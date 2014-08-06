@@ -1,5 +1,5 @@
 
-__author__    = "Andre Merzky"
+__author__    = "Andre Merzky, Matteo Turilli, Ole Weidner"
 __copyright__ = "Copyright 2013, The SAGA Project"
 __license__   = "MIT"
 
@@ -9,12 +9,13 @@ import sys
 import saga
 import time
 
-""" 
+
+"""  
 This is an example which shows how to access Amazon EC2 clouds via the SAGA
-resource package. The code expects the environment variables EC2_ID and EC2_KEY
-to contain the respective authentication tokens required for EC2 access.  It
-also expects EC2_KEYPAIR to point to the ssh key to be used in the EC2 keypair
-authentication.
+resource package. The code expects the environment variables EC2_ACCESS_KEY and
+EC2_SECRET_KEY to contain the respective authentication tokens required for EC2
+access.  It also expects EC2_KEYPAIR to point to the ssh key to be used in the
+EC2 keypair authentication.
 
 This program has different modes of operation:
 
@@ -25,9 +26,17 @@ This program has different modes of operation:
     Usage:
 
         %s -l             :  list    VMs
-        %s -c             :  create  VM
+        %s -c <id> [...]  :  create  VM
         %s -u <id> [...]  :  use     VMs (run jobs)
         %s -d <id> [...]  :  destroy VMs
+
+    Environment:
+       
+       EC2_URL        : backend manager service endpoint
+       EC2_ACCESS_KEY : id  for backend access
+       EC2_SECRET_KEY : key for backend access
+       EC2_KEYPAIR_ID : name of keypair for VM access
+       EC2_KEYPAIR    : public ssh key for VM access
 
 
   * *Listing* of templates and existing VMs on EC2::
@@ -63,7 +72,7 @@ This program has different modes of operation:
     # python examples/resource/ec2.py -c
 
     Created VM
-      id           : [ec2://aws.amazon.com/]-[i-e0d2ad8a]
+      id           : 
       state        : PENDING (pending)
       access       : None
 
@@ -110,9 +119,19 @@ def usage (msg = None) :
     Usage:
 
         %s -l             :  list    VMs
-        %s -c             :  create  VM
+        %s -c <id> [...]  :  create  VM
         %s -u <id> [...]  :  use     VMs (run jobs)
         %s -d <id> [...]  :  destroy VMs
+
+
+    Environment:
+       
+       EC2_URL        : backend manager service endpoint
+       EC2_ACCESS_KEY : id  for backend access
+       EC2_SECRET_KEY : key for backend access
+       EC2_KEYPAIR_ID : name of keypair for VM access
+       EC2_KEYPAIR    : public ssh key for VM access
+
 
     """
 
@@ -140,10 +159,20 @@ def state2str (state) :
 # set up the connection to EC2
 #
 
+if not 'EC2_URL'        in os.environ : usage ("no %s in environment" % 'EC2_URL'       )
+if not 'EC2_ACCESS_KEY' in os.environ : usage ("no %s in environment" % 'EC2_ACCESS_KEY')
+if not 'EC2_SECRET_KEY' in os.environ : usage ("no %s in environment" % 'EC2_SECRET_KEY')
+if not 'EC2_KEYPAIR_ID' in os.environ : usage ("no %s in environment" % 'EC2_KEYPAIR_ID')
+if not 'EC2_KEYPAIR'    in os.environ : usage ("no %s in environment" % 'EC2_KEYPAIR'   )
+
+server = saga.Url(os.environ['EC2_URL'])
+
+
 # in order to connect to EC2, we need an EC2 ID and KEY
 c1 = saga.Context ('ec2')
-c1.user_id  = os.environ['EC2_ID']
-c1.user_key = os.environ['EC2_KEY']
+c1.user_id  = os.environ['EC2_ACCESS_KEY']
+c1.user_key = os.environ['EC2_SECRET_KEY']
+c1.server   = server
 
 # in order to access a created VM, we additionally need to point to the ssh
 # key which is used for EC2 VM contextualization, i.e. as EC2 'keypair'.
@@ -151,9 +180,10 @@ c1.user_key = os.environ['EC2_KEY']
 # -- but then a user_key *must* be specified (only the public key is ever
 # transfererd to EC2).
 c2 = saga.Context ('ec2_keypair')
-c2.token     = 'futuregrid_1'  # keypair name
+c2.token     = os.environ['EC2_KEYPAIR_ID']
 c2.user_cert = os.environ['EC2_KEYPAIR']
-c2.user_id   = 'root'         # the user id on the target VM
+c2.user_id   = 'ubuntu'         # the user id on the target VM
+c2.server    = server
 
 # we create a session for all SAGA interactions, and attach the respective
 # security contexts.  Those are now avail for all SAGA objects created in
@@ -163,7 +193,7 @@ s.contexts.append (c1)
 s.contexts.append (c2)
 
 # in this session, connect to the EC2 resource manager
-rm  = saga.resource.Manager ("ec2://aws.amazon.com/", session=s)
+rm  = saga.resource.Manager (server, session=s)
 
 
 # --------------------------------------------------------------------------
@@ -189,13 +219,27 @@ if  '-l' in args :
     for tmp in rm.list_templates () :
         print "  %s" % tmp
 
-    # # we can also list the available OS images, as per below -- but since
-    # # the list of OS images avaialble on EC2 is *huge*, this operation is
-    # # rather slow (libcloud does one additional hop per image, for
-    # # inspection)
-    # print "\nOS images"
-    # for osi in rm.list_images () :
-    #     print "  %s" % osi
+    # we can also list the available OS images, as per below -- but since
+    # the list of OS images avaialble on EC2 is *huge*, this operation is
+    # rather slow (libcloud does one additional hop per image, for
+    # inspection)
+
+    # {'name': 'None (cube-1-0-5-2012-09-07)', 'ispublic': 'true', 'state': 'available', 'rootdevicetype': 'instance-store', 'imagetype': 'machine'}
+    print "\nOS images"
+    
+    descr = None
+    ispublic = None
+
+    for osi in rm.list_images () :
+        descr = rm.get_image (osi)
+
+        if descr['ispublic'] == 'true' :
+            ispublic = 'public'
+        else:
+            ispublic = 'private'
+
+        print "  %s - %s, %s, %s" % (osi, descr['name'], ispublic,
+                                     descr['state'])
 
     print
     sys.exit (0)
@@ -205,22 +249,26 @@ if  '-l' in args :
 elif  '-c' in args :
 
     args.remove ('-c')
-    if  len (args) > 0 :
-        usage ("no additional args allowed on '-c'")
+    if  len (args) == 0 :
+        usage ("additional args required on '-c'")
 
-    # create a resource description with an image and an OS template, out of
-    # the ones listed above.  We pick a small VM and a plain Ubuntu image...
-    cd = saga.resource.ComputeDescription ()
-    cd.image    = 'ami-0256b16b'
-    cd.template = 'Small Instance'
+    for image in args :
 
-    # create a VM instance with that description, and inspect it for some
-    # detailes
-    cr = rm.acquire (cd)
-    print "\nCreated VM"
-    print "  id           : %s"       %  cr.id
-    print "  state        : %s (%s)"  %  (state2str(cr.state), cr.state_detail)
-    print "  access       : %s"       %  cr.access
+        print"\ncreating an instance from image %s" % image
+
+        # create a resource description with an image and an OS template, out of
+        # the ones listed above.  We pick a small VM and a plain Ubuntu image...
+        cd = saga.resource.ComputeDescription ()
+        cd.image    = image
+        cd.template = 'Small Instance'
+
+        # create a VM instance with that description, and inspect it for some
+        # detailes
+        cr = rm.acquire (cd)
+        print "\nCreated VM"
+        print "  id           : %s"       %  cr.id
+        print "  state        : %s (%s)"  %  (state2str(cr.state), cr.state_detail)
+        print "  access       : %s"       %  cr.access
 
     sys.exit (0)
 

@@ -1,4 +1,3 @@
-
 __author__    = "Andre Merzky, Ole Weidner"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
@@ -81,7 +80,7 @@ release = saga.version
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
-exclude_patterns = []
+exclude_patterns = ["_themes"]
 
 # The reST default role (used for this markup: `text`) to use for all documents.
 #default_role = None
@@ -205,7 +204,7 @@ latex_elements = {
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-  ('index', 'SAGA.tex', u'SAGA Python Documentation',
+  ('index', 'SAGA.tex', u'SAGA-Python Documentation',
    u'The SAGA Project', 'manual'),
 ]
 
@@ -235,7 +234,7 @@ latex_show_pagerefs = True
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'saga', u'SAGA Documentation',
+    ('index', 'saga', u'SAGA-Python Documentation',
      [u'The SAGA Project'], 1)
 ]
 
@@ -249,7 +248,7 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  ('index', 'SAGA', u'SAGA Documentation',
+  ('index', 'SAGA', u'SAGA-Python Documentation',
    u'The SAGA Project', 'SAGA', 'One line description of project.',
    'Miscellaneous'),
 ]

@@ -1,7 +1,15 @@
 #!/bin/bash
 
-curl --insecure -s https://raw.github.com/pypa/virtualenv/master/virtualenv.py | python - /tmp/sagaenv
-. /tmp/sagaenv/bin/activate
+UUID=$(cat /proc/sys/kernel/random/uuid)
+
+curl -O https://pypi.python.org/packages/source/v/virtualenv/virtualenv-1.10.tar.gz
+tar xvfz virtualenv-1.10.tar.gz
+python virtualenv-1.10/virtualenv.py /tmp/sagaenv-$UUID
+
+. /tmp/sagaenv-$UUID/bin/activate
 
 pip install PIL
-python mandelbrot.py $@
+
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+python $DIR/mandelbrot.py $@

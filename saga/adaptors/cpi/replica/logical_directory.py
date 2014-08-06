@@ -31,10 +31,25 @@ class LogicalDirectory (cpi_ns.directory.Directory,
     def init_instance_async     (self, url, flags, session)          : pass
 
 
+    @SYNC
+    def open                    (self, tgt, flags, ttype)            : pass
+    @ASYNC
+    def open_async              (self, tgt, flags, ttype)            : pass
+
+    @SYNC
+    def open_dir                (self, tgt, flags, ttype)            : pass
+    @ASYNC
+    def open_dir_async          (self, tgt, flags, ttype)            : pass
+
     # ----------------------------------------------------------------
     #
     # replica methods
     #
+    @SYNC
+    def get_size                (self, tgt, ttype)                   : pass
+    @ASYNC
+    def get_size_async          (self, tgt, ttype)                   : pass
+
     @SYNC
     def is_file                 (self, tgt, ttype)                   : pass
     @ASYNC
@@ -51,5 +66,5 @@ class LogicalDirectory (cpi_ns.directory.Directory,
     def find_replicas_async (self, name_pattern, attr_pattern, flags, ttype)  : pass
 
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
 

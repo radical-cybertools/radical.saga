@@ -8,16 +8,16 @@ Library Reference
 Intro library reference... 
 
 .. toctree::
-   :numbered:
 
+   url.rst
    job/index.rst
    filesystem/index.rst
    resource/index.rst
-   url.rst
+   replica/index.rst
+   exceptions.rst
    context.rst
    session.rst
    attribute.rst
-   exceptions.rst
 
 ..   replica/index.rst
 ..   advert/index.rst

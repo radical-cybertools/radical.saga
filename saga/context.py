@@ -1,11 +1,11 @@
 
-__author__    = "Andre Merzky"
+__author__    = "Andre Merzky, Ole Weidner"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
 
+import radical.utils.signatures as rus
 
-import saga.utils.signatures as sus
 import saga.adaptors.base    as sab
 import saga.attributes       as sa
 import saga.base             as sb
@@ -17,58 +17,44 @@ from   saga.constants import LIFE_TIME,  REMOTE_ID, REMOTE_HOST, REMOTE_PORT, TO
 # ------------------------------------------------------------------------------
 #
 class Context (sb.Base, sa.Attributes) :
-    '''A SAGA Context object as defined in GFD.90.
+    '''
+    A SAGA Context is a description of a security token. A context 
+    can point for example to a X.509 certificate, an SSH key-pair or 
+    an entry in a MyProxy key-server.
+     
+    It is important to understand that a Context only points to a security 
+    token but it will not hold the certificate contents itself.
 
-    A security context is a description of a security token.  It is important to
-    understand that, in general, a context really just *describes* a token, but
-    that a context *is not* a token (*). For example, a context may point to
-    a X509 certificate -- but it will in general not hold the certificate
-    contents.
+    Contexts are used to tell the adaptors which security tokens are 
+    supposed to be used.  By default, most SAGA adaptors will try to
+    pick up such tokens from their default location, but in some cases 
+    it might be necessary to explicitly define them. An non-default
+    SSH Context for example can be defined like this::
 
-    Context classes are used to inform the backends used by Bliss on what
-    security tokens are expected to be used.  By default, Bliss will be able to
-    pick up such tokens from their default location, but in some cases it might
-    be necessary to explicitly point to them - then use a L{Session} with
-    context instances to do so.
-
-    The usage example for contexts is below::
-
-        # define an ssh context
         ctx = saga.Context("SSH")
-        ctx.user_cert = '$HOME/.ssh/special_id_rsa'
-        ctx.user_key  = '$HOME/.ssh/special_id_rsa.pub'
 
-        # add the context to a session
+        ctx.user_id   = "johndoe"
+        ctx.user_key  = "/home/johndoe/.ssh/key_for_machine_x"
+        ctx.user_pass = "XXXX"  # password to decrypt 'user_key' (if required)
+
         session = saga.Session()
         session.add_context(ctx)
 
-        # create a job service in this session -- that job service can now
-        # *only* use that ssh context. 
-        j = saga.job.Service('ssh://remote.host.net/', session=session)
+        js = saga.job.Service("ssh://machine_x.futuregrid.org",
+                              session=session)
 
-
-    The L{Session} argument to the L{job.Service} constructor is fully optional
-    -- if left out, Bliss will use default session, which picks up some default
-    contexts as described above -- that will suffice for the majority of use
-    cases.
-
-    ----
-
-    (*) The only exception to this rule is the 'UserPass' key, which is used to
-    hold plain-text passwords.  Use this key with care -- it is not good
-    practice to hard-code passwords in the code base, or in config files.
-    Also, be aware that the password may show up in log files, when debugging or
-    analyzing your application.
+    Contexts in SAGA are extensible and implemented similar to the adaptor 
+    mechanism. Currently, the following Context types are supported:
 
     '''
 
     # --------------------------------------------------------------------------
     #
-    @sus.takes   ('Context', 
+    @rus.takes   ('Context', 
                   basestring, 
-                  sus.optional (sab.Base),
-                  sus.optional (dict))
-    @sus.returns (sus.nothing)
+                  rus.optional (sab.Base),
+                  rus.optional (dict))
+    @rus.returns (rus.nothing)
     def __init__ (self, ctype, _adaptor=None, _adaptor_state={}) : 
         '''
         ctype: string
@@ -105,8 +91,8 @@ class Context (sb.Base, sa.Attributes) :
 
     # --------------------------------------------------------------------------
     #
-    @sus.takes   ('Context')
-    @sus.returns (basestring)
+    @rus.takes   ('Context')
+    @rus.returns (basestring)
     def __str__  (self) :
 
         d = self.as_dict ()
@@ -124,8 +110,8 @@ class Context (sb.Base, sa.Attributes) :
 
     # --------------------------------------------------------------------------
     #
-    @sus.takes   ('Context')
-    @sus.returns (basestring)
+    @rus.takes   ('Context')
+    @rus.returns (basestring)
     def __repr__ (self) :
 
         return str(self)
@@ -133,9 +119,9 @@ class Context (sb.Base, sa.Attributes) :
 
     # --------------------------------------------------------------------------
     #
-    @sus.takes      ('Context', 
+    @rus.takes      ('Context', 
                      ('Session', '_DefaultSession'))
-    @sus.returns    (sus.nothing)
+    @rus.returns    (rus.nothing)
     def _initialize (self, session) :
         '''
         ret:  None
@@ -143,5 +129,5 @@ class Context (sb.Base, sa.Attributes) :
         self._adaptor._initialize (session)
 
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
 

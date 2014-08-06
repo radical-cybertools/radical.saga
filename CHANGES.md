@@ -1,8 +1,121 @@
+Version 0.17 release 2014-07-22
+---------------------------------------------------------------------
+
+* Improved prompt-detection and small bug fixes.
+* Closed tickets:
+  - https://github.com/radical-cybertools/saga-python/issues?milestone=20&state=closed
+
+Version 0.16 release 2014-07-09
+---------------------------------------------------------------------
+
+* Several adaptor upddtes
+* Addressed SSH caching and prompt-detection issues
+* Closed tickets:
+  - https://github.com/radical-cybertools/saga-python/issues?milestone=19&state=closed
+
+Version 0.15 release 2014-06-18
+---------------------------------------------------------------------
+
+* Fixed issues with the shell aadaptor Directory.list() method:
+  - https://github.com/radical-cybertools/saga-python/issues/330
+
+Version 0.14 release 2014-05-07
+---------------------------------------------------------------------
+
+* Fixed TTY wrapper issues
+* Migration to new GitHub repository
+* Documentation now on ReadTheDocs: http://saga-python.readthedocs.org/en/latest/
+* Integrated Mark's work on the Condor adaptor
+* Closed tickets:
+  - https://github.com/radical-cybertools/saga-python/issues?milestone=18&state=closed
+
+Version 0.13 release 2014-02-27
+---------------------------------------------------------------------
+
+* Bugfix release.
+* Closed tickets:
+  - https://github.com/saga-project/saga-python/issues?milestone=17&state=closed
+
+
+Version 0.12 release 2014-02-26
+---------------------------------------------------------------------
+
+* Bugfix release + shell cleanup
+
+Version 0.11 release 2014-02-25
+---------------------------------------------------------------------
+
+* Closed tickets:
+  - https://github.com/saga-project/saga-python/issues?milestone=16&state=closed
+
+Version 0.10 release 2014-01-18
+---------------------------------------------------------------------
+
+* Changed versioning scheme from major.minor.patch to major.minor
+  due to Python's messed up installers
+* Fixed job script cleanup:
+  https://github.com/saga-project/saga-python/issues?milestone=15&state=closed
+
+Version 0.9.16 release 2014-01-13
+---------------------------------------------------------------------
+
+* Some improvements to sftp file adaptor
+* Closed tickets: 
+  - https://github.com/saga-project/saga-python/issues?milestone=14&state=closed
+
+Version 0.9.15 release 2013-12-10
+---------------------------------------------------------------------
+
+* Emergency release to fix missing VERSION file
+
+Version 0.9.14 release 2013-12-10
+---------------------------------------------------------------------
+
+* Migration to radical.utils
+* Numerous SFTP file adaptor improvements
+* Closed tickets: 
+  - https://github.com/saga-project/saga-python/issues?milestone=13&state=closed
+
+Version 0.9.13 release 2013-11-26
+---------------------------------------------------------------------
+
+* Added Platform LSF adaptor
+* Closed tickets:
+  - https://github.com/saga-project/saga-python/issues?milestone=11&state=closed
+
+Version 0.9.12 release 2013-10-18
+---------------------------------------------------------------------
+
+* Added iRODS replica adaptor
+* Closed tickets:
+  - https://github.com/saga-project/saga-python/issues?milestone=10&state=closed
+
+Version 0.9.11 released 2013-09-04
+----------------------------------------------------------------------
+
+* Bugfix release
+* Closed tickets:
+  - https://github.com/saga-project/saga-python/issues?milestone=9&state=closed
+
+Version 0.9.10 released 2013-08-12
+----------------------------------------------------------------------
+
+* Better support for Amazon EC2
+* Fixed working directory handling for PBS
+* Closed tickets: 
+  - https://github.com/saga-project/saga-python/issues?milestone=3&state=closed
+
+Version 0.9.9 released 2013-07-19
+----------------------------------------------------------------------
+
+* Hotfix release: bug in Url.__str__ and SFTP copy
+  - https://github.com/saga-project/saga-python/issues?milestone=8&state=closed
+
 Version 0.9.8 released 2013-06-22
 ----------------------------------------------------------------------
 
 * Hotfix release: critical bug in wait() signature
-  - https://github.com/saga-project/saga-python/issues?milestone=7&page=1&state=closed
+  - https://github.com/saga-project/saga-python/issues?milestone=7&state=closed
 
 Version 0.9.7 released 2013-06-19
 ----------------------------------------------------------------------
@@ -10,19 +123,19 @@ Version 0.9.7 released 2013-06-19
 * Added resource package
 * Added 'liblcoud' based adaptor to access Amazon EC2 clouds
 * Closed issues:
-  - https://github.com/saga-project/saga-python/issues?milestone=5&page=1&state=closed
+  - https://github.com/saga-project/saga-python/issues?milestone=5&state=closed
 
 Version 0.9.6 released 2013-06-17
 ----------------------------------------------------------------------
 
 * Hotfix release: critical PBS/TORQUE adaptor fixes
-  - https://github.com/saga-project/saga-python/issues?&milestone=6&page=1&state=closed
+  - https://github.com/saga-project/saga-python/issues?&milestone=6&state=closed
 
 Version 0.9.5 released 2013-06-06
 ----------------------------------------------------------------------
 
 * Hotfix release: critical SLURM adaptor fixes
-  - https://github.com/saga-project/saga-python/issues?milestone=4&page=1&state=closed
+  - https://github.com/saga-project/saga-python/issues?milestone=4&state=closed
 
 Version 0.9.4 released 2013-06-01
 ----------------------------------------------------------------------
@@ -33,7 +146,7 @@ Version 0.9.4 released 2013-06-01
 * A simple HTTP protocol file adaptor
 * Fixed some issues with user-pass and X.509 security contexts
 * Over 40 bugfixes and improvements: 
-  - https://github.com/saga-project/saga-python/issues?milestone=2&page=1&state=closed
+  - https://github.com/saga-project/saga-python/issues?milestone=2&state=closed
 
 Version 0.9.3 released 2013-04-08
 ----------------------------------------------------------------------

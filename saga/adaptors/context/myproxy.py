@@ -168,5 +168,5 @@ class ContextMyProxy (saga.adaptors.cpi.context.Context) :
         session.add_context (new_ctx)
 
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
 

@@ -6,6 +6,9 @@ __license__   = "MIT"
 
 import saga.exceptions as se
 
+import radical.utils as ru
+
+
 def test_SagaException():
     try:
         raise se.SagaException('SagaException')
@@ -51,5 +54,5 @@ def test_IncorrectURL():
         assert e.get_message() == 'IncorrectURL'
         assert str(e)          == 'IncorrectURL'
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
 

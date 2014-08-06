@@ -1,15 +1,15 @@
 
 .. _file_managemen:
 
-Working with Files and Directories
-==================================
+Files and Directories
+=====================
 
 Introduction
 ------------
 
 The file managment API provides the ability to interact with (local and
-remote) file systems via the two classes, :class:`bliss.saga.filesystem.Directory` and
-:class:`bliss.saga.filesystem.File`. The API provides a number of operations, which all
+remote) file systems via the two classes, :class:`saga.filesystem.Directory` and
+:class:`saga.filesystem.File`. The API provides a number of operations, which all
 behave similar to the common unix command line tools (cp, ls, rm etc).
 
 **Example**::
@@ -33,9 +33,21 @@ additional capabilities, such get_size() or move(), can be found in the
 individual class documentations.
 
 
-.. contents:: Table of Contents
-   :local:
+.. _filesystemflags:
 
+Flags
+-----
+
+The following constants are defined as valid flags for file and directory methods:
+
+.. currentmodule:: saga.filesystem
+.. data:: OVERWRITE
+.. data:: RECURSIVE
+.. data:: CREATE
+.. data:: CREATE_PARENTS
+.. data:: LOCK
+.. data:: EXCLUSIVE 
+.. data:: DEREFERENCE
 
 .. #############################################################################
 .. _file:
@@ -43,16 +55,12 @@ individual class documentations.
 File -- :class:`saga.filesystem.File`
 ----------------------------------------
 
-:todo: ...
-
 .. autoclass:: saga.filesystem.File
    :members:
    :undoc-members:
    :show-inheritance:
-
-
-.. contents:: Table of Contents
-   :local:
+   :special-members: __init__
+   :exclude-members: create, read, write, seek, read_v, write_v, size_p, read_p, write_p, size_e, read_e, write_e, modes_e, __module__
 
 
 .. #############################################################################
@@ -61,11 +69,11 @@ File -- :class:`saga.filesystem.File`
 Directory -- :class:`saga.filesystem.Directory`
 -----------------------------------------------
 
-:todo: ...
-
 .. autoclass:: saga.filesystem.Directory
    :members:
    :undoc-members:
    :show-inheritance:
+   :special-members: __init__
+   :exclude-members: create, __module__
 
 

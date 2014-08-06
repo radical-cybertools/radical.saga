@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# be friendly to bash users (and yes, the leading space is on purpose)
+ export HISTIGNORE='*'
+
 # this script uses only POSIX shell functionality, and does not rely on bash or
 # other shell extensions.  It expects /bin/sh to be a POSIX compliant shell
 # thought.
@@ -16,6 +19,8 @@ then
   KILL_DASHES=""
 fi
 
+# we always start in the user's home dir
+\cd $HOME 2>&1 > /dev/null
 
 # --------------------------------------------------------------------
 #
@@ -34,6 +39,10 @@ TIMEOUT=30
 TIMESTAMP=0
 
 PURGE_ON_START="%(PURGE_ON_START)s"
+
+# default exit value is 1, for error.  We need to set explicitly to 0 for
+# non-error conditions.
+EXIT_VAL=1
 
 # --------------------------------------------------------------------
 #
@@ -63,6 +72,7 @@ idle_checker () {
     if test -e "$BASE/quit.$ppid" 
     then
       \rm   -f  "$BASE/quit.$ppid" 
+      EXIT_VAL=0
       exit 0
     fi
 
@@ -76,6 +86,44 @@ idle_checker () {
     \touch "$BASE/idle.$ppid"
   done
 }
+
+# --------------------------------------------------------------------
+#
+# When sending command stdout and stderr back, we encode into 
+# hexadecimal via od, to keep the protocol simple.  This is done by 
+# the 'encode' function which sets 'ENCODED' to the result of that 
+# conversion for all given string parameters.  For completeness, we 
+# also give the matching 'decode' function, although we don't use it
+# in this shell wrapper script itself.  'decode' consumes the output 
+# of 'encode' and stores the resulting string in 'DECODED'.  Any 
+# elements for which decoding fails are complained about in 'RETVAL', 
+# which remains otherwise empty on successful decoding.
+#
+encode () {
+  export ENCODED="`echo \"$*\" | od -t x1 -A n #| cut -c 2- | tr -d ' \n'`"
+  echo $ENCODED
+}
+
+decode () {
+  CODE=""
+  SKIPPED=""
+  RETVAL=""
+  for word in $*; do
+    case "$word" in 
+      [0-9a-f][0-9a-f] )
+        CODE="$CODE\x$word"
+        ;;
+      * )
+        SKIPPED="$SKIPPED $word"
+        ;;
+    esac
+  done
+  DECODED=`/usr/bin/printf "$CODE"`
+  if ! test -z "$SKIPPED"; then
+    RETVAL="skip decoding of [$SKIPPED ]"
+  fi
+}
+
 
 
 # --------------------------------------------------------------------
@@ -122,7 +170,7 @@ verify_in () {
 
 
 # --------------------------------------------------------------------
-# ensure that given job id has valid stdou file
+# ensure that given job id has valid stdout file
 verify_out () {
   verify_dir $1
   if ! test -r "$DIR/out";   then ERROR="pid $1 has no stdout"; return 1; fi
@@ -133,7 +181,7 @@ verify_out () {
 # ensure that given job id has valid stderr file
 verify_err () {
   verify_dir $1
-  if ! test -r "$DIR/err";   then ERROR="stderr $1 has no sterr"; return 1; fi
+  if ! test -r "$DIR/err";   then ERROR="pid $1 has no stderr"; return 1; fi
 }
 
 
@@ -569,13 +617,13 @@ cmd_stdin () {
 
 # --------------------------------------------------------------------
 #
-# print uuencoded string of job's stdout
+# print encoded string of job's stdout
 #
 cmd_stdout () {
   verify_out $1 || return
 
   DIR="$BASE/$1"
-  RETVAL=`uuencode "$DIR/out" "/dev/stdout"`
+  RETVAL=`cat "$DIR/out" | od -t x1 -A n #| cut -c 2- | tr -d ' \n'`
 }
 
 
@@ -587,7 +635,7 @@ cmd_stderr () {
   verify_err $1 || return
 
   DIR="$BASE/$1"
-  RETVAL=`uuencode "$DIR/err" "/dev/stdout"`
+  RETVAL=`cat "$DIR/err" | od -t x1 -A n #| cut -c 2- | tr -d ' \n'`
 }
 
 
@@ -625,6 +673,21 @@ cmd_purge () {
 
 # --------------------------------------------------------------------
 #
+# purge tmp files for bulks etc.
+#
+cmd_purge_tmps () {
+
+  rm -f "$BASE"/bulk.*
+  rm -f "$BASE"/idle.*
+  rm -f "$BASE"/quit.*
+  find  "$BASE" -type d -mtime +30 -exec rm -rf {} \;
+  find  "$BASE" -type f -mtime +30 -exec rm -rf {} \;
+  RETVAL="purged tmp files"
+}
+
+
+# --------------------------------------------------------------------
+#
 # quit this script gracefully
 #
 cmd_quit () {
@@ -633,6 +696,7 @@ cmd_quit () {
   then
     \printf "IDLE TIMEOUT\n"
     \touch "$BASE/timed_out.$$"
+    EXIT_VAL=2
   else
     \touch "$BASE/quit.$$"
   fi
@@ -648,7 +712,7 @@ cmd_quit () {
   \stty echo    >/dev/null 2>&1
   \stty echonl  >/dev/null 2>&1
 
-  exit 0
+  exit $EXIT_VAL
 }
 
 
@@ -786,9 +850,11 @@ listen() {
 \stty -echo   2> /dev/null
 \stty -echonl 2> /dev/null
 
+# FIXME: this leads to timing issues -- disable for benchmarking
 if test "$PURGE_ON_START" = "True"
 then
   cmd_purge
+  cmd_purge_tmps
 fi
 
 create_monitor
