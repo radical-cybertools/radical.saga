@@ -728,12 +728,16 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
         self._ids = []
 
         for line in lines :
+
             try :
-                pid    = int(line.strip ())
-                job_id = "[%s]-[%s]" % (self.rm, pid)
-                self._ids.append (job_id)
+                pid = int(line.strip ())
+
             except Exception as e:
-                self._logger.error ("Ignore ill-formatted job id (%s) (%s)" % (line, e))
+                self._logger.debug ("Ignore ill-formatted job id (%s) (%s)" % (line, e))
+                continue
+
+            job_id = "[%s]-[%s]" % (self.rm, pid)
+            self._ids.append (job_id)
 
         return self._ids
    
