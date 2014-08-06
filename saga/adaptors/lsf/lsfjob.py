@@ -135,8 +135,6 @@ def _lsfcript_generator(url, logger, jd, ppn, lsf_version, queue=None, ):
     if jd.name is not None:
         lsf_params += "#BSUB -J %s \n" % jd.name
 
-    #lsf_params += "#PBS -V \n"
-
     if jd.environment is not None:
         env_variable_list = "export "
         for key in jd.environment.keys():
@@ -157,8 +155,8 @@ def _lsfcript_generator(url, logger, jd, ppn, lsf_version, queue=None, ):
                 lsf_params += "#BSUB -o %s \n" % jd.output
             else:
                 # user provided a relative path for STDOUT. in this case 
-                # we prepend the workind directory path before passing
-                # it on to PBS
+                # we prepend the working directory path before passing
+                # it on to LSF.
                 lsf_params += "#BSUB -o %s/%s \n" % (jd.working_directory, jd.output)
         else:
             lsf_params += "#BSUB -o %s \n" % jd.output
@@ -171,9 +169,9 @@ def _lsfcript_generator(url, logger, jd, ppn, lsf_version, queue=None, ):
             if os.path.isabs(jd.error):
                 lsf_params += "#BSUB -e %s \n" % jd.error
             else:
-                # user provided a realtive path for STDERR. in this case 
-                # we prepend the workind directory path before passing
-                # it on to PBS
+                # user provided a relative path for STDERR. in this case
+                # we prepend the working directory path before passing
+                # it on to LSF.
                 lsf_params += "#BSUB -e %s/%s \n" % (jd.working_directory, jd.error)
         else:
             lsf_params += "#BSUB -e %s \n" % jd.error
@@ -469,7 +467,7 @@ class LSFJobService (saga.adaptors.cpi.job.Service):
         # different queues, number of processes per node, etc.
         # TODO: this is quite a hack. however, it *seems* to work quite
         #       well in practice.
-        #ret, out, _ = self.shell.run_sync('%s -a | egrep "(np|pcpu)"' % \
+        #ret, out, _ = self.shell.run_sync('unset GREP_OPTIONS; %s -a | grep -E "(np|pcpu)"' % \
         #    self._commands['pbsnodes']['path'])
         #if ret != 0:
         #
@@ -543,11 +541,19 @@ class LSFJobService (saga.adaptors.cpi.job.Service):
             lines = out.split("\n")
             lines = filter(lambda lines: lines != '', lines)  # remove empty
 
-            if len(lines) > 1:
-                self._logger.warning('qsub: %s' % ''.join(lines[:-2]))
+            self._logger.info('bsub: %s' % ''.join(lines))
 
-            # we asssume job id is in the first line
-            job_id = "[%s]-[%s]" % (self.rm, lines[0].split(" ")[1][1:-1])
+            lsf_job_id = None
+            for line in lines:
+                if re.search('Job <.+> is submitted to queue', line):
+                    lsf_job_id = re.findall(r'<(.*?)>', line)[0]
+                    break
+
+            if not lsf_job_id:
+                raise Exception("Failed to detect job id after submission.")
+
+            job_id = "[%s]-[%s]" % (self.rm, lsf_job_id)
+
             self._logger.info("Submitted LSF job with id: %s" % job_id)
 
             # update job dictionary
@@ -555,9 +561,8 @@ class LSFJobService (saga.adaptors.cpi.job.Service):
             self.jobs[job_obj]['submitted'] = job_id
 
             # set status to 'pending' and manually trigger callback
-            self.jobs[job_obj]['state'] = saga.job.PENDING
-            job_obj._api()._attributes_i_set('state', self.jobs[job_obj]['state'], job_obj._api()._UP, True)
-
+            #self.jobs[job_obj]['state'] = saga.job.PENDING
+            #job_obj._api()._attributes_i_set('state', self.jobs[job_obj]['state'], job_obj._api()._UP, True)
 
             # return the job id
             return job_id
@@ -570,15 +575,7 @@ class LSFJobService (saga.adaptors.cpi.job.Service):
         """
         rm, pid = self._adaptor.parse_id(job_id)
 
-        # run the LSF 'qstat' command to get some infos about our job
-        if 'PBSPro_1' in self._commands['qstat']['version']:
-            qstat_flag = '-f'
-        else:
-            qstat_flag ='-f1'
-
-        ret, out, _ = self.shell.run_sync("%s %s %s | \
-            egrep '(job_state)|(exec_host)|(exit_status)|(ctime)|\
-            (start_time)|(comp_time)'" % (self._commands['qstat']['path'], qstat_flag, pid))
+        ret, out, _ = self.shell.run_sync("%s -noheader -o 'stat exec_host exit_code submit_time start_time finish_time delimiter=\",\"' %s" % (self._commands['bjobs']['path'], pid))
 
         if ret != 0:
             message = "Couldn't reconnect to job '%s': %s" % (job_id, out)
@@ -596,25 +593,14 @@ class LSFJobService (saga.adaptors.cpi.job.Service):
                 'gone':         False
             }
 
-            results = out.split('\n')
-            for line in results:
-                if len(line.split('=')) == 2:
-                    key, val = line.split('=')
-                    key = key.strip()  # strip() removes whitespaces at the
-                    val = val.strip()  # beginning and the end of the string
-
-                    if key == 'job_state':
-                        job_info['state'] = _lsf_to_saga_jobstate(val)
-                    elif key == 'exec_host':
-                        job_info['exec_hosts'] = val.split('+')
-                    elif key == 'exit_status':
-                        job_info['returncode'] = int(val)
-                    elif key == 'ctime':
-                        job_info['create_time'] = val
-                    elif key == 'start_time':
-                        job_info['start_time'] = val
-                    elif key == 'comp_time':
-                        job_info['end_time'] = val
+            results = out.split(',')
+            job_info['state'] = _lsf_to_saga_jobstate(results[0])
+            job_info['exec_hosts'] = results[1]
+            if results[2] != '-':
+                job_info['returncode'] = int(results[2])
+            job_info['create_time'] = results[3]
+            job_info['start_time'] = results[4]
+            job_info['end_time'] = results[5]
 
             return job_info
 
@@ -626,7 +612,7 @@ class LSFJobService (saga.adaptors.cpi.job.Service):
 
         # if we don't have the job in our dictionary, we don't want it
         if job_obj not in self.jobs:
-            message = "Unkown job object: %s. Can't update state." % job_obj._id
+            message = "Unknown job object: %s. Can't update state." % job_obj._id
             log_error_and_raise(message, saga.NoSuccess, self._logger)
 
         # prev. info contains the info collect when _job_get_info
@@ -656,13 +642,12 @@ class LSFJobService (saga.adaptors.cpi.job.Service):
 
         if ret != 0:
             if ("Illegal job ID" in out):
-                # Let's see if the previous job state was runnig or pending. in
+                # Let's see if the previous job state was running or pending. in
                 # that case, the job is gone now, which can either mean DONE,
                 # or FAILED. the only thing we can do is set it to 'DONE'
                 curr_info['gone'] = True
                 # we can also set the end time
                 self._logger.warning("Previously running job has disappeared. This probably means that the backend doesn't store informations about finished jobs. Setting state to 'DONE'.")
-
 
                 if prev_info['state'] in [saga.job.RUNNING, saga.job.PENDING]:
                     curr_info['state'] = saga.job.DONE
@@ -674,9 +659,9 @@ class LSFJobService (saga.adaptors.cpi.job.Service):
                 log_error_and_raise(message, saga.NoSuccess, self._logger)
         else:
             # parse the result
-            results = out.split( )
+            results = out.split()
             curr_info['state'] = _lsf_to_saga_jobstate(results[2])
-            curr_info['exec_host'] = results[5]
+            curr_info['exec_hosts'] = results[5]
 
         # return the new job info dict
         return curr_info

@@ -221,39 +221,29 @@ def _pbscript_generator(url, logger, jd, ppn, pbs_version, is_cray=False, queue=
     if jd.total_cpu_count is None:
         jd.total_cpu_count = 1
 
+    tcc = jd.total_cpu_count
+    nnodes = tcc / ppn
+    if tcc % ppn > 0:
+        nnodes += 1 # Request enough nodes to cater for the number of cores requested
+
     if is_cray is not "":
         # Special cases for PBS/TORQUE on Cray. Different PBSes,
         # different flags. A complete nightmare...
         if 'PBSPro_10' in pbs_version:
-            logger.info("Using Cray specific '#PBS -l mppwidth=xx' flags (PBSPro_10).")
-            if jd.total_cpu_count is not None:
-                pbs_params += "#PBS -l mppwidth=%s \n" % jd.total_cpu_count
-        elif '4.2.5-snap.201308291703' in pbs_version: 
-            logger.info("Using Titan (Cray XP) specific '#PBS -l nodes=xx' against '#PBS -l size=xx'.")
-            nnodes = int(jd.total_cpu_count)//int(ppn)
-            if nnodes: 
-                pbs_params += "#PBS -l nodes=%s \n" % str(nnodes)
-            else:
-                pbs_params += "#PBS -l nodes=1 \n"
+            logger.info("Using Cray XT (e.g. Hopper) specific '#PBS -l mppwidth=xx' flags (PBSPro_10).")
+            pbs_params += "#PBS -l mppwidth=%s \n" % jd.total_cpu_count
+        elif 'PBSPro_12' in pbs_version:
+            logger.info("Using Cray XT (e.g. Archer) specific '#PBS -l select=xx' flags (PBSPro_12).")
+            pbs_params += "#PBS -l select=%d\n" % nnodes
+        elif '4.2.5-snap.201308291703' in pbs_version:
+            logger.info("Using Titan (Cray XP) specific '#PBS -l nodes=xx'")
+            pbs_params += "#PBS -l nodes=%d\n" % nnodes
         else:
-            if jd.total_cpu_count is not None:
-                if "archer" in is_cray:
-                    logger.info("Using Cray XT -- ARCHER -- specific '#PBS -l select=xx' flags (TORQUE).")
-                    pbs_params += "#PBS -l select=%s \n" % jd.total_cpu_count
-
-                else:
-                    logger.info("Using Cray XT specific '#PBS -l size=xx' flags (TORQUE).")
-                    pbs_params += "#PBS -l size=%s \n" % jd.total_cpu_count
+            logger.info("Using Cray XT (e.g. Kraken, Jaguar) specific '#PBS -l size=xx' flags (TORQUE).")
+            pbs_params += "#PBS -l size=%s\n" % jd.total_cpu_count
     else:
         # Default case, i.e, standard HPC cluster (non-Cray)
-        tcc = int(jd.total_cpu_count)
-        tbd = float(tcc) / float(ppn)
-        if float(tbd) > int(tbd):
-            pbs_params += "#PBS -l nodes=%s:ppn=%s \n" \
-                % (str(int(tbd) + 1), ppn)
-        else:
-            pbs_params += "#PBS -l nodes=%s:ppn=%s \n" \
-                % (str(int(tbd)), ppn)
+        pbs_params += "#PBS -l nodes=%d:ppn=%d \n" % (nnodes, ppn)
 
     # escape all double quotes and dollarsigns, otherwise 'echo |'
     # further down won't work
@@ -534,10 +524,13 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
         # different queues, number of processes per node, etc.
         # TODO: this is quite a hack. however, it *seems* to work quite
         #       well in practice.
-        ret, out, _ = self.shell.run_sync('%s -a | egrep "(np|pcpu)"' % \
-            self._commands['pbsnodes']['path'])
+        if 'PBSPro_12' in self._commands['qstat']['version']:
+            ret, out, _ = self.shell.run_sync('unset GREP_OPTIONS; %s -a | grep -E "resources_available.ncpus"' % \
+                                               self._commands['pbsnodes']['path'])
+        else:
+            ret, out, _ = self.shell.run_sync('unset GREP_OPTIONS; %s -a | grep -E "(np|pcpu)[[:blank:]]*=" ' % \
+                                               self._commands['pbsnodes']['path'])
         if ret != 0:
-
             message = "Error running pbsnodes: %s" % out
             log_error_and_raise(message, saga.NoSuccess, self._logger)
         else:
@@ -548,7 +541,11 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
             for line in out.split('\n'):
                 np = line.split(' = ')
                 if len(np) == 2:
-                    np = np[1].strip()
+                    np_str = np[1].strip()
+                    if np_str == '<various>':
+                        continue
+                    else:
+                        np = int(np_str)
                     if np in ppn_list:
                         ppn_list[np] += 1
                     else:
@@ -653,8 +650,8 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
         else:
             qstat_flag ='-f1'
 
-        ret, out, _ = self.shell.run_sync("%s %s %s | \
-            egrep '(job_state)|(exec_host)|(exit_status)|(ctime)|\
+        ret, out, _ = self.shell.run_sync("unset GREP_OPTIONS; %s %s %s | \
+            grep -E '(job_state)|(exec_host)|(exit_status)|(ctime)|\
             (start_time)|(comp_time)'" % (self._commands['qstat']['path'], qstat_flag, pid))
 
         if ret != 0:
@@ -727,8 +724,8 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
             qstat_flag = '-f'
         else:
             qstat_flag ='-f1'
-        ret, out, _ = self.shell.run_sync("%s %s %s | \
-            egrep '(job_state)|(exec_host)|(exit_status)|(ctime)|(start_time)\
+        ret, out, _ = self.shell.run_sync("unset GREP_OPTIONS; %s %s %s | \
+            grep -E '(job_state)|(exec_host)|(exit_status)|(ctime)|(start_time)\
 |(comp_time)'" % (self._commands['qstat']['path'], qstat_flag, pid))
 
         if ret != 0:
@@ -943,7 +940,7 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
         """
         ids = []
 
-        ret, out, _ = self.shell.run_sync("%s | grep `whoami`" %
+        ret, out, _ = self.shell.run_sync("unset GREP_OPTIONS; %s | grep `whoami`" %
                                           self._commands['qstat']['path'])
 
         if ret != 0 and len(out) > 0:

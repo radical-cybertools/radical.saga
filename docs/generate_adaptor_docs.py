@@ -16,7 +16,7 @@ import saga.engine.registry
 
 # --------------------------------------------------------------------
 #
-DOCROOT = "../source/adaptors"
+DOCROOT = "./source/adaptors"
 
 
 # --------------------------------------------------------------------
@@ -170,7 +170,14 @@ def make_adaptor_docs():
             cfgopts += m._ADAPTOR_DOC['cfg_options']
             options  = ""
 
+            print cfgopts
+
             for o in cfgopts :
+
+                # ignore empty dicts
+                if  not o.keys() :
+                    continue
+
                 oname = o['name']
                 otype = o['type']
                 odef  = o['default']

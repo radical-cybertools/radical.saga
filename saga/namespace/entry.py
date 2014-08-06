@@ -42,7 +42,7 @@ class Entry (sb.Base, sasync.Async) :
     #
     @rus.takes   ('Entry', 
                   rus.optional ((surl.Url, basestring)), 
-                  rus.optional (int), 
+                  rus.optional (int, rus.nothing), 
                   rus.optional (ss.Session),
                   rus.optional (sab.Base), 
                   rus.optional (dict), 
@@ -80,6 +80,7 @@ class Entry (sb.Base, sasync.Async) :
         if not session :
             session = ss.Session (default=True)
 
+        if  not flags : flags = 0
         url     = surl.Url (url)
         scheme  = url.scheme.lower ()
 
@@ -93,7 +94,7 @@ class Entry (sb.Base, sasync.Async) :
     @classmethod
     @rus.takes   ('Entry', 
                   rus.optional ((surl.Url, basestring)), 
-                  rus.optional (int), 
+                  rus.optional (int, rus.nothing), 
                   rus.optional (ss.Session),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns (st.Task)
@@ -107,6 +108,7 @@ class Entry (sb.Base, sasync.Async) :
         '''
 
         # param checks
+        if  not flags : flags = 0
         if not session :
             session = ss.Session (default=True)
 
@@ -235,7 +237,7 @@ class Entry (sb.Base, sasync.Async) :
     #
     @rus.takes   ('Entry',
                   (surl.Url, basestring),
-                  rus.optional (int),
+                  rus.optional (int, rus.nothing),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((rus.nothing, st.Task))
     def copy     (self, tgt, flags=0, ttype=None) :
@@ -260,6 +262,7 @@ class Entry (sb.Base, sasync.Async) :
         '''
         
         # parameter checks
+        if  not flags : flags = 0
         tgt_url = surl.Url (tgt)  # ensure valid and typed Url
     
     
@@ -348,7 +351,7 @@ class Entry (sb.Base, sasync.Async) :
     #
     @rus.takes   ('Entry',
                   (surl.Url, basestring),
-                  rus.optional (int),
+                  rus.optional (int, rus.nothing),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((rus.nothing, st.Task))
     def link     (self, tgt, flags=0, ttype=None) :
@@ -359,6 +362,7 @@ class Entry (sb.Base, sasync.Async) :
         ret:           None / saga.Task
         '''
 
+        if  not flags : flags = 0
         return self._adaptor.link_self (tgt, flags, ttype=ttype) 
 
 
@@ -366,7 +370,7 @@ class Entry (sb.Base, sasync.Async) :
     #
     @rus.takes   ('Entry',
                   (surl.Url, basestring),
-                  rus.optional (int),
+                  rus.optional (int, rus.nothing),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((rus.nothing, st.Task))
     def move     (self, tgt, flags=0, ttype=None) :
@@ -387,6 +391,7 @@ class Entry (sb.Base, sasync.Async) :
             entry = saga.namespace.Directory("sftp://localhost/tmp/data/data.bin")
             entry.move ("sftp://localhost/tmp/data/data.bak")
         '''
+        if  not flags : flags = 0
         return self._adaptor.move_self (tgt, flags, ttype=ttype) 
   
     
@@ -394,6 +399,7 @@ class Entry (sb.Base, sasync.Async) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Entry',
+                  rus.optional (int, rus.nothing),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((rus.nothing, st.Task))
     def remove   (self, flags=0, ttype=None) :
@@ -412,6 +418,7 @@ class Entry (sb.Base, sasync.Async) :
             entry = saga.namespace.Directory("sftp://localhost/tmp/data/data.bin")
             entry.remove ()
         '''
+        if  not flags : flags = 0
         return self._adaptor.remove_self (flags, ttype=ttype) 
   
     

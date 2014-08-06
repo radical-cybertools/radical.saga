@@ -155,6 +155,20 @@ class PTYProcess (object) :
 
     # ----------------------------------------------------------------------
     #
+    def _hide_data (self, data, nolog=False) :
+
+        if  nolog :
+            import re
+            return re.sub (r'([^\n])', 'X', data)
+
+        else :
+            return data
+
+
+
+
+    # ----------------------------------------------------------------------
+    #
     def initialize (self) :
 
         with self.rlock :
@@ -676,24 +690,23 @@ class PTYProcess (object) :
                 # a pattern, or timeout passes
                 while True :
 
-
-
-                  # time.sleep (0.1)
+                    time.sleep (0.1)
 
                     # skip non-lines
                     if  not data :
                         data += self.read (timeout=_POLLDELAY)
                     if  _debug : print ">>%s<<" % data
 
+                    escaped = escape (data)
+                    if _debug : print 'data    ==%s==' % data
+                    if _debug : print 'escaped ==%s==' % escaped
+
                     # check current data for any matching pattern
                     for n in range (0, len(patts)) :
 
-                        escaped = escape (data)
-                      # print '-- 1 --%s--' % data
-                      # print '-- 2 --%s--' % escaped
-
                         match = patts[n].search (escaped)
                         if _debug : print "==%s==" % patterns[n]
+                        if _debug : print match
 
                         if match :
                             # a pattern matched the current data: return a tuple of
@@ -729,7 +742,7 @@ class PTYProcess (object) :
 
     # ----------------------------------------------------------------
     #
-    def write (self, data) :
+    def write (self, data, nolog=False) :
         """
         This method will repeatedly attempt to push the given data into the
         child's stdin pipe, until it succeeds to write all data.
@@ -743,7 +756,8 @@ class PTYProcess (object) :
 
             try :
 
-                log = data.replace ('\n', '\\n')
+                log = self._hide_data (data, nolog)
+                log =  log.replace ('\n', '\\n')
                 log =  log.replace ('\r', '')
                 if  len(log) > _DEBUG_MAX :
                     self.logger.debug ("write: [%5d] [%5d] (%s ... %s)" \
