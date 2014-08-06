@@ -32,6 +32,16 @@ _config_options = [
     'valid_options' : [True, False],
     'documentation' : 'load adaptors which are marked as beta (i.e. not released).',
     'env_variable'  : None
+    },
+    # FIXME: is there a better place to register util level options?  We have
+    # only one though, at this point...
+    { 
+    'category'      : 'saga.utils.pty',
+    'name'          : 'prompt_pattern', 
+    'type'          : str, 
+    'default'       : "[\$#%>\]]\s*$",
+    'documentation' : 'use this regex to detect shell prompts',
+    'env_variable'  : None
     }
 ]
 

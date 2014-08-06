@@ -1,7 +1,6 @@
-
-############################
-SAGA |version| documentation
-############################
+###################################
+SAGA-Python |version| Documentation
+###################################
 
 SAGA-Python is a light-weight Python package that implements `OGF SAGA
 <http://www.ogf.org/documents/GFD.90.pdf>`_ interface specification and provides

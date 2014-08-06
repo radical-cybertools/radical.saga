@@ -28,8 +28,8 @@ try :
     jd = saga.job.Description ()
     jd.executable = '/bin/echo'
     jd.arguments  = ['hello world; date ; sleep 3']
-    jd.output     = "/tmp/out"
-    jd.error      = "/tmp/err"
+ #  jd.output     = "/tmp/out"
+ #  jd.error      = "/tmp/err"
   
     j = js.create_job (jd)
  #  j.add_callback ('State', my_cb)
@@ -46,6 +46,9 @@ try :
 
     print "state: %s" % j.state
     print j.finished
+
+    print "stdout: %s" % j.get_stdout_string ()
+    print "stderr: %s" % j.get_stderr_string ()
 
     # print "list : %s" % js.list ()
     # for id in js.list () :

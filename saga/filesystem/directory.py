@@ -46,7 +46,7 @@ class Directory (nsdir.Directory) :
     #
     @rus.takes   ('Directory', 
                   rus.optional ((surl.Url, basestring)), 
-                  rus.optional (int), 
+                  rus.optional (int, rus.nothing), 
                   rus.optional (ss.Session),
                   rus.optional (sab.Base), 
                   rus.optional (dict), 
@@ -81,6 +81,7 @@ class Directory (nsdir.Directory) :
         """
 
         # param checks
+        if  not flags : flags = 0
         url = surl.Url (url)
 
         self._nsdirec = super  (Directory, self)
@@ -93,7 +94,7 @@ class Directory (nsdir.Directory) :
     @classmethod
     @rus.takes   ('Directory', 
                   rus.optional ((surl.Url, basestring)), 
-                  rus.optional (int), 
+                  rus.optional (int, rus.nothing), 
                   rus.optional (ss.Session),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns (st.Task)
@@ -106,6 +107,7 @@ class Directory (nsdir.Directory) :
         ret:       saga.Task
         """
 
+        if  not flags : flags = 0
         _nsdir = super (Directory, cls)
         return _nsdir.create (url, flags, session, ttype=ttype)
 
@@ -115,7 +117,7 @@ class Directory (nsdir.Directory) :
     #
     @rus.takes   ('Directory', 
                   (surl.Url, basestring),
-                  rus.optional (int),
+                  rus.optional (int, rus.nothing),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns (('File', st.Task))
     def open (self, path, flags=READ, ttype=None) :
@@ -129,6 +131,7 @@ class Directory (nsdir.Directory) :
         :type path:      str()
         :param flags:    :ref:`filesystemflags`
         """
+        if  not flags : flags = 0
         url = surl.Url(path)
         return self._adaptor.open (url, flags, ttype=ttype)
 
@@ -137,7 +140,7 @@ class Directory (nsdir.Directory) :
     #
     @rus.takes   ('Directory', 
                   (surl.Url, basestring),
-                  rus.optional (int),
+                  rus.optional (int, rus.nothing),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns (('Directory', st.Task))
     def open_dir (self, path, flags=READ, ttype=None) :
@@ -157,6 +160,7 @@ class Directory (nsdir.Directory) :
             dir = saga.namespace.Directory("sftp://localhost/tmp/")
             data = dir.open_dir ('data/', saga.namespace.Create)
         """
+        if  not flags : flags = 0
         return self._adaptor.open_dir (path, flags, ttype=ttype)
 
 

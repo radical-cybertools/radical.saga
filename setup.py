@@ -230,12 +230,12 @@ setup_args = {
         "saga.utils",
         "saga.utils.job",
     ],
-    'scripts'          : [],
+    'scripts'          : ['bin/sagapython-version'],
     'package_data'     : {'' : ['*.sh', 'VERSION']},
     'cmdclass'         : {
         'test'         : our_test,
     },
-    'install_requires' : ['apache-libcloud', 'radical.utils>=0.6.2'],
+    'install_requires' : ['apache-libcloud', 'radical.utils'],
     'tests_require'    : ['nose'],
     'zip_safe'         : False,
 #   'build_sphinx'     : {

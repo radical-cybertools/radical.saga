@@ -25,8 +25,8 @@ PNG image. Download the scripts into your $HOME directory:
 
 .. code-block:: bash
 
-    curl --insecure -Os https://raw.github.com/saga-project/saga-python/devel/examples/tutorial/mandelbrot/mandelbrot.py
-    curl --insecure -Os https://raw.github.com/saga-project/saga-python/devel/examples/tutorial/mandelbrot/mandelbrot.sh
+    curl --insecure -Os https://raw.githubusercontent.com/radical-cybertools/saga-python/devel/examples/tutorial/mandelbrot/mandelbrot.py
+    curl --insecure -Os https://raw.githubusercontent.com/radical-cybertools/saga-python/devel/examples/tutorial/mandelbrot/mandelbrot.sh
 
 You can give mandelbrot.py a test-drive locally by calculating a single-tiled
 1024x1024 Mandelbrot fractal:
@@ -35,7 +35,7 @@ You can give mandelbrot.py a test-drive locally by calculating a single-tiled
 
     python mandelbrot.py 1024 1024 0 1024 0 1024 frac.gif
 
-In your ``$HOME`` directory, open a new file saga_mandelbrot.py with your 
-favorite editor and paste the following content:
+In your ``$HOME`` directory, open a new file saga_mandelbrot_osg.py with your 
+favorite editor and paste the following content :download:`here <../../../examples/tutorial/mandelbrot/saga_mandelbrot_osg.py>`:
 
 .. literalinclude:: ../../../examples/tutorial/mandelbrot/saga_mandelbrot_osg.py

@@ -25,7 +25,7 @@ class Directory (nsdir.Directory, sa.Attributes) :
     #
     @rus.takes   ('Directory', 
                   rus.optional ((surl.Url, basestring)), 
-                  rus.optional (int),
+                  rus.optional (int, rus.nothing),
                   rus.optional (ss.Session), 
                   rus.optional (sab.Base),
                   rus.optional (dict),
@@ -41,6 +41,7 @@ class Directory (nsdir.Directory, sa.Attributes) :
         '''
 
         # param checks
+        if not flags : flags = 0
         url = surl.Url (url)
 
         self._nsdirec = super  (Directory, self)
@@ -72,7 +73,7 @@ class Directory (nsdir.Directory, sa.Attributes) :
     @classmethod
     @rus.takes   ('Directory', 
                   rus.optional ((surl.Url, basestring)), 
-                  rus.optional (int), 
+                  rus.optional (int, rus.nothing), 
                   rus.optional (ss.Session), 
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns (st.Task)
@@ -85,6 +86,7 @@ class Directory (nsdir.Directory, sa.Attributes) :
         ret:       saga.Task
         '''
 
+        if not flags : flags = 0
         _nsdir = super (Directory, cls)
         return _nsdir.create (url, flags, session, ttype=ttype)
 
@@ -185,7 +187,7 @@ class Directory (nsdir.Directory, sa.Attributes) :
                   rus.optional (basestring),
                   rus.optional (basestring),
                   rus.optional ((basestring, object)),
-                  rus.optional (int),
+                  rus.optional (int, rus.nothing),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((rus.list_of (surl.Url), st.Task))
     def find     (self, name_pattern, attr_pattern=None, obj_type=None,
@@ -198,6 +200,7 @@ class Directory (nsdir.Directory, sa.Attributes) :
         ret:            list [saga.Url]
         """
         
+        if not flags : flags = 0
         if attr_pattern or obj_type : 
             return self._adaptor.find_adverts (name_pattern, attr_pattern, obj_type, flags, ttype=ttype)
         else :
