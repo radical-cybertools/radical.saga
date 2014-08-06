@@ -358,7 +358,7 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
                     version = out.strip().split('\n')[0]
 
                     # add path and version to the command dictionary
-                    self._commands[cmd] = {"path":    path,
+                    self._commands[cmd] = {"path":    "unset GREP_OPTIONS; %s" % path,
                                            "version": version}
 
         self._logger.info("Found SGE tools: %s" % self._commands)
@@ -1145,7 +1145,7 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
         """
         ids = []
 
-        ret, out, _ = self.shell.run_sync("%s | grep `whoami`"\
+        ret, out, _ = self.shell.run_sync("unset GREP_OPTIONS; %s | grep `whoami`"\
             % self._commands['qstat']['path'])
         if ret != 0 and len(out) > 0:
             message = "Failed to list jobs via 'qstat': %s" % out

@@ -696,6 +696,10 @@ class PTYProcess (object) :
 
                     if  _debug : print ">>%s<<" % data
 
+                    escaped = escape (data)
+                    if _debug : print 'data    ==%s==' % data
+                    if _debug : print 'escaped ==%s==' % escaped
+
                     # check current data for any matching pattern
                     for n in range (0, len(patts)) :
 
@@ -706,6 +710,7 @@ class PTYProcess (object) :
 
                         match = patts[n].search (escaped)
                         if _debug : print "==%s==" % patterns[n]
+                        if _debug : print match
 
                         if match :
                             # a pattern matched the current data: return a tuple of

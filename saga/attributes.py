@@ -18,6 +18,7 @@ import datetime
 import traceback
 import inspect
 import string
+import copy
 import re
 from   pprint import pprint
 
@@ -1907,15 +1908,9 @@ class Attributes (_AttributesBase, ru.DictMixin) :
             if d['attributes'][key]['private' ] and key in orig_d['attributes'] :
                 # don't copy private keys
                 other_d['attributes'][key] = orig_d['attributes'][key]
-                continue
 
-            if        d['attributes'][key]['value'] == None :
-                other_d['attributes'][key]['value'] = None
             else :
-                if        d['attributes'][key]['flavor'] == VECTOR :
-                    other_d['attributes'][key]['value']  = list (d['attributes'][key]['value'])
-                else :
-                    other_d['attributes'][key]['value']  =       d['attributes'][key]['value']
+                other_d['attributes'][key]['value']  = copy.deepcopy (d['attributes'][key]['value'])
 
         # set the new dictionary as state for copied class
         _AttributesBase.__setattr__ (other, '_d', other_d)

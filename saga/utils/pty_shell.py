@@ -179,8 +179,11 @@ class PTYShell (object) :
     #
     def __init__ (self, url, session=None, logger=None, init=None, opts={}, posix=True) :
 
-        if  None != logger  : self.logger  = logger
-        else                : self.logger  = rul.getLogger ('saga', 'PTYShell') 
+        if   logger  : self.logger  = logger
+        else         : self.logger  = rul.getLogger ('saga', 'PTYShell') 
+
+        if   session : self.session = session
+        else         : self.session = ss.Session (default=True)
 
         self.logger.debug ("PTYShell init %s" % self)
 
@@ -193,6 +196,18 @@ class PTYShell (object) :
         self.prompt      = "[\$#%>\]]\s*$"
         self.prompt_re   = re.compile ("^(.*?)%s\s*$" % self.prompt, re.DOTALL)
         self.initialized = False
+
+        # get prompt pattern from config
+        self.cfg       = self.session.get_config('saga.utils.pty')
+
+        if  'prompt_pattern' in self.cfg :
+            self.prompt    = self.cfg['prompt_pattern'].get_value ()
+            self.prompt_re = re.compile ("^(.*?)%s" % self.prompt, re.DOTALL)
+        else :
+            self.prompt    = "[\$#%>\]]\s*$"
+            self.prompt_re = re.compile ("^(.*?)%s" % self.prompt, re.DOTALL)
+
+        self.logger.info ("PTY prompt pattern: %s" % self.prompt)
 
         # we need a local dir for file staging caches.  At this point we use
         # $HOME, but should make this configurable (FIXME)
@@ -209,7 +224,9 @@ class PTYShell (object) :
 
         
         self.factory    = supsf.PTYShellFactory   ()
-        self.pty_info   = self.factory.initialize (url, session, self.logger, posix=posix)
+        self.pty_info   = self.factory.initialize (self.url,    self.session, 
+                                                   self.prompt, self.logger, 
+                                                   posix=self.posix)
         self.pty_shell  = self.factory.run_shell  (self.pty_info)
 
         self.initialize ()
