@@ -25,7 +25,7 @@ class LogicalFile (nsentry.Entry, sa.Attributes) :
     #
     @rus.takes   ('LogicalFile', 
                   rus.optional ((surl.Url, basestring)), 
-                  rus.optional (int), 
+                  rus.optional (int, rus.nothing), 
                   rus.optional (ss.Session),
                   rus.optional (sab.Base), 
                   rus.optional (dict), 
@@ -43,6 +43,7 @@ class LogicalFile (nsentry.Entry, sa.Attributes) :
         '''
 
         # param checks
+        if not flags : flags = 0
         url = surl.Url (url)
 
         self._nsentry = super  (LogicalFile, self)
@@ -55,7 +56,7 @@ class LogicalFile (nsentry.Entry, sa.Attributes) :
     @classmethod
     @rus.takes   ('LogicalFile', 
                   rus.optional ((surl.Url, basestring)), 
-                  rus.optional (int), 
+                  rus.optional (int, rus.nothing), 
                   rus.optional (ss.Session),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns (st.Task)
@@ -68,6 +69,7 @@ class LogicalFile (nsentry.Entry, sa.Attributes) :
         ret:       saga.Task
         '''
 
+        if not flags : flags = 0
         _nsentry = super (LogicalFile, cls)
         return _nsentry.create (url, flags, session, ttype=ttype)
 
@@ -198,7 +200,7 @@ class LogicalFile (nsentry.Entry, sa.Attributes) :
     #
     @rus.takes   ('LogicalFile', 
                   (surl.Url, basestring), 
-                  rus.optional (int),
+                  rus.optional (int, rus.nothing),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((rus.nothing, st.Task))
     def replicate (self, name, flags=None, ttype=None) :
@@ -212,6 +214,7 @@ class LogicalFile (nsentry.Entry, sa.Attributes) :
         ttype:          saga.task.type enum
         ret:            None / saga.Task
         '''
+        if not flags : flags = 0
         return self._adaptor.replicate (name, flags, ttype=ttype)
     
 
@@ -221,7 +224,7 @@ class LogicalFile (nsentry.Entry, sa.Attributes) :
     @rus.takes   ('LogicalFile', 
                   (surl.Url, basestring), 
                   rus.optional ((surl.Url, basestring)),
-                  rus.optional (int),
+                  rus.optional (int, rus.nothing),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((rus.nothing, st.Task))
     def upload (self, name, tgt=None, flags=None, ttype=None) :
@@ -236,6 +239,7 @@ class LogicalFile (nsentry.Entry, sa.Attributes) :
         ttype:          saga.task.type enum
         ret:            None / saga.Task
         '''
+        if not flags : flags = 0
         return self._adaptor.upload (name, tgt, flags, ttype=ttype)
     
  
@@ -245,7 +249,7 @@ class LogicalFile (nsentry.Entry, sa.Attributes) :
     @rus.takes   ('LogicalFile', 
                   (surl.Url, basestring), 
                   rus.optional ((surl.Url, basestring)),
-                  rus.optional (int),
+                  rus.optional (int, rus.nothing),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((rus.nothing, st.Task))
     def download (self, name, src=None, flags=None, ttype=None) :
@@ -260,6 +264,7 @@ class LogicalFile (nsentry.Entry, sa.Attributes) :
         ttype:          saga.task.type enum
         ret:            None / saga.Task
         '''
+        if not flags : flags = 0
         return self._adaptor.download (name, src, flags, ttype=ttype)
     
   

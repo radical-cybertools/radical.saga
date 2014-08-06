@@ -226,7 +226,7 @@ setup_args = {
         "saga.utils",
         "saga.utils.job",
     ],
-    'scripts'          : [],
+    'scripts'          : ['bin/sagapython-version'],
     'package_data'     : {'' : ['*.sh', 'VERSION']},
     'cmdclass'         : {
         'test'         : our_test,
