@@ -231,8 +231,9 @@ class PTYShellFactory (object) :
                                    prompt]                         # greedy native shell prompt 
 
                 # find a prompt
-                # use a very aggressive, but portable prompt setting scheme
-                pty_shell.write (" export PS1='$' > /dev/null 2>&1 || set prompt='$'\n")
+                # use a very aggressive, but portable prompt setting scheme.
+                # Error messages may appear for tcsh and others
+                pty_shell.write (" export PS1='$' ; set prompt='$'\n")
                 n, match = pty_shell.find (prompt_patterns, delay)
 
                 # this loop will run until we finally find the shell prompt, or
