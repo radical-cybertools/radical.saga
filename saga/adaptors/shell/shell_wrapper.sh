@@ -240,7 +240,6 @@ create_monitor () {
   #   rpid: pid of the actual job 
   #   mpid: pid of this monitor.sh instance (== pid of process group for cancel)
 
-
   MPID=\$\$
 
   # on reuse of process IDs, we need to generate new, unique derivations of the
