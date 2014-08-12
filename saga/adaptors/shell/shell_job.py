@@ -577,8 +577,11 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
 
         ret, out, _ = self.shell.run_sync ("RESULT %s\n" % pid)
         if  ret != 0 :
-            raise saga.NoSuccess ("failed to get exit code for '%s': (%s)(%s)" \
+          # raise saga.NoSuccess ("failed to get exit code for '%s': (%s)(%s)" \
+          #                    % (id, ret, out))
+            self._logger.warning ("failed to get exit code for '%s': (%s)(%s)" \
                                % (id, ret, out))
+            return None
 
         lines = filter (None, out.split ("\n"))
         self._logger.debug (lines)
@@ -588,10 +591,14 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
             del (lines[0])
 
         if  len (lines) != 2 :
-            raise saga.NoSuccess ("failed to get exit code for '%s': (%s)" % (id, lines))
+          # raise saga.NoSuccess ("failed to get exit code for '%s': (%s)" % (id, lines))
+            self._logger.warning ("failed to get exit code for '%s': (%s)" % (id, lines))
+            return None
 
         if lines[0] != "OK" :
-            raise saga.NoSuccess ("failed to get exit code for '%s' (%s)" % (id, lines))
+          # raise saga.NoSuccess ("failed to get exit code for '%s' (%s)" % (id, lines))
+            self._logger.warning ("failed to get exit code for '%s' (%s)" % (id, lines))
+            return None
 
         exit_code = lines[1].strip ()
 
