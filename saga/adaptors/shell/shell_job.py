@@ -37,6 +37,7 @@ class _job_state_monitor (threading.Thread) :
         self.rm      = rm 
         self.logger  = logger
         self.stop    = False
+        self.events  = dict()
 
         super (_job_state_monitor, self).__init__ ()
 
@@ -85,15 +86,29 @@ class _job_state_monitor (threading.Thread) :
 
 
                 else :
-                    job_pid, state = line.split (':', 1)
+                    job_pid, state, data = line.split (':', 2)
                     job_id = "[%s]-[%s]" % (self.rm, job_pid)
 
                     state = self.js._adaptor.string_to_state (state)
 
                     try :
-                        job = self.js.get_job (job_id)
-                        job._attributes_i_set ('state', state,
-                                flow=job._UP, force=True)
+                        job = self.js.get_job (job_id, no_reconnect=True)
+
+                        if  not job :
+                            # job not yet known -- keep event for later
+                            if  not job_id in self.events :
+                                self.events[job_id] = list()
+                            self.events[job_id].append (state)
+
+                        else :
+
+                            # check for previous events :
+                            if  job_id in self.events :
+                                for event in self.events[job_id] :
+                                    job._adaptor._set_state (event)
+                                del (self.events[job_id])
+                            job._adaptor._set_state (state)
+
 
                     except saga.DoesNotExist as e :
                         self.logger.error ("event for unknown job '%s'" % job_id)
@@ -371,16 +386,16 @@ class Adaptor (saga.adaptors.base.Base):
     #
     def string_to_state (self, state_str) :
 
-        state_str = state_str.strip ()
+        state_str = state_str.strip ().lower ()
 
-        if state_str.lower () == 'new'       : return saga.job.NEW
-        if state_str.lower () == 'running'   : return saga.job.RUNNING
-        if state_str.lower () == 'suspended' : return saga.job.SUSPENDED
-        if state_str.lower () == 'done'      : return saga.job.DONE
-        if state_str.lower () == 'failed'    : return saga.job.FAILED
-        if state_str.lower () == 'canceled'  : return saga.job.CANCELED
+        return {'new'       : saga.job.NEW,
+                'running'   : saga.job.RUNNING,
+                'suspended' : saga.job.SUSPENDED,
+                'done'      : saga.job.DONE,
+                'failed'    : saga.job.FAILED,
+                'canceled'  : saga.job.CANCELED
+               }.get (state_str, saga.job.UNKNOWN)
 
-        return saga.job.UNKNOWN
 
 
 ###############################################################################
@@ -861,7 +876,7 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
         for line in lines :
 
             try :
-                pid    = int(line.strip ())
+                pid    = line.strip ()
                 job_id = "[%s]-[%s]" % (self.rm, pid)
                 job_ids.append (job_id)
 
@@ -875,7 +890,7 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
-    def get_job (self, job_id):
+    def get_job (self, job_id, no_reconnect=False):
         """ Implements saga.adaptors.cpi.job.Service.get_url()
         """
 
@@ -883,6 +898,8 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
             # no need to reconnect
             return self.jobs[job_id]
 
+        if  no_reconnect :
+            return None
 
         known_jobs = self.list ()
 
@@ -1249,6 +1266,8 @@ class ShellJob (saga.adaptors.cpi.job.Job) :
         state = self._adaptor.string_to_state (stats['state'])
         self._set_state (state)
 
+        return state
+
 
     # ----------------------------------------------------------------
     #
@@ -1257,7 +1276,7 @@ class ShellJob (saga.adaptors.cpi.job.Job) :
         old_state = self._state
 
         # on state changes, trigger notifications
-        if  self._state != state :
+        if  old_state != state :
             self._state  = state
             self._api ()._attributes_i_set ('state', state, self._api ()._UP)
         
@@ -1420,7 +1439,7 @@ class ShellJob (saga.adaptors.cpi.job.Job) :
     def get_exit_code (self) :
         """ Implements saga.adaptors.cpi.job.Job.get_exit_code() """
 
-        if self._exit_code != None :
+        if  self._exit_code != None :
             return self._exit_code
 
         if  self.get_state () not in [saga.job.DONE, 
@@ -1447,10 +1466,10 @@ class ShellJob (saga.adaptors.cpi.job.Job) :
     #
     @SYNC_CALL
     def run (self): 
-        self._id = self.js._job_run (self.jd)
-        self._set_state (saga.job.RUNNING)
 
+        self._id = self.js._job_run (self.jd)
         self.js.jobs[self._id] = self._api ()
+
         self._set_state (saga.job.RUNNING)
 
 
