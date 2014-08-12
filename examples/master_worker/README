@@ -1,0 +1,65 @@
+=====================
+Getting Started
+=====================
+1) Set up server information (Machines on which your workers will run)
+
+-  Give your machine a name using #Machine_Name
+-  Specify the server, working directory, redis server, redis password, and the location of your saga environment
+-  Make sure to have a new line after each specification, including the last one.
+
+Example server_information.txt
+--------------------------------------------------
+#Futuregrid_India
+service: pbs+ssh://vshah505@india.futuregrid.org
+working_directory: /N/u/vshah505/worker/
+redis_server: gw68.quarry.iu.teragrid.org
+redis_pass: XXXXXXXXXXXXXXXXXXXXXX
+bliss_env: $HOME/sagaenv
+
+#Futuregrid_Sierra
+service: pbs+ssh://vshah505@sierra.futuregrid.org
+working_directory: /N/u/vshah505/worker/
+redis_server: gw68.quarry.iu.teragrid.org
+redis_pass: XXXXXXXXXXXXXXXXXXXXXX
+bliss_env: $HOME/sagaenv
+
+--------------------------------------------------
+
+2) Set up dependencies (Files required for execution of your program)
+
+-  Create a dependency list fo each machine listed in server_information.txt. Make sure to have the same names.
+-  List the files for each machine that are needed for execution. Make sure to include worker.py and worker.sh
+-  Make sure to have a new line after each list, including the last one.
+
+Example dependencies.txt
+----------------------
+#Futuregrid_India
+worker.py
+worker.sh
+
+#Futuregrid_Sierra
+worker.py
+worker.sh
+
+----------------------
+
+3) List of tasks
+- Currently the list of tasks is coded within master.py and is found under: 
+#write task list to redis server
+
+- The following command is to write a sleep task for one second.
+-----------------------------------------
+redis_server.rpush(redis_list, "sleep 1")
+-----------------------------------------
+Enter the bash command that will be used to run your program in "" as the second paramter.
+
+======================
+Running Master/Worker
+======================
+Run the following command once all parameters have been set up:
+master.py number_of_tasks number_of_workers number_of_machines
+
+number_of_tasks		-> Number of tasks to write to redis server
+number_of_workers	-> Number of workers to be created
+number_of_machines	-> Number of machines to use (Will be used in the order listed in server_information.txt)
+

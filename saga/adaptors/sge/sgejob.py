@@ -358,7 +358,7 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
                     version = out.strip().split('\n')[0]
 
                     # add path and version to the command dictionary
-                    self._commands[cmd] = {"path":    path,
+                    self._commands[cmd] = {"path":    "unset GREP_OPTIONS; %s" % path,
                                            "version": version}
 
         self._logger.info("Found SGE tools: %s" % self._commands)
@@ -539,7 +539,7 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
         while job_info is None and retries > 0:
             retries -= 1
 
-            qres = self.__kvcmd_results('unset GREP_OPTIONS; qacct', "-j %s | grep -E '%s'" % (
+            qres = self.__kvcmd_results('qacct', "-j %s | grep -E '%s'" % (
                                             sge_job_id, "hostname|qsub_time|start_time|end_time|exit_status|failed"))
 
             if qres is not None: # ok, extract job info from qres
@@ -886,7 +886,7 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
                 # self.__shell_run("%s %s" % (self._commands['qdel']['path'], pid))
 
             if job_info is None: # use qstat -j pid
-                qres = self.__kvcmd_results('unset GREP_OPTIONS; qstat', "-j %s | grep -E 'submission_time|sge_o_host'" % pid,
+                qres = self.__kvcmd_results('qstat', "-j %s | grep -E 'submission_time|sge_o_host'" % pid,
                                             key_suffix=":")
 
                 if qres is not None: # when qstat fails it will fall back to qacct
