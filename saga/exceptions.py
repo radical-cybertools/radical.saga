@@ -514,5 +514,24 @@ class NoSuccess(SagaException):
         SagaException.__init__ (self, msg, parent, api_object, from_log)
 
 
+# ------------------------------------------------------------------------------
+#
+class UnknownHost(BadParameter):
+    """ SSH can not connect to the specified host (rank: 12)"""
 
+    _rank = 12
+
+    def __init__(self, msg, parent=None, api_object=None, from_log=False):
+        SagaException.__init__(self, msg, parent, api_object, from_log)
+
+
+# ------------------------------------------------------------------------------
+#
+class ConnectionRefused(SagaException):
+    """ SSH connection refused (rank: 13)"""
+
+    _rank = 13
+
+    def __init__(self, msg, parent=None, api_object=None, from_log=False):
+        SagaException.__init__(self, msg, parent, api_object, from_log)
 
