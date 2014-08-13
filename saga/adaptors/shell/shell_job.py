@@ -715,8 +715,8 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
 
         ret, out, _ = self.shell.run_sync ("RESULT %s\n" % pid)
         if  ret != 0 :
-          # raise saga.NoSuccess ("failed to get exit code for '%s': (%s)(%s)" \
-          #                    % (id, ret, out))
+            raise saga.NoSuccess ("failed to get exit code for '%s': (%s)(%s)" \
+                               % (id, ret, out))
             self._logger.warning ("failed to get exit code for '%s': (%s)(%s)" \
                                % (id, ret, out))
             return None
@@ -729,12 +729,12 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
             del (lines[0])
 
         if  len (lines) != 2 :
-          # raise saga.NoSuccess ("failed to get exit code for '%s': (%s)" % (id, lines))
+            raise saga.NoSuccess ("failed to get exit code for '%s': (%s)" % (id, lines))
             self._logger.warning ("failed to get exit code for '%s': (%s)" % (id, lines))
             return None
 
         if lines[0] != "OK" :
-          # raise saga.NoSuccess ("failed to get exit code for '%s' (%s)" % (id, lines))
+            raise saga.NoSuccess ("failed to get exit code for '%s' (%s)" % (id, lines))
             self._logger.warning ("failed to get exit code for '%s' (%s)" % (id, lines))
             return None
 
@@ -1445,7 +1445,7 @@ class ShellJob (saga.adaptors.cpi.job.Job) :
         if  self.get_state () not in [saga.job.DONE, 
                                       saga.job.FAILED, 
                                       saga.job.CANCELED] :
-            return None
+            raise saga.IncorrectState ("Cannot get exit code, job is not in final state")
 
         self._exit_code = self.js._job_get_exit_code (self._id)
 
