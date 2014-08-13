@@ -31,14 +31,14 @@ def translate_exception (e, msg=None) :
 
     lmsg = cmsg.lower ()
 
-    if  'could not resolve hostname' in lmsg :
-        e = se.BadParameter (cmsg)
+    if 'could not resolve hostname' in lmsg:
+        e = se.UnknownHost(cmsg)
 
-    elif  'connection timed out' in lmsg :
-        e = se.BadParameter (cmsg)
+    elif 'connection timed out' in lmsg:
+        e = se.Timeout(cmsg)
 
-    elif  'connection refused' in lmsg :
-        e = se.BadParameter (cmsg)
+    elif 'connection refused' in lmsg:
+        e = se.ConnectionRefused(cmsg)
 
     elif 'auth' in lmsg :
         e = se.AuthorizationFailed (cmsg)
