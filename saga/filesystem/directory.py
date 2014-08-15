@@ -84,6 +84,9 @@ class Directory (nsdir.Directory) :
         if  not flags : flags = 0
         url = surl.Url (url)
 
+        if  not url.schema :
+            url.schema = 'file'
+
         self._nsdirec = super  (Directory, self)
         self._nsdirec.__init__ (url, flags, session, 
                                 _adaptor, _adaptor_state, _ttype=_ttype)
@@ -132,7 +135,12 @@ class Directory (nsdir.Directory) :
         :param flags:    :ref:`filesystemflags`
         """
         if  not flags : flags = 0
+        
         url = surl.Url(path)
+
+        if  not url.schema :
+            url.schema = 'file'
+
         return self._adaptor.open (url, flags, ttype=ttype)
 
 
@@ -161,7 +169,13 @@ class Directory (nsdir.Directory) :
             data = dir.open_dir ('data/', saga.namespace.Create)
         """
         if  not flags : flags = 0
-        return self._adaptor.open_dir (path, flags, ttype=ttype)
+
+        url = surl.Url(path)
+
+        if  not url.schema :
+            url.schema = 'file'
+
+        return self._adaptor.open_dir (url, flags, ttype=ttype)
 
 
     # --------------------------------------------------------------------------
@@ -189,7 +203,7 @@ class Directory (nsdir.Directory) :
             print size
         """
         if path   :  return self._adaptor.get_size      (path, ttype=ttype)
-        else      :  return self._adaptor.get_size_self (     ttype=ttype)
+        else      :  return self._adaptor.get_size_self (      ttype=ttype)
 
 
     # --------------------------------------------------------------------------
@@ -222,12 +236,12 @@ class Directory (nsdir.Directory) :
         :param path:     (Optional) name/path of an entry
         :type path:      str()
         """
-        if path    :  return self._adaptor.is_file      (path, ttype=ttype)
+        if path   :  return self._adaptor.is_file      (path, ttype=ttype)
         else      :  return self._adaptor.is_file_self (     ttype=ttype)
 
 
     size  = property (get_size)  # int
 
     
-
+# ------------------------------------------------------------------------------
 
