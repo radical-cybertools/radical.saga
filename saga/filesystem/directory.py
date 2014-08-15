@@ -87,6 +87,9 @@ class Directory (nsdir.Directory) :
         if  not url.schema :
             url.schema = 'file'
 
+        if  not url.host :
+            url.host = 'localhost'
+
         self._nsdirec = super  (Directory, self)
         self._nsdirec.__init__ (url, flags, session, 
                                 _adaptor, _adaptor_state, _ttype=_ttype)
@@ -141,6 +144,9 @@ class Directory (nsdir.Directory) :
         if  not url.schema :
             url.schema = 'file'
 
+        if  not url.host :
+            url.host = 'localhost'
+
         return self._adaptor.open (url, flags, ttype=ttype)
 
 
@@ -174,6 +180,9 @@ class Directory (nsdir.Directory) :
 
         if  not url.schema :
             url.schema = 'file'
+
+        if  not url.host :
+            url.host = 'localhost'
 
         return self._adaptor.open_dir (url, flags, ttype=ttype)
 

@@ -78,6 +78,9 @@ class File (nsentry.Entry) :
         if  not url.schema :
             url.schema = 'file'
 
+        if  not url.host :
+            url.host = 'localhost'
+
         self._nsentry = super  (File, self)
         self._nsentry.__init__ (url, flags, session, 
                                 _adaptor, _adaptor_state, _ttype=_ttype)
