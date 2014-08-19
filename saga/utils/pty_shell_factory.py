@@ -390,7 +390,7 @@ class PTYShellFactory (object) :
 
         with self.rlock :
 
-            print 'new cp  shell to %s' % s_cmd
+          # print 'new cp  shell to %s' % s_cmd
 
             cp_slave = supp.PTYProcess (s_cmd, info['logger'])
             self._initialize_pty (cp_slave, info)

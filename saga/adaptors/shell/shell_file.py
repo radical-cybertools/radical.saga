@@ -176,6 +176,22 @@ class Adaptor (saga.adaptors.base.Base):
         pass
 
 
+    # ----------------------------------------------------------------
+    #
+    def get_lease_target (self, tgt) :
+
+        """
+        return a URL with empty path which can be used to identify leased copy
+        shells (we don't care about the path while leasing copy shells)
+        """
+
+        lease_tgt = saga.Url (tgt)
+        lease_tgt.path = '/'
+
+        return lease_tgt
+
+
+
 
 ###############################################################################
 #
@@ -280,21 +296,6 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
                                     self._logger)
 
         return self.get_api ()
-
-
-    # ----------------------------------------------------------------
-    #
-    def _get_lease_target (self, tgt) :
-
-        """
-        return a URL with empty path which can be used to identify leased copy
-        shells (we don't care about the path while leasing copy shells)
-        """
-
-        lease_tgt = saga.Url (tgt)
-        lease_tgt.path = ''
-
-        return lease_tgt
 
 
     # ----------------------------------------------------------------
@@ -560,8 +561,8 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
                                               % (tgt))
 
                     # print "from local to remote"
-                    lease_tgt = self._get_lease_target (tgt)
-                    with self.lm.lease (lease_tgt, self.shell_creator, lease_tgt) \
+                    lease_tgt = self._adaptor.get_lease_target (tgt)
+                    with self.lm.lease (lease_tgt, self.shell_creator, tgt) \
                         as copy_shell :
                         files_copied = copy_shell.stage_to_remote (src.path, tgt.path, rec_flag)
 
@@ -573,8 +574,8 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
                                               % (src))
 
                     # print "from remote to local"
-                    lease_tgt = self._get_lease_target (tgt)
-                    with self.lm.lease (lease_tgt, self.shell_creator, lease_tgt) \
+                    lease_tgt = self._adaptor.get_lease_target (tgt)
+                    with self.lm.lease (lease_tgt, self.shell_creator, tgt) \
                         as copy_shell :
                         files_copied = copy_shell.stage_from_remote (src.path, tgt.path, rec_flag)
 
@@ -921,21 +922,6 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
 
     # ----------------------------------------------------------------
     #
-    def _get_lease_target (self, tgt) :
-
-        """
-        return a URL with empty path which can be used to identify leased copy
-        shells (we don't care about the path while leasing copy shells)
-        """
-
-        lease_tgt = saga.Url (tgt)
-        lease_tgt.path = ''
-
-        return lease_tgt
-
-
-    # ----------------------------------------------------------------
-    #
     @SYNC_CALL
     def init_instance (self, adaptor_state, url, flags, session):
 
@@ -980,14 +966,11 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
             return sups.PTYShell (url, self.session, self._logger)
         self.shell_creator = _shell_creator
 
-        print 'session: %s' % id(self.session)
-        print 'lm     : %s' % self.lm
-
         # self.shell is also a leased shell -- for File, it does not have any
         # state, really.
         # FIXME: get ssh Master connection from _adaptor dict
-        lease_tgt  = self._get_lease_target (self.url)
-        self.shell = self.lm.lease (lease_tgt, self.shell_creator, lease_tgt) 
+        lease_tgt  = self._adaptor.get_lease_target (self.url)
+        self.shell = self.lm.lease (lease_tgt, self.shell_creator, self.url) 
         # TODO : release shell
 
       # self.shell.obj.set_initialize_hook (self.initialize)
@@ -1174,8 +1157,8 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
                                               % (tgt))
 
                     # print "from local to remote"
-                    lease_tgt = self._get_lease_target (tgt)
-                    with self.lm.lease (lease_tgt, self.shell_creator, lease_tgt) \
+                    lease_tgt = self._adaptor.get_lease_target (tgt)
+                    with self.lm.lease (lease_tgt, self.shell_creator, tgt) \
                         as copy_shell :
                         files_copied = copy_shell.stage_to_remote (src.path, tgt.path, rec_flag)
 
@@ -1187,8 +1170,8 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
                                               % (src))
 
                     # print "from remote to local"
-                    lease_tgt = self._get_lease_target (tgt)
-                    with self.lm.lease (lease_tgt, self.shell_creator, lease_tgt) \
+                    lease_tgt = self._adaptor.get_lease_target (tgt)
+                    with self.lm.lease (lease_tgt, self.shell_creator, tgt) \
                         as copy_shell :
                         files_copied = copy_shell.stage_from_remote (src.path, tgt.path, rec_flag)
 

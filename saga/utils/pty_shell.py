@@ -179,7 +179,7 @@ class PTYShell (object) :
     #
     def __init__ (self, url, session=None, logger=None, init=None, opts={}) :
 
-        print 'new pty shell to %s' % url
+      # print 'new pty shell to %s' % url
 
         if   logger  : self.logger  = logger
         else         : self.logger  = rul.getLogger ('saga', 'PTYShell') 
