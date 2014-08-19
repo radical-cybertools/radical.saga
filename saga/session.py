@@ -6,7 +6,7 @@ __license__   = "MIT"
 
 import radical.utils            as ru
 import radical.utils.signatures as rus
-import radical.utils.logger     as  rul
+import radical.utils.logger     as rul
 
 import saga.exceptions          as se
 
@@ -207,6 +207,10 @@ class Session (saga.base.SimpleBase) :
             self.contexts    = default_session.contexts 
         else :
             self.contexts    = _ContextList (session=self)
+
+        # a session has a lease manager, for adaptors in this session to use.
+        self._lease_manager  = ru.LeaseManager ()
+
 
 
     # ----------------------------------------------------------------
