@@ -58,7 +58,7 @@ class _job_state_monitor(threading.Thread):
                 # job by job. that would be too inefficient!
                 jobs = self.js.jobs
 
-                for job in jobs.keys :
+                for job in jobs.keys() :
                     # if the job hasn't been started, we can't update its
                     # state. we can tell if a job has been started if it
                     # has a job id
@@ -82,9 +82,11 @@ class _job_state_monitor(threading.Thread):
                             # update job info
                             jobs[job] = job_info
 
-                time.sleep(MONITOR_UPDATE_INTERVAL)
             except Exception as e:
                 self.logger.warning("Exception caught in job monitoring thread: %s" % e)
+
+            finally :
+                time.sleep (MONITOR_UPDATE_INTERVAL)
 
 
 # --------------------------------------------------------------------
