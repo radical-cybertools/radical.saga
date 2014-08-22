@@ -898,7 +898,7 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
 
         if  sumisc.url_is_compatible (cwdurl, tgt) :
 
-            ret, out, _ = self.shell.run_sync (" mkdir -p '%s'\n" % (dirname))
+            ret, out, _ = self.shell.obj.run_sync (" mkdir -p '%s'\n" % (dirname))
             if  ret != 0 :
                 raise saga.NoSuccess ("failed at mkdir '%s': (%s) (%s)" \
                                    % (dirname, ret, out))
@@ -909,7 +909,7 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
                 raise saga.BadParameter ("schema of mkdir target is not supported (%s)" \
                                       % (tgt))
 
-            ret, out, _ = self.local.run_sync (" mkdir -p '%s'\n" % (dirname))
+            ret, out, _ = self.local.obj.run_sync (" mkdir -p '%s'\n" % (dirname))
             if  ret != 0 :
                 raise saga.NoSuccess ("failed at mkdir '%s': (%s) (%s)" \
                                    % (dirname, ret, out))
@@ -979,12 +979,12 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
         self.initialize ()
 
 
-        # we create a local shell handle, too, if only to support copy and move
+        # we lease a local shell handle, too, if only to support copy and move
         # to and from local file systems (mkdir for staging target, remove of move
-        # source).  Not that we do not perform a cd on the local shell -- all
+        # source).  Note that we do not perform a cd on the local shell -- all
         # operations are assumed to be performed on absolute paths.
-        self.local = sups.PTYShell ('fork://localhost/', saga.Session(default=True), 
-                                    self._logger)
+        lease_tgt  = self._adaptor.get_lease_target ("fork://localhost")
+        self.local = self.lm.lease (lease_tgt, self.shell_creator, lease_tgt) 
 
         return self.get_api ()
 
@@ -1036,8 +1036,9 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
     #
     def finalize (self, kill=False) :
 
-        # release the shell
+        # release the shells
         self.lm.release (self.shell) 
+        self.lm.release (self.local) 
 
         # we don't reallyfinalize anymore, as the object is leased now!
         # FIXME: we need some finalization on leased objects.  When is the lease
@@ -1047,10 +1048,10 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
       #     self.shell.finalize (True)
       #     self.shell = None
        
-        # self.local was not leased...
-        if  kill and self.local :
-            self.local.finalize (True)
-            self.local = None
+      # # self.local was not leased...
+      # if  kill and self.local :
+      #     self.local.finalize (True)
+      #     self.local = None
 
         self.valid = False
 
@@ -1395,8 +1396,7 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
         ret, out, _ = self.shell.obj.run_sync (" test -f '%s' && test ! -h '%s'" % (cwdurl.path, cwdurl.path))
 
         return True if ret == 0 else False
-   
-   
 
 
+# ------------------------------------------------------------------------------
 

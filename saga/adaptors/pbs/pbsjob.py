@@ -26,8 +26,8 @@ from cgi  import parse_qs
 SYNC_CALL  = saga.adaptors.cpi.decorators.SYNC_CALL
 ASYNC_CALL = saga.adaptors.cpi.decorators.ASYNC_CALL
 
-SYNC_WAIT_UPDATE_INTERVAL = 1  # seconds
-MONITOR_UPDATE_INTERVAL   = 3  # seconds
+SYNC_WAIT_UPDATE_INTERVAL =  1  # seconds
+MONITOR_UPDATE_INTERVAL   = 30  # seconds
 
 
 # --------------------------------------------------------------------
@@ -57,9 +57,8 @@ class _job_state_monitor(threading.Thread):
                 # do bulk updates here! we don't want to pull information
                 # job by job. that would be too inefficient!
                 jobs = self.js.jobs
-                job_keys = jobs.keys()
 
-                for job in job_keys:
+                for job in jobs.keys :
                     # if the job hasn't been started, we can't update its
                     # state. we can tell if a job has been started if it
                     # has a job id
@@ -68,7 +67,7 @@ class _job_state_monitor(threading.Thread):
                         # terminal state, so we can skip the ones that are 
                         # either done, failed or canceled
                         state = jobs[job]['state']
-                        if (state != saga.job.DONE) and (state != saga.job.FAILED) and (state != saga.job.CANCELED):
+                        if  state not in [saga.job.DONE, saga.job.FAILED, saga.job.CANCELED] :
 
                             job_info = self.js._job_get_info(job)
                             self.logger.info("Job monitoring thread updating Job %s (state: %s)" % (job, job_info['state']))
@@ -81,7 +80,7 @@ class _job_state_monitor(threading.Thread):
                                     self.logger.warning("api() object is 'None' for job object %s - can't fire callback." % str(job))
 
                             # update job info
-                            self.js.jobs[job] = job_info
+                            jobs[job] = job_info
 
                 time.sleep(MONITOR_UPDATE_INTERVAL)
             except Exception as e:
