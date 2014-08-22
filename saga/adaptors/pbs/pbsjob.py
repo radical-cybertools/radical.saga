@@ -27,7 +27,7 @@ SYNC_CALL  = saga.adaptors.cpi.decorators.SYNC_CALL
 ASYNC_CALL = saga.adaptors.cpi.decorators.ASYNC_CALL
 
 SYNC_WAIT_UPDATE_INTERVAL =  1  # seconds
-MONITOR_UPDATE_INTERVAL   = 30  # seconds
+MONITOR_UPDATE_INTERVAL   = 60  # seconds
 
 
 # --------------------------------------------------------------------
@@ -902,6 +902,13 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
     def get_job(self, jobid):
         """ Implements saga.adaptors.cpi.job.Service.get_job()
         """
+
+        # try to find the job in our list of known jobs
+        for job in self.jobs :
+            if  self.jobs[job]['job_id'] is jobid :
+                # found it -- no need to reconnect
+                return job._api()
+
 
         # try to get some information about this job
         job_info = self._retrieve_job(jobid)
