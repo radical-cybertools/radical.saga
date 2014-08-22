@@ -74,7 +74,7 @@ class _job_state_monitor(threading.Thread):
 
                             if job_info['state'] != jobs[job]['state']:
                                 # fire job state callback if 'state' has changed
-                                if job._api() is not None:
+                                if  job._api() is not None:
                                     job._api()._attributes_i_set('state', job_info['state'], job._api()._UP, True)
                                 else:
                                     self.logger.warning("api() object is 'None' for job object %s - can't fire callback." % str(job))
@@ -629,6 +629,11 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
             self.jobs[job_obj]['job_id'] = job_id
             self.jobs[job_obj]['submitted'] = job_id
 
+            ids = list()
+            for job in self.jobs :
+                ids.append (self.jobs[job]['job_id'])
+            self._logger.info("assign job id  %s / %s / %s to watch list (%s)" % (None, job_id, job_obj._api(), ids))
+
             # set status to 'pending' and manually trigger callback
             self.jobs[job_obj]['state'] = saga.job.PENDING
             job_obj._api()._attributes_i_set('state', self.jobs[job_obj]['state'], job_obj._api()._UP, True)
@@ -896,6 +901,11 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
             'submitted':    False
         }
 
+        ids = list()
+        for job in self.jobs :
+            ids.append (self.jobs[job]['job_id'])
+        self._logger.info("adding new job %s / %s / %s to watch list (%s)" % (None, None, job_obj._adaptor._api(), ids))
+
         return job_obj
 
     # ----------------------------------------------------------------
@@ -905,11 +915,16 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
         """ Implements saga.adaptors.cpi.job.Service.get_job()
         """
 
+        self._logger.info("checking watch list for %s" % jobid)
         # try to find the job in our list of known jobs
         for job in self.jobs :
-            if  self.jobs[job]['job_id'] is jobid :
+            self._logger.info("checking watch list for %s =? %s" % (jobid, self.jobs[job]['job_id']))
+            if  self.jobs[job]['job_id'] == jobid and job._api() :
+                self._logger.info("checking watch list for %s == %s" % (jobid, self.jobs[job]['job_id']))
                 # found it -- no need to reconnect
                 return job._api()
+            else :
+                self._logger.info("checking watch list for %s =! %s" % (jobid, self.jobs[job]['job_id']))
 
 
         # try to get some information about this job
@@ -925,12 +940,17 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
                          "reconnect_jobid": jobid
                          }
 
-        job = saga.job.Job(_adaptor=self._adaptor,
+        job_obj = saga.job.Job(_adaptor=self._adaptor,
                            _adaptor_state=adaptor_state)
 
+        ids = list()
+        for job in self.jobs :
+            ids.append (self.jobs[job]['job_id'])
+        self._logger.info("adding     job %s / %s / %s to watch list (%s)" % (jobid, job_info['job_id'], job_obj._adaptor._api(), ids))
+
         # throw it into our job dictionary.
-        self.jobs[job._adaptor] = job_info
-        return job
+        self.jobs[job_obj._adaptor] = job_info
+        return job_obj
 
     # ----------------------------------------------------------------
     #
