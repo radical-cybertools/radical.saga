@@ -77,10 +77,7 @@ class _job_state_monitor(threading.Thread):
 
                             if job_info['state'] != jobs[job]['state']:
                                 # fire job state callback if 'state' has changed
-                                if job._api() is not None:
-                                    job._api()._attributes_i_set('state', job_info['state'], job._api()._UP, True)
-                                else:
-                                    self.logger.warning("api() object is 'None' for job object %s - can't fire callback." % str(job))
+                                job._api()._attributes_i_set('state', job_info['state'], job._api()._UP, True)
 
                             # update job info
                             self.js.jobs[job] = job_info
@@ -313,11 +310,10 @@ class Adaptor (saga.adaptors.base.Base):
     #
     def __init__(self):
 
-        saga.adaptors.base.Base.__init__(self,
-            _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
+        saga.adaptors.base.Base.__init__(self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
 
         self.id_re = re.compile('^\[(.*)\]-\[(.*?)\]$')
-        self.opts = self.get_config(_ADAPTOR_NAME)
+        self.opts  = self.get_config (_ADAPTOR_NAME)
 
     # ----------------------------------------------------------------
     #
@@ -499,6 +495,10 @@ class LSFJobService (saga.adaptors.cpi.job.Service):
         # get the job description
         jd = job_obj.jd
 
+        # normalize working directory path
+        if  jd.working_directory :
+            jd.working_directory = os.path.normpath (jd.working_directory)
+
         if (self.queue is not None) and (jd.queue is not None):
             self._logger.warning("Job service was instantiated explicitly with \
 'queue=%s', but job description tries to a differnt queue: '%s'. Using '%s'." %
@@ -518,7 +518,7 @@ class LSFJobService (saga.adaptors.cpi.job.Service):
 
         # try to create the working directory (if defined)
         # WARNING: this assumes a shared filesystem between login node and
-        #          comnpute nodes.
+        #          compute nodes.
         if jd.working_directory is not None:
             self._logger.info("Creating working directory %s" % jd.working_directory)
             ret, out, _ = self.shell.run_sync("mkdir -p %s" % (jd.working_directory))
@@ -527,6 +527,10 @@ class LSFJobService (saga.adaptors.cpi.job.Service):
                 message = "Couldn't create working directory - %s" % (out)
                 log_error_and_raise(message, saga.NoSuccess, self._logger)
 
+        # Now we want to execute the script. This process consists of two steps:
+        # (1) we create a temporary file with 'mktemp' and write the contents of 
+        #     the generated PBS script into it
+        # (2) we call 'qsub <tmpfile>' to submit the script to the queueing system
         cmdline = """SCRIPTFILE=`mktemp -t SAGA-Python-LSFJobScript.XXXXXX` && echo "%s" > $SCRIPTFILE && %s < $SCRIPTFILE && rm -f $SCRIPTFILE""" % (script, self._commands['bsub']['path'])
         ret, out, _ = self.shell.run_sync(cmdline)
 
