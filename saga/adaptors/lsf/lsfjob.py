@@ -10,6 +10,7 @@ __license__   = "MIT"
 import radical.utils.which
 import radical.utils.threads as sut
 
+import saga.url as surl
 import saga.utils.pty_shell
 
 import saga.adaptors.base
@@ -22,7 +23,6 @@ import os
 import time
 import threading
 
-from copy import deepcopy
 from cgi  import parse_qs
 
 SYNC_CALL = saga.adaptors.cpi.decorators.SYNC_CALL
@@ -397,7 +397,7 @@ class LSFJobService (saga.adaptors.cpi.job.Service):
         self.mt.start()
 
         rm_scheme = rm_url.scheme
-        pty_url   = deepcopy(rm_url)
+        pty_url   = surl.Url (rm_url)
 
         # this adaptor supports options that can be passed via the
         # 'query' component of the job service URL.
@@ -629,8 +629,17 @@ class LSFJobService (saga.adaptors.cpi.job.Service):
             return prev_info
 
         # curr. info will contain the new job info collect. it starts off
-        # as a copy of prev_info
-        curr_info = deepcopy(prev_info)
+        # as a copy of prev_info (don't use deepcopy because there is an API 
+        # object in the dict -> recursion)
+        curr_info = dict()
+        curr_info['job_id'     ] = prev_info.get ('job_id'     )
+        curr_info['state'      ] = prev_info.get ('state'      )
+        curr_info['exec_hosts' ] = prev_info.get ('exec_hosts' )
+        curr_info['returncode' ] = prev_info.get ('returncode' )
+        curr_info['create_time'] = prev_info.get ('create_time')
+        curr_info['start_time' ] = prev_info.get ('start_time' )
+        curr_info['end_time'   ] = prev_info.get ('end_time'   )
+        curr_info['gone'       ] = prev_info.get ('gone'       )
 
         rm, pid = self._adaptor.parse_id(job_obj._id)
 

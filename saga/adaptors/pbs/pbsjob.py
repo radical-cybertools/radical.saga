@@ -21,7 +21,6 @@ import os
 import time
 import threading
 
-from copy import deepcopy
 from cgi  import parse_qs
 
 SYNC_CALL  = saga.adaptors.cpi.decorators.SYNC_CALL
@@ -733,15 +732,15 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
         # as a copy of prev_info (don't use deepcopy because there is an API 
         # object in the dict -> recursion)
         curr_info = dict()
-        curr_info['obj'        ] = prev_info['obj'        ]
-        curr_info['job_id'     ] = prev_info['job_id'     ]
-        curr_info['state'      ] = prev_info['state'      ]
-        curr_info['exec_hosts' ] = prev_info['exec_hosts' ]
-        curr_info['returncode' ] = prev_info['returncode' ]
-        curr_info['create_time'] = prev_info['create_time']
-        curr_info['start_time' ] = prev_info['start_time' ]
-        curr_info['end_time'   ] = prev_info['end_time'   ]
-        curr_info['gone'       ] = prev_info['gone'       ]
+        curr_info['obj'        ] = prev_info.get ('obj'        )
+        curr_info['job_id'     ] = prev_info.get ('job_id'     )
+        curr_info['state'      ] = prev_info.get ('state'      )
+        curr_info['exec_hosts' ] = prev_info.get ('exec_hosts' )
+        curr_info['returncode' ] = prev_info.get ('returncode' )
+        curr_info['create_time'] = prev_info.get ('create_time')
+        curr_info['start_time' ] = prev_info.get ('start_time' )
+        curr_info['end_time'   ] = prev_info.get ('end_time'   )
+        curr_info['gone'       ] = prev_info.get ('gone'       )
 
         rm, pid = self._adaptor.parse_id(job_id)
 

@@ -18,7 +18,6 @@ import radical.utils as ru
 
 import re
 import os
-import time
 
 import shell_wrapper
 
@@ -880,7 +879,7 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
     #
     def __del__ (self) :
 
-        self.finalize   (kill=True)
+        self.finalize (kill=True)
 
 
     # ----------------------------------------------------------------
@@ -1040,18 +1039,8 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
         self.lm.release (self.shell) 
         self.lm.release (self.local) 
 
-        # we don't reallyfinalize anymore, as the object is leased now!
-        # FIXME: we need some finalization on leased objects.  When is the lease
-        # manager cleaned up?
-
-      # if  kill and self.shell :
-      #     self.shell.finalize (True)
-      #     self.shell = None
-       
-      # # self.local was not leased...
-      # if  kill and self.local :
-      #     self.local.finalize (True)
-      #     self.local = None
+        self.shell = None
+        self.local = None
 
         self.valid = False
 
