@@ -695,8 +695,6 @@ class PTYProcess (object) :
                 # a pattern, or timeout passes
                 while True :
 
-                    time.sleep (0.1)
-
                     # skip non-lines
                     if  not data :
                         data += self.read (timeout=_POLLDELAY)
