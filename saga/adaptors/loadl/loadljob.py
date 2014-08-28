@@ -22,6 +22,7 @@ import re
 import time
 from urlparse import parse_qs
 from datetime import datetime
+from tempfile import NamedTemporaryFile
 
 
 SYNC_CALL = saga.adaptors.cpi.decorators.SYNC_CALL
@@ -256,6 +257,7 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
         self.node_usage = None
         self.network_mpi = None
         self.blocking = None
+        self.job_type = 'MPICH' # TODO: Is this a sane default?
         self.enforce_resource_submission = False
         self.enforce_consumable_cpus = False
         self.enforce_consumable_memory = False
@@ -282,6 +284,8 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
                     self.network_mpi = val[0]
                 elif key == 'blocking':
                     self.blocking = val[0]
+                elif key == 'job_type':
+                    self.job_type = val[0]
                 elif key == 'enforce_consumable_cpus':
                     self.enforce_consumable_cpus = True
                     self.enforce_resource_submission = True
@@ -455,17 +459,18 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
         :return: the llsubmit script
         """
         loadl_params = str()
-        exec_n_args = str()
+        exec_string = str()
+        args_strings = str()
+
+        explicit_exec = True
 
         if jd.executable is not None:
-            exec_n_args += "%s " % (jd.executable)
+            exec_string = "%s" % (jd.executable)
         if jd.arguments is not None:
             for arg in jd.arguments:
-                exec_n_args += "%s " % (arg)
+                args_strings += "%s " % (arg)
 
-        if jd.total_cpu_count is not None and jd.total_cpu_count > 1:
-            # Is this a sane default?
-            loadl_params += "#@ job_type = MPICH\n"
+        loadl_params += "#@ job_type = %s\n" % self.job_type
 
         if jd.name is not None:
             loadl_params += "#@ job_name = %s \n" % jd.name
@@ -498,7 +503,14 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
             jd.total_cpu_count = 1
         else:
             if jd.total_cpu_count > 1:
-                loadl_params += "#@ total_tasks = %s\n" % jd.total_cpu_count
+                if self.job_type not in ['bluegene']: # 'bluegene' and total_tasks dont live well together
+                    loadl_params += "#@ total_tasks = %s\n" % jd.total_cpu_count
+
+        if self.job_type == 'bluegene':
+            BGQ_CORES_PER_NODE = 16 # Only true for BG/Q
+            if jd.total_cpu_count % BGQ_CORES_PER_NODE > 0:
+                raise Exception("Number of cores requested is no multiple of 16.")
+            loadl_params += "#@ bg_size = %d\n" % (jd.total_cpu_count / BGQ_CORES_PER_NODE)
 
         if self.blocking:
             loadl_params += "#@ blocking = %s\n" % self.blocking
@@ -554,6 +566,10 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
         else:
             loadl_params += "#@ class = edison\n"
 
+        if exec_string and not explicit_exec:
+            loadl_params += "#@ executable = %s\n" % exec_string
+        if args_strings and not explicit_exec:
+            loadl_params += "#@ arguments = %s\n" % args_strings
 
         # finally, we 'queue' the job
         loadl_params += "#@ queue\n"
@@ -575,8 +591,7 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
             'echo "start_time: $(LC_ALL=en_US.utf8 date \'+%%a %%b %%d %%H:%%M:%%S %%Y\')" >>%s' % job_info_path
                 ]
 
-        if exec_n_args is not None:
-            script_body += [exec_n_args]
+        script_body += ['%s %s' % (exec_string, args_strings)]
 
         script_body += [
             'echo "exit_status: $?" >>%s' % job_info_path,
@@ -588,6 +603,15 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
         # further down won't work.
         # only escape '$' in args and exe. not in the params
         script_body = "\n".join(script_body).replace('$', '\\$')
+
+        submit_file = NamedTemporaryFile(mode='w', suffix='.loadl',
+                                         prefix='tmp-saga-', delete=False)
+        submit_file.write(script_body)
+        submit_file.close()
+        self._logger.info("Written LOADL script locally: %s" % submit_file.name)
+
+        if explicit_exec:
+            loadl_params += "#@ executable = %s\n" % submit_file.name
 
         loadlscript = "\n%s%s" % (loadl_params, script_body)
 
