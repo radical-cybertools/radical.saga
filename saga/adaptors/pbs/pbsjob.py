@@ -745,7 +745,7 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
         rm, pid = self._adaptor.parse_id(job_id)
 
         # run the PBS 'qstat' command to get some infos about our job
-        if 'PBSPro_10' in self._commands['qstat']['version']:
+        if 'PBSPro_1' in self._commands['qstat']['version']:
             qstat_flag = '-f'
         else:
             qstat_flag ='-f1'
