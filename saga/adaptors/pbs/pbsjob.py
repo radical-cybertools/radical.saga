@@ -104,7 +104,9 @@ def log_error_and_raise(message, exception, logger):
 def _pbs_to_saga_jobstate(pbsjs):
     """ translates a pbs one-letter state to saga
     """
-    if pbsjs == 'C':
+    if pbsjs == 'C': # Torque
+        return saga.job.DONE
+    elif pbsjs == 'F': # PBS Pro
         return saga.job.DONE
     elif pbsjs == 'E':
         return saga.job.RUNNING
@@ -746,7 +748,7 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
 
         # run the PBS 'qstat' command to get some infos about our job
         if 'PBSPro_1' in self._commands['qstat']['version']:
-            qstat_flag = '-f'
+            qstat_flag = '-fx'
         else:
             qstat_flag ='-f1'
         ret, out, _ = self.shell.run_sync("unset GREP_OPTIONS; %s %s %s | \
