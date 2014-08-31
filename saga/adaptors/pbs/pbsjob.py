@@ -915,15 +915,15 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
         """ Implements saga.adaptors.cpi.job.Service.get_job()
         """
 
-        self._logger.info("checking watch list for %s" % job_id)
+      # self._logger.info("checking watch list for %s" % job_id)
 
         if  job_id in self.jobs :
 
-            self._logger.info("checking watch list for %s - found" % job_id)
+      #     self._logger.info("checking watch list for %s - found" % job_id)
             return self.jobs[job_id]['obj']
 
-        else :
-            self._logger.info("checking watch list for %s - not found" % job_id)
+      # else :
+      #     self._logger.info("checking watch list for %s - not found" % job_id)
 
 
         # try to get some information about this job
@@ -942,7 +942,7 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
         job_obj = saga.job.Job(_adaptor=self._adaptor,
                                _adaptor_state=adaptor_state)
 
-        self._logger.info("adding     job %s / %s to watch list (%s)" % (job_id, job_obj, self.jobs.keys()))
+      # self._logger.info("adding     job %s / %s to watch list (%s)" % (job_id, job_obj, self.jobs.keys()))
 
         # throw it into our job dictionary.
         job_info['obj']   = job_obj
