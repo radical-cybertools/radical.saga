@@ -1267,7 +1267,6 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
         self._is_valid ()
 
         tgt = saga.Url (self.url)  # deep copy, is absolute
-        
         out = self.shell.obj.read_from_remote(tgt.path)
 
         if  size!=None:

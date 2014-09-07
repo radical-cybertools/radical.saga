@@ -812,12 +812,13 @@ class PTYShell (object) :
             # prompt, and updating pwd state on every find_prompt.
 
             # first, write data into a tmp file
-            fname   = self.base + "/staging.%s" % id(self)
+            fname = self.base + "/staging.%s" % id(self)
+            _     = self.stage_from_remote (src, fname)
 
-            _ = self.stage_from_remote (src, fname)
+            os.system ('sync') # WTF?  Why do I need this?
 
             fhandle = open (fname, 'r')
-            out = fhandle.read  ()
+            out     = fhandle.read  ()
             fhandle.close  ()
 
             os.remove (fname)
