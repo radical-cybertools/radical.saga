@@ -245,6 +245,10 @@ def _pbscript_generator(url, logger, jd, ppn, pbs_version, is_cray=False, queue=
         else:
             logger.info("Using Cray XT (e.g. Kraken, Jaguar) specific '#PBS -l size=xx' flags (TORQUE).")
             pbs_params += "#PBS -l size=%s\n" % jd.total_cpu_count
+    elif 'version: 2.3.13' in pbs_version:
+        # e.g. Blacklight
+        # TODO: The more we add, the more it screams for a refactoring
+        pbs_params += "#PBS -l ncpus=%d\n" % tcc
     else:
         # Default case, i.e, standard HPC cluster (non-Cray)
         pbs_params += "#PBS -l nodes=%d:ppn=%d \n" % (nnodes, ppn)
@@ -582,7 +586,7 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
 
         if (self.queue is not None) and (jd.queue is not None):
             self._logger.warning("Job service was instantiated explicitly with \
-'queue=%s', but job description tries to a differnt queue: '%s'. Using '%s'." %
+'queue=%s', but job description tries to a different queue: '%s'. Using '%s'." %
                                 (self.queue, jd.queue, self.queue))
 
         try:
