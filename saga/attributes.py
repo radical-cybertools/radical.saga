@@ -1625,7 +1625,7 @@ class Attributes (_AttributesBase, ru.DictMixin) :
                   basestring, 
                   rus.one_of (_UP, _DOWN))
     @rus.returns (rus.nothing)
-    def _attributes_register_deprecated (self, key, alias, flow) :
+    def _attributes_register_deprecated (self, key, alias, flow=_DOWN) :
         """
         Often enough, there is the need to use change attribute names.  It is
         good practice to not simply rename attributes, and thus effectively
@@ -1649,7 +1649,7 @@ class Attributes (_AttributesBase, ru.DictMixin) :
 
             # new code
             self._attributes_register ('fruit', 'Appel', STRING, SCALAR, WRITEABLE)
-            self._attributes_register_deprecated ('apple', 'fruit)
+            self._attributes_register_deprecated ('apple', 'fruit')
 
         In some cases, you may want to deprecate a variable and not replace it
         with a new one.  In order to keep this interface simple, this can be
@@ -1657,7 +1657,7 @@ class Attributes (_AttributesBase, ru.DictMixin) :
 
             # new code
             self._attributes_register ('deprecated_apple', 'Appel', STRING, SCALAR, WRITEABLE)
-            self._attributes_register_deprecated ('apple', 'deprecated_apple)
+            self._attributes_register_deprecated ('apple', 'deprecated_apple')
 
         This way, the user will either see a warning, or has to explicitly use
         'deprecated_apple' as attribute name -- which should be warning enough,

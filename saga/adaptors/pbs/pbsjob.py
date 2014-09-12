@@ -104,7 +104,9 @@ def log_error_and_raise(message, exception, logger):
 def _pbs_to_saga_jobstate(pbsjs):
     """ translates a pbs one-letter state to saga
     """
-    if pbsjs == 'C':
+    if pbsjs == 'C': # Torque
+        return saga.job.DONE
+    elif pbsjs == 'F': # PBS Pro
         return saga.job.DONE
     elif pbsjs == 'E':
         return saga.job.RUNNING
@@ -243,6 +245,10 @@ def _pbscript_generator(url, logger, jd, ppn, pbs_version, is_cray=False, queue=
         else:
             logger.info("Using Cray XT (e.g. Kraken, Jaguar) specific '#PBS -l size=xx' flags (TORQUE).")
             pbs_params += "#PBS -l size=%s\n" % jd.total_cpu_count
+    elif 'version: 2.3.13' in pbs_version:
+        # e.g. Blacklight
+        # TODO: The more we add, the more it screams for a refactoring
+        pbs_params += "#PBS -l ncpus=%d\n" % tcc
     else:
         # Default case, i.e, standard HPC cluster (non-Cray)
         pbs_params += "#PBS -l nodes=%d:ppn=%d \n" % (nnodes, ppn)
@@ -429,7 +435,7 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
         """
         self.rm      = rm_url
         self.session = session
-        self.ppn     = 1
+        self.ppn     = None
         self.is_cray = ""
         self.queue   = None
         self.shell   = None
@@ -448,12 +454,14 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
             for key, val in parse_qs(rm_url.query).iteritems():
                 if key == 'queue':
                     self.queue = val[0]
-                if key == 'craytype':
+                elif key == 'craytype':
                     self.is_cray = val[0]
+                elif key == 'ppn':
+                    self.ppn = int(val[0])
 
 
-        # we need to extrac the scheme for PTYShell. That's basically the
-        # job.Serivce Url withou the pbs+ part. We use the PTYShell to execute
+        # we need to extract the scheme for PTYShell. That's basically the
+        # job.Service Url without the pbs+ part. We use the PTYShell to execute
         # pbs commands either locally or via gsissh or ssh.
         if rm_scheme == "pbs":
             pty_url.scheme = "fork"
@@ -464,7 +472,7 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
 
         # these are the commands that we need in order to interact with PBS.
         # the adaptor will try to find them during initialize(self) and bail
-        # out in case they are note avaialbe.
+        # out in case they are note available.
         self._commands = {'pbsnodes': None,
                           'qstat':    None,
                           'qsub':     None,
@@ -522,8 +530,15 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
                 self.is_cray = "unknowncray"
         else: 
             self._logger.info("Assuming host is a Cray since 'craytype' is set to: %s" % self.is_cray)
-        # see if we can get some information about the cluster, e.g.,
-        # different queues, number of processes per node, etc.
+
+
+        #
+        # Get number of processes per node
+        #
+        if self.ppn:
+            self._logger.debug("Using user specified 'ppn': %d" % self.ppn)
+            return
+
         # TODO: this is quite a hack. however, it *seems* to work quite
         #       well in practice.
         if 'PBSPro_12' in self._commands['qstat']['version']:
@@ -536,7 +551,7 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
             message = "Error running pbsnodes: %s" % out
             log_error_and_raise(message, saga.NoSuccess, self._logger)
         else:
-            # this is black magic. we just assume that the highest occurence
+            # this is black magic. we just assume that the highest occurrence
             # of a specific np is the number of processors (cores) per compute
             # node. this equals max "PPN" for job scripts
             ppn_list = dict()
@@ -553,9 +568,8 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
                     else:
                         ppn_list[np] = 1
             self.ppn = max(ppn_list, key=ppn_list.get)
-            self._logger.debug("Found the following 'ppn' configurations: %s. \
-    Using %s as default ppn." 
-                % (ppn_list, self.ppn))
+            self._logger.debug("Found the following 'ppn' configurations: %s. "
+                "Using %s as default ppn."  % (ppn_list, self.ppn))
 
     # ----------------------------------------------------------------
     #
@@ -572,7 +586,7 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
 
         if (self.queue is not None) and (jd.queue is not None):
             self._logger.warning("Job service was instantiated explicitly with \
-'queue=%s', but job description tries to a differnt queue: '%s'. Using '%s'." %
+'queue=%s', but job description tries to a different queue: '%s'. Using '%s'." %
                                 (self.queue, jd.queue, self.queue))
 
         try:
@@ -745,8 +759,8 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
         rm, pid = self._adaptor.parse_id(job_id)
 
         # run the PBS 'qstat' command to get some infos about our job
-        if 'PBSPro_10' in self._commands['qstat']['version']:
-            qstat_flag = '-f'
+        if 'PBSPro_1' in self._commands['qstat']['version']:
+            qstat_flag = '-fx'
         else:
             qstat_flag ='-f1'
         ret, out, _ = self.shell.run_sync("unset GREP_OPTIONS; %s %s %s | \
@@ -913,15 +927,15 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
         """ Implements saga.adaptors.cpi.job.Service.get_job()
         """
 
-        self._logger.info("checking watch list for %s" % job_id)
+      # self._logger.info("checking watch list for %s" % job_id)
 
         if  job_id in self.jobs :
 
-            self._logger.info("checking watch list for %s - found" % job_id)
+      #     self._logger.info("checking watch list for %s - found" % job_id)
             return self.jobs[job_id]['obj']
 
-        else :
-            self._logger.info("checking watch list for %s - not found" % job_id)
+      # else :
+      #     self._logger.info("checking watch list for %s - not found" % job_id)
 
 
         # try to get some information about this job
@@ -940,7 +954,7 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
         job_obj = saga.job.Job(_adaptor=self._adaptor,
                                _adaptor_state=adaptor_state)
 
-        self._logger.info("adding     job %s / %s to watch list (%s)" % (job_id, job_obj, self.jobs.keys()))
+      # self._logger.info("adding     job %s / %s to watch list (%s)" % (job_id, job_obj, self.jobs.keys()))
 
         # throw it into our job dictionary.
         job_info['obj']   = job_obj
