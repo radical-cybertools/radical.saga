@@ -239,21 +239,27 @@ create_monitor () {
     if test -e "\$DIR/suspended"
     then
       \\rm -f "\$DIR/suspended"
+      TIME=\`\\awk 'BEGIN{srand(); print srand()}'\`
+      \\printf "SUSPEND: \$TIME\\n"        >> "\$DIR/stats"
+      \\printf "\$SAGA_PID:SUSPENDED: \\n" >> "$NOTIFICATIONS"
+
       # need to wait again
       continue
-      printf "\$SAGA_PID:SUSPENDED: \n" >> "$NOTIFICATIONS"
     fi
 
     if test -e "\$DIR/resumed"
     then
       \\rm -f "\$DIR/resumed"
+      TIME=\`\\awk 'BEGIN{srand(); print srand()}'\`
+      \\printf "RESUME : \$TIME\\n"      >> "\$DIR/stats"
+      \\printf "\$SAGA_PID:RUNNING: \\n" >> "$NOTIFICATIONS"
+
       # need to wait again
-      printf "\$SAGA_PID:RESUMED: \n" >> "$NOTIFICATIONS"
       continue
     fi
 
-    STOP=\`\\awk 'BEGIN{srand(); print srand()}'\`
-    \\printf "STOP  : \$STOP\\n"  >> "\$DIR/stats"
+    TIME=\`\\awk 'BEGIN{srand(); print srand()}'\`
+    \\printf "STOP   : \$TIME\\n"  >> "\$DIR/stats"
 
     # evaluate exit val
     \\printf "\$retv\\n" > "\$DIR/exit"
@@ -385,8 +391,8 @@ cmd_run2 () {
 
   test -d "$DIR"            && \rm    -rf "$DIR"     # re-use old pid if needed
   test -d "$DIR"            || \mkdir -p  "$DIR"  || (RETVAL="cannot use job id"; return 0)
-  \printf "START : $START\n"  > "$DIR/stats"
-  \printf "NEW \n"           >> "$DIR/state"
+  \printf "START  : $START\n"  > "$DIR/stats"
+  \printf "NEW \n"            >> "$DIR/state"
 
   cmd_run_process "$SAGA_PID" "$@" &
   DAEMON_PID=$!      # this is the (SAGA-level) job id!
