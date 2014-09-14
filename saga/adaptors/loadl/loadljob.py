@@ -686,9 +686,9 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
         """
         rm, pid = self._adaptor.parse_id(job_id)
 
-        # run the LoadLeveler 'llq' command to get some infos about our job
-        ret, out, _ = self.shell.run_sync("%s -j %s \
--r %%st %%dd %%cc %%jt %%c %%Xs" % (self._commands['llq']['path'], pid))
+        # run the LoadLeveler 'llq' command to get some info about our job
+        ret, out, _ = self.shell.run_sync("%s -j %s -r %%st %%dd %%cc %%jt %%c %%Xs" % \
+                                          (self._commands['llq']['path'], pid))
         # output is something like
         # R!03/25/2014 13:47!!Serial!normal!kisti.kim
         # OR
