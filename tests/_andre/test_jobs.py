@@ -26,7 +26,7 @@ try :
   
     jd = saga.job.Description ()
     jd.executable = '/bin/echo'
-    jd.arguments  = ['hello world; date ; sleep 3']
+    jd.arguments  = ['hello world; date ; sleep 3; date -a']
  #  jd.output     = "/tmp/out"
  #  jd.error      = "/tmp/err"
   
@@ -48,6 +48,9 @@ try :
 
     print "stdout: %s" % j.get_stdout_string ()
     print "stderr: %s" % j.get_stderr_string ()
+
+    print 'exc: %s' % j.get_exception()
+    j.re_raise ()
 
     # print "list : %s" % js.list ()
     # for id in js.list () :
