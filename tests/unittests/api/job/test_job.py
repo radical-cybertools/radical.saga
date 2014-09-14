@@ -45,6 +45,7 @@ def test_job_service_get_url():
 
     except saga.SagaException as ex:
         assert False, "unexpected exception %s" % ex
+
     finally:
         _silent_close_js(js)
 
@@ -99,11 +100,8 @@ def test_job_service_create():
         assert j.state == saga.job.NEW
 
     except saga.NotImplemented as ni:
-        assert tc.notimpl_warn_only, "%s " % ni
-        if tc.notimpl_warn_only:
-            print "%s " % ni
-    except saga.SagaException as se:
-        assert False, "Unexpected exception: %s" % se
+        tc.handle_exception (ni)
+
     finally:
         _silent_close_js(js)
 
