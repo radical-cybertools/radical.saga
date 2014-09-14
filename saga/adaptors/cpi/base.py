@@ -34,10 +34,11 @@ class CPIBase (ruc.Configurable) :
         # which will annoy (i.e. disable) garbage collection.  We thus use weak
         # references to break that cycle.  The inheriting classes MUST use
         # get_api() to obtain the API reference.
-        if api :
-            self._api   = weakref.ref (api)
-        else :
-            self._api   = None
+      # if  api :
+      #     self._api   = weakref.ref (api)
+      # else :
+      #     self._api   = None
+        self._api   = weakref.ref (api)
 
         # by default, we assume that no bulk optimizations are supported by the
         # adaptor class.  Any adaptor class supporting bulks ops must overwrite
@@ -56,14 +57,20 @@ class CPIBase (ruc.Configurable) :
 
 
     def get_api (self) :
-        if self._api :
-            # get api from weakref.  We can be quite confident that the api
-            # object has *not* been garbage collected, yet, as it obviously is
-            # still binding this adaptor instance.
-            return self._api ()
-        else :
-            # no need to de-weakref 'None'
-            return self._api
+
+        # get api from weakref.  We can be quite confident that the api
+        # object has *not* been garbage collected, yet, as it obviously is
+        # still binding this adaptor instance.
+        return self._api ()
+
+    #   if self._api :
+    #       # get api from weakref.  We can be quite confident that the api
+    #       # object has *not* been garbage collected, yet, as it obviously is
+    #       # still binding this adaptor instance.
+    #       return self._api ()
+    #   else :
+    #       # no need to de-weakref 'None'
+    #       return self._api
 
 
     def get_adaptor_name (self) :

@@ -914,9 +914,7 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
                           "job_id"          : job_id,
                           "job_schema"      : self.rm.schema }
 
-        job = saga.job.Job (_adaptor=self._adaptor, _adaptor_state=adaptor_state)
-
-        return job
+        return saga.job.Job (_adaptor=self._adaptor, _adaptor_state=adaptor_state)
 
 
     # ----------------------------------------------------------------

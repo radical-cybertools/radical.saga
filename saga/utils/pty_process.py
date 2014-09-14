@@ -473,10 +473,18 @@ class PTYProcess (object) :
                 # Boooh!
                 return "false alarm, process %s is alive!" % self.child
 
+            # try a last read to grab whatever we can get (from cache)
+            data = ''
+            try :
+                data  = self.tail
+                data += self.read (size=0, timeout=-1)
+            except :
+                pass
+
             ret  = ""
             ret += "  exit code  : %s\n" % self.exit_code
             ret += "  exit signal: %s\n" % self.exit_signal
-            ret += "  last output: %s\n" % self.cache[-256:] # FIXME: smarter selection
+            ret += "  last output: %s\n" % data
 
             return ret
 
@@ -507,9 +515,6 @@ class PTYProcess (object) :
         with self.rlock :
 
             found_eof = False
-
-            if  not self.alive (recover=False) :
-                raise se.NoSuccess ("process I/O failed: %s" % self.tail)
 
             try:
                 # start the timeout timer right now.  Note that even if timeout is
@@ -689,8 +694,6 @@ class PTYProcess (object) :
                 # we wait forever -- there are two ways out though: data matches
                 # a pattern, or timeout passes
                 while True :
-
-                    time.sleep (0.1)
 
                     # skip non-lines
                     if  not data :
