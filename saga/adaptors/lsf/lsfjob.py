@@ -65,7 +65,7 @@ class _job_state_monitor(threading.Thread):
                     # if the job hasn't been started, we can't update its
                     # state. we can tell if a job has been started if it
                     # has a job id
-                    if jobs[job]['job_id'] is not None:
+                    if  jobs[job].get ('job_id', None) is not None:
                         # we only need to monitor jobs that are not in a
                         # terminal state, so we can skip the ones that are 
                         # either done, failed or canceled
