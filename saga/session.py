@@ -6,7 +6,7 @@ __license__   = "MIT"
 
 import radical.utils            as ru
 import radical.utils.signatures as rus
-import radical.utils.logger     as  rul
+import radical.utils.logger     as rul
 
 import saga.exceptions          as se
 
@@ -99,8 +99,9 @@ class _DefaultSession (object) :
         # dig through the registered context adaptors, and ask each of them for
         # default contexts.
 
-        self.contexts  = _ContextList ()
-        self._logger   = rul.getLogger ('saga', 'DefaultSession')
+        self.contexts       = _ContextList ()
+        self._lease_manager = ru.LeaseManager ()
+        self._logger        = rul.getLogger ('saga', 'DefaultSession')
 
         _engine = saga.engine.engine.Engine ()
 
@@ -202,11 +203,17 @@ class Session (saga.base.SimpleBase) :
         # shared list of the default session singleton.  Otherwise, we create
         # a private list which is not populated.
 
+        # a session also has a lease manager, for adaptors in this session to use.
+
         if  default :
-            default_session  = _DefaultSession ()
-            self.contexts    = default_session.contexts 
+            default_session     = _DefaultSession ()
+            self.contexts       = default_session.contexts 
+            self._lease_manager = default_session._lease_manager
         else :
-            self.contexts    = _ContextList (session=self)
+            self.contexts       = _ContextList (session=self)
+            self._lease_manager = ru.LeaseManager ()
+
+
 
 
     # ----------------------------------------------------------------
