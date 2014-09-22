@@ -9,7 +9,8 @@ __license__   = "MIT"
 
 import threading
 
-import saga.utils.pty_shell
+import saga.url             as surl
+import saga.utils.pty_shell as sups
 import saga.adaptors.base
 import saga.adaptors.cpi.job
 
@@ -20,14 +21,13 @@ import os
 import time
 import threading
 
-from copy import deepcopy
 from cgi  import parse_qs
 
 SYNC_CALL  = saga.adaptors.cpi.decorators.SYNC_CALL
 ASYNC_CALL = saga.adaptors.cpi.decorators.ASYNC_CALL
 
-SYNC_WAIT_UPDATE_INTERVAL = 1  # seconds
-MONITOR_UPDATE_INTERVAL   = 3  # seconds
+SYNC_WAIT_UPDATE_INTERVAL =  1  # seconds
+MONITOR_UPDATE_INTERVAL   = 60  # seconds
 
 
 # --------------------------------------------------------------------
@@ -52,40 +52,42 @@ class _job_state_monitor(threading.Thread):
         return self._stop.isSet()
 
     def run(self):
+
         while self.stopped() is False:
+
             try:
-                # do bulk updates here! we don't want to pull information
+                # FIXME: do bulk updates here! we don't want to pull information
                 # job by job. that would be too inefficient!
                 jobs = self.js.jobs
-                job_keys = jobs.keys()
 
-                for job in job_keys:
-                    # if the job hasn't been started, we can't update its
-                    # state. we can tell if a job has been started if it
-                    # has a job id
-                    if jobs[job]['job_id'] is not None:
-                        # we only need to monitor jobs that are not in a
-                        # terminal state, so we can skip the ones that are 
-                        # either done, failed or canceled
-                        state = jobs[job]['state']
-                        if (state != saga.job.DONE) and (state != saga.job.FAILED) and (state != saga.job.CANCELED):
+                for job_id in jobs.keys() :
 
-                            job_info = self.js._job_get_info(job)
-                            self.logger.info("Job monitoring thread updating Job %s (state: %s)" % (job, job_info['state']))
+                    job_info = jobs[job_id]
 
-                            if job_info['state'] != jobs[job]['state']:
-                                # fire job state callback if 'state' has changed
-                                if job._api() is not None:
-                                    job._api()._attributes_i_set('state', job_info['state'], job._api()._UP, True)
-                                else:
-                                    self.logger.warning("api() object is 'None' for job object %s - can't fire callback." % str(job))
+                    # we only need to monitor jobs that are not in a
+                    # terminal state, so we can skip the ones that are 
+                    # either done, failed or canceled
+                    if  job_info['state'] not in [saga.job.DONE, saga.job.FAILED, saga.job.CANCELED] :
 
-                            # update job info
-                            self.js.jobs[job] = job_info
+                        new_job_info = self.js._job_get_info(job_id)
+                        self.logger.info ("Job monitoring thread updating Job %s (state: %s)" \
+                                       % (job_id, new_job_info['state']))
 
-                time.sleep(MONITOR_UPDATE_INTERVAL)
+                        # fire job state callback if 'state' has changed
+                        if  new_job_info['state'] != job_info['state']:
+                            job_obj = job_info['obj']
+                            job_obj._attributes_i_set('state', new_job_info['state'], job_obj._UP, True)
+
+                        # update job info
+                        jobs[job_id] = new_job_info
+
             except Exception as e:
+                import traceback
+                traceback.print_exc ()
                 self.logger.warning("Exception caught in job monitoring thread: %s" % e)
+
+            finally :
+                time.sleep (MONITOR_UPDATE_INTERVAL)
 
 
 # --------------------------------------------------------------------
@@ -102,7 +104,9 @@ def log_error_and_raise(message, exception, logger):
 def _pbs_to_saga_jobstate(pbsjs):
     """ translates a pbs one-letter state to saga
     """
-    if pbsjs == 'C':
+    if pbsjs == 'C': # Torque
+        return saga.job.DONE
+    elif pbsjs == 'F': # PBS Pro
         return saga.job.DONE
     elif pbsjs == 'E':
         return saga.job.RUNNING
@@ -241,6 +245,10 @@ def _pbscript_generator(url, logger, jd, ppn, pbs_version, is_cray=False, queue=
         else:
             logger.info("Using Cray XT (e.g. Kraken, Jaguar) specific '#PBS -l size=xx' flags (TORQUE).")
             pbs_params += "#PBS -l size=%s\n" % jd.total_cpu_count
+    elif 'version: 2.3.13' in pbs_version:
+        # e.g. Blacklight
+        # TODO: The more we add, the more it screams for a refactoring
+        pbs_params += "#PBS -l ncpus=%d\n" % tcc
     else:
         # Default case, i.e, standard HPC cluster (non-Cray)
         pbs_params += "#PBS -l nodes=%d:ppn=%d \n" % (nnodes, ppn)
@@ -427,7 +435,7 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
         """
         self.rm      = rm_url
         self.session = session
-        self.ppn     = 1
+        self.ppn     = None
         self.is_cray = ""
         self.queue   = None
         self.shell   = None
@@ -438,7 +446,7 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
         self.mt.start()
 
         rm_scheme = rm_url.scheme
-        pty_url   = deepcopy(rm_url)
+        pty_url   = surl.Url(rm_url)
 
         # this adaptor supports options that can be passed via the
         # 'query' component of the job service URL.
@@ -446,12 +454,14 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
             for key, val in parse_qs(rm_url.query).iteritems():
                 if key == 'queue':
                     self.queue = val[0]
-                if key == 'craytype':
+                elif key == 'craytype':
                     self.is_cray = val[0]
+                elif key == 'ppn':
+                    self.ppn = int(val[0])
 
 
-        # we need to extrac the scheme for PTYShell. That's basically the
-        # job.Serivce Url withou the pbs+ part. We use the PTYShell to execute
+        # we need to extract the scheme for PTYShell. That's basically the
+        # job.Service Url without the pbs+ part. We use the PTYShell to execute
         # pbs commands either locally or via gsissh or ssh.
         if rm_scheme == "pbs":
             pty_url.scheme = "fork"
@@ -462,13 +472,13 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
 
         # these are the commands that we need in order to interact with PBS.
         # the adaptor will try to find them during initialize(self) and bail
-        # out in case they are note avaialbe.
+        # out in case they are note available.
         self._commands = {'pbsnodes': None,
                           'qstat':    None,
                           'qsub':     None,
                           'qdel':     None}
 
-        self.shell = saga.utils.pty_shell.PTYShell(pty_url, self.session)
+        self.shell = sups.PTYShell(pty_url, self.session)
 
       # self.shell.set_initialize_hook(self.initialize)
       # self.shell.set_finalize_hook(self.finalize)
@@ -520,8 +530,15 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
                 self.is_cray = "unknowncray"
         else: 
             self._logger.info("Assuming host is a Cray since 'craytype' is set to: %s" % self.is_cray)
-        # see if we can get some information about the cluster, e.g.,
-        # different queues, number of processes per node, etc.
+
+
+        #
+        # Get number of processes per node
+        #
+        if self.ppn:
+            self._logger.debug("Using user specified 'ppn': %d" % self.ppn)
+            return
+
         # TODO: this is quite a hack. however, it *seems* to work quite
         #       well in practice.
         if 'PBSPro_12' in self._commands['qstat']['version']:
@@ -534,7 +551,7 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
             message = "Error running pbsnodes: %s" % out
             log_error_and_raise(message, saga.NoSuccess, self._logger)
         else:
-            # this is black magic. we just assume that the highest occurence
+            # this is black magic. we just assume that the highest occurrence
             # of a specific np is the number of processors (cores) per compute
             # node. this equals max "PPN" for job scripts
             ppn_list = dict()
@@ -551,17 +568,17 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
                     else:
                         ppn_list[np] = 1
             self.ppn = max(ppn_list, key=ppn_list.get)
-            self._logger.debug("Found the following 'ppn' configurations: %s. \
-    Using %s as default ppn." 
-                % (ppn_list, self.ppn))
+            self._logger.debug("Found the following 'ppn' configurations: %s. "
+                "Using %s as default ppn."  % (ppn_list, self.ppn))
 
     # ----------------------------------------------------------------
     #
     def _job_run(self, job_obj):
         """ runs a job via qsub
         """
+
         # get the job description
-        jd = job_obj.jd
+        jd = job_obj.get_description()
 
         # normalize working directory path
         if  jd.working_directory :
@@ -569,7 +586,7 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
 
         if (self.queue is not None) and (jd.queue is not None):
             self._logger.warning("Job service was instantiated explicitly with \
-'queue=%s', but job description tries to a differnt queue: '%s'. Using '%s'." %
+'queue=%s', but job description tries to a different queue: '%s'. Using '%s'." %
                                 (self.queue, jd.queue, self.queue))
 
         try:
@@ -585,8 +602,8 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
             log_error_and_raise(str(ex), saga.BadParameter, self._logger)
 
         # try to create the working directory (if defined)
-        # WRANING: this assumes a shared filesystem between login node and
-        #           comnpute nodes.
+        # WARNING: this assumes a shared filesystem between login node and
+        #          compute nodes.
         if jd.working_directory is not None:
             self._logger.info("Creating working directory %s" % jd.working_directory)
             ret, out, _ = self.shell.run_sync("mkdir -p %s" % (jd.working_directory))
@@ -624,17 +641,29 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
             job_id = "[%s]-[%s]" % (self.rm, lines[-1].strip().split('.')[0])
             self._logger.info("Submitted PBS job with id: %s" % job_id)
 
-            # update job dictionary
-            self.jobs[job_obj]['job_id'] = job_id
-            self.jobs[job_obj]['submitted'] = job_id
+            state = saga.job.PENDING
+
+            # populate job info dict
+            self.jobs[job_id] = {'obj'         : job_obj,
+                                 'job_id'      : job_id,
+                                 'state'       : state,
+                                 'exec_hosts'  : None,
+                                 'returncode'  : None,
+                                 'create_time' : None,
+                                 'start_time'  : None,
+                                 'end_time'    : None,
+                                 'gone'        : False
+                                 }
+
+            self._logger.info ("assign job id  %s / %s / %s to watch list (%s)" \
+                            % (None, job_id, job_obj, self.jobs.keys()))
 
             # set status to 'pending' and manually trigger callback
-            self.jobs[job_obj]['state'] = saga.job.PENDING
-            job_obj._api()._attributes_i_set('state', self.jobs[job_obj]['state'], job_obj._api()._UP, True)
-
+            job_obj._attributes_i_set('state', state, job_obj._UP, True)
 
             # return the job id
             return job_id
+
 
     # ----------------------------------------------------------------
     #
@@ -695,33 +724,43 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
 
     # ----------------------------------------------------------------
     #
-    def _job_get_info(self, job_obj):
+    def _job_get_info(self, job_id):
         """ get job attributes via qstat
         """
 
         # if we don't have the job in our dictionary, we don't want it
-        if job_obj not in self.jobs:
-            message = "Unkown job object: %s. Can't update state." % job_obj._id
+        if job_id not in self.jobs:
+            message = "Unknown job id: %s. Can't update state." % job_id
             log_error_and_raise(message, saga.NoSuccess, self._logger)
 
         # prev. info contains the info collect when _job_get_info
         # was called the last time
-        prev_info = self.jobs[job_obj]
+        prev_info = self.jobs[job_id]
 
         # if the 'gone' flag is set, there's no need to query the job
         # state again. it's gone forever
-        if prev_info['gone'] is True:
+        if  prev_info['gone'] is True:
             return prev_info
 
         # curr. info will contain the new job info collect. it starts off
-        # as a copy of prev_info
-        curr_info = deepcopy(prev_info)
+        # as a copy of prev_info (don't use deepcopy because there is an API 
+        # object in the dict -> recursion)
+        curr_info = dict()
+        curr_info['obj'        ] = prev_info.get ('obj'        )
+        curr_info['job_id'     ] = prev_info.get ('job_id'     )
+        curr_info['state'      ] = prev_info.get ('state'      )
+        curr_info['exec_hosts' ] = prev_info.get ('exec_hosts' )
+        curr_info['returncode' ] = prev_info.get ('returncode' )
+        curr_info['create_time'] = prev_info.get ('create_time')
+        curr_info['start_time' ] = prev_info.get ('start_time' )
+        curr_info['end_time'   ] = prev_info.get ('end_time'   )
+        curr_info['gone'       ] = prev_info.get ('gone'       )
 
-        rm, pid = self._adaptor.parse_id(job_obj._id)
+        rm, pid = self._adaptor.parse_id(job_id)
 
         # run the PBS 'qstat' command to get some infos about our job
-        if 'PBSPro_10' in self._commands['qstat']['version']:
-            qstat_flag = '-f'
+        if 'PBSPro_1' in self._commands['qstat']['version']:
+            qstat_flag = '-fx'
         else:
             qstat_flag ='-f1'
         ret, out, _ = self.shell.run_sync("unset GREP_OPTIONS; %s %s %s | \
@@ -736,7 +775,6 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
                 curr_info['gone'] = True
                 # we can also set the end time
                 self._logger.warning("Previously running job has disappeared. This probably means that the backend doesn't store informations about finished jobs. Setting state to 'DONE'.")
-
 
                 if prev_info['state'] in [saga.job.RUNNING, saga.job.PENDING]:
                     curr_info['state'] = saga.job.DONE
@@ -776,17 +814,17 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
 
     # ----------------------------------------------------------------
     #
-    def _job_get_state(self, job_obj):
+    def _job_get_state(self, job_id):
         """ get the job's state
         """
-        return self.jobs[job_obj]['state']
+        return self.jobs[job_id]['state']
 
     # ----------------------------------------------------------------
     #
-    def _job_get_exit_code(self, job_obj):
+    def _job_get_exit_code(self, job_id):
         """ get the job's exit code
         """
-        ret = self.jobs[job_obj]['returncode']
+        ret = self.jobs[job_id]['returncode']
 
         # FIXME: 'None' should cause an exception
         if ret == None : return None
@@ -794,38 +832,38 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
 
     # ----------------------------------------------------------------
     #
-    def _job_get_execution_hosts(self, job_obj):
+    def _job_get_execution_hosts(self, job_id):
         """ get the job's exit code
         """
-        return self.jobs[job_obj]['exec_hosts']
+        return self.jobs[job_id]['exec_hosts']
 
     # ----------------------------------------------------------------
     #
-    def _job_get_create_time(self, job_obj):
+    def _job_get_create_time(self, job_id):
         """ get the job's creation time
         """
-        return self.jobs[job_obj]['create_time']
+        return self.jobs[job_id]['create_time']
 
     # ----------------------------------------------------------------
     #
-    def _job_get_start_time(self, job_obj):
+    def _job_get_start_time(self, job_id):
         """ get the job's start time
         """
-        return self.jobs[job_obj]['start_time']
+        return self.jobs[job_id]['start_time']
 
     # ----------------------------------------------------------------
     #
-    def _job_get_end_time(self, job_obj):
+    def _job_get_end_time(self, job_id):
         """ get the job's end time
         """
-        return self.jobs[job_obj]['end_time']
+        return self.jobs[job_id]['end_time']
 
     # ----------------------------------------------------------------
     #
-    def _job_cancel(self, job_obj):
+    def _job_cancel(self, job_id):
         """ cancel the job via 'qdel'
         """
-        rm, pid = self._adaptor.parse_id(job_obj._id)
+        rm, pid = self._adaptor.parse_id(job_id)
 
         ret, out, _ = self.shell.run_sync("%s %s\n" \
             % (self._commands['qdel']['path'], pid))
@@ -835,20 +873,20 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
             log_error_and_raise(message, saga.NoSuccess, self._logger)
 
         # assume the job was succesfully canceled
-        self.jobs[job_obj]['state'] = saga.job.CANCELED
+        self.jobs[job_id]['state'] = saga.job.CANCELED
+
 
     # ----------------------------------------------------------------
     #
-    def _job_wait(self, job_obj, timeout):
+    def _job_wait(self, job_id, timeout):
         """ wait for the job to finish or fail
         """
         time_start = time.time()
         time_now   = time_start
-        rm, pid    = self._adaptor.parse_id(job_obj._id)
+        rm, pid    = self._adaptor.parse_id(job_id)
 
         while True:
-            #state = self._job_get_state(job_id=job_id, job_obj=job_obj)
-            state = self.jobs[job_obj]['state']  # this gets updated in the bg.
+            state = self.jobs[job_id]['state']  # this gets updated in the bg.
 
             if state == saga.job.DONE or \
                state == saga.job.FAILED or \
@@ -878,34 +916,30 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
                          "reconnect":       False
                          }
 
-        # create a new job object
-        job_obj = saga.job.Job(_adaptor=self._adaptor,
-                               _adaptor_state=adaptor_state)
-
-        # add job to internal list of known jobs.
-        self.jobs[job_obj._adaptor] = {
-            'state':        saga.job.NEW,
-            'job_id':       None,
-            'exec_hosts':   None,
-            'returncode':   None,
-            'create_time':  None,
-            'start_time':   None,
-            'end_time':     None,
-            'gone':         False,
-            'submitted':    False
-        }
-
-        return job_obj
+        # create and return a new job object
+        return saga.job.Job(_adaptor=self._adaptor,
+                            _adaptor_state=adaptor_state)
 
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
-    def get_job(self, jobid):
+    def get_job(self, job_id):
         """ Implements saga.adaptors.cpi.job.Service.get_job()
         """
 
+      # self._logger.info("checking watch list for %s" % job_id)
+
+        if  job_id in self.jobs :
+
+      #     self._logger.info("checking watch list for %s - found" % job_id)
+            return self.jobs[job_id]['obj']
+
+      # else :
+      #     self._logger.info("checking watch list for %s - not found" % job_id)
+
+
         # try to get some information about this job
-        job_info = self._retrieve_job(jobid)
+        job_info = self._retrieve_job(job_id)
 
         # this dict is passed on to the job adaptor class -- use it to pass any
         # state information you need there.
@@ -914,15 +948,19 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
                          "job_description": saga.job.Description(),
                          "job_schema":      self.rm.schema,
                          "reconnect":       True,
-                         "reconnect_jobid": jobid
+                         "reconnect_jobid": job_id
                          }
 
-        job = saga.job.Job(_adaptor=self._adaptor,
-                           _adaptor_state=adaptor_state)
+        job_obj = saga.job.Job(_adaptor=self._adaptor,
+                               _adaptor_state=adaptor_state)
+
+      # self._logger.info("adding     job %s / %s to watch list (%s)" % (job_id, job_obj, self.jobs.keys()))
 
         # throw it into our job dictionary.
-        self.jobs[job._adaptor] = job_info
-        return job
+        job_info['obj']   = job_obj
+        self.jobs[job_id] = job_info
+
+        return job_obj
 
     # ----------------------------------------------------------------
     #
@@ -955,8 +993,8 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
                 # 112059.svc.uc.futuregrid testjob oweidner 0 Q batch
                 # 112061.svc.uc.futuregrid testjob oweidner 0 Q batch
                 if len(line.split()) > 1:
-                    jobid = "[%s]-[%s]" % (self.rm, line.split()[0].split('.')[0])
-                    ids.append(str(jobid))
+                    job_id = "[%s]-[%s]" % (self.rm, line.split()[0].split('.')[0])
+                    ids.append(str(job_id))
 
         return ids
 
@@ -1011,10 +1049,10 @@ class PBSJob (saga.adaptors.cpi.job.Job):
         self.js = job_info["job_service"]
 
         if job_info['reconnect'] is True:
-            self._id = job_info['reconnect_jobid']
+            self._id      = job_info['reconnect_jobid']
             self._started = True
         else:
-            self._id = None
+            self._id      = None
             self._started = False
 
         return self.get_api()
@@ -1025,7 +1063,10 @@ class PBSJob (saga.adaptors.cpi.job.Job):
     def get_state(self):
         """ implements saga.adaptors.cpi.job.Job.get_state()
         """
-        return self.js._job_get_state(job_obj=self)
+        if  self._started is False:
+            return saga.job.NEW
+
+        return self.js._job_get_state(job_id=self._id)
             
     # ----------------------------------------------------------------
     #
@@ -1037,7 +1078,7 @@ class PBSJob (saga.adaptors.cpi.job.Job):
             log_error_and_raise("Can't wait for job that hasn't been started",
                 saga.IncorrectState, self._logger)
         else:
-            self.js._job_wait(job_obj=self, timeout=timeout)
+            self.js._job_wait(job_id=self._id, timeout=timeout)
 
     # ----------------------------------------------------------------
     #
@@ -1049,7 +1090,7 @@ class PBSJob (saga.adaptors.cpi.job.Job):
             log_error_and_raise("Can't wait for job that hasn't been started",
                 saga.IncorrectState, self._logger)
         else:
-            self.js._job_cancel(self)
+            self.js._job_cancel(self._id)
 
     # ----------------------------------------------------------------
     #
@@ -1057,7 +1098,7 @@ class PBSJob (saga.adaptors.cpi.job.Job):
     def run(self):
         """ implements saga.adaptors.cpi.job.Job.run()
         """
-        self._id = self.js._job_run(self)
+        self._id = self.js._job_run(self._api())
         self._started = True
 
     # ----------------------------------------------------------------
@@ -1085,7 +1126,7 @@ class PBSJob (saga.adaptors.cpi.job.Job):
         if self._started is False:
             return None
         else:
-            return self.js._job_get_exit_code(self)
+            return self.js._job_get_exit_code(self._id)
 
     # ----------------------------------------------------------------
     #
@@ -1096,7 +1137,7 @@ class PBSJob (saga.adaptors.cpi.job.Job):
         if self._started is False:
             return None
         else:
-            return self.js._job_get_create_time(self)
+            return self.js._job_get_create_time(self._id)
 
     # ----------------------------------------------------------------
     #
@@ -1107,7 +1148,7 @@ class PBSJob (saga.adaptors.cpi.job.Job):
         if self._started is False:
             return None
         else:
-            return self.js._job_get_start_time(self)
+            return self.js._job_get_start_time(self._id)
 
     # ----------------------------------------------------------------
     #
@@ -1118,7 +1159,7 @@ class PBSJob (saga.adaptors.cpi.job.Job):
         if self._started is False:
             return None
         else:
-            return self.js._job_get_end_time(self)
+            return self.js._job_get_end_time(self._id)
 
     # ----------------------------------------------------------------
     #
@@ -1129,4 +1170,13 @@ class PBSJob (saga.adaptors.cpi.job.Job):
         if self._started is False:
             return None
         else:
-            return self.js._job_get_execution_hosts(self)
+            return self.js._job_get_execution_hosts(self._id)
+
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def get_description(self):
+        """ implements saga.adaptors.cpi.job.Job.get_execution_hosts()
+        """
+        return self.jd
+
