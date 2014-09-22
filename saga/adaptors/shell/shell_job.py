@@ -756,20 +756,13 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
         """ Implements saga.adaptors.cpi.job.Service.get_url()
         """
 
-        known_jobs = self.list ()
+        # this dict is passed on to the job adaptor class -- use it to pass any
+        # state information you need there.
+        adaptor_state = { "job_service"     : self, 
+                          "job_id"          : jobid,
+                          "job_schema"      : self.rm.schema }
 
-        if jobid not in known_jobs :
-            raise saga.BadParameter._log (self._logger, "job id '%s' unknown"
-                                       % jobid)
-
-        else:
-            # this dict is passed on to the job adaptor class -- use it to pass any
-            # state information you need there.
-            adaptor_state = { "job_service"     : self, 
-                              "job_id"          : jobid,
-                              "job_schema"      : self.rm.schema }
-
-            return saga.job.Job (_adaptor=self._adaptor, _adaptor_state=adaptor_state)
+        return saga.job.Job (_adaptor=self._adaptor, _adaptor_state=adaptor_state)
 
    
     # ----------------------------------------------------------------
