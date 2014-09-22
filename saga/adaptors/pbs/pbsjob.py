@@ -217,13 +217,7 @@ def _pbscript_generator(url, logger, jd, ppn, pbs_version, is_cray=False, queue=
         pbs_params += "#PBS -q %s \n" % queue
 
     if jd.project is not None:
-        if 'PBSPro_1' in pbs_version:
-            # PBS Pro
-            pbs_params += "#PBS -P %s \n" % str(jd.project)
-        else:
-            # Torque
-            pbs_params += "#PBS -A %s \n" % str(jd.project)
-
+        pbs_params += "#PBS -A %s \n" % str(jd.project)
     if jd.job_contact is not None:
         pbs_params += "#PBS -m abe \n"
 
