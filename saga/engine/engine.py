@@ -194,7 +194,7 @@ class Engine(ruc.Configurable):
                 adaptor_module = __import__ (module_name, fromlist=['Adaptor'])
 
             except Exception as e:
-                self._logger.error ("Skipping adaptor %s 1: module loading failed: %s" % (module_name, e))
+                self._logger.warn ("Skipping adaptor %s 1: module loading failed: %s" % (module_name, e))
                 continue # skip to next adaptor
 
 
@@ -209,11 +209,11 @@ class Engine(ruc.Configurable):
                 adaptor_info     = adaptor_instance.register ()
 
             except se.SagaException as e:
-                self._logger.error ("Skipping adaptor %s: loading failed: '%s'" % (module_name, e))
+                self._logger.warn ("Skipping adaptor %s: loading failed: '%s'" % (module_name, e))
                 continue # skip to next adaptor
 
             except Exception as e:
-                self._logger.error ("Skipping adaptor %s: loading failed: '%s'" % (module_name, e))
+                self._logger.warn ("Skipping adaptor %s: loading failed: '%s'" % (module_name, e))
                 continue # skip to next adaptor
 
 
@@ -225,7 +225,7 @@ class Engine(ruc.Configurable):
                 adaptor_instance.sanity_check ()
 
             except Exception as e:
-                self._logger.error ("Skipping adaptor %s: failed self test: %s" % (module_name, e))
+                self._logger.warn ("Skipping adaptor %s: failed self test: %s" % (module_name, e))
                 continue # skip to next adaptor
 
 
@@ -273,10 +273,10 @@ class Engine(ruc.Configurable):
                 adaptor_enabled = adaptor_config['enabled'].get_value ()
 
             except se.SagaException as e:
-                self._logger.error ("Skipping adaptor %s: initialization failed: %s" % (module_name, e))
+                self._logger.warn ("Skipping adaptor %s: initialization failed: %s" % (module_name, e))
                 continue # skip to next adaptor
             except Exception as e:
-                self._logger.error ("Skipping adaptor %s: initialization failed: %s" % (module_name, e))
+                self._logger.warn ("Skipping adaptor %s: initialization failed: %s" % (module_name, e))
                 continue # skip to next adaptor
 
 
@@ -350,12 +350,12 @@ class Engine(ruc.Configurable):
 
                 if  len(cpi_type_nselems) < 2 or \
                     len(cpi_type_nselems) > 3    :
-                    self._logger.error ("Skipping adaptor %s: cpi type not valid: '%s'" \
+                    self._logger.warn ("Skipping adaptor %s: cpi type not valid: '%s'" \
                                      % (module_name, cpi_type))
                     continue # skip to next cpi info
 
                 if cpi_type_nselems[0] != 'saga' :
-                    self._logger.error ("Skipping adaptor %s: cpi namespace not valid: '%s'" \
+                    self._logger.warn ("Skipping adaptor %s: cpi namespace not valid: '%s'" \
                                      % (module_name, cpi_type))
                     continue # skip to next cpi info
 
@@ -383,7 +383,7 @@ class Engine(ruc.Configurable):
                     cpi_type_modname = cpi_type_modname_2 
 
                 if  not cpi_type_modname :
-                    self._logger.error ("Skipping adaptor %s: cpi type not known: '%s'" \
+                    self._logger.warn ("Skipping adaptor %s: cpi type not known: '%s'" \
                                      % (module_name, cpi_type))
                     continue # skip to next cpi info
 
@@ -397,7 +397,7 @@ class Engine(ruc.Configurable):
                             cpi_ok = True
 
                 if not cpi_ok :
-                    self._logger.error ("Skipping adaptor %s: doesn't implement cpi '%s (%s)'" \
+                    self._logger.warn ("Skipping adaptor %s: doesn't implement cpi '%s (%s)'" \
                                      % (module_name, cpi_class, cpi_type))
                     continue # skip to next cpi info
 
@@ -429,7 +429,7 @@ class Engine(ruc.Configurable):
                     # make sure this tuple was not registered, yet
                     if info in self._adaptor_registry[cpi_type][adaptor_schema] :
 
-                        self._logger.error ("Skipping adaptor %s: already registered '%s - %s'" \
+                        self._logger.warn ("Skipping adaptor %s: already registered '%s - %s'" \
                                          % (module_name, cpi_class, adaptor_instance))
                         continue  # skip to next cpi info
 

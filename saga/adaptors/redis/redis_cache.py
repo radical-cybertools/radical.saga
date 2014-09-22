@@ -40,6 +40,7 @@ class Cache :
         # start a thread which, with low priority, cleans out the dict now and
         # then (pops items until a live one is found
 
+
     # ----------------------------------------------------------------
     #
     def _dump (self) :
@@ -50,6 +51,8 @@ class Cache :
         print " miss: %5d" % self.miss
         print self.dict.keys()
         print " ---------------------------------------------- "
+
+
     # ----------------------------------------------------------------
     #
     def get (self, key) :
@@ -71,7 +74,6 @@ class Cache :
 
                 else :
                     # entry timed out
-                    self.miss += 1
                     del self.dict[key]
 
             # cache entry not found, or timed out

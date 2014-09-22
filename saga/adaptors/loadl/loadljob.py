@@ -11,6 +11,7 @@ __license__   = "MIT"
 
 import saga.utils.pty_shell
 
+import saga.url as surl
 import saga.adaptors.cpi.base
 import saga.adaptors.cpi.job
 
@@ -19,7 +20,6 @@ from saga.adaptors.sge.sgejob import SgeKeyValueParser
 import os
 import re
 import time
-from copy import deepcopy
 from urlparse import parse_qs
 from datetime import datetime
 
@@ -264,7 +264,7 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
         self.temp_path = "$HOME/.saga/adaptors/loadl_job"
 
         rm_scheme = rm_url.scheme
-        pty_url   = deepcopy(rm_url)
+        pty_url   = surl.Url (rm_url)
 
         # this adaptor supports options that can be passed via the
         # 'query' component of the job service URL.

@@ -10,6 +10,7 @@ __license__   = "MIT"
 import radical.utils.which
 import radical.utils.threads as sut
 
+import saga.url as surl
 import saga.utils.pty_shell
 
 import saga.adaptors.base
@@ -22,7 +23,6 @@ import os
 import time
 import threading
 
-from copy import deepcopy
 from cgi  import parse_qs
 
 SYNC_CALL = saga.adaptors.cpi.decorators.SYNC_CALL
@@ -65,7 +65,7 @@ class _job_state_monitor(threading.Thread):
                     # if the job hasn't been started, we can't update its
                     # state. we can tell if a job has been started if it
                     # has a job id
-                    if jobs[job]['job_id'] is not None:
+                    if  jobs[job].get ('job_id', None) is not None:
                         # we only need to monitor jobs that are not in a
                         # terminal state, so we can skip the ones that are 
                         # either done, failed or canceled
@@ -77,10 +77,7 @@ class _job_state_monitor(threading.Thread):
 
                             if job_info['state'] != jobs[job]['state']:
                                 # fire job state callback if 'state' has changed
-                                if job._api() is not None:
-                                    job._api()._attributes_i_set('state', job_info['state'], job._api()._UP, True)
-                                else:
-                                    self.logger.warning("api() object is 'None' for job object %s - can't fire callback." % str(job))
+                                job._api()._attributes_i_set('state', job_info['state'], job._api()._UP, True)
 
                             # update job info
                             self.js.jobs[job] = job_info
@@ -313,11 +310,10 @@ class Adaptor (saga.adaptors.base.Base):
     #
     def __init__(self):
 
-        saga.adaptors.base.Base.__init__(self,
-            _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
+        saga.adaptors.base.Base.__init__(self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
 
         self.id_re = re.compile('^\[(.*)\]-\[(.*?)\]$')
-        self.opts = self.get_config(_ADAPTOR_NAME)
+        self.opts  = self.get_config (_ADAPTOR_NAME)
 
     # ----------------------------------------------------------------
     #
@@ -401,7 +397,7 @@ class LSFJobService (saga.adaptors.cpi.job.Service):
         self.mt.start()
 
         rm_scheme = rm_url.scheme
-        pty_url   = deepcopy(rm_url)
+        pty_url   = surl.Url (rm_url)
 
         # this adaptor supports options that can be passed via the
         # 'query' component of the job service URL.
@@ -499,6 +495,10 @@ class LSFJobService (saga.adaptors.cpi.job.Service):
         # get the job description
         jd = job_obj.jd
 
+        # normalize working directory path
+        if  jd.working_directory :
+            jd.working_directory = os.path.normpath (jd.working_directory)
+
         if (self.queue is not None) and (jd.queue is not None):
             self._logger.warning("Job service was instantiated explicitly with \
 'queue=%s', but job description tries to a differnt queue: '%s'. Using '%s'." %
@@ -518,7 +518,7 @@ class LSFJobService (saga.adaptors.cpi.job.Service):
 
         # try to create the working directory (if defined)
         # WARNING: this assumes a shared filesystem between login node and
-        #          comnpute nodes.
+        #          compute nodes.
         if jd.working_directory is not None:
             self._logger.info("Creating working directory %s" % jd.working_directory)
             ret, out, _ = self.shell.run_sync("mkdir -p %s" % (jd.working_directory))
@@ -527,6 +527,10 @@ class LSFJobService (saga.adaptors.cpi.job.Service):
                 message = "Couldn't create working directory - %s" % (out)
                 log_error_and_raise(message, saga.NoSuccess, self._logger)
 
+        # Now we want to execute the script. This process consists of two steps:
+        # (1) we create a temporary file with 'mktemp' and write the contents of 
+        #     the generated PBS script into it
+        # (2) we call 'qsub <tmpfile>' to submit the script to the queueing system
         cmdline = """SCRIPTFILE=`mktemp -t SAGA-Python-LSFJobScript.XXXXXX` && echo "%s" > $SCRIPTFILE && %s < $SCRIPTFILE && rm -f $SCRIPTFILE""" % (script, self._commands['bsub']['path'])
         ret, out, _ = self.shell.run_sync(cmdline)
 
@@ -625,8 +629,17 @@ class LSFJobService (saga.adaptors.cpi.job.Service):
             return prev_info
 
         # curr. info will contain the new job info collect. it starts off
-        # as a copy of prev_info
-        curr_info = deepcopy(prev_info)
+        # as a copy of prev_info (don't use deepcopy because there is an API 
+        # object in the dict -> recursion)
+        curr_info = dict()
+        curr_info['job_id'     ] = prev_info.get ('job_id'     )
+        curr_info['state'      ] = prev_info.get ('state'      )
+        curr_info['exec_hosts' ] = prev_info.get ('exec_hosts' )
+        curr_info['returncode' ] = prev_info.get ('returncode' )
+        curr_info['create_time'] = prev_info.get ('create_time')
+        curr_info['start_time' ] = prev_info.get ('start_time' )
+        curr_info['end_time'   ] = prev_info.get ('end_time'   )
+        curr_info['gone'       ] = prev_info.get ('gone'       )
 
         rm, pid = self._adaptor.parse_id(job_obj._id)
 
