@@ -666,7 +666,8 @@ cmd_list () {
 
 # --------------------------------------------------------------------
 #
-# purge working directories of given jobs (all non-final jobs as default)
+# purge working directories of given jobs 
+# default (no job id given): purge all final jobs older than 1 day
 #
 cmd_purge () {
 
@@ -680,7 +681,8 @@ cmd_purge () {
     do
       dir=`dirname "$d"`
       id=`basename "$dir"`
-      \rm -rf "$BASE/$id" >/dev/null 2>&1
+      \find  "$BASE/$id" -type f -mtime +1 -exec rm -f {} \;
+      \rmdir "$BASE/$id" >/dev/null 2>&1
     done
     RETVAL="purged finished jobs"
   fi
@@ -693,11 +695,11 @@ cmd_purge () {
 #
 cmd_purge_tmps () {
 
-  rm -f "$BASE"/bulk.*
-  rm -f "$BASE"/idle.*
-  rm -f "$BASE"/quit.*
-  find  "$BASE" -type d -mtime +30 -exec rm -rf {} \;
-  find  "$BASE" -type f -mtime +30 -exec rm -rf {} \;
+  \rm -f "$BASE"/bulk.*
+  \rm -f "$BASE"/idle.*
+  \rm -f "$BASE"/quit.*
+  \find  "$BASE" -type d -mtime +30 -exec rm -rf {} \;
+  \find  "$BASE" -type f -mtime +30 -exec rm -rf {} \;
   RETVAL="purged tmp files"
 }
 

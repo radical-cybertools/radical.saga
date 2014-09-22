@@ -9,6 +9,7 @@ __license__   = "MIT"
 
 import saga.utils.pty_shell
 
+import saga.url as surl
 import saga.adaptors.base
 import saga.adaptors.cpi.job
 
@@ -18,7 +19,6 @@ from transferdirectives import TransferDirectives
 import re
 import os
 import time
-from copy import deepcopy
 from urlparse import parse_qs
 from tempfile import NamedTemporaryFile
 
@@ -352,7 +352,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
         self.query_options = dict()
 
         rm_scheme = rm_url.scheme
-        pty_url   = deepcopy(rm_url)
+        pty_url   = surl.Url (rm_url)
 
         # this adaptor supports options that can be passed via the
         # 'query' component of the job service URL.
@@ -506,7 +506,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
             # we don't want the 'query' part of the URL to be part of the ID,
             # simply because it can get terribly long (and ugly). to get rid
             # of it, we clone the URL and set the query part to None.
-            rm_clone = deepcopy(self.rm)
+            rm_clone = surl.Url (self.rm)
             rm_clone.query = ""
             rm_clone.path = ""
 
@@ -659,8 +659,17 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
             return prev_info
 
         # curr. info will contain the new job info collect. it starts off
-        # as a copy of prev_info
-        curr_info = deepcopy(prev_info)
+        # as a copy of prev_info (don't use deepcopy because there is an API 
+        # object in the dict -> recursion)
+        curr_info = dict()
+        curr_info['job_id'     ] = prev_info.get ('job_id'     )
+        curr_info['state'      ] = prev_info.get ('state'      )
+        curr_info['exec_hosts' ] = prev_info.get ('exec_hosts' )
+        curr_info['returncode' ] = prev_info.get ('returncode' )
+        curr_info['create_time'] = prev_info.get ('create_time')
+        curr_info['start_time' ] = prev_info.get ('start_time' )
+        curr_info['end_time'   ] = prev_info.get ('end_time'   )
+        curr_info['gone'       ] = prev_info.get ('gone'       )
 
         rm, pid = self._adaptor.parse_id(job_id)
 
@@ -979,7 +988,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
                 # 112059.svc.uc.futuregrid testjob oweidner 0 Q batch
                 # 112061.svc.uc.futuregrid testjob oweidner 0 Q batch
                 if len(line.split()) > 1:
-                    rm_clone = deepcopy(self.rm)
+                    rm_clone = surl.Url (self.rm)
                     rm_clone.query = ""
                     rm_clone.path = ""
 

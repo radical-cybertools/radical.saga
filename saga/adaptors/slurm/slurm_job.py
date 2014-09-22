@@ -11,6 +11,7 @@ __license__   = "MIT"
 
 import saga.utils.pty_shell
 
+import saga.url as surl
 import saga.adaptors.base
 import saga.adaptors.cpi.job
 
@@ -19,7 +20,6 @@ import os
 import time
 import textwrap
 import string
-from copy import deepcopy
 
 SYNC_CALL  = saga.adaptors.cpi.decorators.SYNC_CALL
 ASYNC_CALL = saga.adaptors.cpi.decorators.ASYNC_CALL
@@ -917,8 +917,17 @@ class SLURMJob (saga.adaptors.cpi.job.Job):
             return prev_info
 
         # curr. info will contain the new job info collect. it starts off
-        # as a copy of prev_info
-        curr_info = deepcopy(prev_info)
+        # as a copy of prev_info (don't use deepcopy because there is an API 
+        # object in the dict -> recursion)
+        curr_info = dict()
+        curr_info['job_id'     ] = prev_info.get ('job_id'     )
+        curr_info['state'      ] = prev_info.get ('state'      )
+        curr_info['exec_hosts' ] = prev_info.get ('exec_hosts' )
+        curr_info['returncode' ] = prev_info.get ('returncode' )
+        curr_info['create_time'] = prev_info.get ('create_time')
+        curr_info['start_time' ] = prev_info.get ('start_time' )
+        curr_info['end_time'   ] = prev_info.get ('end_time'   )
+        curr_info['gone'       ] = prev_info.get ('gone'       )
 
         rm, pid = self._adaptor.parse_id(job_id)
 
