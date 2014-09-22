@@ -98,11 +98,17 @@ class Service (sb.Base, sasync.Async) :
         # param checks
         self.valid  = False
         url         = surl.Url (rm)
-        scheme      = url.scheme.lower ()
 
-        if not session :
+        if  not url.scheme :
+            url.scheme = 'fork'
+
+        if  not url.host :
+            url.host = 'localhost'
+
+        if  not session :
             session = ss.Session (default=True)
 
+        scheme = url.scheme.lower ()
 
         self._super = super  (Service, self)
         self._super.__init__ (scheme, _adaptor, _adaptor_state, 
