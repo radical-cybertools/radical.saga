@@ -44,7 +44,7 @@ def translate_exception (e, msg=None) :
         e = se.AuthorizationFailed (cmsg)
 
     elif 'man-in-the-middle' in lmsg :
-        e = se.AuthenticationFailed ("ssh key mismatch detected: %s" % cmesg)
+        e = se.AuthenticationFailed ("ssh key mismatch detected: %s" % cmsg)
 
     elif 'pass' in lmsg :
         e = se.AuthenticationFailed (cmsg)
