@@ -1,7 +1,8 @@
 #!/bin/bash
 
 # be friendly to bash users (and yes, the leading space is on purpose)
- export HISTIGNORE='*'
+HISTIGNORE='*'
+export HISTIGNORE
 
 # this script uses only POSIX shell functionality, and does not rely on bash or
 # other shell extensions.  It expects /bin/sh to be a POSIX compliant shell
@@ -100,7 +101,7 @@ idle_checker () {
 # which remains otherwise empty on successful decoding.
 #
 encode () {
-  export ENCODED="`echo \"$*\" | od -t x1 -A n #| cut -c 2- | tr -d ' \n'`"
+  ENCODED="`echo \"$*\" | od -t x1 -A n #| cut -c 2- | tr -d ' \n'`"
   echo $ENCODED
 }
 
