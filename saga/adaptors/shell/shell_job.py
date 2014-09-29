@@ -62,19 +62,6 @@ _ADAPTOR_OPTIONS       = [
                           effectively halfs the number of available job service
                           instances per remote host.''',
     'env_variable'     : None
-    },
-    { 
-    'category'         : 'saga.adaptor.shell_job',
-    'name'             : 'purge_on_start', 
-    'type'             : bool, 
-    'default'          : True,
-    'valid_options'    : [True, False],
-    'documentation'    : '''Purge job information (state, stdio, ...) for all
-                          jobs which are in final state when starting the job
-                          service instance.  Note that this will purge *all*
-                          suitable jobs, including the ones managed by another,
-                          live job service instance.''',
-    'env_variable'     : None
     }
 ]
 
@@ -255,7 +242,6 @@ class Adaptor (saga.adaptors.base.Base):
         self.opts  = self.get_config (_ADAPTOR_NAME)
 
         self.notifications  = self.opts['enable_notifications'].get_value ()
-        self.purge_on_start = self.opts['purge_on_start'].get_value ()
 
 
     # ----------------------------------------------------------------
@@ -387,7 +373,7 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
 
         # TODO: replace some constants in the script with values from config
         # files, such as 'timeout' or 'purge_on_quit' ...
-        src = shell_wrapper._WRAPPER_SCRIPT % ({ 'PURGE_ON_START' : str(self._adaptor.purge_on_start) })
+        src = shell_wrapper._WRAPPER_SCRIPT
         tgt = ".saga/adaptors/shell_job/wrapper.sh"
 
         # lets check if we actually need to stage the wrapper script.  We need

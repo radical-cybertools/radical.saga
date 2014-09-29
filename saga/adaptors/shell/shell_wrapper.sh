@@ -67,8 +67,6 @@ TIMEOUT=30
 # update timestamp function
 TIMESTAMP=0
 
-PURGE_ON_START="%(PURGE_ON_START)s"
-
 # default exit value is 1, for error.  We need to set explicitly to 0 for
 # non-error conditions.
 EXIT_VAL=1
@@ -273,12 +271,16 @@ create_monitor () {
   # the subshell instance with the job executable, leaving the I/O redirections
   # intact.
   \\touch  "\$DIR/in"
-  \\printf "\$@\n" > \$DIR/cmd
+  \\printf "#!/bin/sh\n\n" > \$DIR/cmd
+  \\printf "\$@\n"        >> \$DIR/cmd
+  \\chmod 0700               \$DIR/cmd
 
-  exec /bin/sh \$DIR/cmd < "\$DIR/in" > "\$DIR/out" 2> "\$DIR/err" &
+  exec \$DIR/cmd < "\$DIR/in" > "\$DIR/out" 2> "\$DIR/err" &
 
   # the real job ID (not exposed to user)
   RPID=\$!
+
+  echo \$RPID >> /tmp/l
 
   \\printf "RUNNING \\n" >> "\$DIR/state" # declare as running
   \\printf "\$RPID\\n"    > "\$DIR/rpid"  # real process  pid
@@ -856,12 +858,10 @@ listen() {
 \stty -echo   2> /dev/null
 \stty -echonl 2> /dev/null
 
+# purge old jobs during startup.
 # FIXME: this leads to timing issues -- disable for benchmarking
-if test "$PURGE_ON_START" = "True"
-then
-  cmd_purge
-  cmd_purge_tmps
-fi
+cmd_purge
+cmd_purge_tmps
 
 create_monitor
 listen $1
