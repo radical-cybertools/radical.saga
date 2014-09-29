@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 # be friendly to bash users (and yes, the leading space is on purpose)
 HISTIGNORE='*'
@@ -7,6 +7,22 @@ export HISTIGNORE
 # this script uses only POSIX shell functionality, and does not rely on bash or
 # other shell extensions.  It expects /bin/sh to be a POSIX compliant shell
 # thought.
+
+
+# --------------------------------------------------------------------
+# on argument quoting
+#
+#   method "a b c" 'd e' f g
+#   method() {
+#     echo $*     # 'a' 'b' 'c' 'd' 'e' 'f' 'g'
+#     echo $@     # 'a' 'b' 'c' 'd' 'e' 'f' 'g'
+#     echo "$*"   # 'a b c d e f g'
+#     echo "$@"   # 'a b c' 'd e' 'f' 'g'
+#   }
+#
+# on tracing:
+# http://www.unix.com/shell-programming-and-scripting/165648-set-x-within-script-capture-file.html
+
 
 # --------------------------------------------------------------------
 #
@@ -23,6 +39,19 @@ fi
 # we always start in the user's home dir
 \cd $HOME 2>&1 > /dev/null
 
+
+# --------------------------------------------------------------------
+#
+# not all finds support the faster version of command chaining.  If its not
+# available, commands will need to be separated by ';'
+#
+if find /dev/null -exec true '{}' +
+then
+  FIND_PLUS=1
+else
+  FIND_PLUS=0
+fi
+
 # --------------------------------------------------------------------
 #
 # ERROR and RETVAL are used for return state from function calls
@@ -38,8 +67,6 @@ TIMEOUT=30
 
 # update timestamp function
 TIMESTAMP=0
-
-PURGE_ON_START="%(PURGE_ON_START)s"
 
 # default exit value is 1, for error.  We need to set explicitly to 0 for
 # non-error conditions.
@@ -88,6 +115,7 @@ idle_checker () {
   done
 }
 
+
 # --------------------------------------------------------------------
 #
 # When sending command stdout and stderr back, we encode into 
@@ -131,6 +159,16 @@ decode () {
 #
 # it is suprisingly difficult to get seconds since epoch in POSIX -- 
 # 'date +%%s' is a GNU extension...  Anyway, awk to the rescue! 
+#
+# other option:
+#   secs=$((`TZ=GMT0 date \
+#     +"((%Y-1600)*365+(%Y-1600)/4-(%Y-1600)/100+(%Y-1600)/400+%j-135140)*86400+%H*3600+%M*60+%S"`))
+#
+#   $ echo $((`TZ=GMT0 date +"((%Y-1600)*365+(%Y-1600)/4-(%Y-1600)/100+(%Y-1600)/400+%j-135140)*86400+%H*3600+%M*60+%S"`))
+#   1407105367
+#   $ echo $((`TZ=GMT0 date +"((%Y-1600)*365+(%Y-1600)/4-(%Y-1600)/100+(%Y-1600)/400+%j-135140)*86400+%H*3600+%M*60+%S"`))
+#   bash: ((2014-1600)*365+(2014-1600)/4-(2014-1600)/100+(2014-1600)/400+215-135140)*86400+22*3600+36*60+08: 
+#         value too great for base (error token is "08")
 #
 timestamp () {
   TIMESTAMP=`\awk 'BEGIN{srand(); print srand()}'`
@@ -198,34 +236,62 @@ create_monitor () {
   # denoting the job to monitor.   The monitor will write 3 pids to a named pipe
   # (listened to by the wrapper):
   #
-  #   rpid: pid of shell running the job 
+  #   rpid: pid of the actual job 
   #   mpid: pid of this monitor.sh instance (== pid of process group for cancel)
-  SAGA_PID=\$1
-  shift
-  DIR="\$*"
 
-  # subscript which represents the job.  The 'exec' call will replace the
-  # script's shell instance with the job executable, leaving the I/O
-  # redirections intact.
-  \\touch "\$DIR/in"
-
-  (
-    \\printf  "RUNNING \\n"     >> "\$DIR/state"  ;
-    \\exec /bin/sh "\$DIR/cmd"   < "\$DIR/in" > "\$DIR/out" 2> "\$DIR/err"
-  ) 1> /dev/null 2>/dev/null 3</dev/null &
-
-  RPID=\$!
   MPID=\$\$
 
-  \\printf "\$RPID\\n" >  "\$DIR/rpid"  # real job id
-  \\printf "\$MPID\\n" >  "\$DIR/mpid"  # monitor pid
+  # on reuse of process IDs, we need to generate new, unique derivations of the
+  # job directory name.  That name is, by default, the job's rpid.  Id the job
+  # dies and that rpid is reused, we don't want to remove the old dir (job state
+  # may still be queried), so we append an (increasing) integer to that dirname,
+  # i.e. that job id
+  POST=0
+  UPID="\$MPID.\$POST"
+  DIR="$BASE/\$UPID"
   
+  while test -d "\$DIR"
+  do
+    POST=\$((\$POST+1))
+    UPID="\$MPID.\$POST"
+    DIR="$BASE/\$UPID"
+  done
 
-  # we don't care when the wrapper sees these, print can hang forever as far as
-  # we care...
-  ( \\printf "OK\\n" > "\$DIR/fifo" & )
+  \\mkdir -p "\$DIR"
+
+# exec 2>"\$DIR/monitor.trace"
+# set -x 
+
+
+  # FIXME: timestamp
+  START=\`\\awk 'BEGIN{srand(); print srand()}'\`
+  \\printf "START : \$START\n"  > "\$DIR/stats"
+  \\printf "NEW \n"            >> "\$DIR/state"
+
+  # create represents the job.  The 'exec' call will replace
+  # the subshell instance with the job executable, leaving the I/O redirections
+  # intact.
+  \\touch  "\$DIR/in"
+  \\printf "#!/bin/sh\n\n" > \$DIR/cmd
+  \\printf "\$@\n"        >> \$DIR/cmd
+  \\chmod 0700               \$DIR/cmd
+
+  exec \$DIR/cmd < "\$DIR/in" > "\$DIR/out" 2> "\$DIR/err" &
+
+  # the real job ID (not exposed to user)
+  RPID=\$!
+
+  echo \$RPID >> /tmp/l
+
+  \\printf "RUNNING \\n" >> "\$DIR/state" # declare as running
+  \\printf "\$RPID\\n"    > "\$DIR/rpid"  # real process  pid
+  \\printf "\$MPID\\n"    > "\$DIR/mpid"  # monitor shell pid
+  \\printf "\$UPID\\n"    > "\$DIR/upid"  # unique job    pid
+
+  # signal the wrapper that job startup is done, and report job id
+  \\printf "\$UPID\\n" >> "$BASE/fifo"
   
-
+  # start monitoring the job
   while true
   do
     \\wait \$RPID
@@ -306,89 +372,24 @@ EOT
 # surprise really...
 
 cmd_run () {
-  #
-  # do a double fork to avoid zombies (need to do a wait in this process)
 
+  # do a double fork to avoid zombies.  Use 'set -m' to force a new process
+  # group for the monitor
+  (
+   ( set -m 
+     /bin/sh "$BASE/monitor.sh" "$@" 
+   ) 1>/dev/null 2>/dev/null 3</dev/null & exit
+  )
 
-  cmd_run2 "$@" &
+  # we wait until the job was really started, and get its pid from the fifo
+  \read -r SAGA_PID < "$BASE/fifo"
 
-  SAGA_PID=$!      # this is the (SAGA-level) job id!
-  \wait $SAGA_PID  # this will return very quickly -- look at cmd_run2... ;-)
+  # report the current state
+  \tail -n 1 "$BASE/$SAGA_PID/state" || \printf "UNKNOWN\n"
 
-  if test "$SAGA_PID" = '0'  
-  then
-    # some error occured, assume RETVAL is set
-    ERROR="NOK"
-    return
-  fi
+  # return job id
+  RETVAL="$SAGA_PID"
 
-  # success
-  RETVAL=$SAGA_PID 
-
-  # we have to wait though 'til the job enters RUNNING (this is a sync job
-  # startup)
-  DIR="$BASE/$SAGA_PID"
-
-  while true
-  do
-    \grep "RUNNING" "$DIR/state" && break
-    \sleep 0  # sleep 0 will wait for just some millisecs
-  done
-}
-
-
-cmd_run2 () {
-  # this is the second part of the double fork -- run the actual workload in the
-  # background and return - voila!  Note: no wait here, as the spawned script is
-  # supposed to stay alive with the job.
-  #
-  # NOTE: we could, in principle, separate SUBMIT from RUN -- in this case, move
-  # the job into NEW state.
-
-  # turn off debug tracing -- stdout interleaving will mess with parsing.
-  set +x 
-
-  SAGA_PID=`sh -c '\printf "$PPID"'`
-  DIR="$BASE/$SAGA_PID"
-
-  timestamp
-  START=$TIMESTAMP
-
-  test -d "$DIR"            && \rm    -rf "$DIR"     # re-use old pid if needed
-  test -d "$DIR"            || \mkdir -p  "$DIR"  || (RETVAL="cannot use job id"; return 0)
-  \printf "START : $START\n"  > "$DIR/stats"
-  \printf "NEW \n"           >> "$DIR/state"
-
-  cmd_run_process "$SAGA_PID" "$@" &
-  DAEMON_PID=$!      # this is the (SAGA-level) job id!
-  \wait $DAEMON_PID   # this will return very quickly -- look at cmd_run2... ;-)
-  return $!
-}
-
-
-cmd_run_process () {
-  # this command runs the job.  PPID will point to the id of the spawning
-  # script, which, coincidentally, we designated as job ID -- nice:
-  SAGA_PID=$1
-  shift
-
-  DIR="$BASE/$SAGA_PID"
-
-  \mkfifo "$DIR/fifo"           # to communicate with the monitor
-  \printf "$*\n" >  "$DIR/cmd"  # job to run by the monitor
-
-  # start the monitor script, which makes sure
-  # that the job state is properly watched and captured.
-  # The monitor script is ran asynchronously, so that its
-  # lifetime will not be bound to the manager script lifetime.  Also, it runs in
-  # an interactive shell, i.e. in a new process group, so that we can signal the
-  # monitor and the actual job processes all at once (think suspend, cancel).
-  ( /bin/sh -i -c "sh $BASE/monitor.sh  $SAGA_PID \"$DIR\" 2>&1 > \"$DIR/monitor.log\" & exit" )
-
-  \read -r TEST < "$DIR/fifo"
-  \rm -rf $DIR/fifo
-
-  exit
 }
 
 
@@ -460,7 +461,8 @@ cmd_wait () {
       RUNNING   )        ;;
       SUSPENDED )        ;;
       UNKNOWN   )        ;;   # FIXME: should be an error?
-      *         ) ERROR="NOK - invalid state '$RETVAL'"; return ;;  
+      *         ) ERROR="NOK - invalid state '$RETVAL'"
+                  return ;;  
     esac
 
     \sleep 1
@@ -611,7 +613,7 @@ cmd_stdin () {
 
   DIR="$BASE/$1"
   shift
-  \printf "$*" >> "$DIR/in"
+  \printf "$@" >> "$DIR/in"
   RETVAL="stdin refreshed"
 }
 
@@ -683,8 +685,8 @@ cmd_purge_tmps () {
   \rm -f "$BASE"/bulk.*
   \rm -f "$BASE"/idle.*
   \rm -f "$BASE"/quit.*
-  \find  "$BASE" -type d -mtime +30 -exec rm -rf {} \;
-  \find  "$BASE" -type f -mtime +30 -exec rm -rf {} \;
+  \find  "$BASE" -type d -mtime +30 -print | xargs -n 100 \rm -rf 
+  \find  "$BASE" -type f -mtime +30 -print | xargs -n 100 \rm -f 
   RETVAL="purged tmp files"
 }
 
@@ -739,6 +741,10 @@ listen() {
   if ! test -z $1; then
     \printf "PID: $$\n" # FIXME: this should be $1
   fi
+
+  # create fifo to communicate with the monitors
+  \rm -f  "$BASE/fifo"
+  \mkfifo "$BASE/fifo"
 
   # prompt for commands...
   \printf "PROMPT-0->\n"
@@ -853,12 +859,10 @@ listen() {
 \stty -echo   2> /dev/null
 \stty -echonl 2> /dev/null
 
+# purge old jobs during startup.
 # FIXME: this leads to timing issues -- disable for benchmarking
-if test "$PURGE_ON_START" = "True"
-then
-  cmd_purge
-  cmd_purge_tmps
-fi
+cmd_purge
+cmd_purge_tmps
 
 create_monitor
 listen $1

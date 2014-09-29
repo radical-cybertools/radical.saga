@@ -226,3 +226,41 @@ def test_multiple_services():
     except saga.SagaException as se:
         assert False, "Unexpected exception: %s" % se
 
+# ------------------------------------------------------------------------------
+#
+def test_jobid_viability ():
+    """ Test if jobid represents job """
+    # The job id for the fork shell adaptor should return a pid which represents
+    # the actual job instance.  We test by killing that pid and checking state.
+
+    try:
+        import os
+
+        tc = testing.get_test_config ()
+
+        js_url = saga.Url (tc.job_service_url)
+        if  js_url.schema.lower() not in ['fork', 'local', 'ssh'] :
+            # test not supported for other backends
+            return
+
+        if  js_url.host.lower() not in [None, '', 'localhost'] :
+            # test not supported for other backends
+            return
+
+        js  = saga.job.Service ('fork:///')
+        j   = js.run_job ("/bin/sleep 100")
+        jid = j.id
+
+        js_part, j_part = jid.split ('-', 1)
+        pid = j_part[1:-3]
+
+        # kill the children (i.e. the only child) of the pid, which is the
+        # actual job
+        os.system ('ps -ef | cut -c 8-20 | grep %s | cut -c 1-8 | grep -v %s | xargs kill' % (pid, pid))
+
+        assert (j.state == saga.job.FAILED)
+
+
+    except saga.SagaException as se:
+        assert False, "Unexpected exception: %s" % se
+
