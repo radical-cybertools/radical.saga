@@ -173,7 +173,7 @@ setup_args = {
     'author_email'     : "ole.weidner@rutgers.edu",
     'maintainer'       : "Ole Weidner",
     'maintainer_email' : "ole.weidner@rutgers.edu",
-    'url'              : "http://saga-project.github.com/saga-python/",
+    'url'              : "http://radical-cybertools.github.io/saga-python/",
     'license'          : "MIT",
     'keywords'         : "radical pilot job saga",
     'classifiers'      : [
