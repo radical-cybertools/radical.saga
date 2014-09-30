@@ -12,6 +12,7 @@ import saga.adaptors.base
 import saga.adaptors.cpi.job
 
 from   saga.job.constants import *
+from   saga.utils.job     import TransferDirectives
 
 import re
 import time
@@ -184,6 +185,7 @@ _ADAPTOR_CAPABILITIES  = {
                           saga.job.ARGUMENTS,
                           saga.job.ENVIRONMENT,
                           saga.job.WORKING_DIRECTORY,
+                          saga.job.FILE_TRANSFER,
                           saga.job.INPUT,
                           saga.job.OUTPUT,
                           saga.job.ERROR,
@@ -402,7 +404,7 @@ class Adaptor (saga.adaptors.base.Base):
     def stage_input (self, shell, jd) :
 
         if  jd.file_transfer is not None:
-            jd.transfer_directives = TransferDirectives(jd.file_transfer)
+            td = TransferDirectives (jd.file_transfer)
 
             if  len (td.in_append_dict)  > 0 or \
                 len (td.out_append_dict) > 0 :
@@ -419,7 +421,7 @@ class Adaptor (saga.adaptors.base.Base):
     def stage_output (self, shell, jd) :
 
         if  jd.file_transfer is not None:
-            jd.transfer_directives = TransferDirectives(jd.file_transfer)
+            td = TransferDirectives (jd.file_transfer)
 
             if  len (td.out_append_dict) > 0 :
                 raise saga.BadParameter('FileTransfer append (<</>>) not supported')
@@ -657,7 +659,7 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
         """ runs a job on the wrapper via pty, and returns the job id """
 
         # stage data, then run job
-        self._adaptor.stage_input (self._shell, jd)
+        self._adaptor.stage_input (self.shell, jd)
 
         # create command to run
         cmd = self._jd2cmd (jd)
@@ -976,7 +978,7 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
         # FIXME: this is now blocking the run() method.  Ideally, this activity
         # should be passed to a data manager thread/process/service.
         for job in jobs :
-            self._adaptor.stage_input (self._shell, job.description)
+            self._adaptor.stage_input (self.shell, job.description)
         # ------------------------------------------------------------
 
         bulk += "BULK_RUN\n"
@@ -1183,9 +1185,9 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
                 job._adaptor._exception = saga.NoSuccess ("failed to get job state : (%s)(%s)" % (ret, out))
                 continue
 
-            self._update_state (self._adaptor.string_to_state (lines[-1]))
+            state = self._adaptor.string_to_state (lines[-1])
 
-            job._adaptor._set_state (state)
+            job._adaptor._update_state (state)
             states.append (state)
 
 
@@ -1287,7 +1289,7 @@ class ShellJob (saga.adaptors.cpi.job.Job) :
 
             # stage output data
             # FIXME: _update_state blocks until data are staged.  That should not happen.
-            self._adaptor.stage_output (self.shell, self.jd)
+            self._adaptor.stage_output (self.js.shell, self.jd)
         
         # files are staged -- update state, and report to application
         self._state = state

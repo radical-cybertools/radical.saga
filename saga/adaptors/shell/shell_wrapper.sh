@@ -268,8 +268,6 @@ create_monitor () {
   # the real job ID (not exposed to user)
   RPID=\$!
 
-  echo \$RPID >> /tmp/l
-
   \\printf "RUNNING \\n" >> "\$DIR/state" # declare as running
   \\printf "\$RPID\\n"    > "\$DIR/rpid"  # real process  pid
   \\printf "\$MPID\\n"    > "\$DIR/mpid"  # monitor shell pid
