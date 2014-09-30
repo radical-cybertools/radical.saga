@@ -217,7 +217,16 @@ def _pbscript_generator(url, logger, jd, ppn, pbs_version, is_cray=False, queue=
         pbs_params += "#PBS -q %s \n" % queue
 
     if jd.project is not None:
-        pbs_params += "#PBS -A %s \n" % str(jd.project)
+        if 'PBSPro_1' in pbs_version:
+            # On PBS Pro we set both -P(roject) and -A(accounting),
+            # as we don't know what the admins decided, and just
+            # pray that this doesn't create problems.
+            pbs_params += "#PBS -P %s \n" % str(jd.project)
+            pbs_params += "#PBS -A %s \n" % str(jd.project)
+        else:
+            # Torque
+            pbs_params += "#PBS -A %s \n" % str(jd.project)
+
     if jd.job_contact is not None:
         pbs_params += "#PBS -m abe \n"
 
@@ -251,6 +260,10 @@ def _pbscript_generator(url, logger, jd, ppn, pbs_version, is_cray=False, queue=
         pbs_params += "#PBS -l ncpus=%d\n" % tcc
     else:
         # Default case, i.e, standard HPC cluster (non-Cray)
+
+        # If we want just a slice of one node
+        if jd.total_cpu_count < ppn:
+            ppn = jd.total_cpu_count
         pbs_params += "#PBS -l nodes=%d:ppn=%d \n" % (nnodes, ppn)
 
     # escape all double quotes and dollarsigns, otherwise 'echo |'
