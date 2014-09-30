@@ -585,9 +585,9 @@ class Attributes (_AttributesBase, ru.DictMixin) :
         key_getter = d['attributes'][key]['getter']
 
 
-        # # Note that attributes have a time-to-live (ttl).  If a _attributes_i_set
+        # # Note that attributes have a time-to-live (ttl).  If a _attributes_i_get
         # # operation is attempted within 'time-of-last-update + ttl', the operation
-        # # is not triggering backend setter hooks, to avoid trashing (hooks are
+        # # is not triggering backend getter hooks, to avoid trashing (hooks are
         # # expected to be costly).  The force flag set to True will request to call 
         # # registered getter hooks even if ttl is not yet expired.
         # 
@@ -603,7 +603,7 @@ class Attributes (_AttributesBase, ru.DictMixin) :
 
 
         # get the value from the native getter (from the backend), and
-        # set it via the attribute setter.  The setter will not call
+        # get it via the attribute getter.  The getter will not call
         # attrib setters or callbacks, due to the recursion guard.
         #
         # If both are present, we can ignore *one* exception.  If one 
@@ -614,7 +614,6 @@ class Attributes (_AttributesBase, ru.DictMixin) :
         if  all_getter and key_getter : retries = 2
 
         if  all_getter :
-
             try :
                 d['attributes'][key]['recursion'] = True
                 val=all_getter (key)

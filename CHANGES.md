@@ -1,3 +1,17 @@
+Version 0.19 release 2014-09-15
+---------------------------------------------------------------------
+
+* LeaseManager for connection sharing.
+* Improved file transfer performance
+* Small improvements in PBS (esp. Cray) and LSF adaptors. 
+* Closed tickets:
+  - https://github.com/radical-cybertools/saga-python/issues?q=is%3Aclosed+is%3Aissue+milestone%3A%22saga-python+0.19%22+
+
+Version 0.18 release 2014-08-28
+---------------------------------------------------------------------
+
+* scattered fixes and perf improvement
+
 Version 0.17 release 2014-07-22
 ---------------------------------------------------------------------
 

@@ -8,6 +8,7 @@ import sys
 import string
 import inspect
 
+import radical.utils              as ru
 import radical.utils.signatures   as rus
 import radical.utils.logger       as rul
 
@@ -32,7 +33,8 @@ class SimpleBase (object) :
         if  not hasattr (self, '_apitype') :
             self._apitype = self._get_apitype ()
 
-        self._logger = rul.getLogger ('saga', self._apitype)
+        self._logger = rul.getLogger  ('saga', self._apitype)
+        self._id     = ru.generate_id (self._get_apitype () + '.', mode=ru.ID_SIMPLE)
 
       # self._logger.debug ("[saga.Base] %s.__init__()" % self._apitype)
 

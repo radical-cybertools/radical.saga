@@ -64,8 +64,7 @@ class _ContextList (list) :
 
         # try to initialize that context, i.e. evaluate its attributes and
         # infer additional runtime information as needed
-        logger.debug ("adding  context : %s" \
-                   % (ctx_clone))
+      # logger.debug ("adding  context : %s" % (ctx_clone))
 
         if  not session :
             logger.warning ("cannot initialize context - no session: %s" \
