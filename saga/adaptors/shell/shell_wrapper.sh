@@ -151,16 +151,6 @@ decode () {
 # it is suprisingly difficult to get seconds since epoch in POSIX -- 
 # 'date +%%s' is a GNU extension...  Anyway, awk to the rescue! 
 #
-# other option:
-#   secs=$((`TZ=GMT0 date \
-#     +"((%Y-1600)*365+(%Y-1600)/4-(%Y-1600)/100+(%Y-1600)/400+%j-135140)*86400+%H*3600+%M*60+%S"`))
-#
-#   $ echo $((`TZ=GMT0 date +"((%Y-1600)*365+(%Y-1600)/4-(%Y-1600)/100+(%Y-1600)/400+%j-135140)*86400+%H*3600+%M*60+%S"`))
-#   1407105367
-#   $ echo $((`TZ=GMT0 date +"((%Y-1600)*365+(%Y-1600)/4-(%Y-1600)/100+(%Y-1600)/400+%j-135140)*86400+%H*3600+%M*60+%S"`))
-#   bash: ((2014-1600)*365+(2014-1600)/4-(2014-1600)/100+(2014-1600)/400+215-135140)*86400+22*3600+36*60+08: 
-#         value too great for base (error token is "08")
-#
 timestamp () {
   TIMESTAMP=`\awk 'BEGIN{srand(); print srand()}'`
 }
