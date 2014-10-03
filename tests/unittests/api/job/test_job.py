@@ -229,7 +229,7 @@ def test_job_suspend_resume():
         js = saga.job.Service(tc.job_service_url, tc.session)
         jd = saga.job.Description()
         jd.executable = '/bin/sleep'
-        jd.arguments = ['10']
+        jd.arguments = ['20']
 
         # add options from the test .cfg file if set
         jd = sutc.add_tc_params_to_jd(tc=tc, jd=jd)
@@ -432,4 +432,31 @@ def test_get_id():
     finally:
         _silent_cancel(j)
         _silent_close_js(js)
+
+
+# if __name__ == '__main__' :
+# 
+#     def cb (obj, metric, ctx) :
+#         print " -----------------"
+#         print obj.state
+#         print " ================="
+#         return True
+# 
+#     js = saga.job.Service('fork://localhost')
+#     jd = saga.job.Description()
+#     jd.executable = '/bin/sleep'
+#     jd.arguments = ['20']
+#     j = js.create_job(jd)
+#     j.add_callback ('state', cb)
+#     j.run()
+# 
+#     j.suspend()
+#     assert j.state == saga.job.SUSPENDED
+#     assert j.state == j.get_state()
+# 
+# 
+#     j.resume()
+#     assert j.state == saga.job.RUNNING
+#     assert j.state == j.get_state()
+#     time.sleep (20)
 

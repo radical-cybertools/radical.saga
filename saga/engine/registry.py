@@ -34,5 +34,6 @@ adaptor_registry = [
                     "saga.adaptors.slurm.slurm_job",
                     "saga.adaptors.http.http_file",
                     "saga.adaptors.aws.ec2_resource",
-                    "saga.adaptors.loadl.loadljob"
+                    "saga.adaptors.loadl.loadljob",
+                    "saga.adaptors.globus_online.go_file"
                    ]
