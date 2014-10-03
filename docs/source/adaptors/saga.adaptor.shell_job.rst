@@ -163,7 +163,7 @@ purge_on_start
 
 Purge job information (state, stdio, ...) for all
 jobs which are in final state when starting the job
-service instance.  Note that this will purge *all*
+service instance. Note that this will purge *all*
 suitable jobs, including the ones managed by another,
 live job service instance.
 
