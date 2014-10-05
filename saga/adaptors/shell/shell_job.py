@@ -531,7 +531,7 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
         # Well, actually, we do not use exec, as that does not give us good
         # feedback on failures (the shell just quits) -- so we replace it with
         # this poor-man's version...
-        ret, out, _ = self.shell.run_sync (" /bin/sh %s/wrapper.sh $$" % base)
+        ret, out, _ = self.shell.run_sync (" /bin/sh %s/wrapper.sh cmd" % base)
 
         # shell_wrapper.sh will report its own PID -- we use that to sync prompt
         # detection, too.
@@ -553,7 +553,7 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
 
         # ----------------------------------------------------------------------
         # now do the same for the monitoring shell
-        ret, out, _ = self.channel.run_sync (" /bin/sh %s/wrapper.sh $$" % base)
+        ret, out, _ = self.channel.run_sync (" /bin/sh %s/wrapper.sh mon" % base)
 
         # shell_wrapper.sh will report its own PID -- we use that to sync prompt
         # detection, too.
