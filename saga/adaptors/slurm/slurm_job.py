@@ -420,6 +420,7 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         wall_time_limit = None
         queue = None
         project = None
+        job_memory = None
         job_contact = None
         
         # check to see what's available in our job description
@@ -469,6 +470,9 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
 
         if jd.attribute_exists("project"):
             project = jd.project
+
+        if jd.attribute_exists("total_physical_memory"):
+            job_memory = jd.total_physical_memory
 
         if jd.attribute_exists("job_contact"):
             job_contact = jd.job_contact[0]
@@ -528,6 +532,9 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
 
         if  project:
             slurm_script += "#SBATCH -A %s\n" % project
+
+        if  job_memory:
+            slurm_script += "#SBATCH --mem=%s\n" % job_memory
 
         if  job_contact:
             slurm_script += "#SBATCH --mail-user=%s\n" % job_contact
