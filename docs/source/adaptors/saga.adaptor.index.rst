@@ -23,5 +23,6 @@ Adaptors
    saga.adaptor.http_file
    saga.adaptor.ec2_resource
    saga.adaptor.loadljob
+   saga.adaptor.globus_online_file
 
 
