@@ -175,6 +175,9 @@ class PTYShell (object) :
     #   - use ssh mechanisms for master timeout (and persist), as custom
     #     mechanisms will interfere with gc_timout.
 
+    # unique ID per connection, for debugging
+    _pty_id = 0
+
     # ----------------------------------------------------------------
     #
     def __init__ (self, url, session=None, logger=None, init=None, opts={}, posix=True) :
@@ -199,6 +202,9 @@ class PTYShell (object) :
         self.prompt      = "[\$#%>\]]\s*$"
         self.prompt_re   = re.compile ("^(.*?)%s\s*$" % self.prompt, re.DOTALL)
         self.initialized = False
+
+        self.pty_id       = PTYShell._pty_id
+        PTYShell._pty_id += 1
 
         # get prompt pattern from config
         self.cfg       = self.session.get_config('saga.utils.pty')
@@ -232,7 +238,17 @@ class PTYShell (object) :
                                                    posix=self.posix)
         self.pty_shell  = self.factory.run_shell  (self.pty_info)
 
+        self._trace ('init : %s' % self.pty_shell.command)
+
         self.initialize ()
+
+
+    # ----------------------------------------------------------------
+    #
+    def _trace (self, msg) :
+
+      # print " === %5d : %s : %s" % (self._pty_id, self.pty_shell, msg)
+        pass
 
 
     # ----------------------------------------------------------------
@@ -622,6 +638,8 @@ class PTYShell (object) :
         """
 
         with self.pty_shell.rlock :
+         
+            self._trace ("run sync  : %s" % command)
 
             # we expect the shell to be in 'ground state' when running a syncronous
             # command -- thus we can check if the shell is alive before doing so,
@@ -630,8 +648,7 @@ class PTYShell (object) :
                 raise se.IncorrectState ("Can't run command -- shell died:\n%s" \
                                       % self.pty_shell.autopsy ())
 
-            if True :
-          # try :
+            try :
 
                 command = command.strip ()
                 if command.endswith ('&') :
@@ -721,8 +738,8 @@ class PTYShell (object) :
 
                 return (ret, stdout, stderr)
 
-          # except Exception as e :
-          #     raise ptye.translate_exception (e)
+            except Exception as e :
+                raise ptye.translate_exception (e)
 
 
     # ----------------------------------------------------------------
@@ -741,6 +758,8 @@ class PTYShell (object) :
         """
 
         with self.pty_shell.rlock :
+
+          # self._trace ("run async : %s" % command)
 
             # we expect the shell to be in 'ground state' when running an asyncronous
             # command -- thus we can check if the shell is alive before doing so,
@@ -796,6 +815,8 @@ class PTYShell (object) :
 
         try :
 
+          # self._trace ("write     : %s -> %s" % (src, tgt))
+
             # FIXME: make this relative to the shell's pwd?  Needs pwd in
             # prompt, and updating pwd state on every find_prompt.
 
@@ -827,6 +848,9 @@ class PTYShell (object) :
         """
 
         try :
+
+          # self._trace ("read      : %s" % src)
+
             # FIXME: make this relative to the shell's pwd?  Needs pwd in
             # prompt, and updating pwd state on every find_prompt.
 
@@ -863,6 +887,8 @@ class PTYShell (object) :
                     relative to the shell's URL.
         """
 
+        self._trace ("stage to  : %s -> %s" % (src, tgt))
+
         # FIXME: make this relative to the shell's pwd?  Needs pwd in
         # prompt, and updating pwd state on every find_prompt.
 
@@ -887,6 +913,8 @@ class PTYShell (object) :
                     relative to the current working directory.
         """
 
+        self._trace ("stage from: %s -> %s" % (src, tgt))
+
         # FIXME: make this relative to the shell's pwd?  Needs pwd in
         # prompt, and updating pwd state on every find_prompt.
 
@@ -910,6 +938,8 @@ class PTYShell (object) :
         have to do a local expansion, and the to do the same for each entry...
         """
 
+        self._trace ("copy  to  : %s -> %s" % (src, tgt))
+
         with self.pty_shell.rlock :
 
             info = self.pty_info
@@ -921,7 +951,8 @@ class PTYShell (object) :
             s_cmd = info['scripts'][info['type']]['copy_to']    % repl
             s_in  = info['scripts'][info['type']]['copy_to_in'] % repl
 
-            if not self.cp_slave :
+            if  not self.cp_slave :
+                self._trace ("get cp slave")
                 self.cp_slave = self.factory.get_cp_slave (s_cmd, info)
 
             prep = ""
@@ -996,6 +1027,8 @@ class PTYShell (object) :
         need to expand wildcards on the *remote* side :/
         """
 
+        self._trace ("copy  from: %s -> %s" % (src, tgt))
+
         with self.pty_shell.rlock :
 
             info = self.pty_info
@@ -1008,6 +1041,7 @@ class PTYShell (object) :
             s_in  = info['scripts'][info['type']]['copy_from_in'] % repl
 
             if  not self.cp_slave :
+                self._trace ("get cp slave")
                 self.cp_slave = self.factory.get_cp_slave (s_cmd, info)
 
             prep = ""
