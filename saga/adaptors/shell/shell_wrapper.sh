@@ -730,6 +730,15 @@ listen() {
   \rm  -f "$BASE/bulk.$$"
   \touch  "$BASE/bulk.$$"
 
+  # make sure the base has a monitor script....
+  create_monitor
+
+  # set up monitoring fifo
+  if ! test -f "$NOTIFICATIONS"
+  then
+    \touch "$NOTIFICATIONS"
+  fi
+
   # make sure we get killed when idle
   idle_checker $$ 1>/dev/null 2>/dev/null 3</dev/null &
   IDLE=$!

@@ -6,6 +6,7 @@ __license__   = "MIT"
 
 import os
 import sys
+import time
 import saga
 
 # ------------------------------------------------------------------------------

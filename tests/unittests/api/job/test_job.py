@@ -13,35 +13,14 @@ from copy import deepcopy
 
 # ------------------------------------------------------------------------------
 #
-def _silent_cancel(job_obj):
-    # try to cancel job but silently ignore all errors
-    try:
-        job_obj.cancel()
-    except Exception:
-        pass
-
-
-# ------------------------------------------------------------------------------
-#
-def _silent_close_js(js_obj):
-    # try to cancel job but silently ignore all errors
-    try:
-        js_obj.close()
-    except Exception:
-        pass
-
-
-# ------------------------------------------------------------------------------
-#
-def test_job_service_get_url():
+def test_job_service_get_url(job_service, cfg):
     """ Test if the job service URL is returned correctly
     """
     js = None
     try:
-        tc = testing.get_test_config ()
         js = saga.job.Service(tc.job_service_url, tc.session)
         assert js, "job service creation failed?"
-        assert (tc.job_service_url == str(js.url)), "%s == %s" % (tc.job_service_url, str(js.url))
+        assert (cfg['job_service_url'] == str(js.url)), "%s == %s" % (tc.job_service_url, str(js.url))
 
     except saga.SagaException as ex:
         assert False, "unexpected exception %s" % ex
@@ -52,15 +31,13 @@ def test_job_service_get_url():
 
 # ------------------------------------------------------------------------------
 #
-def test_job_service_invalid_url():
+def test_job_service_invalid_url(cfg):
     """ Test if a non-resolvable hostname results in a proper exception
     """
     try:
-        tc = testing.get_test_config ()
-        invalid_url = deepcopy(saga.Url(tc.job_service_url))
+        invalid_url      = saga.Url(cfg['job_service_url'])
         invalid_url.host = "does.not.exist"
         tmp_js = saga.job.Service(invalid_url, tc.session)
-        _silent_close_js(tmp_js)
         assert False, "Expected XYZ exception but got none."
 
     except saga.BadParameter :
@@ -68,26 +45,24 @@ def test_job_service_invalid_url():
 
     # we don't check DNS anymore, as that can take *ages* -- so we now also
     # see Timeout and NoSuccess exceptions...
-    except saga.Timeout :
+    except (saga.NoSuccess, saga.Timeout) :
         assert True
 
-    except saga.NoSuccess :
-        assert True
-
-    # other exceptions sould never occur
+    # other exceptions should never occur
     except saga.SagaException as ex:
         assert False, "Expected BadParameter, Timeout or NoSuccess exception, but got %s (%s)" % (type(ex), ex)
+
+    finally :
+        tmp_js.close ()
 
 
 # ------------------------------------------------------------------------------
 #
-def test_job_service_create():
+def test_job_service_create(job_service, cfg):
     """ Test service.create_job() - expecting state 'NEW'
     """
     js = None
     try:
-        tc = testing.get_test_config ()
-        js = saga.job.Service(tc.job_service_url, tc.session)
         jd = saga.job.Description()
         jd.executable = '/bin/sleep'
         jd.arguments = ['10']
