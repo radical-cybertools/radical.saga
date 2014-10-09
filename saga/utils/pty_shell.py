@@ -175,9 +175,12 @@ class PTYShell (object) :
     #   - use ssh mechanisms for master timeout (and persist), as custom
     #     mechanisms will interfere with gc_timout.
 
+    # unique ID per connection, for debugging
+    _pty_id = 0
+
     # ----------------------------------------------------------------
     #
-    def __init__ (self, url, session=None, logger=None, init=None, opts={}) :
+    def __init__ (self, url, session=None, logger=None, init=None, opts={}, posix=True) :
 
       # print 'new pty shell to %s' % url
 
@@ -192,10 +195,16 @@ class PTYShell (object) :
         self.url         = url      # describes the shell to run
         self.init        = init     # call after reconnect
         self.opts        = opts     # options...
+        self.posix       = posix    # /bin/sh compatible?
         self.latency     = 0.0      # set by factory
         self.cp_slave    = None     # file copy channel
 
+        self.prompt      = "[\$#%>\]]\s*$"
+        self.prompt_re   = re.compile ("^(.*?)%s\s*$" % self.prompt, re.DOTALL)
         self.initialized = False
+
+        self.pty_id       = PTYShell._pty_id
+        PTYShell._pty_id += 1
 
         # get prompt pattern from config
         self.cfg       = self.session.get_config('saga.utils.pty')
@@ -224,10 +233,22 @@ class PTYShell (object) :
 
         
         self.factory    = supsf.PTYShellFactory   ()
-        self.pty_info   = self.factory.initialize (self.url, self.session, self.prompt, self.logger)
+        self.pty_info   = self.factory.initialize (self.url,    self.session, 
+                                                   self.prompt, self.logger, 
+                                                   posix=self.posix)
         self.pty_shell  = self.factory.run_shell  (self.pty_info)
 
+        self._trace ('init : %s' % self.pty_shell.command)
+
         self.initialize ()
+
+
+    # ----------------------------------------------------------------
+    #
+    def _trace (self, msg) :
+
+      # print " === %5d : %s : %s" % (self._pty_id, self.pty_shell, msg)
+        pass
 
 
     # ----------------------------------------------------------------
@@ -250,51 +271,52 @@ class PTYShell (object) :
                 return
 
 
-            # run a POSIX compatible shell, usually /bin/sh, in interactive mode
-            # also, turn off tty echo
-            command_shell = "exec /bin/sh -i"
+            if  self.posix :
+                # run a POSIX compatible shell, usually /bin/sh, in interactive mode
+                # also, turn off tty echo
+                command_shell = "exec /bin/sh -i"
 
-            # use custom shell if so requested
-            if  'shell' in self.opts and self.opts['shell'] :
-                command_shell = "exec %s" % self.opts['shell']
-                self.logger.info ("custom  command shell: %s" % command_shell)
-
-
-            self.logger.debug    ("running command shell:         %s"   % command_shell)
-            self.pty_shell.write (" stty -echo ; unset HISTFILE ; %s\n" % command_shell)
-
-            # make sure this worked, and that we find the prompt. We use
-            # a versatile prompt pattern to account for the custom shell case.
-            _, out = self.find (["^(.*[\$#%>\]])\s*$"])
-
-            # make sure this worked, and that we find the prompt. We use
-            # a versatile prompt pattern to account for the custom shell case.
-            try :
-                # set and register new prompt
-                self.run_async  ( " unset PROMPT_COMMAND ; "
-                                + " unset HISTFILE ; "
-                                + "PS1='PROMPT-$?->'; "
-                                + "PS2=''; "
-                                + "export PS1 PS2 2>&1 >/dev/null\n")
-                self.set_prompt (new_prompt="PROMPT-(\d+)->$")
-
-                self.logger.debug ("got new shell prompt")
-
-            except Exception as e :
-                raise se.NoSuccess ("Shell startup on target host failed: %s" % e)
+                # use custom shell if so requested
+                if  'shell' in self.opts and self.opts['shell'] :
+                    command_shell = "exec %s" % self.opts['shell']
+                    self.logger.info ("custom  command shell: %s" % command_shell)
 
 
-            try :
-                # got a command shell, finally!
-                # for local shells, we now change to the current working
-                # directory.  Remote shells will remain in the default pwd
-                # (usually $HOME).
-                if  sumisc.host_is_local (surl.Url(self.url).host) :
-                    pwd = os.getcwd ()
-                    self.run_sync (' cd %s' % pwd)
-            except Exception as e :
-                # We will ignore any errors.
-                self.logger.warning ("local cd to %s failed" % pwd)
+                self.logger.debug    ("running command shell:         %s"   % command_shell)
+                self.pty_shell.write (" stty -echo ; unset HISTFILE ; %s\n" % command_shell)
+
+                # make sure this worked, and that we find the prompt. We use
+                # a versatile prompt pattern to account for the custom shell case.
+                _, out = self.find ([self.prompt])
+
+                # make sure this worked, and that we find the prompt. We use
+                # a versatile prompt pattern to account for the custom shell case.
+                try :
+                    # set and register new prompt
+                    self.run_async  ( " unset PROMPT_COMMAND ; "
+                                    + " unset HISTFILE ; "
+                                    + "PS1='PROMPT-$?->'; "
+                                    + "PS2=''; "
+                                    + "export PS1 PS2 2>&1 >/dev/null\n")
+                    self.set_prompt (new_prompt="PROMPT-(\d+)->$")
+
+                    self.logger.debug ("got new shell prompt")
+
+                except Exception as e :
+                    raise se.NoSuccess ("Shell startup on target host failed: %s" % e)
+
+
+                try :
+                    # got a command shell, finally!
+                    # for local shells, we now change to the current working
+                    # directory.  Remote shells will remain in the default pwd
+                    # (usually $HOME).
+                    if  sumisc.host_is_local (surl.Url(self.url).host) :
+                        pwd = os.getcwd ()
+                        self.run_sync (' cd %s' % pwd)
+                except Exception as e :
+                    # We will ignore any errors.
+                    self.logger.warning ("local cd to %s failed" % pwd)
                 
                 
 
@@ -337,7 +359,7 @@ class PTYShell (object) :
 
     # ----------------------------------------------------------------
     #
-    def find_prompt (self) :
+    def find_prompt (self, timeout=_PTY_TIMEOUT) :
         """
         If run_async was called, a command is running on the shell.  find_prompt
         can be used to collect its output up to the point where the shell prompt
@@ -356,7 +378,7 @@ class PTYShell (object) :
                 fret  = None
 
                 while fret == None :
-                    fret, match = self.pty_shell.find ([self.prompt], _PTY_TIMEOUT)
+                    fret, match = self.pty_shell.find ([self.prompt], timeout)
                 
               # self.logger.debug  ("find prompt '%s' in '%s'" % (self.prompt, match))
                 ret, txt = self._eval_prompt (match)
@@ -534,12 +556,24 @@ class PTYShell (object) :
                     self.logger.debug  ("could not parse prompt (%s) (%s)" % (prompt, data))
                     raise se.NoSuccess ("could not parse prompt (%s) (%s)" % (prompt, data))
 
-                if  len (result.groups ()) != 2 :
-                    self.logger.debug  ("prompt does not capture exit value (%s)" % prompt)
-                    raise se.NoSuccess ("prompt does not capture exit value (%s)" % prompt)
+                txt = result.group (1)
+                ret = 0
 
-                txt =     result.group (1)
-                ret = int(result.group (2)) 
+                if  len (result.groups ()) != 2 :
+                    if  new_prompt :
+                        self.logger.warn   ("prompt does not capture exit value (%s)" % prompt)
+                      # raise se.NoSuccess ("prompt does not capture exit value (%s)" % prompt)
+
+                else :
+                    try :
+                        ret = int(result.group (2))
+                    except ValueError :
+                        # apparently, this is not an int.  print a warning, and
+                        # assume success -- the calling entity needs to evaluate the
+                        # remainder...
+                        ret = 0
+                        self.logger.warn  ("prompt not suitable for error checks (%s)" % prompt)
+                        txt += "\n%s" % result.group (2)
 
                 # if that worked, we can permanently set new_prompt
                 if  new_prompt :
@@ -604,6 +638,8 @@ class PTYShell (object) :
         """
 
         with self.pty_shell.rlock :
+         
+            self._trace ("run sync  : %s" % command)
 
             # we expect the shell to be in 'ground state' when running a syncronous
             # command -- thus we can check if the shell is alive before doing so,
@@ -723,6 +759,8 @@ class PTYShell (object) :
 
         with self.pty_shell.rlock :
 
+          # self._trace ("run async : %s" % command)
+
             # we expect the shell to be in 'ground state' when running an asyncronous
             # command -- thus we can check if the shell is alive before doing so,
             # and restart if needed
@@ -777,6 +815,8 @@ class PTYShell (object) :
 
         try :
 
+          # self._trace ("write     : %s -> %s" % (src, tgt))
+
             # FIXME: make this relative to the shell's pwd?  Needs pwd in
             # prompt, and updating pwd state on every find_prompt.
 
@@ -808,16 +848,20 @@ class PTYShell (object) :
         """
 
         try :
+
+          # self._trace ("read      : %s" % src)
+
             # FIXME: make this relative to the shell's pwd?  Needs pwd in
             # prompt, and updating pwd state on every find_prompt.
 
             # first, write data into a tmp file
-            fname   = self.base + "/staging.%s" % id(self)
+            fname = self.base + "/staging.%s" % id(self)
+            _     = self.stage_from_remote (src, fname)
 
-            _ = self.stage_from_remote (src, fname)
+            os.system ('sync') # WTF?  Why do I need this?
 
             fhandle = open (fname, 'r')
-            out = fhandle.read  ()
+            out     = fhandle.read  ()
             fhandle.close  ()
 
             os.remove (fname)
@@ -843,6 +887,8 @@ class PTYShell (object) :
                     relative to the shell's URL.
         """
 
+        self._trace ("stage to  : %s -> %s" % (src, tgt))
+
         # FIXME: make this relative to the shell's pwd?  Needs pwd in
         # prompt, and updating pwd state on every find_prompt.
 
@@ -867,6 +913,8 @@ class PTYShell (object) :
                     relative to the current working directory.
         """
 
+        self._trace ("stage from: %s -> %s" % (src, tgt))
+
         # FIXME: make this relative to the shell's pwd?  Needs pwd in
         # prompt, and updating pwd state on every find_prompt.
 
@@ -890,6 +938,8 @@ class PTYShell (object) :
         have to do a local expansion, and the to do the same for each entry...
         """
 
+        self._trace ("copy  to  : %s -> %s" % (src, tgt))
+
         with self.pty_shell.rlock :
 
             info = self.pty_info
@@ -901,7 +951,8 @@ class PTYShell (object) :
             s_cmd = info['scripts'][info['type']]['copy_to']    % repl
             s_in  = info['scripts'][info['type']]['copy_to_in'] % repl
 
-            if not self.cp_slave :
+            if  not self.cp_slave :
+                self._trace ("get cp slave")
                 self.cp_slave = self.factory.get_cp_slave (s_cmd, info)
 
             prep = ""
@@ -976,6 +1027,8 @@ class PTYShell (object) :
         need to expand wildcards on the *remote* side :/
         """
 
+        self._trace ("copy  from: %s -> %s" % (src, tgt))
+
         with self.pty_shell.rlock :
 
             info = self.pty_info
@@ -988,6 +1041,7 @@ class PTYShell (object) :
             s_in  = info['scripts'][info['type']]['copy_from_in'] % repl
 
             if  not self.cp_slave :
+                self._trace ("get cp slave")
                 self.cp_slave = self.factory.get_cp_slave (s_cmd, info)
 
             prep = ""

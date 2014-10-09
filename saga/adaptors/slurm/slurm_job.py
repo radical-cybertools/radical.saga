@@ -20,6 +20,7 @@ import os
 import time
 import textwrap
 import string
+import tempfile
 
 SYNC_CALL  = saga.adaptors.cpi.decorators.SYNC_CALL
 ASYNC_CALL = saga.adaptors.cpi.decorators.ASYNC_CALL
@@ -419,6 +420,7 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         wall_time_limit = None
         queue = None
         project = None
+        job_memory = None
         job_contact = None
         
         # check to see what's available in our job description
@@ -469,12 +471,15 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         if jd.attribute_exists("project"):
             project = jd.project
 
+        if jd.attribute_exists("total_physical_memory"):
+            job_memory = jd.total_physical_memory
+
         if jd.attribute_exists("job_contact"):
             job_contact = jd.job_contact[0]
 
-        slurm_script = "#!/bin/bash\n"
+        slurm_script = "#!/bin/sh\n\n"
 
-        if job_name:
+        if  job_name:
             slurm_script += '#SBATCH -J "%s"\n' % job_name
 
         if spmd_variation:
@@ -499,37 +504,43 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
             log_error_and_raise("More processes (%s) requested than total number of CPUs! (%s)" % (number_of_processes, total_cpu_count), saga.NoSuccess, self._logger)
 
         #make sure we aren't doing funky math
-        if total_cpu_count % number_of_processes != 0:
-            log_error_and_raise("total_cpu_count (%s) must be evenly divisible by number_of_processes (%s)" %(total_cpu_count, number_of_processes), saga.NoSuccess, self._logger)
+        if  total_cpu_count % number_of_processes != 0:
+            log_error_and_raise ("total_cpu_count (%s) must be evenly " \
+                                 "divisible by number_of_processes (%s)" \
+                              % (total_cpu_count, number_of_processes), 
+                                 saga.NoSuccess, self._logger)
 
-        slurm_script += "#SBATCH --ntasks=%s\n" % (number_of_processes)
+        slurm_script += "#SBATCH --ntasks=%s\n"        % (number_of_processes)
         slurm_script += "#SBATCH --cpus-per-task=%s\n" % (total_cpu_count/number_of_processes)
 
-        if cwd is not "":
+        if  cwd is not "":
             slurm_script += "#SBATCH -D %s\n" % cwd
 
-        if output:
-            slurm_script+= "#SBATCH -o %s\n" % output
+        if  output:
+            slurm_script += "#SBATCH -o %s\n" % output
         
-        if error:
+        if  error:
             slurm_script += "#SBATCH -e %s\n" % error
 
-        if wall_time_limit:
-            hours = wall_time_limit / 60
+        if  wall_time_limit:
+            hours   = wall_time_limit / 60
             minutes = wall_time_limit % 60
-            slurm_script += "#SBATCH -t %s:%s:00\n" % (str(hours).zfill(2), str(minutes).zfill(2))
+            slurm_script += "#SBATCH -t %02d:%02d:00\n" % (hours, minutes)
 
-        if queue:
+        if  queue:
             slurm_script += "#SBATCH -p %s\n" % queue
 
-        if project:
+        if  project:
             slurm_script += "#SBATCH -A %s\n" % project
 
-        if job_contact:
+        if  job_memory:
+            slurm_script += "#SBATCH --mem=%s\n" % job_memory
+
+        if  job_contact:
             slurm_script += "#SBATCH --mail-user=%s\n" % job_contact
 
         # make sure we are not missing anything important
-        if not queue:
+        if  not queue:
             raise saga.BadParameter._log (self._logger, 
                                           "No queue has been specified, "
                                           "and the SLURM adaptor "
@@ -542,26 +553,14 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
 
         # create our commandline - escape $ so that environment variables
         # get interpreted properly
-        exec_n_args = exe + arg
-        exec_n_args = exec_n_args.replace('$', '\\$')
+        exec_n_args   = exe + arg
+        exec_n_args   = exec_n_args.replace('$', '\\$')
         slurm_script += exec_n_args
-
-        # escape all double quotes, otherwise 'echo |' further down
-        # won't work
-        slurm_script = slurm_script.replace('"', '\\"')
-
-        # escape '!' - this doesn't work well with bash either:
-        # see: http://superuser.com/questions/133780/in-bash-how-do-i-escape-an-exclamation-mark
-        slurm_script = slurm_script.replace("!", "\"'!'\"")
-
-
-        self._logger.info("SLURM script generated:\n%s" % slurm_script)
-        self._logger.debug("Transferring SLURM script to remote host")
 
         # try to create the working directory (if defined)
         # WRANING: this assumes a shared filesystem between login node and
         #           comnpute nodes.
-        if jd.working_directory is not None:
+        if  jd.working_directory is not None:
             self._logger.info("Creating working directory %s" % jd.working_directory)
             ret, out, _ = self.shell.run_sync("mkdir -p %s" % (jd.working_directory))
             if ret != 0:
@@ -570,7 +569,23 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
                 log_error_and_raise(message, saga.NoSuccess, self._logger)
 
 
-        ret, out, _ = self.shell.run_sync("""echo "%s" | sbatch""" % slurm_script)
+        # write script into a tmp file for staging
+        fhandle, fname = tempfile.mkstemp (suffix='.slurm', prefix='tmp_', text=True)
+        os.write (fhandle, slurm_script)
+        os.close (fhandle)
+
+        self._logger.info ("SLURM script generated:\n%s" % slurm_script)
+
+        tgt = "/tmp/%s" % fname.split('/')[-1]
+        self.shell.stage_to_remote (src=fname, tgt=tgt)
+
+        # submit the job
+        ret, out, _ = self.shell.run_sync ("cat '%s' | sbatch && rm -vf '%s'" % (tgt, tgt))
+
+        self._logger.debug ("staged/submit SLURM script (%s) (%s) (%s)" % (fname, tgt, ret))
+
+        # clean up tmp file
+        os.remove (fname)
 
         # find out what our job ID will be
         # TODO: Could make this more efficient
@@ -677,7 +692,10 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
                 self._logger.debug("Returning exit code %s" % self.exit_code)
                 
                 # return whatever our exit code is
-                return int(self.exit_code)
+                if  self.exit_code :
+                    return int(self.exit_code)
+                else :
+                    return None
         
         ### couldn't get the exitcode -- maybe should change this to just return
         ### None?  b/c we will lose the code if a program waits too
