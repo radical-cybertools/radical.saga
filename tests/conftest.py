@@ -12,18 +12,22 @@ import saga
 import radical.utils as ru
 
 # ------------------------------------------------------------------------------
+#
 def pytest_addoption (parser) :
     parser.addoption ("--configs", action="append", default=[],
         help="list of configs to use for testing")
 
 # ------------------------------------------------------------------------------
+#
 def pytest_generate_tests (metafunc) :
     if 'configs' in metafunc.fixturenames :
         metafunc.parametrize ("configs",
-                              metafunc.config.option.configs)
+                              metafunc.config.option.configs,
+                              scope="module")
 
 # ------------------------------------------------------------------------------
-@pytest.fixture
+#
+@pytest.fixture (scope="module")
 def cfg (configs) :
 
     fname = "./configs/%s" % configs
@@ -39,7 +43,8 @@ def cfg (configs) :
 
 
 # ------------------------------------------------------------------------------
-@pytest.fixture
+#
+@pytest.fixture (scope="module")
 def session (cfg) :
 
     s = saga.Session ()
@@ -55,6 +60,80 @@ def session (cfg) :
         s.add_context (c)
 
     return s
+
+# ------------------------------------------------------------------------------
+#
+@pytest.fixture (scope="module")
+def tools (cfg) :
+
+    # --------------------------------------------------------------------------
+    #
+    class Tools (object) :
+
+        # ----------------------------------------------------------------------
+        #
+        @staticmethod
+        def configure_jd (cfg, jd) :
+        
+            for a in ['job_walltime_limit' ,
+                      'job_project'        ,
+                      'job_queue'          ,
+                      'job_total_cpu_count',
+                      'job_spmd_variation' ] :
+        
+                if  cfg.get (a, None) :
+                    jd.set_attribute (a, cfg[a])
+
+
+        # ----------------------------------------------------------------------
+        #
+        @staticmethod
+        def assert_exception (cfg, e) :
+        
+            ni = cfg.get ('not_implemented', 'warn')
+        
+            if  'NotImplemented' in str(e) and ni == warn :
+                print "WARNING: %s"
+                return
+        
+            else :
+                assert (False), "unexpected exception '%s'" % e
+                raise e
+        
+        
+        # ----------------------------------------------------------------------
+        #
+        @staticmethod
+        def silent_cancel (obj) :
+        
+            if  not isinstance (obj, list) :
+                obj = [obj]
+            
+            for o in obj :
+                try :
+                    o.cancel ()
+                except Exception :
+                    pass
+        
+        
+        # ----------------------------------------------------------------------
+        #
+        @staticmethod
+        def silent_close (obj) :
+        
+            if  not isinstance (obj, list) :
+                obj = [obj]
+            
+            for o in obj :
+                try :
+                    o.close ()
+                except Exception :
+                    pass
+
+    # --------------------------------------------------------------------------
+    #
+    return Tools ()
+    
 
 # ------------------------------------------------------------------------------
 

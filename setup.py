@@ -151,10 +151,7 @@ class our_test(Command):
     def finalize_options   (self) : pass
     def run (self) :
         testdir = "%s/tests/" % os.path.dirname(os.path.realpath(__file__))
-        retval  = sp.call([sys.executable,
-                          '%s/run_tests.py'               % testdir,
-                          '%s/configs/basetests.cfg'      % testdir])
-        raise SystemExit(retval)
+        sys.exit (sp.call (['py.test', '--configs', 'fork_localhost.cfg', testdir]))
 
 
 #-----------------------------------------------------------------------------
@@ -233,7 +230,7 @@ setup_args = {
         'test'         : our_test,
     },
     'install_requires' : ['apache-libcloud', 'radical.utils'],
-    'tests_require'    : ['nose'],
+    'tests_require'    : ['pytest'],
     'zip_safe'         : False,
 #   'build_sphinx'     : {
 #       'source-dir'   : 'docs/',
