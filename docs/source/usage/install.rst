@@ -40,8 +40,8 @@ alternative Python environment (e.g., in your home directory):
 
 .. code-block:: bash
 
-    virtualenv --no-site-package $HOME/sagenv/
-    . $HOME/sagenv/bin/activate
+    virtualenv --no-site-package $HOME/sagaenv/
+    . $HOME/sagaenv/bin/activate
     pip install saga-python   
 
 
@@ -52,7 +52,8 @@ It also installs easy_install and pip:
 
 .. code-block:: bash
 
-    curl --insecure -s https://raw.github.com/pypa/virtualenv/1.9.X/virtualenv.py | python - $HOME/sagaenv
+    wget https://raw.githubusercontent.com/pypa/virtualenv/1.9.1/virtualenv.py
+    python virtualenv.py $HOME/sagaenv/ --no-site-packages
     . $HOME/sagaenv/bin/activate
     pip install saga-python
 
