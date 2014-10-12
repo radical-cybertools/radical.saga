@@ -760,8 +760,8 @@ class PTYProcess (object) :
         with self.rlock :
 
             if not self.alive (recover=False) :
-                raise ptye.translate_exception (se.NoSuccess ("cannot write to dead process (%s)" \
-                                                % self.cache[-256:]))
+                raise ptye.translate_exception (se.NoSuccess ("cannot write to dead process (%s) [%5d]" \
+                                                % (self.cache[-256:], self.parent_in)))
 
             try :
 
