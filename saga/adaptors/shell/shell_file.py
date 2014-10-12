@@ -305,7 +305,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
         with self.lm.lease (lease_tgt, self.shell_creator, location) \
              as cmd_shell :
 
-            return cmd_shell.run_sync ("cd %s && command", location.path, command)
+            return cmd_shell.run_sync ("cd %s && %s", (location.path, command))
 
 
     # ----------------------------------------------------------------
