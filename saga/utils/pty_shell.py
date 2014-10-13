@@ -958,9 +958,6 @@ class PTYShell (object) :
                 # do not use the chached cp_slave in this case, but just run the
                 # command.  We do not have a list of transferred files though,
                 # yet -- that should be parsed from the proc output.
-                print " >> ============================================== "
-                print s_cmd
-                print " >> ============================================== "
                 cp_proc = supp.PTYProcess (s_cmd)
                 cp_proc.wait ()
                 return list()
