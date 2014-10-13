@@ -58,8 +58,12 @@ _SCHEMAS = _SCHEMAS_SH + _SCHEMAS_SSH + _SCHEMAS_GSI
 # ssh versions...
 
 # ssh master/slave flag magic # FIXME: make timeouts configurable
-_SSH_FLAGS_MASTER   = "-o ControlMaster=yes -o ControlPath=%(ctrl)s -o TCPKeepAlive=yes -o ServerAliveInterval=10 -o ServerAliveCountMax=20 -2"
-_SSH_FLAGS_SLAVE    = "-o ControlMaster=no  -o ControlPath=%(ctrl)s -o TCPKeepAlive=yes -o ServerAliveInterval=10 -o ServerAliveCountMax=20 -2"
+# _SSH_FLAGS_MASTER = "-o ControlMaster=yes -o ControlPath=%(ctrl)s -o TCPKeepAlive=yes -o ServerAliveInterval=10 -o ServerAliveCountMax=20 -2 "
+# _SSH_FLAGS_SLAVE  = "-o ControlMaster=no  -o ControlPath=%(ctrl)s -o TCPKeepAlive=yes -o ServerAliveInterval=10 -o ServerAliveCountMax=20 -2 "
+_SSH_FLAGS_MASTER   = "-o ControlMaster=yes -o ControlPath=%(ctrl)s -o TCPKeepAlive=no  -o ServerAliveInterval=10 -o ServerAliveCountMax=20 -2 "
+_SSH_FLAGS_SLAVE    = "-o ControlMaster=no  -o ControlPath=%(ctrl)s -o TCPKeepAlive=no  -o ServerAliveInterval=10 -o ServerAliveCountMax=20 -2 "
+_SCP_FLAGS          = ""
+_SFTP_FLAGS         = ""
 
 # FIXME: right now, we create a shell connection as master --
 # but a master does not actually need a shell, as it is never really
@@ -68,12 +72,16 @@ _SCRIPTS = {
     'ssh' : { 
         'master'        : '%(ssh_env)s "%(ssh_exe)s"   %(ssh_args)s  %(m_flags)s  %(host_str)s',
         'shell'         : '%(ssh_env)s "%(ssh_exe)s"   %(ssh_args)s  %(s_flags)s  %(host_str)s',
-      # 'copy_to'       : '%(scp_env)s "%(scp_exe)s"   %(scp_args)s  %(s_flags)s  "%(src)s" "%(fs_root)s/%(tgt)s"',
-      # 'copy_from'     : '%(scp_env)s "%(scp_exe)s"   %(scp_args)s  %(s_flags)s  "%(fs_root)s/%(src)s" "%(tgt)s"',
-        'copy_to'       : '%(sftp_env)s "%(sftp_exe)s" %(sftp_args)s %(s_flags)s  %(host_str)s',
-        'copy_from'     : '%(sftp_env)s "%(sftp_exe)s" %(sftp_args)s %(s_flags)s  %(host_str)s',
-        'copy_to_in'    : 'mput %(cp_flags)s "%(src)s" "%(tgt)s" \n',
-        'copy_from_in'  : 'mget %(cp_flags)s "%(src)s" "%(tgt)s" \n',
+        # scp
+        'copy_to'       : '%(scp_env)s "%(scp_exe)s"   %(scp_args)s  %(s_flags)s "%(src)s" "%(scp_root)s/%(tgt)s"',
+        'copy_from'     : '%(scp_env)s "%(scp_exe)s"   %(scp_args)s  %(s_flags)s "%(scp_root)s/%(src)s" "%(tgt)s"',
+        'copy_to_in'    : '',
+        'copy_from_in'  : '',
+      # # sftp
+      # 'copy_to'       : '%(sftp_env)s "%(sftp_exe)s" %(sftp_args)s %(s_flags)s  %(host_str)s',
+      # 'copy_from'     : '%(sftp_env)s "%(sftp_exe)s" %(sftp_args)s %(s_flags)s  %(host_str)s',
+      # 'copy_to_in'    : 'mput %(cp_flags)s "%(src)s" "%(tgt)s" \n',
+      # 'copy_from_in'  : 'mget %(cp_flags)s "%(src)s" "%(tgt)s" \n',
     },
     'sh' : {
         'master'        : '%(sh_env)s "%(sh_exe)s"  %(sh_args)s',
@@ -464,7 +472,7 @@ class PTYShellFactory (object) :
                 info['sh_args']  = "-i"
                 info['sh_env']   = "/usr/bin/env TERM=vt100 PS1='PROMPT-$?->'"
                 info['cp_env']   = "/usr/bin/env TERM=vt100 PS1='PROMPT-$?->'"
-                info['fs_root']  = "/"
+                info['scp_root'] = "/"
 
                 if  "SHELL" in os.environ :
                     info['sh_exe'] =  ru.which (os.environ["SHELL"])
@@ -513,8 +521,8 @@ class PTYShellFactory (object) :
                 info['scp_env']   =  "/usr/bin/env TERM=vt100 "  # avoid ansi escapes
                 info['sftp_env']  =  "/usr/bin/env TERM=vt100 "  # avoid ansi escapes
                 info['ssh_args']  =  "-t "                       # force pty
-                info['scp_args']  =  ""
-                info['sftp_args'] =  ""
+                info['scp_args']  =  _SCP_FLAGS
+                info['sftp_args'] =  _SFTP_FLAGS
 
                 if  session :
 
@@ -592,9 +600,25 @@ class PTYShellFactory (object) :
 
                 info['m_flags']  = _SSH_FLAGS_MASTER % ({'ctrl' : info['ctrl']})
                 info['s_flags']  = _SSH_FLAGS_SLAVE  % ({'ctrl' : info['ctrl']})
-                info['fs_root']  = url
 
-                info['fs_root'].path = "/"
+                # we want the userauth and hostname parts of the URL, to get the
+                # scp-scope fs root.  
+                info['scp_root']  = ""
+                has_auth          = False
+                if  url.username : 
+                    info['scp_root'] += url.username
+                    has_auth          = True
+                if  url.password : 
+                    info['scp_root'] += ":"
+                    info['scp_root'] += url.password
+                    has_auth          = True
+                if  has_auth :
+                    info['scp_root'] += "@"
+                info['scp_root']     += "%s:" % url.host
+
+                # FIXME: port needs to be handled as parameter
+              # if  url.port : 
+              #     info['scp_root'] += ":%d" % url.port
 
 
             # keep all collected info in the master dict, and return it for

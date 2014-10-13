@@ -13,6 +13,7 @@ import saga.utils.misc              as sumisc
 import radical.utils.logger         as rul
 
 import saga.utils.pty_shell_factory as supsf
+import saga.utils.pty_process       as supp
 import saga.url                     as surl
 import saga.exceptions              as se
 import saga.session                 as ss
@@ -951,6 +952,23 @@ class PTYShell (object) :
             s_cmd = info['scripts'][info['type']]['copy_to']    % repl
             s_in  = info['scripts'][info['type']]['copy_to_in'] % repl
 
+            if  not s_in :
+                # this code path does not use an interactive shell for copy --
+                # so the above s_cmd is all we want to run, really.  We get
+                # do not use the chached cp_slave in this case, but just run the
+                # command.  We do not have a list of transferred files though,
+                # yet -- that should be parsed from the proc output.
+                print " >> ============================================== "
+                print s_cmd
+                print " >> ============================================== "
+                cp_proc = supp.PTYProcess (s_cmd)
+                cp_proc.wait ()
+                return list()
+
+
+            # this code path uses an interactive shell to transfer files, of
+            # some form, such as sftp.  Get the shell cp_slave from cache, and
+            # run the actual copy command.
             if  not self.cp_slave :
                 self._trace ("get cp slave")
                 self.cp_slave = self.factory.get_cp_slave (s_cmd, info)
@@ -1039,6 +1057,19 @@ class PTYShell (object) :
             # at this point, we do have a valid, living master
             s_cmd = info['scripts'][info['type']]['copy_from']    % repl
             s_in  = info['scripts'][info['type']]['copy_from_in'] % repl
+
+            if  not s_in :
+                # this code path does not use an interactive shell for copy --
+                # so the above s_cmd is all we want to run, really.  We get
+                # do not use the chached cp_slave in this case, but just run the
+                # command.  We do not have a list of transferred files though,
+                # yet -- that should be parsed from the proc output.
+                print " << ============================================== "
+                print s_cmd
+                print " << ============================================== "
+                cp_proc = supp.PTYProcess (s_cmd)
+                cp_proc.wait ()
+                return list()
 
             if  not self.cp_slave :
                 self._trace ("get cp slave")

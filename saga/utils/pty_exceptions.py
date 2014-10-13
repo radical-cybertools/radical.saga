@@ -24,6 +24,11 @@ def translate_exception (e, msg=None) :
         # this seems to have a specific cause already, leave it alone
         return e
 
+    import traceback
+    import logging
+    logging.debug (traceback.format_exc())
+
+
     cmsg = e._plain_message
 
     if  msg :
@@ -32,37 +37,37 @@ def translate_exception (e, msg=None) :
     lmsg = cmsg.lower ()
 
     if  'could not resolve hostname' in lmsg :
-        e = se.BadParameter (cmsg)
+        e = se.BadParameter (cmsg, parent=e)
 
     elif  'connection timed out' in lmsg :
-        e = se.BadParameter (cmsg)
+        e = se.BadParameter (cmsg, parent=e)
 
     elif  'connection refused' in lmsg :
-        e = se.BadParameter (cmsg)
+        e = se.BadParameter (cmsg, parent=e)
 
     elif 'auth' in lmsg :
-        e = se.AuthorizationFailed (cmsg)
+        e = se.AuthorizationFailed (cmsg, parent=e)
 
     elif 'man-in-the-middle' in lmsg :
-        e = se.AuthenticationFailed ("ssh key mismatch detected: %s" % cmsg)
+        e = se.AuthenticationFailed ("ssh key mismatch detected: %s" % cmsg, parent=e)
 
     elif 'pass' in lmsg :
         e = se.AuthenticationFailed (cmsg)
 
     elif 'ssh_exchange_identification' in lmsg :
-        e = se.AuthenticationFailed ("too frequent login attempts, or sshd misconfiguration: %s" % cmsg)
+        e = se.AuthenticationFailed ("too frequent login attempts, or sshd misconfiguration: %s" % cmsg, parent=e)
 
     elif 'denied' in lmsg :
         e = se.PermissionDenied (cmsg)
 
     elif 'shared connection' in lmsg :
-        e = se.NoSuccess ("Insufficient system resources: %s" % cmsg)
+        e = se.NoSuccess ("Insufficient system resources: %s" % cmsg, parent=e)
 
     elif 'pty allocation' in lmsg :
-        e = se.NoSuccess ("Insufficient system resources: %s" % cmsg)
+        e = se.NoSuccess ("Insufficient system resources: %s" % cmsg, parent=e)
 
     elif 'Connection to master closed' in lmsg :
-        e = se.NoSuccess ("Connection failed (insufficient system resources?): %s" % cmsg)
+        e = se.NoSuccess ("Connection failed (insufficient system resources?): %s" % cmsg, parent=e)
 
     return e
 
