@@ -580,7 +580,7 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         self.shell.stage_to_remote (src=fname, tgt=tgt)
 
         # submit the job
-        ret, out, _ = self.shell.run_sync ("cat '$HOME/%s' | sbatch && rm -vf '%s'" % (tgt, tgt))
+        ret, out, _ = self.shell.run_sync ("cat '%s' | sbatch && rm -vf '%s'" % (tgt, tgt))
 
         self._logger.debug ("staged/submit SLURM script (%s) (%s) (%s)" % (fname, tgt, ret))
 
