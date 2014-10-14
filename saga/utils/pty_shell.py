@@ -514,7 +514,7 @@ class PTYShell (object) :
                 self.run_async (' printf "SYNCHRONIZE_PROMPT\n"')
 
                 # FIXME: better timout value?
-                fret, match = self.pty_shell.find (["SYNCHRONIZE_PROMPT"], timeout=1.0)  
+                fret, match = self.pty_shell.find (["SYNCHRONIZE_PROMPT"], timeout=10.0)  
 
                 if  fret == None :
                     # not find prompt after blocking?  BAD!  Restart the shell
@@ -958,8 +958,19 @@ class PTYShell (object) :
                 # do not use the chached cp_slave in this case, but just run the
                 # command.  We do not have a list of transferred files though,
                 # yet -- that should be parsed from the proc output.
+              # import traceback
+              # print "====================="
+              # print "PTYShell scp command %s" % s_cmd
+              # print "====================="
+              # traceback.print_stack()
+              # print "====================="
+
                 cp_proc = supp.PTYProcess (s_cmd)
-                cp_proc.wait ()
+                out = cp_proc.wait ()
+              # print "wait done"
+              # print "====================="
+              # print out
+              # print "====================="
                 return list()
 
 

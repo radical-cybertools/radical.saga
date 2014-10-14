@@ -37,37 +37,37 @@ def translate_exception (e, msg=None) :
     lmsg = cmsg.lower ()
 
     if  'could not resolve hostname' in lmsg :
-        e = se.BadParameter (cmsg, parent=e)
+        e = se.BadParameter (cmsg)
 
     elif  'connection timed out' in lmsg :
-        e = se.BadParameter (cmsg, parent=e)
+        e = se.BadParameter (cmsg)
 
     elif  'connection refused' in lmsg :
-        e = se.BadParameter (cmsg, parent=e)
+        e = se.BadParameter (cmsg)
 
     elif 'auth' in lmsg :
-        e = se.AuthorizationFailed (cmsg, parent=e)
+        e = se.AuthorizationFailed (cmsg)
 
     elif 'man-in-the-middle' in lmsg :
-        e = se.AuthenticationFailed ("ssh key mismatch detected: %s" % cmsg, parent=e)
+        e = se.AuthenticationFailed ("ssh key mismatch detected: %s" % cmsg)
 
     elif 'pass' in lmsg :
         e = se.AuthenticationFailed (cmsg)
 
     elif 'ssh_exchange_identification' in lmsg :
-        e = se.AuthenticationFailed ("too frequent login attempts, or sshd misconfiguration: %s" % cmsg, parent=e)
+        e = se.AuthenticationFailed ("too frequent login attempts, or sshd misconfiguration: %s" % cmsg)
 
     elif 'denied' in lmsg :
         e = se.PermissionDenied (cmsg)
 
     elif 'shared connection' in lmsg :
-        e = se.NoSuccess ("Insufficient system resources: %s" % cmsg, parent=e)
+        e = se.NoSuccess ("Insufficient system resources: %s" % cmsg)
 
     elif 'pty allocation' in lmsg :
-        e = se.NoSuccess ("Insufficient system resources: %s" % cmsg, parent=e)
+        e = se.NoSuccess ("Insufficient system resources: %s" % cmsg)
 
     elif 'Connection to master closed' in lmsg :
-        e = se.NoSuccess ("Connection failed (insufficient system resources?): %s" % cmsg, parent=e)
+        e = se.NoSuccess ("Connection failed (insufficient system resources?): %s" % cmsg)
 
     return e
 
