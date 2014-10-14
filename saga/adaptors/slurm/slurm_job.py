@@ -576,7 +576,7 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
 
         self._logger.info ("SLURM script generated:\n%s" % slurm_script)
 
-        tgt = "/tmp/%s" % fname.split('/')[-1]
+        tgt = "%s" % fname.split('/')[-1]
         self.shell.stage_to_remote (src=fname, tgt=tgt)
 
         # submit the job
