@@ -255,7 +255,7 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         self.scontrol_start_time_re = re.compile("""(?<=StartTime=)[^ ]*""")
         self.scontrol_end_time_re = re.compile("""(?<=EndTime=)[^ ]*""")
         self.scontrol_create_time_re = re.compile("""(?<=SubmitTime=)[^ ]*""")
-        self.scontrol_exec_hosts_re = re.compile("""(?<=ExcNodeList=)[^ ]*""")
+        self.scontrol_exec_hosts_re = re.compile("""(?<=NodeList=)[^ ]*""")
         self.scontrol_comp_time_re = re.compile("""(?<=RunTime=)[^ ]*""")
 
         # these are the commands that we need in order to interact with SLURM
