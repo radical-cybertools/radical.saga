@@ -319,7 +319,7 @@ class PTYProcess (object) :
 
             if not self.child:
                 # this was quick ;-)
-                print "child is gone"
+              # print "child is gone"
                 return output
 
             # we need to lock, as the SIGCHLD will only arrive once
@@ -327,7 +327,7 @@ class PTYProcess (object) :
                 # hey, kiddo, whats up?
                 try :
                     wpid, wstat = os.waitpid (self.child, 0)
-                    print "wait: %s -- %s" % (wpid, wstat)
+                  # print "wait: %s -- %s" % (wpid, wstat)
 
                 except OSError as e :
 
@@ -337,11 +337,11 @@ class PTYProcess (object) :
                         self.exit_code   = None
                         self.exit_signal = None
                         self.finalize ()
-                        print "no such child"
+                      # print "no such child"
                         return output
 
                     # no idea what happened -- it is likely bad
-                    print "waitpid failed"
+                  # print "waitpid failed"
                     raise se.NoSuccess ("waitpid failed on wait")
 
 
@@ -367,7 +367,7 @@ class PTYProcess (object) :
                 self.child = None
                 self.finalize (wstat=wstat)
 
-                print "child is done"
+              # print "child is done"
                 return output
 
 

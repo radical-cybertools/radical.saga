@@ -73,8 +73,8 @@ _SCRIPTS = {
         'master'        : '%(ssh_env)s "%(ssh_exe)s"   %(ssh_args)s  %(m_flags)s  %(host_str)s',
         'shell'         : '%(ssh_env)s "%(ssh_exe)s"   %(ssh_args)s  %(s_flags)s  %(host_str)s',
         # scp
-        'copy_to'       : '%(scp_env)s "%(scp_exe)s"   %(scp_args)s  %(s_flags)s "%(src)s" "%(scp_root)s/%(tgt)s"',
-        'copy_from'     : '%(scp_env)s "%(scp_exe)s"   %(scp_args)s  %(s_flags)s "%(scp_root)s/%(src)s" "%(tgt)s"',
+        'copy_to'       : '%(scp_env)s "%(scp_exe)s"   %(scp_args)s  %(s_flags)s "%(src)s" "%(scp_root)s%(tgt)s"',
+        'copy_from'     : '%(scp_env)s "%(scp_exe)s"   %(scp_args)s  %(s_flags)s "%(scp_root)s%(src)s" "%(tgt)s"',
         'copy_to_in'    : '',
         'copy_from_in'  : '',
       # # sftp
