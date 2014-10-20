@@ -246,8 +246,9 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
                                    % (dirname, ret, out))
 
         else :
-            raise saga.BadParameter ("failed: cannot create target dir for '%s': (%s) (%s)" \
-                                  % (tgt, ret, out))
+            lease_tgt = self._adaptor.get_lease_target (tgt)
+            with self.lm.lease (lease_tgt, self.shell_creator, tgt) as tmp_shell :
+                tmp_shell.run_sync ('mkdir -p %s' % dirname)
 
 
     # ----------------------------------------------------------------
@@ -499,15 +500,15 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
         if  flags & saga.filesystem.RECURSIVE : 
             rec_flag  += "-r "
 
-        if  flags & saga.filesystem.CREATE_PARENTS : 
-            self._create_parent (cwdurl, tgt)
-
         files_copied = list()
 
         # if cwd, src and tgt point to the same host, we just run a shell cp
         # command on that host
         if  sumisc.url_is_compatible (cwdurl, src) and \
             sumisc.url_is_compatible (cwdurl, tgt) :
+
+            if  flags & saga.filesystem.CREATE_PARENTS : 
+                self._create_parent (cwdurl, tgt)
 
             # print "shell cp"
             ret, out, err = self._command (" cp %s '%s' '%s'\n" % (rec_flag, src.path, tgt.path))
@@ -520,6 +521,12 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
         # is local (stage_from vs. stage_to).
         else :
             # print "! shell cp"
+
+            # for a remote target, we need to manually create the target dir (if
+            # needed)
+            if  flags & saga.filesystem.CREATE_PARENTS : 
+                self._create_parent (cwdurl, tgt)
+
 
             # if cwd is remote, we use stage from/to
             if  not sumisc.url_is_local (cwdurl) :
@@ -920,8 +927,9 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
 
         else :
 
-            raise saga.BadParameter ("failed: cannot create target dir '%s': not local to pwd (%s)" \
-                                  % (tgt, cwdurl))
+            lease_tgt = self._adaptor.get_lease_target (tgt)
+            with self.lm.lease (lease_tgt, self.shell_creator, tgt) as tmp_shell :
+                tmp_shell.run_sync ('mkdir -p %s' % dirname)
 
 
     # ----------------------------------------------------------------

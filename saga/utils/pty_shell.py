@@ -569,7 +569,7 @@ class PTYShell (object) :
                     try :
                         ret = int(result.group (2))
                     except ValueError :
-                        # apparently, this is not an int.  print a warning, and
+                        # apparently, this is not an integer. Print a warning, and
                         # assume success -- the calling entity needs to evaluate the
                         # remainder...
                         ret = 0
