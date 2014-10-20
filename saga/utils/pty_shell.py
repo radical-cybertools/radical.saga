@@ -958,19 +958,12 @@ class PTYShell (object) :
                 # do not use the chached cp_slave in this case, but just run the
                 # command.  We do not have a list of transferred files though,
                 # yet -- that should be parsed from the proc output.
-              # import traceback
-              # print "====================="
-              # print "PTYShell scp command %s" % s_cmd
-              # print "====================="
-              # traceback.print_stack()
-              # print "====================="
 
                 cp_proc = supp.PTYProcess (s_cmd)
                 out = cp_proc.wait ()
-              # print "wait done"
-              # print "====================="
-              # print out
-              # print "====================="
+                if  cp_proc.exit_code :
+                    raise ptye.translate_exception (se.NoSuccess ("file copy failed: %s" % out))
+
                 return list()
 
 
@@ -1072,11 +1065,11 @@ class PTYShell (object) :
                 # do not use the chached cp_slave in this case, but just run the
                 # command.  We do not have a list of transferred files though,
                 # yet -- that should be parsed from the proc output.
-                print " << ============================================== "
-                print s_cmd
-                print " << ============================================== "
                 cp_proc = supp.PTYProcess (s_cmd)
                 cp_proc.wait ()
+                if  cp_proc.exit_code :
+                    raise ptye.translate_exception (se.NoSuccess ("file copy failed: %s" % out))
+
                 return list()
 
             if  not self.cp_slave :

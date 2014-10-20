@@ -224,6 +224,8 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
     def _create_parent (self, cwdurl, tgt) :
 
         dirname = sumisc.url_get_dirname (tgt)
+        ret     = None
+        out     = None
 
         if  sumisc.url_is_compatible (cwdurl, tgt) :
 
