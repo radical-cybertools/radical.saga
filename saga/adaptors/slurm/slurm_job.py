@@ -249,14 +249,14 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         _cpi_base = super  (SLURMJobService, self)
         _cpi_base.__init__ (api, adaptor)
 
-        self.exit_code_re = re.compile("""(?<=ExitCode=)[0-9]*""")
-        self.scontrol_jobstate_re = re.compile("""(?<=JobState=)[a-zA-Z]*""")
         # TODO make sure this formats properly and works right!
-        self.scontrol_start_time_re = re.compile("""(?<=StartTime=)[^ ]*""")
-        self.scontrol_end_time_re = re.compile("""(?<=EndTime=)[^ ]*""")
-        self.scontrol_create_time_re = re.compile("""(?<=SubmitTime=)[^ ]*""")
-        self.scontrol_exec_hosts_re = re.compile("""(?<=NodeList=)[^ ]*""")
-        self.scontrol_comp_time_re = re.compile("""(?<=RunTime=)[^ ]*""")
+        self.exit_code_re            = re.compile(r"\bExitCode  \b=(\d*)", re.VERBOSE)
+        self.scontrol_jobstate_re    = re.compile(r"\bJobState  \b=(\S*)", re.VERBOSE)
+        self.scontrol_create_time_re = re.compile(r"\bSubmitTime\b=(\S*)", re.VERBOSE)
+        self.scontrol_start_time_re  = re.compile(r"\bStartTime \b=(\S*)", re.VERBOSE)
+        self.scontrol_end_time_re    = re.compile(r"\bEndTime   \b=(\S*)", re.VERBOSE)
+        self.scontrol_comp_time_re   = re.compile(r"\bRunTime   \b=(\S*)", re.VERBOSE)
+        self.scontrol_exec_hosts_re  = re.compile(r"\bNodeList  \b=(\S*)", re.VERBOSE)
 
         # these are the commands that we need in order to interact with SLURM
         # the adaptor will try to find them when it first opens the shell
@@ -608,11 +608,11 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         # create local jobs dictionary entry
         self.jobs[self.job_id] = {
                 'state': saga.job.PENDING,
-                'exec_hosts': None,
-                'returncode': None,
                 'create_time': None,
                 'start_time': None,
                 'end_time': None,
+                'comp_time': None,
+                'exec_hosts': None,
                 'gone': False
             }
 
@@ -669,33 +669,17 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         """ get the job exit code from the wrapper shell """
         rm, pid     = self._adaptor.parse_id (id)
         ret, out, _ = self.shell.run_sync("scontrol show job %s" % pid)
+        match       = self.exit_code_re.search (out)
 
-        exit_code_found = False
-        
-        # dig out our exitcode
-        for line in out.split("\n"):
-            #if we find exitcode text in this line
-            if "ExitCode" in line:
-                self._logger.debug("Exitcode found in line: %s" % line)
+        if match:
+            self.exit_code = int(match.group(1))
 
-                # run our regex
-                re_search = self.exit_code_re.search(line)
+        else:
+            self.exit_code = None
 
-                # if we have a match, yank out the exitcode
-                if re_search:
-                    self.exit_code = re_search.group()
+        self._logger.debug("Returning exit code %s" % self.exit_code)
+        return self.exit_code
 
-                # if no match, we have no exitcode
-                else:
-                    self.exit_code = None
-
-                self._logger.debug("Returning exit code %s" % self.exit_code)
-                
-                # return whatever our exit code is
-                if  self.exit_code :
-                    return int(self.exit_code)
-                else :
-                    return None
         
         ### couldn't get the exitcode -- maybe should change this to just return
         ### None?  b/c we will lose the code if a program waits too
@@ -940,78 +924,55 @@ class SLURMJob (saga.adaptors.cpi.job.Job):
         curr_info = dict()
         curr_info['job_id'     ] = prev_info.get ('job_id'     )
         curr_info['state'      ] = prev_info.get ('state'      )
-        curr_info['exec_hosts' ] = prev_info.get ('exec_hosts' )
-        curr_info['returncode' ] = prev_info.get ('returncode' )
         curr_info['create_time'] = prev_info.get ('create_time')
         curr_info['start_time' ] = prev_info.get ('start_time' )
         curr_info['end_time'   ] = prev_info.get ('end_time'   )
+        curr_info['comp_time'  ] = prev_info.get ('comp_time'  )
+        curr_info['exec_hosts' ] = prev_info.get ('exec_hosts' )
         curr_info['gone'       ] = prev_info.get ('gone'       )
 
         rm, pid = self._adaptor.parse_id(job_id)
 
         # update current info with scontrol
         ret, out, _ = self.js.shell.run_sync('scontrol show job %s' % pid)
-        #self._logger.debug("Updating job status using the following information:\n%s" % out) 
+      # self._logger.debug("Updating job status using the following information:\n%s" % out) 
 
         # update the state
         curr_info['state'] = self._job_get_state(job_id)
 
-        # figure out when the job was created
-        create_time_search = self.js.scontrol_create_time_re.search(out)
-        create_time=None
-        if create_time_search:
-            create_time = create_time_search.group(0)
 
-        curr_info['create_time'] = create_time
+        match = self.js.scontrol_create_time_re.search(out)
+        if match:
+            curr_info['create_time'] = match.group(1)
+            self._logger.debug("create_time for job %s detected as %s" % \
+                               (pid, curr_info['create_time']))
 
-        self._logger.debug("create_time for job %s detected as %s" % \
-                               (pid, create_time))
+        match = self.js.scontrol_start_time_re.search(out)
+        if match:
+            curr_info['start_time'] = match.group(1)
+            self._logger.debug("start_time for job %s detected as %s" % \
+                               (pid, curr_info['start_time']))
 
-        # determine the job's start time
-        start_time_search = self.js.scontrol_start_time_re.search(out)
-        start_time=None
-        if start_time_search:
-            start_time = start_time_search.group(0)
+        match = self.js.scontrol_end_time_re.search(out)
+        if match:
+            curr_info['end_time'] = match.group(1)
+            self._logger.debug("end_time for job %s detected as %s" % \
+                               (pid, curr_info['end_time']))
 
-        curr_info['start_time'] = start_time
+        match = self.js.scontrol_comp_time_re.search(out)
+        if match:
+            curr_info['comp_time'] = match.group(1)
+            self._logger.debug("comp_time for job %s detected as %s" % \
+                               (pid, curr_info['comp_time']))
 
-        self._logger.debug("start_time for job %s detected as %s" % \
-                               (pid, start_time))
-
-        # determine the job's end time
-        end_time_search = self.js.scontrol_end_time_re.search(out)
-        end_time=None
-        if end_time_search:
-            end_time = end_time_search.group(0)
-
-        curr_info['end_time'] = end_time
-
-        self._logger.debug("end_time for job %s detected as %s" % \
-                               (pid, end_time))
-
-        # determine the job's execution hosts
-        exec_hosts_search = self.js.scontrol_exec_hosts_re.search(out)
-        exec_hosts=None
-        if exec_hosts_search:
-            exec_hosts = exec_hosts_search.group(0)
-
-        curr_info['exec_hosts'] = exec_hosts
-
-        self._logger.debug("exec_hosts for job %s detected as %s" % \
-                               (pid, exec_hosts))
-
-        # determine the job's comp time
-        comp_time_search = self.js.scontrol_comp_time_re.search(out)
-        comp_time=None
-        if comp_time_search:
-            comp_time = comp_time_search.group(0)
-
-        curr_info['comp_time'] = comp_time
-
-        self._logger.debug("comp_time for job %s detected as %s" % \
-                               (pid, comp_time))
+        match = self.js.scontrol_exec_hosts_re.search(out)
+        if match:
+            curr_info['exec_hosts'] = match.group(1)
+            self._logger.debug("exec_hosts for job %s detected as %s" % \
+                               (pid, curr_info['exec_hosts']))
 
         return curr_info
+
 
     def _job_get_state (self, job_id) :
         """ get the job state from the wrapper shell """
@@ -1033,15 +994,14 @@ class SLURMJob (saga.adaptors.cpi.job.Job):
             or self._state == saga.job.DONE:
             return self._state
 
-        rm, pid     = self._adaptor.parse_id (job_id)
-
-        #self.scontrol_jobstate_re = re.compile("""(?<=JobState=)[a-zA-Z]*""")
+        rm, pid = self._adaptor.parse_id (job_id)
 
         try:
             ret, out, _ = self.js.shell.run_sync('scontrol show job %s' % pid)
-            m = self.js.scontrol_jobstate_re.search(out)
-            if m:
-                slurm_state = m.group(0)
+            match       = self.js.scontrol_jobstate_re.search(out)
+
+            if match:
+                slurm_state = match.group(1)
             else:
                 # no jobstate found from scontrol
                 # the job may have finished a while back, use sacct to
