@@ -33,15 +33,23 @@ _config_options = [
     'documentation' : 'load adaptors which are marked as beta (i.e. not released).',
     'env_variable'  : None
     },
-    # FIXME: is there a better place to register util level options?  We have
-    # only one though, at this point...
+    # FIXME: is there a better place to register util level options?
     { 
     'category'      : 'saga.utils.pty',
     'name'          : 'prompt_pattern', 
     'type'          : str, 
-    'default'       : "[\$#%>\]]\s*$",
+    'default'       : '[\$#%>\]]\s*$',
     'documentation' : 'use this regex to detect shell prompts',
     'env_variable'  : None
+    },
+    { 
+    'category'      : 'saga.utils.pty',
+    'name'          : 'ssh_copy_mode', 
+    'type'          : str, 
+    'default'       : 'sftp',
+    'valid_options' : ['sftp', 'scp', 'rsync+ssh', 'rsync'],
+    'documentation' : 'use the specified protocol for pty level file transfer',
+    'env_variable'  : 'SAGA_PTY_SSH_COPYMODE'
     }
 ]
 
