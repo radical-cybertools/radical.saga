@@ -99,8 +99,18 @@ class _DefaultSession (object) :
         # default contexts.
 
         self.contexts       = _ContextList ()
-        self._lease_manager = ru.LeaseManager ()
         self._logger        = rul.getLogger ('saga', 'DefaultSession')
+
+        # FIXME: at the moment, the lease manager is owned by the session.  
+        # Howevwer, the pty layer is the main user of the lease manager,
+        # and we thus keep the lease manager options in the pty subsection.  
+        # So here we are, in the session, evaluating the pty config options...
+        config = saga.engine.engine.Engine ().get_config ('saga.utils.pty')
+        self._lease_manager = ru.LeaseManager (
+                max_pool_size = config['connection_pool_size'].get_value (),
+                max_pool_wait = config['connection_pool_wait'].get_value (),
+                max_obj_age   = config['connection_pool_ttl'].get_value ()
+                )
 
         _engine = saga.engine.engine.Engine ()
 
@@ -133,6 +143,7 @@ class _DefaultSession (object) :
                         self._logger.debug   ("skip default context [%-20s] : %s : %s" \
                                          %   (info['adaptor_name'], default_ctx, e))
                         continue
+
 
 
 # ------------------------------------------------------------------------------
@@ -210,7 +221,17 @@ class Session (saga.base.SimpleBase) :
             self._lease_manager = default_session._lease_manager
         else :
             self.contexts       = _ContextList (session=self)
-            self._lease_manager = ru.LeaseManager ()
+
+            # FIXME: at the moment, the lease manager is owned by the session.  
+            # Howevwer, the pty layer is the main user of the lease manager,
+            # and we thus keep the lease manager options in the pty subsection.  
+            # So here we are, in the session, evaluating the pty config options...
+            config = self.get_config ('saga.utils.pty')
+            self._lease_manager = ru.LeaseManager (
+                    max_pool_size = config['connection_pool_size'].get_value (),
+                    max_pool_wait = config['connection_pool_wait'].get_value (),
+                    max_obj_age   = config['connection_pool_ttl'].get_value ()
+                    )
 
 
 
@@ -277,7 +298,7 @@ class Session (saga.base.SimpleBase) :
 
     # ----------------------------------------------------------------
     #
-    @rus.takes   ('Session')
+    @rus.takes   ('DefaultSession')
     @rus.returns (dict)
     def get_config (self, section="") :
         """
@@ -287,8 +308,5 @@ class Session (saga.base.SimpleBase) :
         """
 
         return saga.engine.engine.Engine ().get_config (section)
-
-
-
 
 

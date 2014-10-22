@@ -50,6 +50,30 @@ _config_options = [
     'valid_options' : ['sftp', 'scp', 'rsync+ssh', 'rsync'],
     'documentation' : 'use the specified protocol for pty level file transfer',
     'env_variable'  : 'SAGA_PTY_SSH_COPYMODE'
+    },
+    { 
+    'category'      : 'saga.utils.pty',
+    'name'          : 'connection_pool_ttl', 
+    'type'          : int, 
+    'default'       : 10*60,
+    'documentation' : 'minimum time a connection is kept alive in a connection pool',
+    'env_variable'  : 'SAGA_PTY_CONN_POOL_TTL'
+    },
+    { 
+    'category'      : 'saga.utils.pty',
+    'name'          : 'connection_pool_size', 
+    'type'          : int, 
+    'default'       : 10,
+    'documentation' : 'maximum number of connections kept in a connection pool',
+    'env_variable'  : 'SAGA_PTY_CONN_POOL_SIZE'
+    },
+    { 
+    'category'      : 'saga.utils.pty',
+    'name'          : 'connection_pool_wait', 
+    'type'          : int, 
+    'default'       : 10*60,
+    'documentation' : 'maximum number of seconds to wait for any connection in the connection pool to become available before raising a timeout error',
+    'env_variable'  : 'SAGA_PTY_CONN_POOL_WAIT'
     }
 ]
 
