@@ -298,7 +298,7 @@ class Session (saga.base.SimpleBase) :
 
     # ----------------------------------------------------------------
     #
-    @rus.takes   ('DefaultSession')
+    @rus.takes   ('Session')
     @rus.returns (dict)
     def get_config (self, section="") :
         """
