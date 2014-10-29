@@ -229,7 +229,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
 
         if  sumisc.url_is_compatible (cwdurl, tgt) :
 
-            ret, out, _ = self._command (" mkdir -p '%s'\n" % (dirname))
+            ret, out, _ = self._command (" mkdir -p '%s'\n" % (dirname), make_location=True)
             if  ret != 0 :
                 raise saga.NoSuccess ("failed at mkdir '%s': (%s) (%s)" \
                                    % (dirname, ret, out))
@@ -297,7 +297,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
 
     # ----------------------------------------------------------------
     #
-    def _command (self, command, location=None) :
+    def _command (self, command, location=None, make_location=False) :
 
         if  not location :
             location = self.cwdurl
@@ -308,7 +308,13 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
         with self.lm.lease (lease_tgt, self.shell_creator, location) \
              as cmd_shell :
 
-            return cmd_shell.run_sync ("cd %s && %s" % (location.path, command))
+            if  make_location :
+                pre_cmd = "mkdir -p %s &&" % location.path
+            else :
+                pre_cmd = ""
+             
+
+            return cmd_shell.run_sync ("%s cd %s && %s" % (pre_cmd, location.path, command))
 
 
     # ----------------------------------------------------------------
@@ -745,9 +751,9 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
         options = ""
 
         if  flags & saga.filesystem.CREATE_PARENTS : 
-            options += "-p"
-
-        self._command (" mkdir %s '%s'" % (options, tgt.path))
+            self._command (" mkdir -p '%s'" % tgt.path, make_location=True)
+        else :
+            self._command (" mkdir '%s'" % tgt.path)
 
    
     # ----------------------------------------------------------------

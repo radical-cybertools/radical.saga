@@ -258,7 +258,7 @@ def test_jobid_viability ():
         # actual job
         os.system ('ps -ef | cut -c 8-20 | grep " %s " | cut -c 1-8 | grep -v " %s " | xargs kill' % (pid, pid))
 
-        assert (j.state == saga.job.FAILED), 'job.state: %s' % job.state
+        assert (j.state == saga.job.FAILED), 'job.state: %s' % j.state
 
 
     except saga.SagaException as se:
