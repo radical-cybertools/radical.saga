@@ -1,3 +1,17 @@
+Version 0.21 release 2014-10-29
+---------------------------------------------------------------------
+
+* For a list of bug fixes, see
+  https://github.com/radical-cybertools/saga-python/issues?q=is%3Aissue+is%3Aclosed+sort%3Aupdated-desc
+* For a list of open issues and known problems, see
+  https://github.com/radical-cybertools/saga-python/issues?q=is%3Aissue+is%3Aopen+
+
+* scattered bug fixes related to connection caching
+* configurable switch between scp and sftp
+* tweak timeouts on ssh channels
+* disable irods adaptor
+
+
 Version 0.19 release 2014-09-15
 ---------------------------------------------------------------------
 
