@@ -1,3 +1,10 @@
+Version 0.22 release 2014-11-03
+---------------------------------------------------------------------
+
+* Hotfix release fixing incompatbile sftp flag "-2"
+  See: https://github.com/radical-cybertools/saga-python/issues/397
+
+
 Version 0.21 release 2014-10-29
 ---------------------------------------------------------------------
 
