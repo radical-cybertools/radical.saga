@@ -302,7 +302,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
         with self.lm.lease (lease_tgt, self.shell_creator, location) \
              as cmd_shell :
 
-            if  make_location :
+            if  make_location and location.path :
                 pre_cmd = "mkdir -p %s &&" % location.path
             else :
                 pre_cmd = ""
