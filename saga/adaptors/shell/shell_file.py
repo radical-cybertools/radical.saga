@@ -749,9 +749,12 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
         options = ""
 
         if  flags & saga.filesystem.CREATE_PARENTS : 
-            self._command (" mkdir -p '%s'" % tgt.path, make_location=True)
+            ret, out, _ = self._command (" mkdir -p '%s'" % tgt.path, make_location=True)
         else :
-            self._command (" mkdir '%s'" % tgt.path)
+            ret, out, _ = self._command (" mkdir '%s'" % tgt.path)
+
+        if  ret != 0 :
+            raise saga.NoSuccess ("make_dir (%s) faild: %s" % tgt_in, out)
 
    
     # ----------------------------------------------------------------
