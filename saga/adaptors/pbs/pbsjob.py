@@ -242,11 +242,10 @@ def _pbscript_generator(url, logger, jd, ppn, pbs_version, is_cray=False, queue=
     if is_cray is not "":
         # Special cases for PBS/TORQUE on Cray. Different PBSes,
         # different flags. A complete nightmare...
-        #if 'PBSPro_10' in pbs_version:
-        #    logger.info("Using Cray XT (e.g. Hopper) specific '#PBS -l mppwidth=xx' flags (PBSPro_10).")
-        #    pbs_params += "#PBS -l mppwidth=%s \n" % jd.total_cpu_count
-        #el
-        if 'PBSPro_12' in pbs_version:
+        if 'PBSPro_10' in pbs_version:
+            logger.info("Using Cray XT (e.g. Hopper) specific '#PBS -l mppwidth=xx' flags (PBSPro_10).")
+            pbs_params += "#PBS -l mppwidth=%s \n" % jd.total_cpu_count
+        elif 'PBSPro_12' in pbs_version:
             logger.info("Using Cray XT (e.g. Archer) specific '#PBS -l select=xx' flags (PBSPro_12).")
             pbs_params += "#PBS -l select=%d\n" % nnodes
         elif '4.2.6' in pbs_version:
@@ -270,7 +269,7 @@ def _pbscript_generator(url, logger, jd, ppn, pbs_version, is_cray=False, queue=
         pbs_params += "#PBS -l select=%d\n" % (nnodes)
     else:
         # Default case, i.e, standard HPC cluster (non-Cray)
-        
+
         # If we want just a slice of one node
         if jd.total_cpu_count < ppn:
             ppn = jd.total_cpu_count
