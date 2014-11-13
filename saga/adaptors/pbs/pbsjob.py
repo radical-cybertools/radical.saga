@@ -731,17 +731,17 @@ grep -E -i '(job_state)|(exec_host)|(exit_status)|(ctime)|\
                     val = val.strip()  # beginning and the end of the string
 
                     if key == 'job_state':
-                        curr_info['state'] = _pbs_to_saga_jobstate(val)
+                        job_info['state'] = _pbs_to_saga_jobstate(val)
                     elif key == 'exec_host':
-                        curr_info['exec_hosts'] = val.split('+')  # format i73/7+i73/6+...
+                        job_info['exec_hosts'] = val.split('+')  # format i73/7+i73/6+...
                     elif key in ['exit_status','Exit_status']:
-                        curr_info['returncode'] = int(val)
+                        job_info['returncode'] = int(val)
                     elif key == 'ctime':
-                        curr_info['create_time'] = val
+                        job_info['create_time'] = val
                     elif key in ['start_time','stime']:
-                        curr_info['start_time'] = val
+                        job_info['start_time'] = val
                     elif key in ['comp_time','mtime']:
-                        curr_info['end_time'] = val
+                        job_info['end_time'] = val
 
             return job_info
 
