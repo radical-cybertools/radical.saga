@@ -181,6 +181,8 @@ _ADAPTOR_OPTIONS       = [
 #
 _ADAPTOR_CAPABILITIES  = {
     "jdes_attributes"  : [saga.job.EXECUTABLE,
+                          saga.job.PRE_EXEC,
+                          saga.job.POST_EXEC,
                           saga.job.ARGUMENTS,
                           saga.job.ENVIRONMENT,
                           saga.job.WORKING_DIRECTORY,
@@ -588,33 +590,40 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
     #
     def _jd2cmd (self, jd) :
 
-        exe = jd.executable
-        arg = ""
-        env = ""
-        cwd = ""
-        io  = ""
-
-        if  jd.attribute_exists (ARGUMENTS) :
-            for a in jd.arguments :
-                arg += "%s " % a
+        cmd = "true"
 
         if  jd.attribute_exists (ENVIRONMENT) :
             for e in jd.environment :
-                env += "export %s=%s; "  %  (e, jd.environment[e])
+                env += " && export %s=%s"  %  (e, jd.environment[e])
 
         if  jd.attribute_exists (WORKING_DIRECTORY) :
-            cwd = "mkdir -p %s && cd %s && " % (jd.working_directory, jd.working_directory)
+            cmd += " && mkdir -p %s && cd %s" % (jd.working_directory, jd.working_directory)
+
+        if  jd.attribute_exists (PRE_EXEC) :
+            for p in jd.pre_exec :
+                cmd += " && %s"  %  p
+
+        cmd += " && ("
+        cmd += " %s" % jd.executable
+
+        if  jd.attribute_exists (ARGUMENTS) :
+            for a in jd.arguments :
+                cmd += " %s" % a
+
+        cmd += " )"
 
         if  jd.attribute_exists (INPUT) :
-            io += "<%s " % jd.input
+            cmd += " <%s" % jd.input
 
         if  jd.attribute_exists (OUTPUT) :
-            io += "1>%s " % jd.output
+            cmd += " 1>%s" % jd.output
 
         if  jd.attribute_exists (ERROR) :
-            io += "2>%s " % jd.error
+            cmd += " 2>%s" % jd.error
 
-        cmd = "( %s%s( %s %s) %s)" % (env, cwd, exe, arg, io)
+        if  jd.attribute_exists (POST_EXEC) :
+            for p in jd.post_exec :
+                cmd += " && %s"  %  p
 
         return cmd
 
