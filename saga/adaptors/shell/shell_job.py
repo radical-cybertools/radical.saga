@@ -594,7 +594,7 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
 
         if  jd.attribute_exists (ENVIRONMENT) :
             for e in jd.environment :
-                env += " && export %s=%s"  %  (e, jd.environment[e])
+                cmd += " && export %s=%s"  %  (e, jd.environment[e])
 
         if  jd.attribute_exists (WORKING_DIRECTORY) :
             cmd += " && mkdir -p %s && cd %s" % (jd.working_directory, jd.working_directory)
@@ -695,6 +695,7 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
             raise saga.NoSuccess ("failed to get job stats for '%s': (%s)(%s)" \
                                % (id, ret, out))
 
+        # the filter removes also empty lines from stdout/stderr.  Oh well...
         lines = filter (None, out.split ("\n"))
         self._logger.debug (lines)
 
@@ -702,12 +703,44 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
             raise saga.NoSuccess ("failed to get valid job state for '%s' (%s)" % (id, lines))
 
         ret = {}
+        ret['STDOUT'] = ""
+        ret['STDERR'] = ""
+        in_stdout = False
+        in_stderr = False
+
         for line in lines :
-            if not ':' in line :
+
+            if  in_stdout :
+                if  'END_STDOUT' in line :
+                    in_stdout = False
+                else :
+                    ret['STDOUT'] += line
                 continue
 
-            key, val = line.split (":", 2)
-            ret[key.strip ().lower ()] = val.strip ()
+            if  in_stderr :
+                if  'END_STDERR' in line :
+                    in_stderr = False
+                else :
+                    ret['STDERR'] += line
+                continue
+
+            if ':' in line :
+                key, val = line.split (":", 2)
+                ret[key.strip ().lower ()] = val.strip ()
+                continue
+
+            if 'START_STDOUT' in line :
+                in_stdout = True
+                in_stderr = False
+                continue
+
+            if 'START_STDERR' in line :
+                in_stderr = True
+                in_stdout = False
+                continue
+
+            import pprint
+            pprint.pprint (ret)
 
         return ret
 

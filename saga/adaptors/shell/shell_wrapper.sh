@@ -457,6 +457,22 @@ cmd_stats () {
   STATE=`\grep -e ' $' "$DIR/state" | \tail -n 1 | \tr -d ' '`
   RETVAL="STATE : $STATE\n"
   RETVAL="$RETVAL\n`\cat $DIR/stats`\n"
+
+  # if state is FAILED, we also deliver the last couple of lines from stderr,
+  # for obvious reasons.  Oh heck, we always deliver it, that makes parsing
+  # simpler -- but we deliver more on errors
+  N=10
+  if test "$state" = "FAILED" 
+  then
+    N=100
+  fi
+  STDERR=`test -f "$DIR/err" && tail -$N "$DIR/err"`
+  RETVAL="$RETVAL\nSTART_STDERR\n$STDERR\nEND_STDERR\n"
+
+  # same procedure for stdout -- this will not be returned to the end user, but
+  # is mostly for debugging
+  STDERR=`test -f "$DIR/err" && tail -$1 "$DIR/err"`
+  RETVAL="$RETVAL\nSTART_STDOUT\n$STDERR\nEND_STDOUT\n"
 }
 
 
