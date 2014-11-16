@@ -982,6 +982,9 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
             self.cwdurl      = saga.Url (url) # deep copy
             self.cwdurl.path = self.cwd
 
+            if  not self.flags :
+                self.flags = 0
+
 
         def _shell_creator (url) :
             return sups.PTYShell (url, self.session, self._logger)

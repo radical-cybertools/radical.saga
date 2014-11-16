@@ -12,12 +12,11 @@ def my_cb (a, b, c) :
     return True
 
 try :
-    c = saga.Context ('ssh')
-    c.user_key  = '/home/merzky/.ssh/id_rsa_test'
+    c = saga.Context ('UserPass')
     c.user_id   = 'tester'
     c.user_pass = 'testtest'
 
-    s = saga.Session (default=True)
+    s = saga.Session (default=False)
   # s.add_context (c)
 
 
@@ -27,7 +26,7 @@ try :
   
     jd = saga.job.Description ()
     jd.executable = '/bin/echo'
-    jd.arguments  = ['hello world; date ; sleep 3']
+    jd.arguments  = ['hello world; date ; sleep 3; date -a']
  #  jd.output     = "/tmp/out"
  #  jd.error      = "/tmp/err"
   
@@ -49,6 +48,9 @@ try :
 
     print "stdout: %s" % j.get_stdout_string ()
     print "stderr: %s" % j.get_stderr_string ()
+
+    print 'exc: %s' % j.get_exception()
+    j.re_raise ()
 
     # print "list : %s" % js.list ()
     # for id in js.list () :
