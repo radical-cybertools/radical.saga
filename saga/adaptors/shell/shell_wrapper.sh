@@ -466,12 +466,12 @@ cmd_stats () {
   then
     N=100
   fi
-  STDERR=`test -f "$DIR/err" && tail -$N "$DIR/err"`
+  STDERR=`test -f "$DIR/err" && \tail -n $N "$DIR/err"`
   RETVAL="$RETVAL\nSTART_STDERR\n$STDERR\nEND_STDERR\n"
 
   # same procedure for stdout -- this will not be returned to the end user, but
   # is mostly for debugging
-  STDERR=`test -f "$DIR/err" && tail -$1 "$DIR/err"`
+  STDERR=`test -f "$DIR/err" && \tail -n $N "$DIR/err"`
   RETVAL="$RETVAL\nSTART_STDOUT\n$STDERR\nEND_STDOUT\n"
 }
 
@@ -660,7 +660,7 @@ cmd_stdout () {
   verify_out $1 || return
 
   DIR="$BASE/$1"
-  RETVAL=`cat "$DIR/out" | od -t x1 -A n #| cut -c 2- | tr -d ' \n'`
+  RETVAL=`cat "$DIR/out" | od -t x1 -A n | cut -c 2- | tr -d ' \n'`
 }
 
 
@@ -672,7 +672,7 @@ cmd_stderr () {
   verify_err $1 || return
 
   DIR="$BASE/$1"
-  RETVAL=`cat "$DIR/err" | od -t x1 -A n #| cut -c 2- | tr -d ' \n'`
+  RETVAL=`cat "$DIR/err" | od -t x1 -A n | cut -c 2- | tr -d ' \n'`
 }
 
 

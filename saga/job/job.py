@@ -346,11 +346,11 @@ class Job (sb.Base, st.Task, sasync.Async) :
         return self._adaptor.signal (signum, ttype=ttype)
 
 
-    id          = property (get_id)           # string
-    description = property (get_description)  # Description
-   #stdin       = property (get_stdin)        # File
-    stdout      = property (get_stdout)       # File
-    stderr      = property (get_stderr)       # File
+    id          = property (get_id)            # string
+    description = property (get_description)   # Description
+   #stdin       = property (get_stdin)         # File
+    stdout      = property (get_stdout_string) # string
+    stderr      = property (get_stderr_string) # string
 
 
     #-----------------------------------------------------------------

@@ -725,7 +725,7 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
                 continue
 
             if ':' in line :
-                key, val = line.split (":", 2)
+                key, val = line.split (":", 1)
                 ret[key.strip ().lower ()] = val.strip ()
                 continue
 
