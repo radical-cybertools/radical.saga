@@ -309,6 +309,8 @@ class SagaException (Exception) :
         return self._traceback
 
 
+    # --------------------------------------------------------------------------
+    #
     message        = property (get_message)         # string
     object         = property (get_object)          # object type
     type           = property (get_type)            # exception type
