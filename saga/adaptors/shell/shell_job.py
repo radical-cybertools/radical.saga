@@ -969,6 +969,9 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
         messages, assigning job IDs etc.
         """
 
+        # FIXME: this just assumes that all tasks are job creation tasks --
+        #        which is not necessarily true...
+
         self._logger.debug ("container run: %s"  %  str(jobs))
 
         bulk = "BULK\n"
@@ -1038,13 +1041,28 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
     @SYNC_CALL
     def container_wait (self, jobs, mode, timeout) :
 
+        # FIXME: this just assumes that all tasks are job wait tasks --
+        #        which is not necessarily true...
+        # FIXME: we ignore the job wait mode (ALL/ANY), and always wait for all
+        #        jobs...
+
         self._logger.debug ("container wait: %s"  %  str(jobs))
 
         bulk = "BULK\n"
 
         for job in jobs :
-            rm, pid = self._adaptor.parse_id (job.id)
-            bulk   += "WAIT %s\n" % pid
+            print type (job)
+            print type (job._adaptor)
+
+            if  not isinstance (job._adaptor, ShellJob) :
+                # this is not a job created by this adaptor.  Its probably
+                # a task for a job operation where the job is owned by this
+                # adaptor (FIXME: check).  Fall back to non-container wait.
+                # FIXME: timeout handling is wrong
+                job.wait (timeout)
+            else :
+                rm, pid = self._adaptor.parse_id (job.id)
+                bulk   += "WAIT %s\n" % pid
 
         bulk += "BULK_RUN\n"
         self.shell.run_async (bulk)
@@ -1154,6 +1172,10 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
         states = []
 
         for job in jobs :
+
+            print job
+            job._attributes_dump ()
+
             rm, pid = self._adaptor.parse_id (job.id)
             bulk   += "STATE %s\n" % pid
 
