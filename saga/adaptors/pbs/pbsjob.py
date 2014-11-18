@@ -133,9 +133,10 @@ def _pbs_to_saga_jobstate(pbsjs):
 def _pbscript_generator(url, logger, jd, ppn, pbs_version, is_cray=False, queue=None, ):
     """ generates a PBS script from a SAGA job description
     """
-    pbs_params = str()
+    pbs_params  = str()
     exec_n_args = str()
 
+    exec_n_args += 'export SAGA_PPN=%d\n' % ppn
     if jd.executable is not None:
         exec_n_args += "%s " % (jd.executable)
     if jd.arguments is not None:
