@@ -1068,7 +1068,7 @@ class PTYShell (object) :
                 cp_proc = supp.PTYProcess (s_cmd)
                 cp_proc.wait ()
                 if  cp_proc.exit_code :
-                    raise ptye.translate_exception (se.NoSuccess ("file copy failed: %s" % out))
+                    raise ptye.translate_exception (se.NoSuccess ("file copy failed: exit code %s" % cp_proc.exit_code))
 
                 return list()
 
