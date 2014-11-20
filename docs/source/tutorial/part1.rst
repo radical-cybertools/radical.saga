@@ -65,12 +65,6 @@ The latest saga-python module is available via the `Python Package Index <https:
 
    pip install saga-python
 
-You will see some downloading and unpacking action and if everything worked ok, the last two lines should look like this:
-
-.. code-block:: none
-
-   Finished processing dependencies for saga-python==0.9.3
-
 To make sure that your installation works, run the following command to check if
 the saga-python module can be imported by the interpreter (the output of the
 command below should be version number of the saga-python module):

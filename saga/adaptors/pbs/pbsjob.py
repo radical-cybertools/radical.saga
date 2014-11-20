@@ -133,9 +133,10 @@ def _pbs_to_saga_jobstate(pbsjs):
 def _pbscript_generator(url, logger, jd, ppn, pbs_version, is_cray=False, queue=None, ):
     """ generates a PBS script from a SAGA job description
     """
-    pbs_params = str()
+    pbs_params  = str()
     exec_n_args = str()
 
+    exec_n_args += 'export SAGA_PPN=%d\n' % ppn
     if jd.executable is not None:
         exec_n_args += "%s " % (jd.executable)
     if jd.arguments is not None:
@@ -145,7 +146,7 @@ def _pbscript_generator(url, logger, jd, ppn, pbs_version, is_cray=False, queue=
     if jd.name is not None:
         pbs_params += "#PBS -N %s \n" % jd.name
 
-    if is_cray is "":
+    if (is_cray is "") or not('Version: 4.2.7' in pbs_version):
         # qsub on Cray systems complains about the -V option:
         # Warning:
         # Your job uses the -V option, which requests that all of your
@@ -248,9 +249,12 @@ def _pbscript_generator(url, logger, jd, ppn, pbs_version, is_cray=False, queue=
         elif 'PBSPro_12' in pbs_version:
             logger.info("Using Cray XT (e.g. Archer) specific '#PBS -l select=xx' flags (PBSPro_12).")
             pbs_params += "#PBS -l select=%d\n" % nnodes
-        elif '4.2.5-snap.201308291703' in pbs_version:
+        elif '4.2.6' in pbs_version:
             logger.info("Using Titan (Cray XP) specific '#PBS -l nodes=xx'")
             pbs_params += "#PBS -l nodes=%d\n" % nnodes
+        elif '4.2.7' in pbs_version:
+            logger.info("Using Cray XT @ NERSC (e.g. Edison) specific '#PBS -l mppwidth=xx' flags (PBSPro_10).")
+            pbs_params += "#PBS -l mppwidth=%s \n" % jd.total_cpu_count
         else:
             logger.info("Using Cray XT (e.g. Kraken, Jaguar) specific '#PBS -l size=xx' flags (TORQUE).")
             pbs_params += "#PBS -l size=%s\n" % jd.total_cpu_count
@@ -258,12 +262,19 @@ def _pbscript_generator(url, logger, jd, ppn, pbs_version, is_cray=False, queue=
         # e.g. Blacklight
         # TODO: The more we add, the more it screams for a refactoring
         pbs_params += "#PBS -l ncpus=%d\n" % tcc
+    elif '4.2.7' in pbs_version:
+        logger.info("Using Cray XT @ NERSC (e.g. Hopper) specific '#PBS -l mppwidth=xx' flags (PBSPro_10).")
+        pbs_params += "#PBS -l mppwidth=%s \n" % jd.total_cpu_count
+    elif  'PBSPro_12' in pbs_version:
+        logger.info("Using PBSPro 12 notation '#PBS -l select=XX' ")
+        pbs_params += "#PBS -l select=%d\n" % (nnodes)
     else:
         # Default case, i.e, standard HPC cluster (non-Cray)
 
         # If we want just a slice of one node
         if jd.total_cpu_count < ppn:
             ppn = jd.total_cpu_count
+
         pbs_params += "#PBS -l nodes=%d:ppn=%d \n" % (nnodes, ppn)
 
     # escape all double quotes and dollarsigns, otherwise 'echo |'
@@ -693,8 +704,8 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
             qstat_flag ='-f1'
 
         ret, out, _ = self.shell.run_sync("unset GREP_OPTIONS; %s %s %s | \
-            grep -E '(job_state)|(exec_host)|(exit_status)|(ctime)|\
-            (start_time)|(comp_time)'" % (self._commands['qstat']['path'], qstat_flag, pid))
+grep -E -i '(job_state)|(exec_host)|(exit_status)|(ctime)|\
+(start_time)|(comp_time)|(stime)|(qtime)|(mtime)'" % (self._commands['qstat']['path'], qstat_flag, pid))
 
         if ret != 0:
             message = "Couldn't reconnect to job '%s': %s" % (job_id, out)
@@ -723,14 +734,14 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
                     if key == 'job_state':
                         job_info['state'] = _pbs_to_saga_jobstate(val)
                     elif key == 'exec_host':
-                        job_info['exec_hosts'] = val.split('+')
-                    elif key == 'exit_status':
+                        job_info['exec_hosts'] = val.split('+')  # format i73/7+i73/6+...
+                    elif key in ['exit_status','Exit_status']:
                         job_info['returncode'] = int(val)
                     elif key == 'ctime':
                         job_info['create_time'] = val
-                    elif key == 'start_time':
+                    elif key in ['start_time','stime']:
                         job_info['start_time'] = val
-                    elif key == 'comp_time':
+                    elif key in ['comp_time','mtime']:
                         job_info['end_time'] = val
 
             return job_info
@@ -776,9 +787,10 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
             qstat_flag = '-fx'
         else:
             qstat_flag ='-f1'
+            
         ret, out, _ = self.shell.run_sync("unset GREP_OPTIONS; %s %s %s | \
-            grep -E '(job_state)|(exec_host)|(exit_status)|(ctime)|(start_time)\
-|(comp_time)'" % (self._commands['qstat']['path'], qstat_flag, pid))
+grep -E -i '(job_state)|(exec_host)|(exit_status)|(ctime)|(start_time)\
+|(comp_time)|(mtime)|(stime)|(qtime)|(etime)'" % (self._commands['qstat']['path'], qstat_flag, pid))
 
         if ret != 0:
             if ("Unknown Job Id" in out):
@@ -813,13 +825,13 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
                         curr_info['state'] = _pbs_to_saga_jobstate(val)
                     elif key == 'exec_host':
                         curr_info['exec_hosts'] = val.split('+')  # format i73/7+i73/6+...
-                    elif key == 'exit_status':
+                    elif key in ['exit_status','Exit_status']:
                         curr_info['returncode'] = int(val)
                     elif key == 'ctime':
                         curr_info['create_time'] = val
-                    elif key == 'start_time':
+                    elif key in ['start_time','stime']:
                         curr_info['start_time'] = val
-                    elif key == 'comp_time':
+                    elif key in ['comp_time','mtime']:
                         curr_info['end_time'] = val
 
         # return the new job info dict
@@ -1192,4 +1204,5 @@ class PBSJob (saga.adaptors.cpi.job.Job):
         """ implements saga.adaptors.cpi.job.Job.get_execution_hosts()
         """
         return self.jd
+
 

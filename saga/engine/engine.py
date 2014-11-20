@@ -33,15 +33,47 @@ _config_options = [
     'documentation' : 'load adaptors which are marked as beta (i.e. not released).',
     'env_variable'  : None
     },
-    # FIXME: is there a better place to register util level options?  We have
-    # only one though, at this point...
+    # FIXME: is there a better place to register util level options?
     { 
     'category'      : 'saga.utils.pty',
     'name'          : 'prompt_pattern', 
     'type'          : str, 
-    'default'       : "[\$#%>\]]\s*$",
+    'default'       : '[\$#%>\]]\s*$',
     'documentation' : 'use this regex to detect shell prompts',
     'env_variable'  : None
+    },
+    { 
+    'category'      : 'saga.utils.pty',
+    'name'          : 'ssh_copy_mode', 
+    'type'          : str, 
+    'default'       : 'sftp',
+    'valid_options' : ['sftp', 'scp', 'rsync+ssh', 'rsync'],
+    'documentation' : 'use the specified protocol for pty level file transfer',
+    'env_variable'  : 'SAGA_PTY_SSH_COPYMODE'
+    },
+    { 
+    'category'      : 'saga.utils.pty',
+    'name'          : 'connection_pool_ttl', 
+    'type'          : int, 
+    'default'       : 10*60,
+    'documentation' : 'minimum time a connection is kept alive in a connection pool',
+    'env_variable'  : 'SAGA_PTY_CONN_POOL_TTL'
+    },
+    { 
+    'category'      : 'saga.utils.pty',
+    'name'          : 'connection_pool_size', 
+    'type'          : int, 
+    'default'       : 10,
+    'documentation' : 'maximum number of connections kept in a connection pool',
+    'env_variable'  : 'SAGA_PTY_CONN_POOL_SIZE'
+    },
+    { 
+    'category'      : 'saga.utils.pty',
+    'name'          : 'connection_pool_wait', 
+    'type'          : int, 
+    'default'       : 10*60,
+    'documentation' : 'maximum number of seconds to wait for any connection in the connection pool to become available before raising a timeout error',
+    'env_variable'  : 'SAGA_PTY_CONN_POOL_WAIT'
     }
 ]
 

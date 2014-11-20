@@ -69,7 +69,7 @@ EXIT_VAL=1
 # shell if it is idle for longer than TIMEOUT seconds
 #
 \trap cleanup_handler QUIT TERM EXIT
-# trap idle_handler ALRM
+# \trap idle_handler ALRM
 \trap '' ALRM
 
 cleanup_handler (){
@@ -267,8 +267,6 @@ create_monitor () {
 
   # the real job ID (not exposed to user)
   RPID=\$!
-
-  echo \$RPID >> /tmp/l
 
   \\printf "RUNNING \\n" >> "\$DIR/state" # declare as running
   \\printf "\$RPID\\n"    > "\$DIR/rpid"  # real process  pid
@@ -749,24 +747,11 @@ cmd_quit () {
 #
 listen() {
 
-  # report our own pid
-  if ! test -z $1; then
-    \printf "PID: $$\n" # FIXME: this should be $1
-  fi
-
-  # interprete new base dir
-  if ! test -z $2; then
-    BASE="$2"
-    NOTIFICATIONS="$BASE/notifications"
-  fi
-
   # make sure the base has a monitor script....
   create_monitor
 
-
   # we need our home base cleaned
   test -d "$BASE" || \mkdir -p  "$BASE"  || exit 1
-  \touch  "$BASE/bulk.$$"
   \rm  -f "$BASE/bulk.$$"
   \touch  "$BASE/bulk.$$"
 
@@ -777,7 +762,7 @@ listen() {
   fi
 
   # make sure we get killed when idle
-  idle_checker $$ 1>/dev/null 2>/dev/null 3</dev/null &
+  ( idle_checker $$ 1>/dev/null 2>/dev/null 3</dev/null & ) &
   IDLE=$!
 
   # create fifo to communicate with the monitors
@@ -900,6 +885,9 @@ listen() {
 \stty -echo   2> /dev/null
 \stty -echonl 2> /dev/null
 
+# confirm existence
+\printf "PID: $$\n"
+
 # FIXME: this leads to timing issues -- disable for benchmarking
 if test "$PURGE_ON_START" = "True"
 then
@@ -907,7 +895,7 @@ then
   cmd_purge_tmps
 fi
 
-listen $*
+listen
 #
 # --------------------------------------------------------------------
 

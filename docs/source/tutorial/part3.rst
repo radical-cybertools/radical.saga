@@ -50,7 +50,7 @@ Alternatively, if you have access to a PBS cluster, use a ``pbs+ssh://...`` URL:
 
 .. code-block:: python
   
-    js = saga.job.Service("pbs+ssh://remote.hpchost.net", session=ses)
+    js = saga.job.Service("pbs+ssh://remote.hpchost.net", session=session)
 
 There are more URL options. Have a look at the :ref:`chapter_adaptors` section
 for a complete list. If you submitting your job to a PBS cluster (pbs+ssh://), 
