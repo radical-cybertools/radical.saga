@@ -703,9 +703,10 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
         else:
             qstat_flag ='-f1'
 
-        ret, out, _ = self.shell.run_sync("unset GREP_OPTIONS; %s %s %s | \
-grep -E -i '(job_state)|(exec_host)|(exit_status)|(ctime)|\
-(start_time)|(comp_time)|(stime)|(qtime)|(mtime)'" % (self._commands['qstat']['path'], qstat_flag, pid))
+        ret, out, _ = self.shell.run_sync("unset GREP_OPTIONS; %s %s %s | "\
+                "grep -E -i '(job_state)|(exec_host)|(exit_status)|(ctime)|"\
+                "(start_time)|(comp_time)|(stime)|(qtime)|(mtime)'" \
+              % (self._commands['qstat']['path'], qstat_flag, pid))
 
         if ret != 0:
             message = "Couldn't reconnect to job '%s': %s" % (job_id, out)
@@ -788,9 +789,10 @@ grep -E -i '(job_state)|(exec_host)|(exit_status)|(ctime)|\
         else:
             qstat_flag ='-f1'
             
-        ret, out, _ = self.shell.run_sync("unset GREP_OPTIONS; %s %s %s | \
-grep -E -i '(job_state)|(exec_host)|(exit_status)|(ctime)|(start_time)\
-|(comp_time)|(mtime)|(stime)|(qtime)|(etime)'" % (self._commands['qstat']['path'], qstat_flag, pid))
+        ret, out, _ = self.shell.run_sync("unset GREP_OPTIONS; %s %s %s | "  \
+                "grep -E -i '(job_state)|(exec_host)|(exit_status)|(ctime)|" \
+                "(start_time)|(comp_time)|(mtime)|(stime)|(qtime)|(etime)'"  \
+                % (self._commands['qstat']['path'], qstat_flag, pid))
 
         if ret != 0:
             if ("Unknown Job Id" in out):
