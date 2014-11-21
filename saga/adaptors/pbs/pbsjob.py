@@ -692,9 +692,10 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
         else:
             qstat_flag ='-f1'
 
-        ret, out, _ = self.shell.run_sync("unset GREP_OPTIONS; %s %s %s | \
-            grep -E '(job_state)|(exec_host)|(exit_status)|(ctime)|\
-            (start_time)|(comp_time)'" % (self._commands['qstat']['path'], qstat_flag, pid))
+        ret, out, _ = self.shell.run_sync("unset GREP_OPTIONS; %s %s %s | "\
+                "grep -E -i '(job_state)|(exec_host)|(exit_status)|(ctime)|"\
+                "(start_time)|(comp_time)|(stime)|(qtime)|(mtime)'" \
+              % (self._commands['qstat']['path'], qstat_flag, pid))
 
         if ret != 0:
             message = "Couldn't reconnect to job '%s': %s" % (job_id, out)
@@ -776,9 +777,11 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
             qstat_flag = '-fx'
         else:
             qstat_flag ='-f1'
-        ret, out, _ = self.shell.run_sync("unset GREP_OPTIONS; %s %s %s | \
-            grep -E '(job_state)|(exec_host)|(exit_status)|(ctime)|(start_time)\
-|(comp_time)'" % (self._commands['qstat']['path'], qstat_flag, pid))
+            
+        ret, out, _ = self.shell.run_sync("unset GREP_OPTIONS; %s %s %s | "  \
+                "grep -E -i '(job_state)|(exec_host)|(exit_status)|(ctime)|" \
+                "(start_time)|(comp_time)|(mtime)|(stime)|(qtime)|(etime)'"  \
+                % (self._commands['qstat']['path'], qstat_flag, pid))
 
         if ret != 0:
             if ("Unknown Job Id" in out):
@@ -787,7 +790,9 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
                 # or FAILED. the only thing we can do is set it to 'DONE'
                 curr_info['gone'] = True
                 # we can also set the end time
-                self._logger.warning("Previously running job has disappeared. This probably means that the backend doesn't store informations about finished jobs. Setting state to 'DONE'.")
+                self._logger.warning("Previously running job has disappeared. "
+                        "This probably means that the backend doesn't store "
+                        "informations about finished jobs. Setting state to 'DONE'.")
 
                 if prev_info['state'] in [saga.job.RUNNING, saga.job.PENDING]:
                     curr_info['state'] = saga.job.DONE
