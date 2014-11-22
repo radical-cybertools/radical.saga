@@ -319,15 +319,19 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
         # to the initial (or later current) working directory.
 
         cmd = ""
+        mkl = False    # make location on command execution
 
         if  self.flags & saga.filesystem.CREATE_PARENTS :
             cmd = " mkdir -p '%s' ;  cd '%s'" % (self.url.path, self.url.path)
+            mkl = True
         elif self.flags & saga.filesystem.CREATE :
             cmd = " mkdir    '%s' ;  cd '%s'" % (self.url.path, self.url.path)
+            mkl = False
         else :
             cmd = " test -d  '%s' && cd '%s'" % (self.url.path, self.url.path)
+            mkl = False
 
-        ret, out, _ = self._command (cmd)
+        ret, out, _ = self._command (cmd, make_location=mkl)
 
         if  ret != 0 :
             raise saga.BadParameter ("invalid dir '%s': %s" % (self.url.path, out))
