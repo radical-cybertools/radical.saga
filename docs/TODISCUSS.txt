@@ -1,3 +1,4 @@
+
 job.Decription
   * remove 'Interactive'
   
@@ -23,3 +24,5 @@ Adaptors need to document:
 
   * which jd attributes are supported and how they map to the backend
   * if / which metrics are supported
+
+
