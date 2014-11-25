@@ -729,21 +729,26 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
             for line in results:
                 if len(line.split('=')) == 2:
                     key, val = line.split('=')
-                    key = key.strip()  # strip() removes whitespaces at the
-                    val = val.strip()  # beginning and the end of the string
+                    key = key.strip().lower()
+                    val = val.strip()
 
-                    if key == 'job_state':
-                        job_info['state'] = _pbs_to_saga_jobstate(val)
-                    elif key == 'exec_host':
-                        job_info['exec_hosts'] = val.split('+')  # format i73/7+i73/6+...
-                    elif key in ['exit_status','Exit_status']:
-                        job_info['returncode'] = int(val)
-                    elif key == 'ctime':
-                        job_info['create_time'] = val
+                    if key in ['job_state']:
+                        curr_info['state'] = _pbs_to_saga_jobstate(val)
+
+                    elif key in ['exec_host']:
+                        curr_info['exec_hosts'] = val.split('+')  # format i73/7+i73/6+...
+
+                    elif key in ['exit_status']:
+                        curr_info['returncode'] = int(val)
+
+                    elif key in ['qtime', 'ctime']:
+                        curr_info['create_time'] = val
+
                     elif key in ['start_time','stime']:
-                        job_info['start_time'] = val
-                    elif key in ['comp_time','mtime']:
-                        job_info['end_time'] = val
+                        curr_info['start_time'] = val
+
+                    elif key in ['etime', 'comp_time','mtime']:
+                        curr_info['end_time'] = val
 
             return job_info
 
@@ -820,20 +825,25 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
             for result in results:
                 if len(result.split('=')) == 2:
                     key, val = result.split('=')
-                    key = key.strip()  # strip() removes whitespaces at the
-                    val = val.strip()  # beginning and the end of the string
+                    key = key.strip().lower()
+                    val = val.strip()
 
-                    if key == 'job_state':
+                    if key in ['job_state']:
                         curr_info['state'] = _pbs_to_saga_jobstate(val)
-                    elif key == 'exec_host':
+
+                    elif key in ['exec_host']:
                         curr_info['exec_hosts'] = val.split('+')  # format i73/7+i73/6+...
-                    elif key in ['exit_status','Exit_status']:
+
+                    elif key in ['exit_status']:
                         curr_info['returncode'] = int(val)
-                    elif key == 'ctime':
+
+                    elif key in ['qtime', 'ctime']:
                         curr_info['create_time'] = val
+
                     elif key in ['start_time','stime']:
                         curr_info['start_time'] = val
-                    elif key in ['comp_time','mtime']:
+
+                    elif key in ['etime', 'comp_time','mtime']:
                         curr_info['end_time'] = val
 
         # return the new job info dict
