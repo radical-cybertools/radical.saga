@@ -733,22 +733,22 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
                     val = val.strip()
 
                     if key in ['job_state']:
-                        curr_info['state'] = _pbs_to_saga_jobstate(val)
+                        job_info['state'] = _pbs_to_saga_jobstate(val)
 
                     elif key in ['exec_host']:
-                        curr_info['exec_hosts'] = val.split('+')  # format i73/7+i73/6+...
+                        job_info['exec_hosts'] = val.split('+')  # format i73/7+i73/6+...
 
                     elif key in ['exit_status']:
-                        curr_info['returncode'] = int(val)
+                        job_info['returncode'] = int(val)
 
                     elif key in ['qtime', 'ctime']:
-                        curr_info['create_time'] = val
+                        job_info['create_time'] = val
 
                     elif key in ['start_time','stime']:
-                        curr_info['start_time'] = val
+                        job_info['start_time'] = val
 
                     elif key in ['etime', 'comp_time','mtime']:
-                        curr_info['end_time'] = val
+                        job_info['end_time'] = val
 
             return job_info
 
@@ -775,16 +775,16 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
         # curr. info will contain the new job info collect. it starts off
         # as a copy of prev_info (don't use deepcopy because there is an API 
         # object in the dict -> recursion)
-        curr_info = dict()
-        curr_info['obj'        ] = prev_info.get ('obj'        )
-        curr_info['job_id'     ] = prev_info.get ('job_id'     )
-        curr_info['state'      ] = prev_info.get ('state'      )
-        curr_info['exec_hosts' ] = prev_info.get ('exec_hosts' )
-        curr_info['returncode' ] = prev_info.get ('returncode' )
-        curr_info['create_time'] = prev_info.get ('create_time')
-        curr_info['start_time' ] = prev_info.get ('start_time' )
-        curr_info['end_time'   ] = prev_info.get ('end_time'   )
-        curr_info['gone'       ] = prev_info.get ('gone'       )
+        job_info = dict()
+        job_info['obj'        ] = prev_info.get ('obj'        )
+        job_info['job_id'     ] = prev_info.get ('job_id'     )
+        job_info['state'      ] = prev_info.get ('state'      )
+        job_info['exec_hosts' ] = prev_info.get ('exec_hosts' )
+        job_info['returncode' ] = prev_info.get ('returncode' )
+        job_info['create_time'] = prev_info.get ('create_time')
+        job_info['start_time' ] = prev_info.get ('start_time' )
+        job_info['end_time'   ] = prev_info.get ('end_time'   )
+        job_info['gone'       ] = prev_info.get ('gone'       )
 
         rm, pid = self._adaptor.parse_id(job_id)
 
@@ -804,14 +804,14 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
                 # Let's see if the previous job state was runnig or pending. in
                 # that case, the job is gone now, which can either mean DONE,
                 # or FAILED. the only thing we can do is set it to 'DONE'
-                curr_info['gone'] = True
+                job_info['gone'] = True
                 # we can also set the end time
                 self._logger.warning("Previously running job has disappeared. This probably means that the backend doesn't store informations about finished jobs. Setting state to 'DONE'.")
 
                 if prev_info['state'] in [saga.job.RUNNING, saga.job.PENDING]:
-                    curr_info['state'] = saga.job.DONE
+                    job_info['state'] = saga.job.DONE
                 else:
-                    curr_info['state'] = saga.job.FAILED
+                    job_info['state'] = saga.job.FAILED
             else:
                 # something went wrong
                 message = "Error retrieving job info via 'qstat': %s" % out
@@ -829,25 +829,25 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
                     val = val.strip()
 
                     if key in ['job_state']:
-                        curr_info['state'] = _pbs_to_saga_jobstate(val)
+                        job_info['state'] = _pbs_to_saga_jobstate(val)
 
                     elif key in ['exec_host']:
-                        curr_info['exec_hosts'] = val.split('+')  # format i73/7+i73/6+...
+                        job_info['exec_hosts'] = val.split('+')  # format i73/7+i73/6+...
 
                     elif key in ['exit_status']:
-                        curr_info['returncode'] = int(val)
+                        job_info['returncode'] = int(val)
 
                     elif key in ['qtime', 'ctime']:
-                        curr_info['create_time'] = val
+                        job_info['create_time'] = val
 
                     elif key in ['start_time','stime']:
-                        curr_info['start_time'] = val
+                        job_info['start_time'] = val
 
                     elif key in ['etime', 'comp_time','mtime']:
-                        curr_info['end_time'] = val
+                        job_info['end_time'] = val
 
         # return the new job info dict
-        return curr_info
+        return job_info
 
     # ----------------------------------------------------------------
     #
