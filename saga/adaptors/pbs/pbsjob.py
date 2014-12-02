@@ -806,7 +806,9 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
                 # or FAILED. the only thing we can do is set it to 'DONE'
                 job_info['gone'] = True
                 # we can also set the end time
-                self._logger.warning("Previously running job has disappeared. This probably means that the backend doesn't store informations about finished jobs. Setting state to 'DONE'.")
+                self._logger.warning("Previously running job has disappeared. "
+                        "This probably means that the backend doesn't store "
+                        "informations about finished jobs. Setting state to 'DONE'.")
 
                 if prev_info['state'] in [saga.job.RUNNING, saga.job.PENDING]:
                     job_info['state'] = saga.job.DONE
