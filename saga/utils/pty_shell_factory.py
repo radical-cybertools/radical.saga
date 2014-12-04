@@ -60,8 +60,8 @@ _SCHEMAS = _SCHEMAS_SH + _SCHEMAS_SSH + _SCHEMAS_GSI
 # ssh master/slave flag magic # FIXME: make timeouts configurable
 # _SSH_FLAGS_MASTER = "-o ControlMaster=yes  -o ControlPath=%(ctrl)s -o TCPKeepAlive=yes -o ServerAliveInterval=10 -o ServerAliveCountMax=20 -2 "
 # _SSH_FLAGS_SLAVE  = "-o ControlMaster=no   -o ControlPath=%(ctrl)s -o TCPKeepAlive=yes -o ServerAliveInterval=10 -o ServerAliveCountMax=20 -2 "
-_SSH_FLAGS_MASTER   = "-o ControlMaster=auto -o ControlPath=%(ctrl)s -o TCPKeepAlive=no  -o ServerAliveInterval=10 -o ServerAliveCountMax=20"
-_SSH_FLAGS_SLAVE    = "-o ControlMaster=auto -o ControlPath=%(ctrl)s -o TCPKeepAlive=no  -o ServerAliveInterval=10 -o ServerAliveCountMax=20"
+_SSH_FLAGS_MASTER   = "-o ControlMaster=no   -o ControlPath=%(ctrl)s -o TCPKeepAlive=no  -o ServerAliveInterval=10 -o ServerAliveCountMax=20"
+_SSH_FLAGS_SLAVE    = "-o ControlMaster=no   -o ControlPath=%(ctrl)s -o TCPKeepAlive=no  -o ServerAliveInterval=10 -o ServerAliveCountMax=20"
 _SCP_FLAGS          = ""
 _SFTP_FLAGS         = ""
 
