@@ -458,10 +458,13 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
         :param jd: job descriptor
         :return: the llsubmit script
         """
-        loadl_params = str()
-        exec_string = str()
-        args_strings = str()
+        loadl_params = ''
+        exec_string = ''
+        args_strings = ''
 
+        # TODO: If the explicit exec does not work on all systems,
+        #       this needs to be turned into a configurable.
+        #       If it does work, we might just get rid of the conditional.
         explicit_exec = True
 
         if jd.executable is not None:
@@ -476,7 +479,7 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
             loadl_params += "#@ job_name = %s \n" % jd.name
 
         if jd.environment is not None:
-            variable_list = str()
+            variable_list = ''
             for key in jd.environment.keys():
                 variable_list += "%s=%s;" % (key, jd.environment[key])
             loadl_params += "#@ environment = %s \n" % variable_list
@@ -541,7 +544,6 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
 
             loadl_params += "\n"
 
-
         # Number of islands to allocate resources on, can specify a number, or a min/max
         if self.island_count:
             loadl_params += "#@ island_count = %s\n" % self.island_count
@@ -589,7 +591,7 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
             'echo "hostname: $HOSTNAME" >%s' % job_info_path,
             'echo "qsub_time: %s" >>%s' % (datetime.now().strftime("%a %b %d %H:%M:%S %Y"), job_info_path),
             'echo "start_time: $(LC_ALL=en_US.utf8 date \'+%%a %%b %%d %%H:%%M:%%S %%Y\')" >>%s' % job_info_path
-                ]
+        ]
 
         script_body += ['%s %s' % (exec_string, args_strings)]
 
