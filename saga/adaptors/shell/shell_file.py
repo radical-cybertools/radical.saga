@@ -266,12 +266,6 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
         self.valid       = False # will be set by initialize
         self.lm          = session._lease_manager
 
-        # cwd is where this directory is in, so the path w/o the last element
-        path             = self.url.path.rstrip ('/')
-        self.cwd         = sumisc.url_get_dirname (path)
-        self.cwdurl      = saga.Url (url) # deep copy
-        self.cwdurl.path = self.cwd
-
         def _shell_creator (url) :
             return sups.PTYShell (url, self.session, self._logger)
         self.shell_creator = _shell_creator
@@ -300,7 +294,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
     def _command (self, command, location=None, make_location=False) :
 
         if  not location :
-            location = self.cwdurl
+            location = self.url
         else :
             location = saga.Url (location)
 
@@ -546,8 +540,8 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
                     sumisc.url_is_compatible (cwdurl, tgt) :
 
                   # print "from local to remote: %s -> %s" % (src.path, tgt.path)
-                    lease_tgt = self._adaptor.get_lease_target (self.cwdurl)
-                    with self.lm.lease (lease_tgt, self.shell_creator, self.cwdurl) \
+                    lease_tgt = self._adaptor.get_lease_target (self.url)
+                    with self.lm.lease (lease_tgt, self.shell_creator, self.url) \
                         as copy_shell :
                         files_copied = copy_shell.stage_to_remote (src.path, tgt.path, rec_flag)
 
@@ -555,8 +549,8 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
                      sumisc.url_is_compatible (cwdurl, src) :
 
                   # print "from remote to local: %s -> %s" % (src.path, tgt.path)
-                    lease_tgt = self._adaptor.get_lease_target (self.cwdurl)
-                    with self.lm.lease (lease_tgt, self.shell_creator, self.cwdurl) \
+                    lease_tgt = self._adaptor.get_lease_target (self.url)
+                    with self.lm.lease (lease_tgt, self.shell_creator, self.url) \
                         as copy_shell :
                         files_copied = copy_shell.stage_from_remote (src.path, tgt.path, rec_flag)
 
