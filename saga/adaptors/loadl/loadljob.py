@@ -462,10 +462,18 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
         exec_string = ''
         args_strings = ''
 
-        # TODO: If the explicit exec does not work on all systems,
+        # LoadLeveler has two ways of specifying the executable and arguments.
+        # - Explicit: the executable and arguments are specified as parameters.
+        # - Implicit: the (remainder of the) job script is the task.
+        #
+        # Currently we don't know how this policy can be detected at runtime.
+        # We "hope" that providing both will however work in all cases.
+        #
+        # TODO: If the explicit_exec does not work on all systems,
         #       this needs to be turned into a configurable.
+        #       (Q: What should be the default?)
         #       If it does work, we might just get rid of the conditional.
-        explicit_exec = False
+        explicit_exec = True
 
         if jd.executable is not None:
             exec_string = "%s" % (jd.executable)
