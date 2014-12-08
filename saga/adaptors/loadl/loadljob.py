@@ -473,8 +473,6 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
             for arg in jd.arguments:
                 args_strings += "%s " % (arg)
 
-        loadl_params += "#@ job_type = %s\n" % self.job_type
-
         if jd.name is not None:
             loadl_params += "#@ job_name = %s \n" % jd.name
 
@@ -508,6 +506,8 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
             if jd.total_cpu_count > 1:
                 if self.job_type not in ['bluegene']: # 'bluegene' and total_tasks dont live well together
                     loadl_params += "#@ total_tasks = %s\n" % jd.total_cpu_count
+
+                loadl_params += "#@ job_type = %s\n" % self.job_type
 
         if self.job_type == 'bluegene':
             BGQ_CORES_PER_NODE = 16 # Only true for BG/Q
