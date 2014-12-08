@@ -573,9 +573,6 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
         if args_strings and not explicit_exec:
             loadl_params += "#@ arguments = %s\n" % args_strings
 
-        # finally, we 'queue' the job
-        loadl_params += "#@ queue\n"
-
         # Job info, executable and arguments
         job_info_path = self.__remote_job_info_path()
 
@@ -615,10 +612,12 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
         if explicit_exec:
             loadl_params += "#@ executable = %s\n" % submit_file.name
 
+        # finally, we 'queue' the job
+        loadl_params += "#@ queue\n"
+
         loadlscript = "\n%s%s" % (loadl_params, script_body)
 
         return loadlscript.replace('"', '\\"')
-
 
     # ----------------------------------------------------------------
     #
