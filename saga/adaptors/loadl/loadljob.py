@@ -465,7 +465,7 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
         # TODO: If the explicit exec does not work on all systems,
         #       this needs to be turned into a configurable.
         #       If it does work, we might just get rid of the conditional.
-        explicit_exec = True
+        explicit_exec = False
 
         if jd.executable is not None:
             exec_string = "%s" % (jd.executable)
