@@ -29,7 +29,7 @@ import pty_exceptions               as ptye
 #   -S control_path : slave mode for connection sharing
 #   -t              : force pty allocation
 #   -x              : disable x11 forwarding
-#   
+#
 #   ServerAliveInterval
 #   CheckHostIP no
 #   ConnectTimeout
@@ -58,10 +58,8 @@ _SCHEMAS = _SCHEMAS_SH + _SCHEMAS_SSH + _SCHEMAS_GSI
 # ssh versions...
 
 # ssh master/slave flag magic # FIXME: make timeouts configurable
-# _SSH_FLAGS_MASTER = "-o ControlMaster=yes  -o ControlPath=%(ctrl)s -o TCPKeepAlive=yes -o ServerAliveInterval=10 -o ServerAliveCountMax=20 -2 "
-# _SSH_FLAGS_SLAVE  = "-o ControlMaster=no   -o ControlPath=%(ctrl)s -o TCPKeepAlive=yes -o ServerAliveInterval=10 -o ServerAliveCountMax=20 -2 "
-_SSH_FLAGS_MASTER   = "-o ControlMaster=no   -o ControlPath=%(ctrl)s -o TCPKeepAlive=no  -o ServerAliveInterval=10 -o ServerAliveCountMax=20"
-_SSH_FLAGS_SLAVE    = "-o ControlMaster=no   -o ControlPath=%(ctrl)s -o TCPKeepAlive=no  -o ServerAliveInterval=10 -o ServerAliveCountMax=20"
+_SSH_FLAGS_MASTER   = "-o ControlMaster=%(share_mode)s -o ControlPath=%(ctrl)s -o TCPKeepAlive=no  -o ServerAliveInterval=10 -o ServerAliveCountMax=20"
+_SSH_FLAGS_SLAVE    = "-o ControlMaster=%(share_mode)s -o ControlPath=%(ctrl)s -o TCPKeepAlive=no  -o ServerAliveInterval=10 -o ServerAliveCountMax=20"
 _SCP_FLAGS          = ""
 _SFTP_FLAGS         = ""
 
@@ -69,7 +67,7 @@ _SFTP_FLAGS         = ""
 # but a master does not actually need a shell, as it is never really
 # used to run commands...
 _SCRIPTS = {
-    'ssh' : { 
+    'ssh' : {
         'master'       : '%(ssh_env)s "%(ssh_exe)s" %(ssh_args)s %(m_flags)s %(host_str)s',
         'shell'        : '%(ssh_env)s "%(ssh_exe)s" %(ssh_args)s %(s_flags)s %(host_str)s'
     },
@@ -239,7 +237,7 @@ class PTYShellFactory (object) :
                                    "Token_Response.*:\s*$",        # passtoken  prompt
                                    "want to continue connecting",  # hostkey confirmation
                                    ".*HELLO_\\d+_SAGA$",           # prompt detection helper
-                                   prompt]                         # greedy native shell prompt 
+                                   prompt]                         # greedy native shell prompt
 
                 # find a prompt
                 # use a very aggressive, but portable prompt setting scheme.
@@ -268,7 +266,7 @@ class PTYShellFactory (object) :
                         # print 'HELLO_x_SAGA', and search for that one, too.
                         # We actually do 'printf HELLO_%d_SAGA x' so that the
                         # pattern only appears in the result, not in the
-                        # command... 
+                        # command...
 
                         if  retries > 100 :
                             raise se.NoSuccess ("Could not detect shell prompt (timeout)")
@@ -276,8 +274,8 @@ class PTYShellFactory (object) :
                         # make sure we retry a finite time...
                         retries += 1
 
-                        if  not retry_trigger : 
-                            # just waiting for the *right* trigger or prompt, 
+                        if  not retry_trigger :
+                            # just waiting for the *right* trigger or prompt,
                             # don't need new ones...
                             continue
 
@@ -392,10 +390,10 @@ class PTYShellFactory (object) :
                                    % (n, match))
                         # we are done waiting for a prompt
                         break
-                
+
             except Exception as e :
                 raise ptye.translate_exception (e)
-                
+
 
     # --------------------------------------------------------------------------
     #
@@ -413,10 +411,10 @@ class PTYShellFactory (object) :
     # --------------------------------------------------------------------------
     #
     def run_shell (self, info) :
-        """ 
+        """
         This initiates a master connection.  If there is a suitable master
         connection in the registry, it is re-used, and no new master connection
-        is created.  If needed, the existing master connection is revived.  
+        is created.  If needed, the existing master connection is revived.
         """
 
       # if True :
@@ -449,7 +447,8 @@ class PTYShellFactory (object) :
                 session = saga.Session (default=True)
 
             session_cfg = session.get_config ('saga.utils.pty')
-            info['ssh_copy_mode'] = session_cfg['ssh_copy_mode'].get_value ()
+            info['ssh_copy_mode']  = session_cfg['ssh_copy_mode'].get_value ()
+            info['ssh_share_mode'] = session_cfg['ssh_share_mode'].get_value ()
 
 
             # fill the info dict with details for this master channel, and all
@@ -465,26 +464,29 @@ class PTYShellFactory (object) :
 
             if  not info['schema'] :
                 info['schema'] = 'local'
-                    
+
 
             # find out what type of shell we have to deal with
             if  info['schema'] in _SCHEMAS_SSH :
                 info['shell_type'] = "ssh"
-                info['copy_type']  = info['ssh_copy_mode']
+                info['copy_mode']  = info['ssh_copy_mode']
+                info['share_mode'] = info['ssh_share_mode']
                 info['ssh_exe']    = ru.which ("ssh")
                 info['scp_exe']    = ru.which ("scp")
                 info['sftp_exe']   = ru.which ("sftp")
 
             elif info['schema'] in _SCHEMAS_GSI :
                 info['shell_type'] = "ssh"
-                info['copy_type']  = info['ssh_copy_mode']
+                info['copy_mode']  = info['ssh_copy_mode']
+                info['share_mode'] = info['ssh_share_mode']
                 info['ssh_exe']    = ru.which ("gsissh")
                 info['scp_exe']    = ru.which ("gsiscp")
                 info['sftp_exe']   = ru.which ("gsisftp")
 
             elif info['schema'] in _SCHEMAS_SH :
                 info['shell_type'] = "sh"
-                info['copy_type']  = "sh"
+                info['copy_mode']  = "sh"
+                info['share_mode'] = "auto"
                 info['sh_args']    = "-i"
                 info['sh_env']     = "/usr/bin/env TERM=vt100 PS1='PROMPT-$?->'"
                 info['cp_env']     = "/usr/bin/env TERM=vt100 PS1='PROMPT-$?->'"
@@ -518,7 +520,7 @@ class PTYShellFactory (object) :
             except Exception  as e :
                 info['latency'] = 1.0  # generic value assuming slow link
                 info['logger'].warning ("Could not contact host '%s': %s" % (url, e))
-                
+
             if  info['shell_type'] == "sh" :
 
                 info['sh_env'] = "/usr/bin/env TERM=vt100 "  # avoid ansi escapes
@@ -554,9 +556,9 @@ class PTYShellFactory (object) :
                                     info['user']  = context.user_id
 
                                 if  context.attribute_exists ("user_key")  and  context.user_key  :
-                                    info['ssh_args']  += "-o IdentityFile=%s " % context.user_key 
-                                    info['scp_args']  += "-o IdentityFile=%s " % context.user_key 
-                                    info['sftp_args'] += "-o IdentityFile=%s " % context.user_key 
+                                    info['ssh_args']  += "-o IdentityFile=%s " % context.user_key
+                                    info['scp_args']  += "-o IdentityFile=%s " % context.user_key
+                                    info['sftp_args'] += "-o IdentityFile=%s " % context.user_key
 
                                     if  context.attribute_exists ("user_pass") and context.user_pass :
                                         info['key_pass'][context.user_key] = context.user_pass
@@ -575,17 +577,17 @@ class PTYShellFactory (object) :
                                     info['ssh_env']   += "X509_USER_PROXY='%s' " % context.user_proxy
                                     info['scp_env']   += "X509_USER_PROXY='%s' " % context.user_proxy
                                     info['sftp_env']  += "X509_USER_PROXY='%s' " % context.user_proxy
-                       
+
                                 if  context.attribute_exists ("user_cert")   and  context.user_cert :
                                     info['ssh_env']   += "X509_USER_CERT='%s' " % context.user_cert
                                     info['scp_env']   += "X509_USER_CERT='%s' " % context.user_cert
                                     info['sftp_env']  += "X509_USER_CERT='%s' " % context.user_cert
-                       
+
                                 if  context.attribute_exists ("user_key")    and  context.user_key :
                                     info['ssh_env']   += "X509_USER_key='%s' "  % context.user_key
                                     info['scp_env']   += "X509_USER_key='%s' "  % context.user_key
                                     info['sftp_env']  += "X509_USER_key='%s' "  % context.user_key
-                       
+
                                 if  context.attribute_exists ("cert_repository") and context.cert_repository :
                                     info['ssh_env']   += "X509_CERT_DIR='%s' "  % context.cert_repository
                                     info['scp_env']   += "X509_CERT_DIR='%s' "  % context.cert_repository
@@ -614,17 +616,19 @@ class PTYShellFactory (object) :
                     info['user'] = getpass.getuser ()
                     info['ctrl'] = "%s_%%h_%%p.ctrl" % (ctrl_base)
 
-                info['m_flags']  = _SSH_FLAGS_MASTER % ({'ctrl' : info['ctrl']})
-                info['s_flags']  = _SSH_FLAGS_SLAVE  % ({'ctrl' : info['ctrl']})
+                info['m_flags']  = _SSH_FLAGS_MASTER % ({'share_mode' : info['share_mode'],
+                                                         'ctrl'       : info['ctrl']})
+                info['s_flags']  = _SSH_FLAGS_SLAVE  % ({'share_mode' : info['share_mode'],
+                                                         'ctrl'       : info['ctrl']})
 
                 # we want the userauth and hostname parts of the URL, to get the
-                # scp-scope fs root.  
+                # scp-scope fs root.
                 info['scp_root']  = ""
                 has_auth          = False
-                if  url.username : 
+                if  url.username :
                     info['scp_root'] += url.username
                     has_auth          = True
-                if  url.password : 
+                if  url.password :
                     info['scp_root'] += ":"
                     info['scp_root'] += url.password
                     has_auth          = True
@@ -633,7 +637,7 @@ class PTYShellFactory (object) :
                 info['scp_root']     += "%s:" % url.host
 
                 # FIXME: port needs to be handled as parameter
-              # if  url.port : 
+              # if  url.port :
               #     info['scp_root'] += ":%d" % url.port
 
 
