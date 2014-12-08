@@ -45,10 +45,10 @@ class PTYProcess (object) :
         # run an interactive client process
         pty = PTYProcess ("/usr/bin/ssh -t localhost")
 
-        # check client's I/O for one of the following patterns (prompts).  
+        # check client's I/O for one of the following patterns (prompts).
         # Then search again.
-        n, match = pty.find (['password\s*:\s*$', 
-                              'want to continue connecting.*\(yes/no\)\s*$', 
+        n, match = pty.find (['password\s*:\s*$',
+                              'want to continue connecting.*\(yes/no\)\s*$',
                               '[\$#>]\s*$'])
 
         while True :
@@ -56,20 +56,20 @@ class PTYProcess (object) :
             if n == 0 :
                 # found password prompt - tell the secret
                 pty.write ("secret\\n")
-                n, _ = pty.find (['password\s*:\s*$', 
-                                  'want to continue connecting.*\(yes/no\)\s*$', 
+                n, _ = pty.find (['password\s*:\s*$',
+                                  'want to continue connecting.*\(yes/no\)\s*$',
                                   '[\$#>]\s*$'])
             elif n == 1 :
                 # found request to accept host key - sure we do... (who checks
                 # those keys anyways...?).  Then search again.
                 pty.write ("yes\\n")
-                n, _ = pty.find (['password\s*:\s*$', 
-                                  'want to continue connecting.*\(yes/no\)\s*$', 
+                n, _ = pty.find (['password\s*:\s*$',
+                                  'want to continue connecting.*\(yes/no\)\s*$',
                                   '[\$#>]\s*$'])
             elif n == 2 :
                 # found shell prompt!  Wohoo!
                 break
-        
+
 
         while True :
             # go full Dornroeschen (Sleeping Beauty)...
@@ -100,7 +100,7 @@ class PTYProcess (object) :
         """
 
         self.logger = logger
-        if  not  self.logger : self.logger = rul.getLogger ('saga', 'PTYProcess') 
+        if  not  self.logger : self.logger = rul.getLogger ('saga', 'PTYProcess')
         self.logger.debug ("PTYProcess init %s" % self)
 
 
@@ -139,7 +139,7 @@ class PTYProcess (object) :
     # --------------------------------------------------------------------
     #
     def __del__ (self) :
-        """ 
+        """
         Need to free pty's on destruction, otherwise we might ran out of
         them (see cat /proc/sys/kernel/pty/max)
         """
@@ -151,7 +151,7 @@ class PTYProcess (object) :
                 self.finalize ()
             except :
                 pass
-    
+
 
     # ----------------------------------------------------------------------
     #
@@ -178,7 +178,7 @@ class PTYProcess (object) :
                 self.logger.warn ("initialization race: %s" % ' '.join (self.command))
                 return
 
-    
+
             self.logger.info ("running: %s" % ' '.join (self.command))
 
             # create the child
@@ -187,7 +187,7 @@ class PTYProcess (object) :
             except Exception as e:
                 raise se.NoSuccess ("Could not run (%s): %s" \
                                  % (' '.join (self.command), e))
-            
+
             if  not self.child :
                 # this is the child
 
@@ -240,7 +240,7 @@ class PTYProcess (object) :
 
                             # this should not have failed -- child disappeared?
                             if e.errno == errno.ECHILD :
-                                self.exit_code   = None 
+                                self.exit_code   = None
                                 self.exit_signal = None
                                 wstat            = None
                                 break
@@ -274,22 +274,22 @@ class PTYProcess (object) :
                     self.exit_signal = os.WTERMSIG (wstat)
 
 
-            try : 
+            try :
                 if  self.parent_out :
                     os.close (self.parent_out)
                     self.parent_out = None
             except OSError :
                 pass
 
-          # try : 
+          # try :
           #     if  self.parent_in :
           #         os.close (self.parent_in)
           #         self.parent_in = None
           # except OSError :
           #     pass
 
-          # try : 
-          #     os.close (self.parent_err) 
+          # try :
+          #     os.close (self.parent_err)
           # except OSError :
           #     pass
 
@@ -298,9 +298,9 @@ class PTYProcess (object) :
     # --------------------------------------------------------------------
     #
     def wait (self) :
-        """ 
+        """
         blocks forever until the child finishes on its own, or is getting
-        killed.  
+        killed.
 
         Actully, we might just as well try to figure out what is going on on the
         remote end of things -- so we read the pipe until the child dies...
@@ -352,7 +352,7 @@ class PTYProcess (object) :
                     continue
 
 
-                # Yes, we got a note.  
+                # Yes, we got a note.
                 # Well, maybe the child fooled us and is just playing dead?
                 if os.WIFSTOPPED   (wstat) or \
                    os.WIFCONTINUED (wstat)    :
@@ -375,7 +375,7 @@ class PTYProcess (object) :
     #
     def alive (self, recover=False) :
         """
-        try to determine if the child process is still active.  If not, mark 
+        try to determine if the child process is still active.  If not, mark
         the child as dead and close all IO descriptors etc ("func:`finalize`).
 
         If `recover` is `True` and the child is indeed dead, we attempt to
@@ -399,7 +399,7 @@ class PTYProcess (object) :
 
                 while True :
                   # print 'waitpid %s' % self.child
-                  
+
                     # hey, kiddo, whats up?
                     try :
                         wpid, wstat = os.waitpid (self.child, os.WNOHANG)
@@ -420,7 +420,7 @@ class PTYProcess (object) :
                         return True
 
 
-                    # Yes, we got a note.  
+                    # Yes, we got a note.
                     # Well, maybe the child fooled us and is just playing dead?
                     if os.WIFSTOPPED   (wstat) or \
                        os.WIFCONTINUED (wstat)    :
@@ -468,7 +468,7 @@ class PTYProcess (object) :
     # --------------------------------------------------------------------
     #
     def autopsy (self) :
-        """ 
+        """
         return diagnostics information string for dead child processes
         """
 
@@ -497,16 +497,16 @@ class PTYProcess (object) :
     # --------------------------------------------------------------------
     #
     def read (self, size=0, timeout=0, _force=False) :
-        """ 
+        """
         read some data from the child.  By default, the method reads whatever is
         available on the next read, up to _CHUNKSIZE, but other read sizes can
-        be specified.  
-        
+        be specified.
+
         The method will return whatever data it has at timeout::
-        
+
           timeout == 0 : return the content of the first successful read, with
                          whatever data up to 'size' have been found.
-          timeout <  0 : return after first read attempt, even if no data have 
+          timeout <  0 : return after first read attempt, even if no data have
                          been available.
 
         If no data are found, the method returns an empty string (not None).
@@ -553,12 +553,12 @@ class PTYProcess (object) :
                     # idle wait 'til the next data chunk arrives, or 'til _POLLDELAY
                     rlist, _, _ = select.select ([self.parent_out], [], [], _POLLDELAY)
 
-                    # got some data? 
+                    # got some data?
                     for f in rlist:
                         # read whatever we still need
 
                         readsize = _CHUNKSIZE
-                        if  size: 
+                        if  size:
                             readsize = size-len(ret)
 
                         buf  = os.read (f, _CHUNKSIZE)
@@ -606,7 +606,7 @@ class PTYProcess (object) :
                     # at this point, we do not have sufficient data -- only
                     # return on timeout
 
-                    if  timeout == 0 : 
+                    if  timeout == 0 :
                         # only return if we have data
                         if len (self.cache) :
                             ret        = self.cache
@@ -666,7 +666,7 @@ class PTYProcess (object) :
 
         Performance: the call is doing repeated string regex searches over
         whatever data it finds.  On complex regexes, and large data, and small
-        read buffers, this method can be expensive.  
+        read buffers, this method can be expensive.
 
         Note: the returned data get '\\\\r' stripped.
 
@@ -727,7 +727,7 @@ class PTYProcess (object) :
                             # pattern index and matching data.  The remainder of the
                             # data is cached.
                             ret  = escaped[0:match.end()]
-                            self.cache = escaped[match.end():] 
+                            self.cache = escaped[match.end():]
 
                             if _debug : print "~~match!~~ %s" % escaped[match.start():match.end()]
                             if _debug : print "~~match!~~ %s" % (len(escaped))
@@ -787,7 +787,7 @@ class PTYProcess (object) :
                     _, wlist, _ = select.select ([], [self.parent_in], [], _POLLDELAY)
 
                     for f in wlist :
-                        
+
                         # write will report the number of written bytes
                         size = os.write (f, data)
 
