@@ -24,53 +24,62 @@ import saga.engine.registry  # adaptors to load
 ############# These are all supported options for saga.engine ####################
 ##
 _config_options = [
-    { 
+    {
     'category'      : 'saga.engine',
-    'name'          : 'load_beta_adaptors', 
-    'type'          : bool, 
+    'name'          : 'load_beta_adaptors',
+    'type'          : bool,
     'default'       : False,
     'valid_options' : [True, False],
     'documentation' : 'load adaptors which are marked as beta (i.e. not released).',
     'env_variable'  : None
     },
     # FIXME: is there a better place to register util level options?
-    { 
+    {
     'category'      : 'saga.utils.pty',
-    'name'          : 'prompt_pattern', 
-    'type'          : str, 
+    'name'          : 'prompt_pattern',
+    'type'          : str,
     'default'       : '[\$#%>\]]\s*$',
     'documentation' : 'use this regex to detect shell prompts',
     'env_variable'  : None
     },
-    { 
+    {
     'category'      : 'saga.utils.pty',
-    'name'          : 'ssh_copy_mode', 
-    'type'          : str, 
+    'name'          : 'ssh_copy_mode',
+    'type'          : str,
     'default'       : 'sftp',
     'valid_options' : ['sftp', 'scp', 'rsync+ssh', 'rsync'],
     'documentation' : 'use the specified protocol for pty level file transfer',
     'env_variable'  : 'SAGA_PTY_SSH_COPYMODE'
     },
-    { 
+    {
     'category'      : 'saga.utils.pty',
-    'name'          : 'connection_pool_ttl', 
-    'type'          : int, 
+    'name'          : 'ssh_share_mode',
+    'type'          : str,
+    'default'       : 'auto',
+    'valid_options' : ['auto', 'no'],
+    'documentation' : 'use the specified mode as flag for the ssh ControlMaster option',
+    'env_variable'  : 'SAGA_PTY_SSH_SHAREMODE'
+    },
+    {
+    'category'      : 'saga.utils.pty',
+    'name'          : 'connection_pool_ttl',
+    'type'          : int,
     'default'       : 10*60,
     'documentation' : 'minimum time a connection is kept alive in a connection pool',
     'env_variable'  : 'SAGA_PTY_CONN_POOL_TTL'
     },
-    { 
+    {
     'category'      : 'saga.utils.pty',
-    'name'          : 'connection_pool_size', 
-    'type'          : int, 
+    'name'          : 'connection_pool_size',
+    'type'          : int,
     'default'       : 10,
     'documentation' : 'maximum number of connections kept in a connection pool',
     'env_variable'  : 'SAGA_PTY_CONN_POOL_SIZE'
     },
-    { 
+    {
     'category'      : 'saga.utils.pty',
-    'name'          : 'connection_pool_wait', 
-    'type'          : int, 
+    'name'          : 'connection_pool_wait',
+    'type'          : int,
     'default'       : 10*60,
     'documentation' : 'maximum number of seconds to wait for any connection in the connection pool to become available before raising a timeout error',
     'env_variable'  : 'SAGA_PTY_CONN_POOL_WAIT'
@@ -79,7 +88,7 @@ _config_options = [
 
 ################################################################################
 ##
-class Engine(ruc.Configurable): 
+class Engine(ruc.Configurable):
     """ Represents the SAGA engine runtime system.
 
         The Engine is a singleton class that takes care of adaptor
@@ -95,14 +104,14 @@ class Engine(ruc.Configurable):
             'name'    : _adaptor_name,
             'version' : 'v1.3'
             'schemas' : ['fork', 'local']
-            'cpis'    : [{ 
+            'cpis'    : [{
               'type'    : 'saga.job.Job',
               'class'   : 'LocalJob',
-              }, 
-              { 
+              },
+              {
               'type'    : 'saga.job.Service',
               'class'   : 'LocalJobService',
-              } 
+              }
             ]
           }
 
@@ -119,18 +128,18 @@ class Engine(ruc.Configurable):
         registry of adaptor classes, hierarchically sorted like this
         (simplified)::
 
-          _adaptor_registry = 
-          { 
-              'job' : 
-              { 
+          _adaptor_registry =
+          {
+              'job' :
+              {
                   'gram' : [<gram job  adaptor, gram job adaptor class>]
                   'ssh'  : [<ssh  job  adaptor, ssh  job adaptor class>]
                   'http' : [<aws  job  adaptor, aws  job adaptor class>,
                             <occi job  adaptor, occi job adaptor class>]
                   ...
               },
-              'file' : 
-              { 
+              'file' :
+              {
                   'ftp'  : <ftp file adaptor, ftp file adaptor class>
                   'scp'  : <scp file adaptor, scp file adaptor class>
                   ...
@@ -144,7 +153,7 @@ class Engine(ruc.Configurable):
         would use (simplified)::
 
           def __init__ (self, url="", session=None) :
-              
+
               for (adaptor, adaptor_class) in self._engine._adaptor_registry{'job'}{url.scheme}
 
                   try :
@@ -164,9 +173,9 @@ class Engine(ruc.Configurable):
 
 
     #-----------------------------------------------------------------
-    # 
+    #
     def __init__(self):
-        
+
         # Engine manages cpis from adaptors
         self._adaptor_registry = {}
 
@@ -188,9 +197,9 @@ class Engine(ruc.Configurable):
 
 
     #-----------------------------------------------------------------
-    # 
+    #
     def _load_adaptors (self, inject_registry=None):
-        """ Try to load all adaptors that are registered in 
+        """ Try to load all adaptors that are registered in
             saga.engine.registry.py. This method is called from the
             constructor.  As Engine is a singleton, this method is
             called once after the module is first loaded in any python
@@ -236,7 +245,7 @@ class Engine(ruc.Configurable):
             adaptor_instance = None
             adaptor_info     = None
 
-            try: 
+            try:
                 adaptor_instance = adaptor_module.Adaptor ()
                 adaptor_info     = adaptor_instance.register ()
 
@@ -253,7 +262,7 @@ class Engine(ruc.Configurable):
             # be used to confirm that the adaptor can function properly in the
             # current runtime environment (e.g., that all pre-requisites and
             # system dependencies are met).
-            try: 
+            try:
                 adaptor_instance.sanity_check ()
 
             except Exception as e:
@@ -376,7 +385,7 @@ class Engine(ruc.Configurable):
                 # we add a lower cased version of the class name as last
                 # namespace element, and check again.
 
-                # ->   saga .  job .  Service 
+                # ->   saga .  job .  Service
                 # <- ['saga', 'job', 'Service']
                 cpi_type_nselems = cpi_type.split ('.')
 
@@ -391,7 +400,7 @@ class Engine(ruc.Configurable):
                                      % (module_name, cpi_type))
                     continue # skip to next cpi info
 
-                # -> ['saga',                    'job', 'Service'] 
+                # -> ['saga',                    'job', 'Service']
                 # <- ['saga', 'adaptors', 'cpi', 'job', 'Service']
                 cpi_type_nselems.insert (1, 'adaptors')
                 cpi_type_nselems.insert (2, 'cpi')
@@ -409,10 +418,10 @@ class Engine(ruc.Configurable):
                 # does either module exist?
                 cpi_type_modname = None
                 if  cpi_type_modname_1 in sys.modules :
-                    cpi_type_modname = cpi_type_modname_1 
+                    cpi_type_modname = cpi_type_modname_1
 
                 if  cpi_type_modname_2 in sys.modules :
-                    cpi_type_modname = cpi_type_modname_2 
+                    cpi_type_modname = cpi_type_modname_2
 
                 if  not cpi_type_modname :
                     self._logger.warn ("Skipping adaptor %s: cpi type not known: '%s'" \
@@ -453,8 +462,8 @@ class Engine(ruc.Configurable):
                     # as that is passed to the cpi class c'tor later
                     # on (the adaptor instance is used to share state
                     # between cpi instances, amongst others)
-                    info = {'cpi_cname'        : cpi_cname, 
-                            'cpi_class'        : cpi_class, 
+                    info = {'cpi_cname'        : cpi_cname,
+                            'cpi_class'        : cpi_class,
                             'adaptor_name'     : adaptor_name,
                             'adaptor_instance' : adaptor_instance}
 
@@ -476,7 +485,7 @@ class Engine(ruc.Configurable):
 
 
     #-----------------------------------------------------------------
-    # 
+    #
     def find_adaptors (self, ctype, schema) :
         ''' Look for a suitable cpi class serving a particular schema
 
@@ -501,11 +510,11 @@ class Engine(ruc.Configurable):
 
 
     #-----------------------------------------------------------------
-    # 
+    #
     def get_adaptor (self, adaptor_name) :
         ''' Return the adaptor module's ``Adaptor`` class for the given adaptor
-            name.  
-            
+            name.
+
             This method is used if adaptor or API object implementation need to
             interact with other adaptors.
         '''
@@ -522,13 +531,13 @@ class Engine(ruc.Configurable):
 
 
     #-----------------------------------------------------------------
-    # 
-    def bind_adaptor (self, api_instance, ctype, schema, 
+    #
+    def bind_adaptor (self, api_instance, ctype, schema,
                       preferred_adaptor, *args, **kwargs) :
         '''
         Look for a suitable adaptor class to bind to, instantiate it, and
         initialize it.
-        
+
         If 'preferred_adaptor' is not 'None', only that given adaptors is
         considered, and adaptor classes are only created from that specific
         adaptor.
@@ -596,13 +605,13 @@ class Engine(ruc.Configurable):
 
 
     #-----------------------------------------------------------------
-    # 
+    #
     def loaded_adaptors (self):
         return self._adaptor_registry
 
 
     #-----------------------------------------------------------------
-    # 
+    #
     def _dump (self) :
         import pprint
         pprint.pprint (self._adaptor_registry)

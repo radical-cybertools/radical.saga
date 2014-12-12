@@ -949,8 +949,8 @@ class PTYShell (object) :
                           'cp_flags' : cp_flags}.items () + info.items ())
 
             # at this point, we do have a valid, living master
-            s_cmd = info['scripts'][info['copy_type']]['copy_to']    % repl
-            s_in  = info['scripts'][info['copy_type']]['copy_to_in'] % repl
+            s_cmd = info['scripts'][info['copy_mode']]['copy_to']    % repl
+            s_in  = info['scripts'][info['copy_mode']]['copy_to_in'] % repl
 
             if  not s_in :
                 # this code path does not use an interactive shell for copy --
@@ -1056,8 +1056,8 @@ class PTYShell (object) :
                           'cp_flags' : cp_flags}.items ()+ info.items ())
 
             # at this point, we do have a valid, living master
-            s_cmd = info['scripts'][info['copy_type']]['copy_from']    % repl
-            s_in  = info['scripts'][info['copy_type']]['copy_from_in'] % repl
+            s_cmd = info['scripts'][info['copy_mode']]['copy_from']    % repl
+            s_in  = info['scripts'][info['copy_mode']]['copy_from_in'] % repl
 
             if  not s_in :
                 # this code path does not use an interactive shell for copy --
