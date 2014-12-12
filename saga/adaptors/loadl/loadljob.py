@@ -22,7 +22,6 @@ import re
 import time
 from urlparse import parse_qs
 from datetime import datetime
-from tempfile import NamedTemporaryFile
 
 
 SYNC_CALL = saga.adaptors.cpi.decorators.SYNC_CALL
@@ -265,6 +264,23 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
         self.enforce_consumable_large_page_memory = False
         self.temp_path = "$HOME/.saga/adaptors/loadl_job"
 
+        # LoadLeveler has two ways of specifying the executable and arguments.
+        # - Explicit: the executable and arguments are specified as parameters.
+        # - Implicit: the (remainder of the) job script is the task.
+        #
+        # Currently we don't know how this policy can be detected at runtime.
+        # We know that providing both will not work in all cases.
+        #
+        # As the IBM Red Book documents the explicit exec only,
+        # we should use that as a default.
+        # Currently we just use a hack to workaround Joule.
+        #
+        # Note: does this now simply become a Joule hack?
+        #
+        # TODO: Split script into submission file and script and use that for
+        #       explicit exec?
+        self.explicit_exec = False
+
         rm_scheme = rm_url.scheme
         pty_url   = surl.Url (rm_url)
 
@@ -298,7 +314,8 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
                 elif key == 'enforce_consumable_large_page_memory':
                     self.enforce_consumable_large_page_memory = True
                     self.enforce_resource_submission = True
-
+                elif key == 'explicit_exec':
+                    self.explicit_exec = True
 
         # we need to extract the scheme for PTYShell. That's basically the
         # job.Service Url without the loadl+ part. We use the PTYShell to execute
@@ -462,19 +479,6 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
         exec_string = ''
         args_strings = ''
 
-        # LoadLeveler has two ways of specifying the executable and arguments.
-        # - Explicit: the executable and arguments are specified as parameters.
-        # - Implicit: the (remainder of the) job script is the task.
-        #
-        # Currently we don't know how this policy can be detected at runtime.
-        # We "hope" that providing both will however work in all cases.
-        #
-        # TODO: If the explicit_exec does not work on all systems,
-        #       this needs to be turned into a configurable.
-        #       (Q: What should be the default?)
-        #       If it does work, we might just get rid of the conditional.
-        explicit_exec = True
-
         if jd.executable is not None:
             exec_string = "%s" % (jd.executable)
         if jd.arguments is not None:
@@ -576,16 +580,14 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
         else:
             loadl_params += "#@ class = edison\n"
 
-        if exec_string and not explicit_exec:
-            loadl_params += "#@ executable = %s\n" % exec_string
-        if args_strings and not explicit_exec:
-            loadl_params += "#@ arguments = %s\n" % args_strings
+        # finally, we 'queue' the job
+        loadl_params += "#@ queue\n"
 
         # Job info, executable and arguments
         job_info_path = self.__remote_job_info_path()
 
         script_body = [
-        'function aborted() {',
+            'function aborted() {',
             '  echo Aborted with signal $1.',
             '  echo "signal: $1" >>%s' % job_info_path,
             '  echo "end_time: $(LC_ALL=en_US.utf8 date \'+%%a %%b %%d %%H:%%M:%%S %%Y\')" >>%s' % job_info_path,
@@ -611,17 +613,11 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
         # only escape '$' in args and exe. not in the params
         script_body = "\n".join(script_body).replace('$', '\\$')
 
-        submit_file = NamedTemporaryFile(mode='w', suffix='.loadl',
-                                         prefix='tmp-saga-', delete=False)
-        submit_file.write(script_body)
-        submit_file.close()
-        self._logger.info("Written LOADL script locally: %s" % submit_file.name)
-
-        if explicit_exec:
-            loadl_params += "#@ executable = %s\n" % submit_file.name
-
-        # finally, we 'queue' the job
-        loadl_params += "#@ queue\n"
+        # Dirty Trick for Joule: it expects an "executable" parameter,
+        # but doesn't really need it, therefore we pass it after the queue
+        # parameter, where it is not used anymore.
+        if self.explicit_exec:
+            loadl_params += "#@ executable = BOGUS\n"
 
         loadlscript = "\n%s%s" % (loadl_params, script_body)
 
@@ -657,7 +653,7 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
         # Now we want to execute the script. This process consists of two steps:
         # (1) we create a temporary file with 'mktemp' and write the contents of
         #     the generated Load Leveler script into it
-        # (2) we call 'qsub <tmpfile>' to submit the script to the queueing system
+        # (2) we call 'llsubmit <tmpfile>' to submit the script to the queueing system
         cmdline = """SCRIPTFILE=`mktemp -t SAGA-Python-LOADLJobScript.XXXXXX` &&  echo "%s" > $SCRIPTFILE && %s%s $SCRIPTFILE && rm -f $SCRIPTFILE""" %  (script, self._commands['llsubmit']['path'], self.cluster_option)
         self._logger.info("cmdline: %r", cmdline)
         ret, out, _ = self.shell.run_sync(cmdline)
