@@ -688,7 +688,6 @@ cmd_purge () {
       id=`basename "$dir"`
       \find  "$BASE/$id"      -type f -mtime +1 -print | xargs -n 100 rm -f
       \rmdir "$BASE/$id"      >/dev/null 2>&1
-      \find  "$NOTIFICATIONS" -type f -mtime +1 -print | xargs -n 100 rm -f
       \touch "$NOTIFICATIONS"
     done
     RETVAL="purged finished jobs"
