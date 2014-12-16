@@ -160,16 +160,33 @@ class PTYProcess (object) :
         # clean the *read* data cache -- only use when you know what you are
         # doing!
 
-        if  not self.parent_out :
-            # nothing to read, yet, so there is nothing to cache, so tehre is
-            # nothing to flush...
-            return
+        try :
+             if not self.parent_out :
+                 # nothing to read, yet, so there is nothing to cache, so tehre is
+                 # nothing to flush...
+                 return
 
-        self.logger.debug ("flush: [%5d] [%5d] (flush pty read cache)" \
-                % (self.parent_out, len(self.cache)))
-        if len(self.cache) :
-            self.logger.warn ("discarding non-empty cache: '%s'" % self.cache)
-        self.cache = ""
+             self.logger.debug ("flush: [%5d] [     ] (flush pty read cache)"  \
+                     % (self.parent_out))
+
+             # lets see if there are still things to read
+             while True :
+                 tmp = self.read (timeout=0.1)
+                 if tmp :
+                     self.logger.warn ("flush: [%5d] [%5d] (discard data: '%s')" \
+                             % (self.parent_out, len(tmp), tmp))
+                     continue
+                 break
+
+             if len(self.cache) :
+                  self.logger.warn ("flush: [%5d] [%5d] (discard cache: '%s')" \
+                          % (self.parent_out, len(self.cache), self.cache))
+             self.cache = ""
+
+        except Exception as e :
+            self.logger.exception ('flushing failed')
+            raise
+
 
 
     # ----------------------------------------------------------------------
