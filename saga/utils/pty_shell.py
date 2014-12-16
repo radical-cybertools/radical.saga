@@ -321,6 +321,7 @@ class PTYShell (object) :
                 
                 
 
+            self.pty_shell.flush ()
             self.initialized = True
             self.finalized   = False
 
@@ -641,6 +642,7 @@ class PTYShell (object) :
         with self.pty_shell.rlock :
          
             self._trace ("run sync  : %s" % command)
+            self.pty_shell.flush ()
 
             # we expect the shell to be in 'ground state' when running a syncronous
             # command -- thus we can check if the shell is alive before doing so,
@@ -760,7 +762,8 @@ class PTYShell (object) :
 
         with self.pty_shell.rlock :
 
-          # self._trace ("run async : %s" % command)
+            self._trace ("run async : %s" % command)
+            self.pty_shell.flush ()
 
             # we expect the shell to be in 'ground state' when running an asyncronous
             # command -- thus we can check if the shell is alive before doing so,
@@ -939,9 +942,11 @@ class PTYShell (object) :
         have to do a local expansion, and the to do the same for each entry...
         """
 
-        self._trace ("copy  to  : %s -> %s" % (src, tgt))
-
         with self.pty_shell.rlock :
+
+            self._trace ("copy  to  : %s -> %s" % (src, tgt))
+            self.pty_shell.flush ()
+
 
             info = self.pty_info
             repl = dict ({'src'      : src, 
@@ -974,7 +979,9 @@ class PTYShell (object) :
                 self._trace ("get cp slave")
                 self.cp_slave = self.factory.get_cp_slave (s_cmd, info)
 
+            self.cp_slave.flush ()
             prep = ""
+
             if  'sftp' in s_cmd :
                 # prepare target dirs for recursive copy, if needed
                 import glob
@@ -984,9 +991,9 @@ class PTYShell (object) :
                         prep += "mkdir %s/%s\n" % (tgt, os.path.basename (s))
 
 
+            self.cp_slave.flush ()
             _      = self.cp_slave.write    ("%s%s\n" % (prep, s_in))
             _, out = self.cp_slave.find     (['[\$\>\]]\s*$'], -1)
-            _, out = self.cp_slave.find     (['[\$\>\]]\s*$'], 1.0)
 
             # FIXME: we don't really get exit codes from copy
             # if  self.cp_slave.exit_code != 0 :
@@ -1046,9 +1053,10 @@ class PTYShell (object) :
         need to expand wildcards on the *remote* side :/
         """
 
-        self._trace ("copy  from: %s -> %s" % (src, tgt))
-
         with self.pty_shell.rlock :
+
+            self._trace ("copy  from: %s -> %s" % (src, tgt))
+            self.pty_shell.flush ()
 
             info = self.pty_info
             repl = dict ({'src'      : src, 
@@ -1076,6 +1084,7 @@ class PTYShell (object) :
                 self._trace ("get cp slave")
                 self.cp_slave = self.factory.get_cp_slave (s_cmd, info)
 
+            self.cp_slave.flush ()
             prep = ""
 
             if  'sftp' in s_cmd :
@@ -1090,6 +1099,7 @@ class PTYShell (object) :
                         prep += "lmkdir %s/%s\n" % (tgt, os.path.basename (s))
 
 
+            self.cp_slave.flush ()
             _      = self.cp_slave.write    ("%s%s\n" % (prep, s_in))
             _, out = self.cp_slave.find     (['[\$\>\]] *$'], -1)
 
@@ -1140,6 +1150,5 @@ class PTYShell (object) :
             return files
 
 
-
-
+# ------------------------------------------------------------------------------
 

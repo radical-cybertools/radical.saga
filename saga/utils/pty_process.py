@@ -155,6 +155,25 @@ class PTYProcess (object) :
 
     # ----------------------------------------------------------------------
     #
+    def flush (self) :
+
+        # clean the *read* data cache -- only use when you know what you are
+        # doing!
+
+        if  not self.parent_out :
+            # nothing to read, yet, so there is nothing to cache, so tehre is
+            # nothing to flush...
+            return
+
+        self.logger.debug ("flush: [%5d] [%5d] (flush pty read cache)" \
+                % (self.parent_out, len(self.cache)))
+        if len(self.cache) :
+            self.logger.warn ("discarding non-empty cache: '%s'" % self.cache)
+        self.cache = ""
+
+
+    # ----------------------------------------------------------------------
+    #
     def _hide_data (self, data, nolog=False) :
 
         if  nolog :

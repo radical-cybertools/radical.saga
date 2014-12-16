@@ -81,8 +81,8 @@ _SCRIPTS = {
 
         'copy_to'      : '%(sftp_env)s "%(sftp_exe)s" %(sftp_args)s %(s_flags)s %(host_str)s',
         'copy_from'    : '%(sftp_env)s "%(sftp_exe)s" %(sftp_args)s %(s_flags)s %(host_str)s',
-        'copy_to_in'   : 'mput %(cp_flags)s "%(src)s" "%(tgt)s" \n',
-        'copy_from_in' : 'mget %(cp_flags)s "%(src)s" "%(tgt)s" \n'
+        'copy_to_in'   : 'mput %(cp_flags)s "%(src)s" "%(tgt)s"',
+        'copy_from_in' : 'mget %(cp_flags)s "%(src)s" "%(tgt)s"'
     },
     'sh' : {
         'master'       : '%(sh_env)s "%(sh_exe)s"  %(sh_args)s',
