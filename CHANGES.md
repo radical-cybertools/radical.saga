@@ -6,6 +6,13 @@
   https://github.com/radical-cybertools/saga-python/issues?q=is%3Aissue+is%3Aopen+
 
 
+Version 0.25 release 2014-12-17
+---------------------------------------------------------------------
+
+* hotfix for sftp problems on some client/server version combinations which lead
+to data inconsistencies
+
+
 Version 0.24 release 2014-12-08
 ---------------------------------------------------------------------
 
