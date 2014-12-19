@@ -7,6 +7,10 @@ export HISTIGNORE
 # this script uses only POSIX shell functionality, and does not rely on bash or
 # other shell extensions.  It expects /bin/sh to be a POSIX compliant shell
 # thought.
+#
+# The invokation passes one (optional) parameter, the base workdir.  That
+# directory will be used to keep job state data. It' default value is set to
+# $HOME/.saga/adaptors/shell_job/
 
 
 # --------------------------------------------------------------------
@@ -48,7 +52,11 @@ ERROR=""
 RETVAL=""
 
 # this is where this 'daemon' keeps state for all started jobs
-BASE=$HOME/.saga/adaptors/shell_job/
+BASE="$*"
+if test -z "$BASE"
+then
+  BASE=$HOME/.saga/adaptors/shell_job/
+fi
 NOTIFICATIONS="$BASE/notifications"
 
 # this process will terminate when idle for longer than TIMEOUT seconds
