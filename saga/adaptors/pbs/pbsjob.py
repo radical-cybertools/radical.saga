@@ -240,6 +240,20 @@ def _pbscript_generator(url, logger, jd, ppn, pbs_version, is_cray=False, queue=
     if tcc % ppn > 0:
         nnodes += 1 # Request enough nodes to cater for the number of cores requested
 
+    # Node properties are appended to the nodes argument in the resource_list.
+    node_properties = []
+
+    # Parse candidate_hosts
+    #
+    # Currently only implemented for "bigflash" on Gordon@SDSC
+    # https://github.com/radical-cybertools/saga-python/issues/406
+    #
+    if jd.candidate_hosts:
+        if 'BIG_FLASH' in jd.candidate_hosts:
+            node_properties.append('bigflash')
+        else:
+            raise saga.NotImplemented("This type of 'candidate_hosts' not implemented: '%s'" % jd.candidate_hosts)
+
     if is_cray is not "":
         # Special cases for PBS/TORQUE on Cray. Different PBSes,
         # different flags. A complete nightmare...
@@ -275,7 +289,8 @@ def _pbscript_generator(url, logger, jd, ppn, pbs_version, is_cray=False, queue=
         if jd.total_cpu_count < ppn:
             ppn = jd.total_cpu_count
 
-        pbs_params += "#PBS -l nodes=%d:ppn=%d \n" % (nnodes, ppn)
+        pbs_params += "#PBS -l nodes=%d:ppn=%d%s\n" % (
+            nnodes, ppn, ''.join([':%s' % prop for prop in node_properties]))
 
     # escape all double quotes and dollarsigns, otherwise 'echo |'
     # further down won't work
@@ -308,6 +323,7 @@ _ADAPTOR_CAPABILITIES = {
     "jdes_attributes":   [saga.job.NAME,
                           saga.job.EXECUTABLE,
                           saga.job.ARGUMENTS,
+                          saga.job.CANDIDATE_HOSTS,
                           saga.job.ENVIRONMENT,
                           saga.job.INPUT,
                           saga.job.OUTPUT,
