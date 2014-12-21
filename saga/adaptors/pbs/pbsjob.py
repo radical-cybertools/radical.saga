@@ -53,6 +53,10 @@ class _job_state_monitor(threading.Thread):
 
     def run(self):
 
+        # we stop the monitoring thread when we see the same error 3 times in
+        # a row...
+        error_type_count = dict()
+
         while self.stopped() is False:
 
             try:
@@ -85,6 +89,17 @@ class _job_state_monitor(threading.Thread):
                 import traceback
                 traceback.print_exc ()
                 self.logger.warning("Exception caught in job monitoring thread: %s" % e)
+
+                # check if we see the same error again and again
+                error_type = str(e)
+                if  error_type not in error_type_count :
+                    error_type_count = dict()
+                    error_type_count[error_type]  = 1
+                else :
+                    error_type_count[error_type] += 1
+                    if  error_type_count[error_type] >= 3 :
+                        self.logger.error("too many monitoring errors -- stopping job monitoring thread")
+                        return
 
             finally :
                 time.sleep (MONITOR_UPDATE_INTERVAL)
