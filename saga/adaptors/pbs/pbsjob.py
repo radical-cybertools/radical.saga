@@ -804,9 +804,9 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
         else:
             qstat_flag ='-f1'
             
-        ret, out, _ = self.shell.run_sync("unset GREP_OPTIONS; %s %s %s | "  \
-                "grep -E -i '(job_state)|(exec_host)|(exit_status)|(ctime)|" \
-                "(start_time)|(comp_time)|(mtime)|(stime)|(qtime)|(etime)'"  \
+        ret, out, _ = self.shell.run_sync("unset GREP_OPTIONS; %s %s %s | "
+                "grep -E -i '(job_state)|(exec_host)|(exit_status)|"
+                 "(ctime)|(start_time)|(stime)|(mtime)'"
                 % (self._commands['qstat']['path'], qstat_flag, pid))
 
         if ret != 0:
@@ -838,6 +838,9 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
 
             # The job seems to exist on the backend. let's process some data.
 
+            # TODO: make the parsing "contextual", in the sense that it takes
+            #       the state into account.
+
             # parse the egrep result. this should look something like this:
             #     job_state = C
             #     exec_host = i72/0
@@ -846,25 +849,50 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
             for line in results:
                 if len(line.split('=')) == 2:
                     key, val = line.split('=')
-                    key = key.strip().lower()
+                    key = key.strip()
                     val = val.strip()
 
-                    if key in ['job_state']:
+                    # The ubiquitous job state
+                    if key in ['job_state']: # PBS Pro and TORQUE
                         job_info['state'] = _pbs_to_saga_jobstate(val)
 
-                    elif key in ['exec_host']:
+                    # Hosts where the job ran
+                    elif key in ['exec_host']: # PBS Pro and TORQUE
                         job_info['exec_hosts'] = val.split('+')  # format i73/7+i73/6+...
 
-                    elif key in ['exit_status']:
+                    # Exit code of the job
+                    elif key in ['exit_status', # TORQUE
+                                 'Exit_status' # PBS Pro
+                                ]:
                         job_info['returncode'] = int(val)
 
-                    elif key in ['qtime', 'ctime']:
+                    # Time job got created in the queue
+                    elif key in ['ctime']: # PBS Pro and TORQUE
                         job_info['create_time'] = val
 
-                    elif key in ['start_time','stime']:
+                    # Time job started to run
+                    elif key in ['start_time', # TORQUE
+                                 'stime'       # PBS Pro
+                                ]:
                         job_info['start_time'] = val
 
-                    elif key in ['etime', 'comp_time','mtime']:
+                    # Time job ended.
+                    #
+                    # PBS Pro doesn't have an "end time" field.
+                    # It has an "resources_used.walltime" though,
+                    # which could be added up to the start time.
+                    # We will not do that arithmetic now though.
+                    #
+                    # Alternatively, we can use mtime, as the latest
+                    # modification time will generally also be the end time.
+                    #
+                    # TORQUE has an "comp_time" (completion? time) field,
+                    # that is generally the same as mtime at the finish.
+                    #
+                    # For the time being we will use mtime as end time for
+                    # both TORQUE and PBS Pro.
+                    #
+                    if key in ['mtime']: # PBS Pro and TORQUE
                         job_info['end_time'] = val
 
         # return the updated job info
