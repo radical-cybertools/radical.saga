@@ -756,30 +756,7 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
                 'gone':         False
             }
 
-            results = out.split('\n')
-            for line in results:
-                if len(line.split('=')) == 2:
-                    key, val = line.split('=')
-                    key = key.strip().lower()
-                    val = val.strip()
-
-                    if key in ['job_state']:
-                        job_info['state'] = _pbs_to_saga_jobstate(val)
-
-                    elif key in ['exec_host']:
-                        job_info['exec_hosts'] = val.split('+')  # format i73/7+i73/6+...
-
-                    elif key in ['exit_status']:
-                        job_info['returncode'] = int(val)
-
-                    elif key in ['qtime', 'ctime']:
-                        job_info['create_time'] = val
-
-                    elif key in ['start_time','stime']:
-                        job_info['start_time'] = val
-
-                    elif key in ['etime', 'comp_time','mtime']:
-                        job_info['end_time'] = val
+            job_info = self._the_real_deal(out, job_info)
 
             return job_info
 
@@ -832,52 +809,60 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
 
         if ret != 0:
             if ("Unknown Job Id" in out):
-                # Let's see if the previous job state was runnig or pending. in
+                # Let's see if the previous job state was running or pending. in
                 # that case, the job is gone now, which can either mean DONE,
                 # or FAILED. the only thing we can do is set it to 'DONE'
                 job_info['gone'] = True
                 # we can also set the end time
                 self._logger.warning("Previously running job has disappeared. "
                         "This probably means that the backend doesn't store "
-                        "informations about finished jobs. Setting state to 'DONE'.")
+                        "information about finished jobs. Setting state to 'DONE'.")
 
                 if prev_info['state'] in [saga.job.RUNNING, saga.job.PENDING]:
                     job_info['state'] = saga.job.DONE
                 else:
+                    # TODO: This is a bad guess?
                     job_info['state'] = saga.job.FAILED
             else:
                 # something went wrong
                 message = "Error retrieving job info via 'qstat': %s" % out
                 log_error_and_raise(message, saga.NoSuccess, self._logger)
         else:
-            # parse the egrep result. this should look something like this:
-            #     job_state = C
-            #     exec_host = i72/0
-            #     exit_status = 0
-            results = out.split('\n')
-            for result in results:
-                if len(result.split('=')) == 2:
-                    key, val = result.split('=')
-                    key = key.strip().lower()
-                    val = val.strip()
+            job_info = self._the_real_deal(out, job_info)
 
-                    if key in ['job_state']:
-                        job_info['state'] = _pbs_to_saga_jobstate(val)
+        # return the new job info dict
+        return job_info
 
-                    elif key in ['exec_host']:
-                        job_info['exec_hosts'] = val.split('+')  # format i73/7+i73/6+...
+    def _the_real_deal(self, haystack, job_info):
 
-                    elif key in ['exit_status']:
-                        job_info['returncode'] = int(val)
+        # parse the egrep result. this should look something like this:
+        #     job_state = C
+        #     exec_host = i72/0
+        #     exit_status = 0
+        results = haystack.split('\n')
+        for line in results:
+            if len(line.split('=')) == 2:
+                key, val = line.split('=')
+                key = key.strip().lower()
+                val = val.strip()
 
-                    elif key in ['qtime', 'ctime']:
-                        job_info['create_time'] = val
+                if key in ['job_state']:
+                    job_info['state'] = _pbs_to_saga_jobstate(val)
 
-                    elif key in ['start_time','stime']:
-                        job_info['start_time'] = val
+                elif key in ['exec_host']:
+                    job_info['exec_hosts'] = val.split('+')  # format i73/7+i73/6+...
 
-                    elif key in ['etime', 'comp_time','mtime']:
-                        job_info['end_time'] = val
+                elif key in ['exit_status']:
+                    job_info['returncode'] = int(val)
+
+                elif key in ['qtime', 'ctime']:
+                    job_info['create_time'] = val
+
+                elif key in ['start_time','stime']:
+                    job_info['start_time'] = val
+
+                elif key in ['etime', 'comp_time','mtime']:
+                    job_info['end_time'] = val
 
         # return the new job info dict
         return job_info
