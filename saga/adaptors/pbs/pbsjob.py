@@ -73,7 +73,7 @@ class _job_state_monitor(threading.Thread):
                     # either done, failed or canceled
                     if  job_info['state'] not in [saga.job.DONE, saga.job.FAILED, saga.job.CANCELED] :
 
-                        new_job_info = self.js._job_get_info(job_id)
+                        new_job_info = self.js._job_get_info(job_id, reconnect=False)
                         self.logger.info ("Job monitoring thread updating Job %s (state: %s)" \
                                        % (job_id, new_job_info['state']))
 
@@ -726,77 +726,81 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
         """ see if we can get some info about a job that we don't
             know anything about
         """
-        rm, pid = self._adaptor.parse_id(job_id)
+        # rm, pid = self._adaptor.parse_id(job_id)
 
-        # run the PBS 'qstat' command to get some infos about our job
-        if 'PBSPro_1' in self._commands['qstat']['version']:
-            qstat_flag = '-f'
-        else:
-            qstat_flag ='-f1'
+        # # run the PBS 'qstat' command to get some infos about our job
+        # if 'PBSPro_1' in self._commands['qstat']['version']:
+        #     qstat_flag = '-f'
+        # else:
+        #     qstat_flag ='-f1'
+        #
+        # ret, out, _ = self.shell.run_sync("unset GREP_OPTIONS; %s %s %s | "\
+        #         "grep -E -i '(job_state)|(exec_host)|(exit_status)|(ctime)|"\
+        #         "(start_time)|(comp_time)|(stime)|(qtime)|(mtime)'" \
+        #       % (self._commands['qstat']['path'], qstat_flag, pid))
 
-        ret, out, _ = self.shell.run_sync("unset GREP_OPTIONS; %s %s %s | "\
-                "grep -E -i '(job_state)|(exec_host)|(exit_status)|(ctime)|"\
-                "(start_time)|(comp_time)|(stime)|(qtime)|(mtime)'" \
-              % (self._commands['qstat']['path'], qstat_flag, pid))
+        # if ret != 0:
+        #     message = "Couldn't reconnect to job '%s': %s" % (job_id, out)
+        #     log_error_and_raise(message, saga.NoSuccess, self._logger)
 
-        if ret != 0:
-            message = "Couldn't reconnect to job '%s': %s" % (job_id, out)
-            log_error_and_raise(message, saga.NoSuccess, self._logger)
-
-        else:
-            # the job seems to exist on the backend. let's gather some data
-            job_info = {
-                'job_id':       job_id,
-                'state':        saga.job.UNKNOWN,
-                'exec_hosts':   None,
-                'returncode':   None,
-                'create_time':  None,
-                'start_time':   None,
-                'end_time':     None,
-                'gone':         False
-            }
-
-            job_info = self._the_real_deal(out, job_info)
-
-            return job_info
+        # else:
+        #     # the job seems to exist on the backend. let's gather some data
+        #     job_info = {
+        #         'job_id':       job_id,
+        #         'state':        saga.job.UNKNOWN,
+        #         'exec_hosts':   None,
+        #         'returncode':   None,
+        #         'create_time':  None,
+        #         'start_time':   None,
+        #         'end_time':     None,
+        #         'gone':         False
+        #     }
+        #
+        #     job_info = self._parse_qstat(out, job_info)
+        #
+        #     return job_info
 
     # ----------------------------------------------------------------
     #
-    def _job_get_info(self, job_id):
-        """ get job attributes via qstat
+    def _job_get_info(self, job_id, reconnect):
+        """ Get job information attributes via qstat.
         """
 
-        # if we don't have the job in our dictionary, we don't want it
-        if job_id not in self.jobs:
+        # If we don't have the job in our dictionary, we don't want it,
+        # unless we are trying to reconnect.
+        if not reconnect and job_id not in self.jobs:
             message = "Unknown job id: %s. Can't update state." % job_id
             log_error_and_raise(message, saga.NoSuccess, self._logger)
 
-        # prev. info contains the info collect when _job_get_info
-        # was called the last time
-        prev_info = self.jobs[job_id]
+        cur_info = {}
+        prev_info = {}
+        if not reconnect:
+            # prev_info contains the info collect when _job_get_info
+            # was called the last time
+            prev_info = self.jobs[job_id]
 
-        # if the 'gone' flag is set, there's no need to query the job
-        # state again. it's gone forever
-        if  prev_info['gone'] is True:
-            return prev_info
+            # if the 'gone' flag is set, there's no need to query the job
+            # state again. it's gone forever
+            if prev_info['gone'] is True:
+                return prev_info
 
-        # curr. info will contain the new job info collect. it starts off
-        # as a copy of prev_info (don't use deepcopy because there is an API 
-        # object in the dict -> recursion)
-        job_info = dict()
-        job_info['obj'        ] = prev_info.get ('obj'        )
-        job_info['job_id'     ] = prev_info.get ('job_id'     )
-        job_info['state'      ] = prev_info.get ('state'      )
-        job_info['exec_hosts' ] = prev_info.get ('exec_hosts' )
-        job_info['returncode' ] = prev_info.get ('returncode' )
-        job_info['create_time'] = prev_info.get ('create_time')
-        job_info['start_time' ] = prev_info.get ('start_time' )
-        job_info['end_time'   ] = prev_info.get ('end_time'   )
-        job_info['gone'       ] = prev_info.get ('gone'       )
+            # cur_info will contain the refreshed job info. it starts off
+            # as a copy of prev_info (don't use deepcopy because there is an API
+            # object in the dict -> recursion)
+            cur_info['obj']         = prev_info.get('obj')
+            cur_info['job_id']      = prev_info.get('job_id')
+            cur_info['state']       = prev_info.get('state')
+            cur_info['exec_hosts']  = prev_info.get('exec_hosts')
+            cur_info['returncode']  = prev_info.get('returncode')
+            cur_info['create_time'] = prev_info.get('create_time')
+            cur_info['start_time']  = prev_info.get('start_time')
+            cur_info['end_time']    = prev_info.get('end_time')
+            cur_info['gone']        = prev_info.get('gone')
 
         rm, pid = self._adaptor.parse_id(job_id)
 
         # run the PBS 'qstat' command to get some infos about our job
+        # TODO: create a PBSPRO/TORQUE flag once
         if 'PBSPro_1' in self._commands['qstat']['version']:
             qstat_flag = '-fx'
         else:
@@ -808,32 +812,52 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
                 % (self._commands['qstat']['path'], qstat_flag, pid))
 
         if ret != 0:
+
+            if reconnect:
+                message = "Couldn't reconnect to job '%s': %s" % (job_id, out)
+                log_error_and_raise(message, saga.NoSuccess, self._logger)
+
             if ("Unknown Job Id" in out):
                 # Let's see if the previous job state was running or pending. in
                 # that case, the job is gone now, which can either mean DONE,
                 # or FAILED. the only thing we can do is set it to 'DONE'
-                job_info['gone'] = True
-                # we can also set the end time
+                cur_info['gone'] = True
+                # TODO: we can also set the end time?
                 self._logger.warning("Previously running job has disappeared. "
                         "This probably means that the backend doesn't store "
                         "information about finished jobs. Setting state to 'DONE'.")
 
                 if prev_info['state'] in [saga.job.RUNNING, saga.job.PENDING]:
-                    job_info['state'] = saga.job.DONE
+                    cur_info['state'] = saga.job.DONE
                 else:
-                    # TODO: This is a bad guess?
-                    job_info['state'] = saga.job.FAILED
+                    # TODO: This is an uneducated guess?
+                    cur_info['state'] = saga.job.FAILED
             else:
                 # something went wrong
                 message = "Error retrieving job info via 'qstat': %s" % out
                 log_error_and_raise(message, saga.NoSuccess, self._logger)
         else:
-            job_info = self._the_real_deal(out, job_info)
+
+            if reconnect:
+                # Create a template data structure
+                cur_info = {
+                    'job_id':       job_id,
+                    'state':        saga.job.UNKNOWN,
+                    'exec_hosts':   None,
+                    'returncode':   None,
+                    'create_time':  None,
+                    'start_time':   None,
+                    'end_time':     None,
+                    'gone':         False
+                }
+
+            # the job seems to exist on the backend. let's gather some data
+            cur_info = self._parse_qstat(out, cur_info)
 
         # return the new job info dict
-        return job_info
+        return cur_info
 
-    def _the_real_deal(self, haystack, job_info):
+    def _parse_qstat(self, haystack, job_info):
 
         # parse the egrep result. this should look something like this:
         #     job_state = C
@@ -980,21 +1004,16 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
     @SYNC_CALL
     def get_job(self, job_id):
         """ Implements saga.adaptors.cpi.job.Service.get_job()
+
+            Re-create job instance from a job-id.
         """
 
-      # self._logger.info("checking watch list for %s" % job_id)
-
-        if  job_id in self.jobs :
-
-      #     self._logger.info("checking watch list for %s - found" % job_id)
+        # If we already have the job info, we just pass the current info.
+        if job_id in self.jobs :
             return self.jobs[job_id]['obj']
 
-      # else :
-      #     self._logger.info("checking watch list for %s - not found" % job_id)
-
-
-        # try to get some information about this job
-        job_info = self._retrieve_job(job_id)
+        # Try to get some initial information about this job (again)
+        job_info = self._job_get_info(job_id, reconnect=True)
 
         # this dict is passed on to the job adaptor class -- use it to pass any
         # state information you need there.
@@ -1008,8 +1027,6 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
 
         job_obj = saga.job.Job(_adaptor=self._adaptor,
                                _adaptor_state=adaptor_state)
-
-      # self._logger.info("adding     job %s / %s to watch list (%s)" % (job_id, job_obj, self.jobs.keys()))
 
         # throw it into our job dictionary.
         job_info['obj']   = job_obj
