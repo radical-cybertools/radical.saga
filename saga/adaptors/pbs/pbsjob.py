@@ -836,41 +836,41 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
         else:
 
             # The job seems to exist on the backend. let's process some data.
-            job_info = self._parse_qstat(out, job_info)
+
+            # parse the egrep result. this should look something like this:
+            #     job_state = C
+            #     exec_host = i72/0
+            #     exit_status = 0
+            results = out.split('\n')
+            for line in results:
+                if len(line.split('=')) == 2:
+                    key, val = line.split('=')
+                    key = key.strip().lower()
+                    val = val.strip()
+
+                    if key in ['job_state']:
+                        job_info['state'] = _pbs_to_saga_jobstate(val)
+
+                    elif key in ['exec_host']:
+                        job_info['exec_hosts'] = val.split('+')  # format i73/7+i73/6+...
+
+                    elif key in ['exit_status']:
+                        job_info['returncode'] = int(val)
+
+                    elif key in ['qtime', 'ctime']:
+                        job_info['create_time'] = val
+
+                    elif key in ['start_time','stime']:
+                        job_info['start_time'] = val
+
+                    elif key in ['etime', 'comp_time','mtime']:
+                        job_info['end_time'] = val
 
         # return the updated job info
         return job_info
 
     def _parse_qstat(self, haystack, job_info):
 
-        # parse the egrep result. this should look something like this:
-        #     job_state = C
-        #     exec_host = i72/0
-        #     exit_status = 0
-        results = haystack.split('\n')
-        for line in results:
-            if len(line.split('=')) == 2:
-                key, val = line.split('=')
-                key = key.strip().lower()
-                val = val.strip()
-
-                if key in ['job_state']:
-                    job_info['state'] = _pbs_to_saga_jobstate(val)
-
-                elif key in ['exec_host']:
-                    job_info['exec_hosts'] = val.split('+')  # format i73/7+i73/6+...
-
-                elif key in ['exit_status']:
-                    job_info['returncode'] = int(val)
-
-                elif key in ['qtime', 'ctime']:
-                    job_info['create_time'] = val
-
-                elif key in ['start_time','stime']:
-                    job_info['start_time'] = val
-
-                elif key in ['etime', 'comp_time','mtime']:
-                    job_info['end_time'] = val
 
         # return the new job info dict
         return job_info
