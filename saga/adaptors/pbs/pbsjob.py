@@ -108,7 +108,7 @@ class _job_state_monitor(threading.Thread):
 # --------------------------------------------------------------------
 #
 def log_error_and_raise(message, exception, logger):
-    """ loggs an 'error' message and subsequently throws an exception
+    """ logs an 'error' message and subsequently throws an exception
     """
     logger.error(message)
     raise exception(message)
@@ -119,25 +119,26 @@ def log_error_and_raise(message, exception, logger):
 def _pbs_to_saga_jobstate(pbsjs):
     """ translates a pbs one-letter state to saga
     """
-    if pbsjs == 'C': # Torque
+    if pbsjs == 'C': # Torque "Job is completed after having run."
         return saga.job.DONE
-    elif pbsjs == 'F': # PBS Pro
+    elif pbsjs == 'F': # PBS Pro "Job is finished."
         return saga.job.DONE
-    elif pbsjs == 'E':
+    elif pbsjs == 'H': # PBS Pro and TORQUE "Job is held."
+        return saga.job.PENDING
+    elif pbsjs == 'Q': # PBS Pro and TORQUE "Job is queued(, eligible to run or routed.)
+        return saga.job.PENDING
+    elif pbsjs == 'S': # PBS Pro and TORQUE "Job is suspended."
+        return saga.job.PENDING
+    elif pbsjs == 'W': # PBS Pro and TORQUE "Job is waiting for its execution time to be reached."
+        return saga.job.PENDING
+    elif pbsjs == 'R': # PBS Pro and TORQUE "Job is running."
         return saga.job.RUNNING
-    elif pbsjs == 'H':
-        return saga.job.PENDING
-    elif pbsjs == 'Q':
-        return saga.job.PENDING
-    elif pbsjs == 'R':
+    elif pbsjs == 'E': # PBS Pro and TORQUE "Job is exiting after having run"
         return saga.job.RUNNING
-    elif pbsjs == 'T':
+    elif pbsjs == 'T': # PBS Pro and TORQUE "Job is being moved to new location."
+        # TODO: PENDING?
         return saga.job.RUNNING
-    elif pbsjs == 'W':
-        return saga.job.PENDING
-    elif pbsjs == 'S':
-        return saga.job.PENDING
-    elif pbsjs == 'X':
+    elif pbsjs == 'X': # PBS Pro "Subjob has completed execution or has been deleted."
         return saga.job.CANCELED
     else:
         return saga.job.UNKNOWN
