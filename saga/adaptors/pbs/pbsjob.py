@@ -773,7 +773,7 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
             log_error_and_raise(message, saga.NoSuccess, self._logger)
 
         if not reconnect:
-            # prev_info contains the info collect when _job_get_info
+            # job_info contains the info collect when _job_get_info
             # was called the last time
             job_info = self.jobs[job_id]
 
@@ -815,7 +815,7 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
                 log_error_and_raise(message, saga.NoSuccess, self._logger)
 
             if ("Unknown Job Id" in out):
-                # Let's see if the previous job state was running or pending. in
+                # Let's see if the last known job state was running or pending. in
                 # that case, the job is gone now, which can either mean DONE,
                 # or FAILED. the only thing we can do is set it to 'DONE'
                 job_info['gone'] = True
