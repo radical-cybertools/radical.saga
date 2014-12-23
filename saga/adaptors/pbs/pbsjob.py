@@ -772,30 +772,27 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
             message = "Unknown job id: %s. Can't update state." % job_id
             log_error_and_raise(message, saga.NoSuccess, self._logger)
 
-        cur_info = {}
-        prev_info = {}
         if not reconnect:
             # prev_info contains the info collect when _job_get_info
             # was called the last time
-            prev_info = self.jobs[job_id]
+            job_info = self.jobs[job_id]
 
             # if the 'gone' flag is set, there's no need to query the job
             # state again. it's gone forever
-            if prev_info['gone'] is True:
-                return prev_info
-
-            # cur_info will contain the refreshed job info. it starts off
-            # as a copy of prev_info (don't use deepcopy because there is an API
-            # object in the dict -> recursion)
-            cur_info['obj']         = prev_info.get('obj')
-            cur_info['job_id']      = prev_info.get('job_id')
-            cur_info['state']       = prev_info.get('state')
-            cur_info['exec_hosts']  = prev_info.get('exec_hosts')
-            cur_info['returncode']  = prev_info.get('returncode')
-            cur_info['create_time'] = prev_info.get('create_time')
-            cur_info['start_time']  = prev_info.get('start_time')
-            cur_info['end_time']    = prev_info.get('end_time')
-            cur_info['gone']        = prev_info.get('gone')
+            if job_info['gone'] is True:
+                return job_info
+        else:
+            # Create a template data structure
+            job_info = {
+                'job_id':       job_id,
+                'state':        saga.job.UNKNOWN,
+                'exec_hosts':   None,
+                'returncode':   None,
+                'create_time':  None,
+                'start_time':   None,
+                'end_time':     None,
+                'gone':         False
+            }
 
         rm, pid = self._adaptor.parse_id(job_id)
 
@@ -821,41 +818,28 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
                 # Let's see if the previous job state was running or pending. in
                 # that case, the job is gone now, which can either mean DONE,
                 # or FAILED. the only thing we can do is set it to 'DONE'
-                cur_info['gone'] = True
+                job_info['gone'] = True
                 # TODO: we can also set the end time?
                 self._logger.warning("Previously running job has disappeared. "
                         "This probably means that the backend doesn't store "
                         "information about finished jobs. Setting state to 'DONE'.")
 
-                if prev_info['state'] in [saga.job.RUNNING, saga.job.PENDING]:
-                    cur_info['state'] = saga.job.DONE
+                if job_info['state'] in [saga.job.RUNNING, saga.job.PENDING]:
+                    job_info['state'] = saga.job.DONE
                 else:
                     # TODO: This is an uneducated guess?
-                    cur_info['state'] = saga.job.FAILED
+                    job_info['state'] = saga.job.FAILED
             else:
                 # something went wrong
                 message = "Error retrieving job info via 'qstat': %s" % out
                 log_error_and_raise(message, saga.NoSuccess, self._logger)
         else:
 
-            if reconnect:
-                # Create a template data structure
-                cur_info = {
-                    'job_id':       job_id,
-                    'state':        saga.job.UNKNOWN,
-                    'exec_hosts':   None,
-                    'returncode':   None,
-                    'create_time':  None,
-                    'start_time':   None,
-                    'end_time':     None,
-                    'gone':         False
-                }
+            # The job seems to exist on the backend. let's process some data.
+            job_info = self._parse_qstat(out, job_info)
 
-            # the job seems to exist on the backend. let's gather some data
-            cur_info = self._parse_qstat(out, cur_info)
-
-        # return the new job info dict
-        return cur_info
+        # return the updated job info
+        return job_info
 
     def _parse_qstat(self, haystack, job_info):
 
