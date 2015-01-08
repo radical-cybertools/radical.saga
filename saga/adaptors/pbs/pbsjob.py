@@ -48,16 +48,13 @@ class _job_state_monitor(threading.Thread):
         self._stop.set()
 
 
-    def stopped(self):
-        return self._stop.isSet()
-
     def run(self):
 
         # we stop the monitoring thread when we see the same error 3 times in
         # a row...
         error_type_count = dict()
 
-        while self.stopped() is False:
+        while not self._stop.is_set ():
 
             try:
                 # FIXME: do bulk updates here! we don't want to pull information
