@@ -281,6 +281,9 @@ def _pbscript_generator(url, logger, jd, ppn, pbs_version, is_cray=False, queue=
         elif '4.2.7' in pbs_version:
             logger.info("Using Cray XT @ NERSC (e.g. Edison) specific '#PBS -l mppwidth=xx' flags (PBSPro_10).")
             pbs_params += "#PBS -l mppwidth=%s \n" % jd.total_cpu_count
+        elif 'Version: 5.' in pbs_version:
+            logger.info("Using TORQUE 5.x notation '#PBS -l procs=XX' ")
+            pbs_params += "#PBS -l procs=%d\n" % jd.total_cpu_count
         else:
             logger.info("Using Cray XT (e.g. Kraken, Jaguar) specific '#PBS -l size=xx' flags (TORQUE).")
             pbs_params += "#PBS -l size=%s\n" % jd.total_cpu_count
@@ -291,7 +294,7 @@ def _pbscript_generator(url, logger, jd, ppn, pbs_version, is_cray=False, queue=
     elif '4.2.7' in pbs_version:
         logger.info("Using Cray XT @ NERSC (e.g. Hopper) specific '#PBS -l mppwidth=xx' flags (PBSPro_10).")
         pbs_params += "#PBS -l mppwidth=%s \n" % jd.total_cpu_count
-    elif  'PBSPro_12' in pbs_version:
+    elif 'PBSPro_12' in pbs_version:
         logger.info("Using PBSPro 12 notation '#PBS -l select=XX' ")
         pbs_params += "#PBS -l select=%d\n" % (nnodes)
     else:
@@ -569,7 +572,10 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
 
         self._logger.info("Found PBS tools: %s" % self._commands)
 
-        # let's try to figure out if we're working on a Cray XT machine.
+        #
+        # TODO: Get rid of this, as I dont think there is any justification that Cray's are special
+        #
+        # let's try to figure out if we're working on a Cray machine.
         # naively, we assume that if we can find the 'aprun' command in the
         # path that we're logged in to a Cray machine.
         if self.is_cray == "":
@@ -577,12 +583,11 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
             if ret != 0:
                 self.is_cray = ""
             else:
-                self._logger.info("Host '%s' seems to be a Cray XT class machine." \
+                self._logger.info("Host '%s' seems to be a Cray machine." \
                     % self.rm.host)
                 self.is_cray = "unknowncray"
         else: 
             self._logger.info("Assuming host is a Cray since 'craytype' is set to: %s" % self.is_cray)
-
 
         #
         # Get number of processes per node
