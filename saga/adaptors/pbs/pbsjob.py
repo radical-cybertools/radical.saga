@@ -169,10 +169,9 @@ def _pbscript_generator(url, logger, jd, ppn, pbs_version, is_cray=False, queue=
         pbs_params += "#PBS -V \n"
 
     if jd.environment is not None:
-        variable_list = str()
-        for key in jd.environment.keys():
-            variable_list += "%s=%s," % (key, jd.environment[key])
-        pbs_params += "#PBS -v %s \n" % variable_list
+        pbs_params += "#PBS -v %s\n" % \
+                ','.join (["%s=%s" % (k,v) 
+                           for k,v in jd.environment.iteritems()])
 
 # apparently this doesn't work with older PBS installations
 #    if jd.working_directory is not None:
