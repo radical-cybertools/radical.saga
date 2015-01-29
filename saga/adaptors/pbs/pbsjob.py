@@ -641,6 +641,7 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
         if  jd.working_directory :
             jd.working_directory = os.path.normpath (jd.working_directory)
 
+        # TODO: Why would one want this?
         if (self.queue is not None) and (jd.queue is not None):
             self._logger.warning("Job service was instantiated explicitly with \
 'queue=%s', but job description tries to a different queue: '%s'. Using '%s'." %
