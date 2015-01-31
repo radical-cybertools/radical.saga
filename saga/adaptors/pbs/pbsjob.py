@@ -143,7 +143,7 @@ def _pbs_to_saga_jobstate(pbsjs):
 
 # --------------------------------------------------------------------
 #
-def _pbscript_generator(url, logger, jd, ppn, pbs_version, is_cray=False, queue=None, ):
+def _pbscript_generator(url, logger, jd, ppn, gres, pbs_version, is_cray=False, queue=None, ):
     """ generates a PBS script from a SAGA job description
     """
     pbs_params  = str()
@@ -306,6 +306,10 @@ def _pbscript_generator(url, logger, jd, ppn, pbs_version, is_cray=False, queue=
 
         pbs_params += "#PBS -l nodes=%d:ppn=%d%s\n" % (
             nnodes, ppn, ''.join([':%s' % prop for prop in node_properties]))
+
+    # Process Generic Resource specification request
+    if gres:
+        pbs_params += "#PBS -l gres=%s\n" % gres
 
     # escape all double quotes and dollarsigns, otherwise 'echo |'
     # further down won't work
@@ -495,6 +499,7 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
         self.queue   = None
         self.shell   = None
         self.jobs    = dict()
+        self.gres    = None
 
         # the monitoring thread - one per service instance
         self.mt = _job_state_monitor(job_service=self)
@@ -513,6 +518,8 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
                     self.is_cray = val[0]
                 elif key == 'ppn':
                     self.ppn = int(val[0])
+                elif key == 'gres':
+                    self.gres = val[0]
 
 
         # we need to extract the scheme for PTYShell. That's basically the
@@ -650,7 +657,7 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
         try:
             # create a PBS job script from SAGA job description
             script = _pbscript_generator(url=self.rm, logger=self._logger,
-                                         jd=jd, ppn=self.ppn,
+                                         jd=jd, ppn=self.ppn, gres=self.gres,
                                          pbs_version=self._commands['qstat']['version'],
                                          is_cray=self.is_cray, queue=self.queue,
                                          )
