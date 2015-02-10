@@ -143,7 +143,7 @@ def _pbs_to_saga_jobstate(pbsjs):
 
 # --------------------------------------------------------------------
 #
-def _pbscript_generator(url, logger, jd, ppn, pbs_version, is_cray=False, queue=None, ):
+def _pbscript_generator(url, logger, jd, ppn, gres, pbs_version, is_cray=False, queue=None, ):
     """ generates a PBS script from a SAGA job description
     """
     pbs_params  = str()
@@ -281,6 +281,9 @@ def _pbscript_generator(url, logger, jd, ppn, pbs_version, is_cray=False, queue=
         elif '4.2.7' in pbs_version:
             logger.info("Using Cray XT @ NERSC (e.g. Edison) specific '#PBS -l mppwidth=xx' flags (PBSPro_10).")
             pbs_params += "#PBS -l mppwidth=%s \n" % jd.total_cpu_count
+        elif 'Version: 5.' in pbs_version:
+            logger.info("Using TORQUE 5.x notation '#PBS -l procs=XX' ")
+            pbs_params += "#PBS -l procs=%d\n" % jd.total_cpu_count
         else:
             logger.info("Using Cray XT (e.g. Kraken, Jaguar) specific '#PBS -l size=xx' flags (TORQUE).")
             pbs_params += "#PBS -l size=%s\n" % jd.total_cpu_count
@@ -291,7 +294,7 @@ def _pbscript_generator(url, logger, jd, ppn, pbs_version, is_cray=False, queue=
     elif '4.2.7' in pbs_version:
         logger.info("Using Cray XT @ NERSC (e.g. Hopper) specific '#PBS -l mppwidth=xx' flags (PBSPro_10).")
         pbs_params += "#PBS -l mppwidth=%s \n" % jd.total_cpu_count
-    elif  'PBSPro_12' in pbs_version:
+    elif 'PBSPro_12' in pbs_version:
         logger.info("Using PBSPro 12 notation '#PBS -l select=XX' ")
         pbs_params += "#PBS -l select=%d\n" % (nnodes)
     else:
@@ -303,6 +306,10 @@ def _pbscript_generator(url, logger, jd, ppn, pbs_version, is_cray=False, queue=
 
         pbs_params += "#PBS -l nodes=%d:ppn=%d%s\n" % (
             nnodes, ppn, ''.join([':%s' % prop for prop in node_properties]))
+
+    # Process Generic Resource specification request
+    if gres:
+        pbs_params += "#PBS -l gres=%s\n" % gres
 
     # escape all double quotes and dollarsigns, otherwise 'echo |'
     # further down won't work
@@ -492,6 +499,7 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
         self.queue   = None
         self.shell   = None
         self.jobs    = dict()
+        self.gres    = None
 
         # the monitoring thread - one per service instance
         self.mt = _job_state_monitor(job_service=self)
@@ -510,6 +518,8 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
                     self.is_cray = val[0]
                 elif key == 'ppn':
                     self.ppn = int(val[0])
+                elif key == 'gres':
+                    self.gres = val[0]
 
 
         # we need to extract the scheme for PTYShell. That's basically the
@@ -569,7 +579,10 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
 
         self._logger.info("Found PBS tools: %s" % self._commands)
 
-        # let's try to figure out if we're working on a Cray XT machine.
+        #
+        # TODO: Get rid of this, as I dont think there is any justification that Cray's are special
+        #
+        # let's try to figure out if we're working on a Cray machine.
         # naively, we assume that if we can find the 'aprun' command in the
         # path that we're logged in to a Cray machine.
         if self.is_cray == "":
@@ -577,12 +590,11 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
             if ret != 0:
                 self.is_cray = ""
             else:
-                self._logger.info("Host '%s' seems to be a Cray XT class machine." \
+                self._logger.info("Host '%s' seems to be a Cray machine." \
                     % self.rm.host)
                 self.is_cray = "unknowncray"
         else: 
             self._logger.info("Assuming host is a Cray since 'craytype' is set to: %s" % self.is_cray)
-
 
         #
         # Get number of processes per node
@@ -636,6 +648,7 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
         if  jd.working_directory :
             jd.working_directory = os.path.normpath (jd.working_directory)
 
+        # TODO: Why would one want this?
         if (self.queue is not None) and (jd.queue is not None):
             self._logger.warning("Job service was instantiated explicitly with \
 'queue=%s', but job description tries to a different queue: '%s'. Using '%s'." %
@@ -644,7 +657,7 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
         try:
             # create a PBS job script from SAGA job description
             script = _pbscript_generator(url=self.rm, logger=self._logger,
-                                         jd=jd, ppn=self.ppn,
+                                         jd=jd, ppn=self.ppn, gres=self.gres,
                                          pbs_version=self._commands['qstat']['version'],
                                          is_cray=self.is_cray, queue=self.queue,
                                          )
