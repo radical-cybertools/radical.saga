@@ -116,9 +116,13 @@ class Adaptor (saga.adaptors.base.Base):
                     continue
 
                 if  key.endswith ('.pem') :
-                    pub  = "%s" % key
-                else :
-                    pub  = "%s.pub" % key
+                    # we can't handle passwd protected PEMs well, since we can't
+                    # detect when they are passwd protected in the first place,
+                    # so we do not pick them up by default
+                    continue
+              #     pub  = "%s" % key
+              # else :
+              #     pub  = "%s.pub" % key
 
             
                 # the private and public keys must exist
