@@ -111,20 +111,18 @@ class Adaptor (saga.adaptors.base.Base):
                     # don't want directories -- only keys
                     continue
 
-                if  key.endswith ('.pub') :
+                elif  key.endswith ('.pub') :
                     # don't want public keys in this loop
                     continue
 
-                if  key.endswith ('.pem') :
+                elif  key.endswith ('.pem') :
                     # we can't handle passwd protected PEMs well, since we can't
                     # detect when they are passwd protected in the first place,
                     # so we do not pick them up by default
                     continue
-              #     pub  = "%s" % key
-              # else :
-              #     pub  = "%s.pub" % key
+                else :
+                    pub  = "%s.pub" % key
 
-            
                 # the private and public keys must exist
                 if  not os.path.exists (key ) or \
                     not os.path.isfile (key )    :
