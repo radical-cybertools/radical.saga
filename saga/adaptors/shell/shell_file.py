@@ -224,10 +224,12 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
     def _create_parent (self, cwdurl, tgt) :
 
         dirname = sumisc.url_get_dirname (tgt)
+        ret     = None
+        out     = None
 
         if  sumisc.url_is_compatible (cwdurl, tgt) :
 
-            ret, out, _ = self._command (" mkdir -p '%s'\n" % (dirname))
+            ret, out, _ = self._command (" mkdir -p '%s'\n" % (dirname), make_location=True)
             if  ret != 0 :
                 raise saga.NoSuccess ("failed at mkdir '%s': (%s) (%s)" \
                                    % (dirname, ret, out))
@@ -244,8 +246,9 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
                                    % (dirname, ret, out))
 
         else :
-            raise saga.BadParameter ("failed: cannot create target dir for '%s': (%s) (%s)" \
-                                  % (tgt, ret, out))
+            lease_tgt = self._adaptor.get_lease_target (tgt)
+            with self.lm.lease (lease_tgt, self.shell_creator, tgt) as tmp_shell :
+                tmp_shell.run_sync ('mkdir -p %s' % dirname)
 
 
     # ----------------------------------------------------------------
@@ -262,12 +265,6 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
         self.session     = session
         self.valid       = False # will be set by initialize
         self.lm          = session._lease_manager
-
-        # cwd is where this directory is in, so the path w/o the last element
-        path             = self.url.path.rstrip ('/')
-        self.cwd         = sumisc.url_get_dirname (path)
-        self.cwdurl      = saga.Url (url) # deep copy
-        self.cwdurl.path = self.cwd
 
         def _shell_creator (url) :
             return sups.PTYShell (url, self.session, self._logger)
@@ -294,10 +291,10 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
 
     # ----------------------------------------------------------------
     #
-    def _command (self, command, location=None) :
+    def _command (self, command, location=None, make_location=False) :
 
         if  not location :
-            location = self.cwdurl
+            location = self.url
         else :
             location = saga.Url (location)
 
@@ -305,7 +302,13 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
         with self.lm.lease (lease_tgt, self.shell_creator, location) \
              as cmd_shell :
 
-            return cmd_shell.run_sync ("cd %s && command", location.path, command)
+            if  make_location and location.path :
+                pre_cmd = "mkdir -p %s &&" % location.path
+            else :
+                pre_cmd = ""
+             
+
+            return cmd_shell.run_sync ("%s cd %s && %s" % (pre_cmd, location.path, command))
 
 
     # ----------------------------------------------------------------
@@ -316,15 +319,19 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
         # to the initial (or later current) working directory.
 
         cmd = ""
+        mkl = False    # make location on command execution
 
         if  self.flags & saga.filesystem.CREATE_PARENTS :
             cmd = " mkdir -p '%s' ;  cd '%s'" % (self.url.path, self.url.path)
+            mkl = True
         elif self.flags & saga.filesystem.CREATE :
             cmd = " mkdir    '%s' ;  cd '%s'" % (self.url.path, self.url.path)
+            mkl = False
         else :
             cmd = " test -d  '%s' && cd '%s'" % (self.url.path, self.url.path)
+            mkl = False
 
-        ret, out, _ = self._command (cmd)
+        ret, out, _ = self._command (cmd, make_location=mkl)
 
         if  ret != 0 :
             raise saga.BadParameter ("invalid dir '%s': %s" % (self.url.path, out))
@@ -497,15 +504,15 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
         if  flags & saga.filesystem.RECURSIVE : 
             rec_flag  += "-r "
 
-        if  flags & saga.filesystem.CREATE_PARENTS : 
-            self._create_parent (cwdurl, tgt)
-
         files_copied = list()
 
         # if cwd, src and tgt point to the same host, we just run a shell cp
         # command on that host
         if  sumisc.url_is_compatible (cwdurl, src) and \
             sumisc.url_is_compatible (cwdurl, tgt) :
+
+            if  flags & saga.filesystem.CREATE_PARENTS : 
+                self._create_parent (cwdurl, tgt)
 
             # print "shell cp"
             ret, out, err = self._command (" cp %s '%s' '%s'\n" % (rec_flag, src.path, tgt.path))
@@ -519,6 +526,12 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
         else :
             # print "! shell cp"
 
+            # for a remote target, we need to manually create the target dir (if
+            # needed)
+            if  flags & saga.filesystem.CREATE_PARENTS : 
+                self._create_parent (cwdurl, tgt)
+
+
             # if cwd is remote, we use stage from/to
             if  not sumisc.url_is_local (cwdurl) :
 
@@ -527,8 +540,8 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
                     sumisc.url_is_compatible (cwdurl, tgt) :
 
                   # print "from local to remote: %s -> %s" % (src.path, tgt.path)
-                    lease_tgt = self._adaptor.get_lease_target (self.cwdurl)
-                    with self.lm.lease (lease_tgt, self.shell_creator, self.cwdurl) \
+                    lease_tgt = self._adaptor.get_lease_target (self.url)
+                    with self.lm.lease (lease_tgt, self.shell_creator, self.url) \
                         as copy_shell :
                         files_copied = copy_shell.stage_to_remote (src.path, tgt.path, rec_flag)
 
@@ -536,8 +549,8 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
                      sumisc.url_is_compatible (cwdurl, src) :
 
                   # print "from remote to local: %s -> %s" % (src.path, tgt.path)
-                    lease_tgt = self._adaptor.get_lease_target (self.cwdurl)
-                    with self.lm.lease (lease_tgt, self.shell_creator, self.cwdurl) \
+                    lease_tgt = self._adaptor.get_lease_target (self.url)
+                    with self.lm.lease (lease_tgt, self.shell_creator, self.url) \
                         as copy_shell :
                         files_copied = copy_shell.stage_from_remote (src.path, tgt.path, rec_flag)
 
@@ -736,9 +749,12 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
         options = ""
 
         if  flags & saga.filesystem.CREATE_PARENTS : 
-            options += "-p"
+            ret, out, _ = self._command (" mkdir -p '%s'" % tgt.path, make_location=True)
+        else :
+            ret, out, _ = self._command (" mkdir '%s'" % tgt.path)
 
-        self._command (" mkdir %s '%s'" % (options, tgt.path))
+        if  ret != 0 :
+            raise saga.NoSuccess ("make_dir (%s) faild: %s" % tgt_in, out)
 
    
     # ----------------------------------------------------------------
@@ -918,8 +934,9 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
 
         else :
 
-            raise saga.BadParameter ("failed: cannot create target dir '%s': not local to pwd (%s)" \
-                                  % (tgt, cwdurl))
+            lease_tgt = self._adaptor.get_lease_target (tgt)
+            with self.lm.lease (lease_tgt, self.shell_creator, tgt) as tmp_shell :
+                tmp_shell.run_sync ('mkdir -p %s' % dirname)
 
 
     # ----------------------------------------------------------------

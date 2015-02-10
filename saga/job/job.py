@@ -273,6 +273,25 @@ class Job (sb.Base, st.Task, sasync.Async) :
 
     # --------------------------------------------------------------------------
     #
+    @rus.takes     ('Job',
+                    rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
+    @rus.returns   ((str, st.Task))
+    def get_log_string (self, ttype=None) :
+        """
+        get_log_string()
+
+        Return the job's log information, ie. backend specific log messages
+        which have been collected during the job execution.  Those messages also
+        include stdout/stderr from the job's pre- and post-exec.
+
+        ttype:     saga.task.type enum
+        ret:       string.
+        """
+        return self._adaptor.get_stderr_string (ttype=ttype)
+
+
+    # --------------------------------------------------------------------------
+    #
     @rus.takes   ('Job',
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((rus.nothing, st.Task))

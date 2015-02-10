@@ -24,6 +24,11 @@ def translate_exception (e, msg=None) :
         # this seems to have a specific cause already, leave it alone
         return e
 
+    import traceback
+    import logging
+    logging.debug (traceback.format_exc())
+
+
     cmsg = e._plain_message
 
     if  msg :

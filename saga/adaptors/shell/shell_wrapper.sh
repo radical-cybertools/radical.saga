@@ -7,6 +7,10 @@ export HISTIGNORE
 # this script uses only POSIX shell functionality, and does not rely on bash or
 # other shell extensions.  It expects /bin/sh to be a POSIX compliant shell
 # thought.
+#
+# The invokation passes one (optional) parameter, the base workdir.  That
+# directory will be used to keep job state data. It' default value is set to
+# $HOME/.saga/adaptors/shell_job/
 
 
 # --------------------------------------------------------------------
@@ -48,7 +52,11 @@ ERROR=""
 RETVAL=""
 
 # this is where this 'daemon' keeps state for all started jobs
-BASE=$HOME/.saga/adaptors/shell_job/
+BASE="$*"
+if test -z "$BASE"
+then
+  BASE=$HOME/.saga/adaptors/shell_job/
+fi
 NOTIFICATIONS="$BASE/notifications"
 
 # this process will terminate when idle for longer than TIMEOUT seconds
@@ -213,7 +221,7 @@ create_monitor () {
   \cat > "$BASE/monitor.sh" <<EOT
 
   # create the monitor wrapper script once -- this is used by all job startup
-  # scripts to actually run job.sh.  The script gets SAGA_PID as argument,
+  # scripts to actually run job.sh.  The script gets a PID as argument,
   # denoting the job to monitor.   The monitor will write 3 pids to a named pipe
   # (listened to by the wrapper):
   #
@@ -260,8 +268,8 @@ create_monitor () {
   \\chmod 0700               \$DIR/cmd
 
   (
-    \\printf  "RUNNING \\n"             >> "\$DIR/state"
-    \\printf  "\$SAGA_PID:RUNNING: \\n" >> "\$NOTIFICATIONS"
+    \\printf  "RUNNING \\n"          >> "\$DIR/state"
+    \\printf  "\$UPID:RUNNING: \\n"  >> "\$NOTIFICATIONS"
     \\exec "\$DIR/cmd"   < "\$DIR/in" > "\$DIR/out" 2> "\$DIR/err"
   ) 1> /dev/null 2>/dev/null 3</dev/null &
 
@@ -289,8 +297,8 @@ create_monitor () {
     then
       \\rm -f "\$DIR/suspended"
       TIME=\`\\awk 'BEGIN{srand(); print srand()}'\`
-      \\printf "SUSPEND: \$TIME\\n"        >> "\$DIR/stats"
-      \\printf "\$SAGA_PID:SUSPENDED: \\n" >> "$NOTIFICATIONS"
+      \\printf "SUSPEND: \$TIME\\n"    >> "\$DIR/stats"
+      \\printf "\$UPID:SUSPENDED: \\n" >> "$NOTIFICATIONS"
 
       # need to wait again
       continue
@@ -300,8 +308,8 @@ create_monitor () {
     then
       \\rm -f "\$DIR/resumed"
       TIME=\`\\awk 'BEGIN{srand(); print srand()}'\`
-      \\printf "RESUME : \$TIME\\n"      >> "\$DIR/stats"
-      \\printf "\$SAGA_PID:RUNNING: \\n" >> "$NOTIFICATIONS"
+      \\printf "RESUME : \$TIME\\n"  >> "\$DIR/stats"
+      \\printf "\$UPID:RUNNING: \\n" >> "$NOTIFICATIONS"
 
       # need to wait again
       continue
@@ -313,11 +321,11 @@ create_monitor () {
     # evaluate exit val
     \\printf "\$retv\\n" > "\$DIR/exit"
 
-    test   "\$retv" -eq 0  && \\printf            "DONE   \\n" >> "\$DIR/state"
-    test   "\$retv" -eq 0  || \\printf            "FAILED \\n" >> "\$DIR/state"
+    test   "\$retv" -eq 0  && \\printf "DONE   \\n" >> "\$DIR/state"
+    test   "\$retv" -eq 0  || \\printf "FAILED \\n" >> "\$DIR/state"
 
-    test   "\$retv" -eq 0  && \\printf "\$SAGA_PID:DONE:\$retv   \\n" >> "\$NOTIFICATIONS"
-    test   "\$retv" -eq 0  || \\printf "\$SAGA_PID:FAILED:\$retv \\n" >> "\$NOTIFICATIONS"
+    test   "\$retv" -eq 0  && \\printf "\$UPID:DONE:\$retv   \\n" >> "\$NOTIFICATIONS"
+    test   "\$retv" -eq 0  || \\printf "\$UPID:FAILED:\$retv \\n" >> "\$NOTIFICATIONS"
 
 
     # done waiting
@@ -400,13 +408,13 @@ cmd_run () {
   )
 
   # we wait until the job was really started, and get its pid from the fifo
-  \read -r SAGA_PID < "$BASE/fifo"
+  \read -r UPID < "$BASE/fifo"
 
   # report the current state
-  \tail -n 1 "$BASE/$SAGA_PID/state" || \printf "UNKNOWN\n"
+  \tail -n 1 "$BASE/$UPID/state" || \printf "UNKNOWN\n"
 
   # return job id
-  RETVAL="$SAGA_PID"
+  RETVAL="$UPID"
 
 }
 
@@ -688,7 +696,6 @@ cmd_purge () {
       id=`basename "$dir"`
       \find  "$BASE/$id"      -type f -mtime +1 -print | xargs -n 100 rm -f
       \rmdir "$BASE/$id"      >/dev/null 2>&1
-      \find  "$NOTIFICATIONS" -type f -mtime +1 -print | xargs -n 100 rm -f
       \touch "$NOTIFICATIONS"
     done
     RETVAL="purged finished jobs"

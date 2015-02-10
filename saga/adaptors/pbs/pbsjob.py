@@ -48,12 +48,13 @@ class _job_state_monitor(threading.Thread):
         self._stop.set()
 
 
-    def stopped(self):
-        return self._stop.isSet()
-
     def run(self):
 
-        while self.stopped() is False:
+        # we stop the monitoring thread when we see the same error 3 times in
+        # a row...
+        error_type_count = dict()
+
+        while not self._stop.is_set ():
 
             try:
                 # FIXME: do bulk updates here! we don't want to pull information
@@ -69,7 +70,7 @@ class _job_state_monitor(threading.Thread):
                     # either done, failed or canceled
                     if  job_info['state'] not in [saga.job.DONE, saga.job.FAILED, saga.job.CANCELED] :
 
-                        new_job_info = self.js._job_get_info(job_id)
+                        new_job_info = self.js._job_get_info(job_id, reconnect=False)
                         self.logger.info ("Job monitoring thread updating Job %s (state: %s)" \
                                        % (job_id, new_job_info['state']))
 
@@ -86,6 +87,17 @@ class _job_state_monitor(threading.Thread):
                 traceback.print_exc ()
                 self.logger.warning("Exception caught in job monitoring thread: %s" % e)
 
+                # check if we see the same error again and again
+                error_type = str(e)
+                if  error_type not in error_type_count :
+                    error_type_count = dict()
+                    error_type_count[error_type]  = 1
+                else :
+                    error_type_count[error_type] += 1
+                    if  error_type_count[error_type] >= 3 :
+                        self.logger.error("too many monitoring errors -- stopping job monitoring thread")
+                        return
+
             finally :
                 time.sleep (MONITOR_UPDATE_INTERVAL)
 
@@ -93,7 +105,7 @@ class _job_state_monitor(threading.Thread):
 # --------------------------------------------------------------------
 #
 def log_error_and_raise(message, exception, logger):
-    """ loggs an 'error' message and subsequently throws an exception
+    """ logs an 'error' message and subsequently throws an exception
     """
     logger.error(message)
     raise exception(message)
@@ -104,25 +116,26 @@ def log_error_and_raise(message, exception, logger):
 def _pbs_to_saga_jobstate(pbsjs):
     """ translates a pbs one-letter state to saga
     """
-    if pbsjs == 'C': # Torque
+    if pbsjs == 'C': # Torque "Job is completed after having run."
         return saga.job.DONE
-    elif pbsjs == 'F': # PBS Pro
+    elif pbsjs == 'F': # PBS Pro "Job is finished."
         return saga.job.DONE
-    elif pbsjs == 'E':
+    elif pbsjs == 'H': # PBS Pro and TORQUE "Job is held."
+        return saga.job.PENDING
+    elif pbsjs == 'Q': # PBS Pro and TORQUE "Job is queued(, eligible to run or routed.)
+        return saga.job.PENDING
+    elif pbsjs == 'S': # PBS Pro and TORQUE "Job is suspended."
+        return saga.job.PENDING
+    elif pbsjs == 'W': # PBS Pro and TORQUE "Job is waiting for its execution time to be reached."
+        return saga.job.PENDING
+    elif pbsjs == 'R': # PBS Pro and TORQUE "Job is running."
         return saga.job.RUNNING
-    elif pbsjs == 'H':
-        return saga.job.PENDING
-    elif pbsjs == 'Q':
-        return saga.job.PENDING
-    elif pbsjs == 'R':
+    elif pbsjs == 'E': # PBS Pro and TORQUE "Job is exiting after having run"
         return saga.job.RUNNING
-    elif pbsjs == 'T':
+    elif pbsjs == 'T': # PBS Pro and TORQUE "Job is being moved to new location."
+        # TODO: PENDING?
         return saga.job.RUNNING
-    elif pbsjs == 'W':
-        return saga.job.PENDING
-    elif pbsjs == 'S':
-        return saga.job.PENDING
-    elif pbsjs == 'X':
+    elif pbsjs == 'X': # PBS Pro "Subjob has completed execution or has been deleted."
         return saga.job.CANCELED
     else:
         return saga.job.UNKNOWN
@@ -133,9 +146,10 @@ def _pbs_to_saga_jobstate(pbsjs):
 def _pbscript_generator(url, logger, jd, ppn, pbs_version, is_cray=False, queue=None, ):
     """ generates a PBS script from a SAGA job description
     """
-    pbs_params = str()
+    pbs_params  = str()
     exec_n_args = str()
 
+    exec_n_args += 'export SAGA_PPN=%d\n' % ppn
     if jd.executable is not None:
         exec_n_args += "%s " % (jd.executable)
     if jd.arguments is not None:
@@ -145,7 +159,7 @@ def _pbscript_generator(url, logger, jd, ppn, pbs_version, is_cray=False, queue=
     if jd.name is not None:
         pbs_params += "#PBS -N %s \n" % jd.name
 
-    if is_cray is "":
+    if (is_cray is "") or not('Version: 4.2.7' in pbs_version):
         # qsub on Cray systems complains about the -V option:
         # Warning:
         # Your job uses the -V option, which requests that all of your
@@ -155,10 +169,9 @@ def _pbscript_generator(url, logger, jd, ppn, pbs_version, is_cray=False, queue=
         pbs_params += "#PBS -V \n"
 
     if jd.environment is not None:
-        variable_list = str()
-        for key in jd.environment.keys():
-            variable_list += "%s=%s," % (key, jd.environment[key])
-        pbs_params += "#PBS -v %s \n" % variable_list
+        pbs_params += "#PBS -v %s\n" % \
+                ','.join (["%s=%s" % (k,v) 
+                           for k,v in jd.environment.iteritems()])
 
 # apparently this doesn't work with older PBS installations
 #    if jd.working_directory is not None:
@@ -239,6 +252,20 @@ def _pbscript_generator(url, logger, jd, ppn, pbs_version, is_cray=False, queue=
     if tcc % ppn > 0:
         nnodes += 1 # Request enough nodes to cater for the number of cores requested
 
+    # Node properties are appended to the nodes argument in the resource_list.
+    node_properties = []
+
+    # Parse candidate_hosts
+    #
+    # Currently only implemented for "bigflash" on Gordon@SDSC
+    # https://github.com/radical-cybertools/saga-python/issues/406
+    #
+    if jd.candidate_hosts:
+        if 'BIG_FLASH' in jd.candidate_hosts:
+            node_properties.append('bigflash')
+        else:
+            raise saga.NotImplemented("This type of 'candidate_hosts' not implemented: '%s'" % jd.candidate_hosts)
+
     if is_cray is not "":
         # Special cases for PBS/TORQUE on Cray. Different PBSes,
         # different flags. A complete nightmare...
@@ -248,9 +275,12 @@ def _pbscript_generator(url, logger, jd, ppn, pbs_version, is_cray=False, queue=
         elif 'PBSPro_12' in pbs_version:
             logger.info("Using Cray XT (e.g. Archer) specific '#PBS -l select=xx' flags (PBSPro_12).")
             pbs_params += "#PBS -l select=%d\n" % nnodes
-        elif '4.2.5-snap.201308291703' in pbs_version:
+        elif '4.2.6' in pbs_version:
             logger.info("Using Titan (Cray XP) specific '#PBS -l nodes=xx'")
             pbs_params += "#PBS -l nodes=%d\n" % nnodes
+        elif '4.2.7' in pbs_version:
+            logger.info("Using Cray XT @ NERSC (e.g. Edison) specific '#PBS -l mppwidth=xx' flags (PBSPro_10).")
+            pbs_params += "#PBS -l mppwidth=%s \n" % jd.total_cpu_count
         else:
             logger.info("Using Cray XT (e.g. Kraken, Jaguar) specific '#PBS -l size=xx' flags (TORQUE).")
             pbs_params += "#PBS -l size=%s\n" % jd.total_cpu_count
@@ -258,13 +288,21 @@ def _pbscript_generator(url, logger, jd, ppn, pbs_version, is_cray=False, queue=
         # e.g. Blacklight
         # TODO: The more we add, the more it screams for a refactoring
         pbs_params += "#PBS -l ncpus=%d\n" % tcc
+    elif '4.2.7' in pbs_version:
+        logger.info("Using Cray XT @ NERSC (e.g. Hopper) specific '#PBS -l mppwidth=xx' flags (PBSPro_10).")
+        pbs_params += "#PBS -l mppwidth=%s \n" % jd.total_cpu_count
+    elif  'PBSPro_12' in pbs_version:
+        logger.info("Using PBSPro 12 notation '#PBS -l select=XX' ")
+        pbs_params += "#PBS -l select=%d\n" % (nnodes)
     else:
         # Default case, i.e, standard HPC cluster (non-Cray)
 
         # If we want just a slice of one node
         if jd.total_cpu_count < ppn:
             ppn = jd.total_cpu_count
-        pbs_params += "#PBS -l nodes=%d:ppn=%d \n" % (nnodes, ppn)
+
+        pbs_params += "#PBS -l nodes=%d:ppn=%d%s\n" % (
+            nnodes, ppn, ''.join([':%s' % prop for prop in node_properties]))
 
     # escape all double quotes and dollarsigns, otherwise 'echo |'
     # further down won't work
@@ -297,6 +335,7 @@ _ADAPTOR_CAPABILITIES = {
     "jdes_attributes":   [saga.job.NAME,
                           saga.job.EXECUTABLE,
                           saga.job.ARGUMENTS,
+                          saga.job.CANDIDATE_HOSTS,
                           saga.job.ENVIRONMENT,
                           saga.job.INPUT,
                           saga.job.OUTPUT,
@@ -684,24 +723,63 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
         """ see if we can get some info about a job that we don't
             know anything about
         """
-        rm, pid = self._adaptor.parse_id(job_id)
+        # rm, pid = self._adaptor.parse_id(job_id)
 
-        # run the PBS 'qstat' command to get some infos about our job
-        if 'PBSPro_1' in self._commands['qstat']['version']:
-            qstat_flag = '-f'
-        else:
-            qstat_flag ='-f1'
+        # # run the PBS 'qstat' command to get some infos about our job
+        # if 'PBSPro_1' in self._commands['qstat']['version']:
+        #     qstat_flag = '-f'
+        # else:
+        #     qstat_flag ='-f1'
+        #
+        # ret, out, _ = self.shell.run_sync("unset GREP_OPTIONS; %s %s %s | "\
+        #         "grep -E -i '(job_state)|(exec_host)|(exit_status)|(ctime)|"\
+        #         "(start_time)|(comp_time)|(stime)|(qtime)|(mtime)'" \
+        #       % (self._commands['qstat']['path'], qstat_flag, pid))
 
-        ret, out, _ = self.shell.run_sync("unset GREP_OPTIONS; %s %s %s | \
-            grep -E '(job_state)|(exec_host)|(exit_status)|(ctime)|\
-            (start_time)|(comp_time)'" % (self._commands['qstat']['path'], qstat_flag, pid))
+        # if ret != 0:
+        #     message = "Couldn't reconnect to job '%s': %s" % (job_id, out)
+        #     log_error_and_raise(message, saga.NoSuccess, self._logger)
 
-        if ret != 0:
-            message = "Couldn't reconnect to job '%s': %s" % (job_id, out)
+        # else:
+        #     # the job seems to exist on the backend. let's gather some data
+        #     job_info = {
+        #         'job_id':       job_id,
+        #         'state':        saga.job.UNKNOWN,
+        #         'exec_hosts':   None,
+        #         'returncode':   None,
+        #         'create_time':  None,
+        #         'start_time':   None,
+        #         'end_time':     None,
+        #         'gone':         False
+        #     }
+        #
+        #     job_info = self._parse_qstat(out, job_info)
+        #
+        #     return job_info
+
+    # ----------------------------------------------------------------
+    #
+    def _job_get_info(self, job_id, reconnect):
+        """ Get job information attributes via qstat.
+        """
+
+        # If we don't have the job in our dictionary, we don't want it,
+        # unless we are trying to reconnect.
+        if not reconnect and job_id not in self.jobs:
+            message = "Unknown job id: %s. Can't update state." % job_id
             log_error_and_raise(message, saga.NoSuccess, self._logger)
 
+        if not reconnect:
+            # job_info contains the info collect when _job_get_info
+            # was called the last time
+            job_info = self.jobs[job_id]
+
+            # if the 'gone' flag is set, there's no need to query the job
+            # state again. it's gone forever
+            if job_info['gone'] is True:
+                return job_info
         else:
-            # the job seems to exist on the backend. let's gather some data
+            # Create a template data structure
             job_info = {
                 'job_id':       job_id,
                 'state':        saga.job.UNKNOWN,
@@ -713,117 +791,114 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
                 'gone':         False
             }
 
-            results = out.split('\n')
-            for line in results:
-                if len(line.split('=')) == 2:
-                    key, val = line.split('=')
-                    key = key.strip()  # strip() removes whitespaces at the
-                    val = val.strip()  # beginning and the end of the string
-
-                    if key == 'job_state':
-                        job_info['state'] = _pbs_to_saga_jobstate(val)
-                    elif key == 'exec_host':
-                        job_info['exec_hosts'] = val.split('+')
-                    elif key == 'exit_status':
-                        job_info['returncode'] = int(val)
-                    elif key == 'ctime':
-                        job_info['create_time'] = val
-                    elif key == 'start_time':
-                        job_info['start_time'] = val
-                    elif key == 'comp_time':
-                        job_info['end_time'] = val
-
-            return job_info
-
-    # ----------------------------------------------------------------
-    #
-    def _job_get_info(self, job_id):
-        """ get job attributes via qstat
-        """
-
-        # if we don't have the job in our dictionary, we don't want it
-        if job_id not in self.jobs:
-            message = "Unknown job id: %s. Can't update state." % job_id
-            log_error_and_raise(message, saga.NoSuccess, self._logger)
-
-        # prev. info contains the info collect when _job_get_info
-        # was called the last time
-        prev_info = self.jobs[job_id]
-
-        # if the 'gone' flag is set, there's no need to query the job
-        # state again. it's gone forever
-        if  prev_info['gone'] is True:
-            return prev_info
-
-        # curr. info will contain the new job info collect. it starts off
-        # as a copy of prev_info (don't use deepcopy because there is an API 
-        # object in the dict -> recursion)
-        curr_info = dict()
-        curr_info['obj'        ] = prev_info.get ('obj'        )
-        curr_info['job_id'     ] = prev_info.get ('job_id'     )
-        curr_info['state'      ] = prev_info.get ('state'      )
-        curr_info['exec_hosts' ] = prev_info.get ('exec_hosts' )
-        curr_info['returncode' ] = prev_info.get ('returncode' )
-        curr_info['create_time'] = prev_info.get ('create_time')
-        curr_info['start_time' ] = prev_info.get ('start_time' )
-        curr_info['end_time'   ] = prev_info.get ('end_time'   )
-        curr_info['gone'       ] = prev_info.get ('gone'       )
-
         rm, pid = self._adaptor.parse_id(job_id)
 
         # run the PBS 'qstat' command to get some infos about our job
+        # TODO: create a PBSPRO/TORQUE flag once
         if 'PBSPro_1' in self._commands['qstat']['version']:
             qstat_flag = '-fx'
         else:
             qstat_flag ='-f1'
-        ret, out, _ = self.shell.run_sync("unset GREP_OPTIONS; %s %s %s | \
-            grep -E '(job_state)|(exec_host)|(exit_status)|(ctime)|(start_time)\
-|(comp_time)'" % (self._commands['qstat']['path'], qstat_flag, pid))
+            
+        ret, out, _ = self.shell.run_sync("unset GREP_OPTIONS; %s %s %s | "
+                "grep -E -i '(job_state)|(exec_host)|(exit_status)|"
+                 "(ctime)|(start_time)|(stime)|(mtime)'"
+                % (self._commands['qstat']['path'], qstat_flag, pid))
 
         if ret != 0:
+
+            if reconnect:
+                message = "Couldn't reconnect to job '%s': %s" % (job_id, out)
+                log_error_and_raise(message, saga.NoSuccess, self._logger)
+
             if ("Unknown Job Id" in out):
-                # Let's see if the previous job state was runnig or pending. in
+                # Let's see if the last known job state was running or pending. in
                 # that case, the job is gone now, which can either mean DONE,
                 # or FAILED. the only thing we can do is set it to 'DONE'
-                curr_info['gone'] = True
-                # we can also set the end time
-                self._logger.warning("Previously running job has disappeared. This probably means that the backend doesn't store informations about finished jobs. Setting state to 'DONE'.")
+                job_info['gone'] = True
+                # TODO: we can also set the end time?
+                self._logger.warning("Previously running job has disappeared. "
+                        "This probably means that the backend doesn't store "
+                        "information about finished jobs. Setting state to 'DONE'.")
 
-                if prev_info['state'] in [saga.job.RUNNING, saga.job.PENDING]:
-                    curr_info['state'] = saga.job.DONE
+                if job_info['state'] in [saga.job.RUNNING, saga.job.PENDING]:
+                    job_info['state'] = saga.job.DONE
                 else:
-                    curr_info['state'] = saga.job.FAILED
+                    # TODO: This is an uneducated guess?
+                    job_info['state'] = saga.job.FAILED
             else:
                 # something went wrong
                 message = "Error retrieving job info via 'qstat': %s" % out
                 log_error_and_raise(message, saga.NoSuccess, self._logger)
         else:
+
+            # The job seems to exist on the backend. let's process some data.
+
+            # TODO: make the parsing "contextual", in the sense that it takes
+            #       the state into account.
+
             # parse the egrep result. this should look something like this:
             #     job_state = C
             #     exec_host = i72/0
             #     exit_status = 0
             results = out.split('\n')
-            for result in results:
-                if len(result.split('=')) == 2:
-                    key, val = result.split('=')
-                    key = key.strip()  # strip() removes whitespaces at the
-                    val = val.strip()  # beginning and the end of the string
+            for line in results:
+                if len(line.split('=')) == 2:
+                    key, val = line.split('=')
+                    key = key.strip()
+                    val = val.strip()
 
-                    if key == 'job_state':
-                        curr_info['state'] = _pbs_to_saga_jobstate(val)
-                    elif key == 'exec_host':
-                        curr_info['exec_hosts'] = val.split('+')  # format i73/7+i73/6+...
-                    elif key == 'exit_status':
-                        curr_info['returncode'] = int(val)
-                    elif key == 'ctime':
-                        curr_info['create_time'] = val
-                    elif key == 'start_time':
-                        curr_info['start_time'] = val
-                    elif key == 'comp_time':
-                        curr_info['end_time'] = val
+                    # The ubiquitous job state
+                    if key in ['job_state']: # PBS Pro and TORQUE
+                        job_info['state'] = _pbs_to_saga_jobstate(val)
+
+                    # Hosts where the job ran
+                    elif key in ['exec_host']: # PBS Pro and TORQUE
+                        job_info['exec_hosts'] = val.split('+')  # format i73/7+i73/6+...
+
+                    # Exit code of the job
+                    elif key in ['exit_status', # TORQUE
+                                 'Exit_status' # PBS Pro
+                                ]:
+                        job_info['returncode'] = int(val)
+
+                    # Time job got created in the queue
+                    elif key in ['ctime']: # PBS Pro and TORQUE
+                        job_info['create_time'] = val
+
+                    # Time job started to run
+                    elif key in ['start_time', # TORQUE
+                                 'stime'       # PBS Pro
+                                ]:
+                        job_info['start_time'] = val
+
+                    # Time job ended.
+                    #
+                    # PBS Pro doesn't have an "end time" field.
+                    # It has an "resources_used.walltime" though,
+                    # which could be added up to the start time.
+                    # We will not do that arithmetic now though.
+                    #
+                    # Alternatively, we can use mtime, as the latest
+                    # modification time will generally also be the end time.
+                    #
+                    # TORQUE has an "comp_time" (completion? time) field,
+                    # that is generally the same as mtime at the finish.
+                    #
+                    # For the time being we will use mtime as end time for
+                    # both TORQUE and PBS Pro.
+                    #
+                    if key in ['mtime']: # PBS Pro and TORQUE
+                        job_info['end_time'] = val
+
+        # return the updated job info
+        return job_info
+
+    def _parse_qstat(self, haystack, job_info):
+
 
         # return the new job info dict
-        return curr_info
+        return job_info
 
     # ----------------------------------------------------------------
     #
@@ -938,21 +1013,16 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
     @SYNC_CALL
     def get_job(self, job_id):
         """ Implements saga.adaptors.cpi.job.Service.get_job()
+
+            Re-create job instance from a job-id.
         """
 
-      # self._logger.info("checking watch list for %s" % job_id)
-
-        if  job_id in self.jobs :
-
-      #     self._logger.info("checking watch list for %s - found" % job_id)
+        # If we already have the job info, we just pass the current info.
+        if job_id in self.jobs :
             return self.jobs[job_id]['obj']
 
-      # else :
-      #     self._logger.info("checking watch list for %s - not found" % job_id)
-
-
-        # try to get some information about this job
-        job_info = self._retrieve_job(job_id)
+        # Try to get some initial information about this job (again)
+        job_info = self._job_get_info(job_id, reconnect=True)
 
         # this dict is passed on to the job adaptor class -- use it to pass any
         # state information you need there.
@@ -966,8 +1036,6 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
 
         job_obj = saga.job.Job(_adaptor=self._adaptor,
                                _adaptor_state=adaptor_state)
-
-      # self._logger.info("adding     job %s / %s to watch list (%s)" % (job_id, job_obj, self.jobs.keys()))
 
         # throw it into our job dictionary.
         job_info['obj']   = job_obj
@@ -1192,4 +1260,5 @@ class PBSJob (saga.adaptors.cpi.job.Job):
         """ implements saga.adaptors.cpi.job.Job.get_execution_hosts()
         """
         return self.jd
+
 

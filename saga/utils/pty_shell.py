@@ -13,6 +13,7 @@ import saga.utils.misc              as sumisc
 import radical.utils.logger         as rul
 
 import saga.utils.pty_shell_factory as supsf
+import saga.utils.pty_process       as supp
 import saga.url                     as surl
 import saga.exceptions              as se
 import saga.session                 as ss
@@ -320,6 +321,7 @@ class PTYShell (object) :
                 
                 
 
+            self.pty_shell.flush ()
             self.initialized = True
             self.finalized   = False
 
@@ -513,7 +515,7 @@ class PTYShell (object) :
                 self.run_async (' printf "SYNCHRONIZE_PROMPT\n"')
 
                 # FIXME: better timout value?
-                fret, match = self.pty_shell.find (["SYNCHRONIZE_PROMPT"], timeout=1.0)  
+                fret, match = self.pty_shell.find (["SYNCHRONIZE_PROMPT"], timeout=10.0)  
 
                 if  fret == None :
                     # not find prompt after blocking?  BAD!  Restart the shell
@@ -568,7 +570,7 @@ class PTYShell (object) :
                     try :
                         ret = int(result.group (2))
                     except ValueError :
-                        # apparently, this is not an int.  print a warning, and
+                        # apparently, this is not an integer. Print a warning, and
                         # assume success -- the calling entity needs to evaluate the
                         # remainder...
                         ret = 0
@@ -640,6 +642,7 @@ class PTYShell (object) :
         with self.pty_shell.rlock :
          
             self._trace ("run sync  : %s" % command)
+            self.pty_shell.flush ()
 
             # we expect the shell to be in 'ground state' when running a syncronous
             # command -- thus we can check if the shell is alive before doing so,
@@ -759,7 +762,8 @@ class PTYShell (object) :
 
         with self.pty_shell.rlock :
 
-          # self._trace ("run async : %s" % command)
+            self._trace ("run async : %s" % command)
+            self.pty_shell.flush ()
 
             # we expect the shell to be in 'ground state' when running an asyncronous
             # command -- thus we can check if the shell is alive before doing so,
@@ -938,9 +942,11 @@ class PTYShell (object) :
         have to do a local expansion, and the to do the same for each entry...
         """
 
-        self._trace ("copy  to  : %s -> %s" % (src, tgt))
-
         with self.pty_shell.rlock :
+
+            self._trace ("copy  to  : %s -> %s" % (src, tgt))
+            self.pty_shell.flush ()
+
 
             info = self.pty_info
             repl = dict ({'src'      : src, 
@@ -948,14 +954,34 @@ class PTYShell (object) :
                           'cp_flags' : cp_flags}.items () + info.items ())
 
             # at this point, we do have a valid, living master
-            s_cmd = info['scripts'][info['type']]['copy_to']    % repl
-            s_in  = info['scripts'][info['type']]['copy_to_in'] % repl
+            s_cmd = info['scripts'][info['copy_mode']]['copy_to']    % repl
+            s_in  = info['scripts'][info['copy_mode']]['copy_to_in'] % repl
 
+            if  not s_in :
+                # this code path does not use an interactive shell for copy --
+                # so the above s_cmd is all we want to run, really.  We get
+                # do not use the chached cp_slave in this case, but just run the
+                # command.  We do not have a list of transferred files though,
+                # yet -- that should be parsed from the proc output.
+
+                cp_proc = supp.PTYProcess (s_cmd)
+                out = cp_proc.wait ()
+                if  cp_proc.exit_code :
+                    raise ptye.translate_exception (se.NoSuccess ("file copy failed: %s" % out))
+
+                return list()
+
+
+            # this code path uses an interactive shell to transfer files, of
+            # some form, such as sftp.  Get the shell cp_slave from cache, and
+            # run the actual copy command.
             if  not self.cp_slave :
                 self._trace ("get cp slave")
                 self.cp_slave = self.factory.get_cp_slave (s_cmd, info)
 
+            self.cp_slave.flush ()
             prep = ""
+
             if  'sftp' in s_cmd :
                 # prepare target dirs for recursive copy, if needed
                 import glob
@@ -965,9 +991,9 @@ class PTYShell (object) :
                         prep += "mkdir %s/%s\n" % (tgt, os.path.basename (s))
 
 
+            self.cp_slave.flush ()
             _      = self.cp_slave.write    ("%s%s\n" % (prep, s_in))
             _, out = self.cp_slave.find     (['[\$\>\]]\s*$'], -1)
-            _, out = self.cp_slave.find     (['[\$\>\]]\s*$'], 1.0)
 
             # FIXME: we don't really get exit codes from copy
             # if  self.cp_slave.exit_code != 0 :
@@ -1027,9 +1053,10 @@ class PTYShell (object) :
         need to expand wildcards on the *remote* side :/
         """
 
-        self._trace ("copy  from: %s -> %s" % (src, tgt))
-
         with self.pty_shell.rlock :
+
+            self._trace ("copy  from: %s -> %s" % (src, tgt))
+            self.pty_shell.flush ()
 
             info = self.pty_info
             repl = dict ({'src'      : src, 
@@ -1037,13 +1064,27 @@ class PTYShell (object) :
                           'cp_flags' : cp_flags}.items ()+ info.items ())
 
             # at this point, we do have a valid, living master
-            s_cmd = info['scripts'][info['type']]['copy_from']    % repl
-            s_in  = info['scripts'][info['type']]['copy_from_in'] % repl
+            s_cmd = info['scripts'][info['copy_mode']]['copy_from']    % repl
+            s_in  = info['scripts'][info['copy_mode']]['copy_from_in'] % repl
+
+            if  not s_in :
+                # this code path does not use an interactive shell for copy --
+                # so the above s_cmd is all we want to run, really.  We get
+                # do not use the chached cp_slave in this case, but just run the
+                # command.  We do not have a list of transferred files though,
+                # yet -- that should be parsed from the proc output.
+                cp_proc = supp.PTYProcess (s_cmd)
+                cp_proc.wait ()
+                if  cp_proc.exit_code :
+                    raise ptye.translate_exception (se.NoSuccess ("file copy failed: exit code %s" % cp_proc.exit_code))
+
+                return list()
 
             if  not self.cp_slave :
                 self._trace ("get cp slave")
                 self.cp_slave = self.factory.get_cp_slave (s_cmd, info)
 
+            self.cp_slave.flush ()
             prep = ""
 
             if  'sftp' in s_cmd :
@@ -1058,6 +1099,7 @@ class PTYShell (object) :
                         prep += "lmkdir %s/%s\n" % (tgt, os.path.basename (s))
 
 
+            self.cp_slave.flush ()
             _      = self.cp_slave.write    ("%s%s\n" % (prep, s_in))
             _, out = self.cp_slave.find     (['[\$\>\]] *$'], -1)
 
@@ -1108,6 +1150,5 @@ class PTYShell (object) :
             return files
 
 
-
-
+# ------------------------------------------------------------------------------
 

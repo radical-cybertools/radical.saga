@@ -1,3 +1,55 @@
+
+
+* For a list of bug fixes, see
+  https://github.com/radical-cybertools/saga-python/issues?q=is%3Aissue+is%3Aclosed+sort%3Aupdated-desc
+* For a list of open issues and known problems, see
+  https://github.com/radical-cybertools/saga-python/issues?q=is%3Aissue+is%3Aopen+
+
+
+Version 0.25 release 2014-12-17
+---------------------------------------------------------------------
+
+* hotfix for sftp problems on some client/server version combinations which lead
+to data inconsistencies
+
+
+Version 0.24 release 2014-12-08
+---------------------------------------------------------------------
+
+* make ssh share mode configurable
+* Re-enable explicit_exec and add more explanation.
+* Make setting job_type conditional on >1 cores.
+* more variety in PBS "constants" (ha!)
+* fix #401
+* make sure the target dir for leased shells exists on CREATE_PARENTS in dir ctor
+* fix #400
+* export PPN information to torque and pbs jobs
+* merge and fix Danila's patch
+* re-enable test for PBSPro_10
+* added test config for archer
+* re-enable test for PBSPro_10, as discussed with Ole.
+* added test config for archer
+* add missing error check on mkdir
+* fix logical error on dir state recovery
+* LoadLeveler support for BG/Q machines.
+
+
+Version 0.22 release 2014-11-03
+---------------------------------------------------------------------
+
+* Hotfix release fixing incompatbile sftp flag "-2"
+  See: https://github.com/radical-cybertools/saga-python/issues/397
+
+
+Version 0.21 release 2014-10-29
+---------------------------------------------------------------------
+
+* scattered bug fixes related to connection caching
+* configurable switch between scp and sftp
+* tweak timeouts on ssh channels
+* disable irods adaptor
+
+
 Version 0.19 release 2014-09-15
 ---------------------------------------------------------------------
 
@@ -381,3 +433,4 @@ Version 0.1.7 released 2011-11-09
 
 * More or less stable job API    
 * First functional PBS over SSH plugin 
+

@@ -256,12 +256,30 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
         self.node_usage = None
         self.network_mpi = None
         self.blocking = None
+        self.job_type = 'MPICH' # TODO: Is this a sane default?
         self.enforce_resource_submission = False
         self.enforce_consumable_cpus = False
         self.enforce_consumable_memory = False
         self.enforce_consumable_virtual_memory = False
         self.enforce_consumable_large_page_memory = False
         self.temp_path = "$HOME/.saga/adaptors/loadl_job"
+
+        # LoadLeveler has two ways of specifying the executable and arguments.
+        # - Explicit: the executable and arguments are specified as parameters.
+        # - Implicit: the (remainder of the) job script is the task.
+        #
+        # Currently we don't know how this policy can be detected at runtime.
+        # We know that providing both will not work in all cases.
+        #
+        # As the IBM Red Book documents the explicit exec only,
+        # we should use that as a default.
+        # Currently we just use a hack to workaround Joule.
+        #
+        # Note: does this now simply become a Joule hack?
+        #
+        # TODO: Split script into submission file and script and use that for
+        #       explicit exec?
+        self.explicit_exec = False
 
         rm_scheme = rm_url.scheme
         pty_url   = surl.Url (rm_url)
@@ -282,6 +300,8 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
                     self.network_mpi = val[0]
                 elif key == 'blocking':
                     self.blocking = val[0]
+                elif key == 'job_type':
+                    self.job_type = val[0]
                 elif key == 'enforce_consumable_cpus':
                     self.enforce_consumable_cpus = True
                     self.enforce_resource_submission = True
@@ -294,7 +314,8 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
                 elif key == 'enforce_consumable_large_page_memory':
                     self.enforce_consumable_large_page_memory = True
                     self.enforce_resource_submission = True
-
+                elif key == 'explicit_exec':
+                    self.explicit_exec = True
 
         # we need to extract the scheme for PTYShell. That's basically the
         # job.Service Url without the loadl+ part. We use the PTYShell to execute
@@ -454,24 +475,21 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
         :param jd: job descriptor
         :return: the llsubmit script
         """
-        loadl_params = str()
-        exec_n_args = str()
+        loadl_params = ''
+        exec_string = ''
+        args_strings = ''
 
         if jd.executable is not None:
-            exec_n_args += "%s " % (jd.executable)
+            exec_string = "%s" % (jd.executable)
         if jd.arguments is not None:
             for arg in jd.arguments:
-                exec_n_args += "%s " % (arg)
-
-        if jd.total_cpu_count is not None and jd.total_cpu_count > 1:
-            # Is this a sane default?
-            loadl_params += "#@ job_type = MPICH\n"
+                args_strings += "%s " % (arg)
 
         if jd.name is not None:
             loadl_params += "#@ job_name = %s \n" % jd.name
 
         if jd.environment is not None:
-            variable_list = str()
+            variable_list = ''
             for key in jd.environment.keys():
                 variable_list += "%s=%s;" % (key, jd.environment[key])
             loadl_params += "#@ environment = %s \n" % variable_list
@@ -498,7 +516,16 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
             jd.total_cpu_count = 1
         else:
             if jd.total_cpu_count > 1:
-                loadl_params += "#@ total_tasks = %s\n" % jd.total_cpu_count
+                if self.job_type not in ['bluegene']: # 'bluegene' and total_tasks dont live well together
+                    loadl_params += "#@ total_tasks = %s\n" % jd.total_cpu_count
+
+                loadl_params += "#@ job_type = %s\n" % self.job_type
+
+        if self.job_type == 'bluegene':
+            BGQ_CORES_PER_NODE = 16 # Only true for BG/Q
+            if jd.total_cpu_count % BGQ_CORES_PER_NODE > 0:
+                raise Exception("Number of cores requested is no multiple of 16.")
+            loadl_params += "#@ bg_size = %d\n" % (jd.total_cpu_count / BGQ_CORES_PER_NODE)
 
         if self.blocking:
             loadl_params += "#@ blocking = %s\n" % self.blocking
@@ -529,7 +556,6 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
 
             loadl_params += "\n"
 
-
         # Number of islands to allocate resources on, can specify a number, or a min/max
         if self.island_count:
             loadl_params += "#@ island_count = %s\n" % self.island_count
@@ -554,7 +580,6 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
         else:
             loadl_params += "#@ class = edison\n"
 
-
         # finally, we 'queue' the job
         loadl_params += "#@ queue\n"
 
@@ -562,7 +587,7 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
         job_info_path = self.__remote_job_info_path()
 
         script_body = [
-        'function aborted() {',
+            'function aborted() {',
             '  echo Aborted with signal $1.',
             '  echo "signal: $1" >>%s' % job_info_path,
             '  echo "end_time: $(LC_ALL=en_US.utf8 date \'+%%a %%b %%d %%H:%%M:%%S %%Y\')" >>%s' % job_info_path,
@@ -573,10 +598,9 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
             'echo "hostname: $HOSTNAME" >%s' % job_info_path,
             'echo "qsub_time: %s" >>%s' % (datetime.now().strftime("%a %b %d %H:%M:%S %Y"), job_info_path),
             'echo "start_time: $(LC_ALL=en_US.utf8 date \'+%%a %%b %%d %%H:%%M:%%S %%Y\')" >>%s' % job_info_path
-                ]
+        ]
 
-        if exec_n_args is not None:
-            script_body += [exec_n_args]
+        script_body += ['%s %s' % (exec_string, args_strings)]
 
         script_body += [
             'echo "exit_status: $?" >>%s' % job_info_path,
@@ -589,10 +613,15 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
         # only escape '$' in args and exe. not in the params
         script_body = "\n".join(script_body).replace('$', '\\$')
 
+        # Dirty Trick for Joule: it expects an "executable" parameter,
+        # but doesn't really need it, therefore we pass it after the queue
+        # parameter, where it is not used anymore.
+        if self.explicit_exec:
+            loadl_params += "#@ executable = BOGUS\n"
+
         loadlscript = "\n%s%s" % (loadl_params, script_body)
 
         return loadlscript.replace('"', '\\"')
-
 
     # ----------------------------------------------------------------
     #
@@ -624,7 +653,7 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
         # Now we want to execute the script. This process consists of two steps:
         # (1) we create a temporary file with 'mktemp' and write the contents of
         #     the generated Load Leveler script into it
-        # (2) we call 'qsub <tmpfile>' to submit the script to the queueing system
+        # (2) we call 'llsubmit <tmpfile>' to submit the script to the queueing system
         cmdline = """SCRIPTFILE=`mktemp -t SAGA-Python-LOADLJobScript.XXXXXX` &&  echo "%s" > $SCRIPTFILE && %s%s $SCRIPTFILE && rm -f $SCRIPTFILE""" %  (script, self._commands['llsubmit']['path'], self.cluster_option)
         self._logger.info("cmdline: %r", cmdline)
         ret, out, _ = self.shell.run_sync(cmdline)
@@ -662,9 +691,9 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
         """
         rm, pid = self._adaptor.parse_id(job_id)
 
-        # run the LoadLeveler 'llq' command to get some infos about our job
-        ret, out, _ = self.shell.run_sync("%s -j %s \
--r %%st %%dd %%cc %%jt %%c %%Xs" % (self._commands['llq']['path'], pid))
+        # run the LoadLeveler 'llq' command to get some info about our job
+        ret, out, _ = self.shell.run_sync("%s -j %s -r %%st %%dd %%cc %%jt %%c %%Xs" % \
+                                          (self._commands['llq']['path'], pid))
         # output is something like
         # R!03/25/2014 13:47!!Serial!normal!kisti.kim
         # OR
