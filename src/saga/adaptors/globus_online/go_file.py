@@ -243,7 +243,7 @@ class Adaptor (saga.adaptors.base.Base):
         sid = session._id
 
         if  not sid in self.shells :
-            raise saga.InocrrectState ("GO shell disconnected")
+            raise saga.IncorrectState ("GO shell disconnected")
 
         shell = self.shells[sid]['shell']
         url   = saga.Url (url)
