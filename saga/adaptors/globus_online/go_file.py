@@ -31,7 +31,7 @@ GO_DEFAULT_URL = "gsissh://cli.globusonline.org/"
 # the adaptor name
 #
 _ADAPTOR_NAME          = "saga.adaptor.globus_online_file"
-_ADAPTOR_SCHEMAS       = ["go+gsisftp", "go+gridftp"]
+_ADAPTOR_SCHEMAS       = ["go+gridftp"]
 _ADAPTOR_OPTIONS       = [
     { 
     # fuck our config system!  I don't want these to be strings!  And its not
@@ -88,9 +88,7 @@ _ADAPTOR_DOC           = {
         """,
     "details"          : """ 
         """,
-    "schemas"          : {"go+gsisftp" : "use globus online for gsisftp file transfer", 
-                          "go+gridftp" : "use globus online for gridftp file transfer"
-        }
+    "schemas"          : {"go+gridftp": "use globus online for gridftp file transfer"}
 }
 
 # --------------------------------------------------------------------
