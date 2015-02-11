@@ -452,6 +452,9 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
         self.jobs    = dict()
         self.njobs   = 0
 
+        # if the rm URL specifies a path, we interprete that as shell to run.
+        # Otherwise, we default to running /bin/sh (for fork) or the user's
+        # login shell (for ssh etc).
         if  self.rm.path and self.rm.path != '/' and self.rm.path != '.' :
             self.opts['shell'] = self.rm.path
 
