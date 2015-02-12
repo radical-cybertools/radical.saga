@@ -33,7 +33,7 @@ def main():
         ctx = saga.Context("ssh")
 
         # Change e.g., if you have a differnent username on the remote machine
-        ctx.user_id = "marksant"
+        #ctx.user_id = "your_ssh_username"
 
         session = saga.Session()
         session.add_context(ctx)
@@ -41,36 +41,27 @@ def main():
         # Create a job service object that represent a remote pbs cluster.
         # The keyword 'pbs' in the url scheme triggers the PBS adaptors
         # and '+ssh' enables PBS remote access via SSH.
-        #js = saga.job.Service("pbs+ssh://gordon.sdsc.xsede.org")
-        js = saga.job.Service("pbs+ssh://india.futuregrid.org")
-        #js = saga.job.Service("pbs+ssh://login.archer.ac.uk")
-                              #session=session)
+        js = saga.job.Service("pbs+ssh://india.futuregrid.org",
+                              session=session)
 
         # Next, we describe the job we want to run. A complete set of job
         # description attributes can be found in the API documentation.
         jd = saga.job.Description()
-        #jd.environment       = {'FILENAME': 'testfile'}
+        jd.environment       = {'FILENAME': 'testfile'}
         jd.wall_time_limit   = 1 # minutes
 
-        #jd.executable        = 'df'
-        #jd.arguments         = ['-h', '/scratch/$USER/$PBS_JOBID']
-        jd.executable        = 'sleep'
-        jd.arguments         = ['10']
+        jd.executable        = '/bin/touch'
+        jd.arguments         = ['$FILENAME']
 
         #jd.total_cpu_count   = 12 # for lonestar this has to be a multiple of 12
         #jd.spmd_variation    = '12way' # translates to the qsub -pe flag
 
-        #jd.queue             = "batch"
-        #jd.queue             = "debug"
+        jd.queue             = "batch"
         #jd.project           = "TG-MCB090174"
-        #jd.project           = "e290"
 
-        #jd.working_directory = "$HOME/A/B/C"
+        jd.working_directory = "$HOME/A/B/C"
         jd.output            = "examplejob.out"
         jd.error             = "examplejob.err"
-
-        #jd.candidate_hosts   = "BIG_FLASH"
-        #jd.candidate_hosts   = "smallfish"
 
         # Create a new job from the job description. The initial state of
         # the job is 'New'.
