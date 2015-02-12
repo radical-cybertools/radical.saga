@@ -261,8 +261,6 @@ class Adaptor(saga.adaptors.base.Base):
             raise saga.BadParameter('need schema for GO ops')
 
         ep_str, ep_name, ep_url = self.get_go_endpoint_ids(session, url)
-        self._logger.debug("get_path_spec() ep_str: %s, ep_name: %s, ep_url: %s",
-                           ep_str, ep_name, ep_url)
 
         # if both URLs point into the same namespace, and if the given path is
         # not absolute, then expand it relative to the cwd_path (if it exists).
@@ -285,25 +283,20 @@ class Adaptor(saga.adaptors.base.Base):
     #
     def get_go_endpoint(self, session, shell, url):
 
-        self._logger.debug("get_go_endpoint for url: %s", url)
-
         # for the given URL, derive the endpoint string.
         # FIXME: make sure that the endpoint is activated 
         ep_str, ep_name, ep_url = self.get_go_endpoint_ids(session, url)
 
         ep = self.get_go_endpoint_list(session, shell, ep_name, fetch=False)
-        self._logger.debug("get_go_endpoint ep outside: %s", ep)
 
         if not ep:
 
             # if not, check if it was created meanwhile (fetch again)
             ep = self.get_go_endpoint_list(session, shell, ep_name, fetch=True)
 
-            self._logger.debug("get_go_endpoint ep inside: %s", ep)
-
             if not ep:
 
-                # Dont try to create endpoints that are supposed to be there
+                # Don't try to create endpoints that are supposed to be there
                 # (plus, we can't!)
                 if '#' in url.host:
                     raise saga.NoSuccess("# in hostname, not going to create!")
@@ -339,8 +332,6 @@ class Adaptor(saga.adaptors.base.Base):
         # then check if the given ep_name is a known endpoint name, and if so,
         # return that entry -- otherwise return None.  If no ep_name is given,
         # and fetch is True, we thus simply refresh the internal list.
-
-        self._logger.debug("updating endpoint list (%s, %s)" % (ep_name, fetch))
 
         if fetch:
             endpoints = {}
@@ -506,8 +497,6 @@ class GODirectory(saga.adaptors.cpi.filesystem.Directory):
         # FIXME: eval flags!
         if flags == None:
             flags = 0
-
-        self._logger.debug("init_instance() url: %s", url)
 
         self.orig     = saga.Url(url) # deep copy
         self.url      = saga.Url(url) # deep copy
