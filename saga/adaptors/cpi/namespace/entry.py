@@ -54,7 +54,6 @@ class Entry (cpi_base.CPIBase, cpi_async.Async) :
     @ASYNC
     def get_name_async       (self, ttype)                    : pass
 
-
     @SYNC
     def is_dir_self          (self, ttype)                    : pass
     @ASYNC

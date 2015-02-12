@@ -177,8 +177,8 @@ class Entry (sb.Base, sasync.Async) :
         '''
         ttype:         saga.task.type enum
         ret:           bool / saga.Task
-        
-        Returns True if path is a directory, False otherwise. 
+
+        Returns True if path is a directory, False otherwise.
 
         Example::
 
@@ -188,8 +188,8 @@ class Entry (sb.Base, sasync.Async) :
                 # do something
         '''
         return self._adaptor.is_dir_self (ttype=ttype)
-  
-    
+
+
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Entry',

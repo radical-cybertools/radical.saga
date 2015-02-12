@@ -481,8 +481,8 @@ class Directory (entry.Entry) :
         '''
         if tgt    :  return self._adaptor.is_link (tgt, ttype=ttype)
         else      :  return self._nsentry.is_link (     ttype=ttype)
-  
-    
+
+
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Directory', 
