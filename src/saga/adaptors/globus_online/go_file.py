@@ -55,7 +55,7 @@ _ADAPTOR_OPTIONS       = [
     },
     # Set a GO specific prompt on the PTYShell
     {
-        'category'      : 'saga.utils.pty',
+        'category'      : 'saga.adaptor.globus_online_file',
         'name'          : 'prompt_pattern',
         'type'          : str,
         'default'       : '\$ $',
@@ -135,6 +135,7 @@ class Adaptor(saga.adaptors.base.Base):
         self.opts   = self.get_config(_ADAPTOR_NAME)
         self.notify = self.opts['enable_notifications'].get_value()
         self.f_mode = self.opts['failure_mode'].get_value()
+        self.prompt = self.opts['prompt_pattern'].get_value()
         self.shells = {}  # keep go shells for each session
 
     # --------------------------------------------------------------------------
@@ -166,8 +167,11 @@ class Adaptor(saga.adaptors.base.Base):
             else:
                 new_url = saga.Url(go_url) # deep copy
 
-            # create the shell.  
-            shell = sups.PTYShell(new_url, session, self._logger, posix=False)
+            opts = {'prompt_pattern' : self.prompt}
+
+            # create the shell.
+            shell = sups.PTYShell(new_url, session=session, logger=self._logger, 
+                                  options=opts, posix=False)
             self.shells[sid]['shell'] = shell
 
             # confirm the user ID for this shell
@@ -594,7 +598,7 @@ class GODirectory(saga.adaptors.cpi.filesystem.Directory):
             url = sumisc.url_make_absolute(self.get_url(), url)
 
         return saga.filesystem.Directory(url=url, flags=flags, session=self.session,
-                                          _adaptor=self._adaptor, _adaptor_state=adaptor_state)
+                _adaptor=self._adaptor, _adaptor_state=adaptor_state)
 
     # ----------------------------------------------------------------
     #
@@ -675,7 +679,6 @@ class GODirectory(saga.adaptors.cpi.filesystem.Directory):
 
         self._is_valid()
 
-        # FIXME: eval flags
         sync_level = 0
         
         src_ps = self.get_path_spec(url=src_in)
@@ -753,10 +756,10 @@ class GODirectory(saga.adaptors.cpi.filesystem.Directory):
         # Oh well, since we don't really (want to) know if the target is a dir
         # or not, we remove both versions... :/
         # FIXME
-        cmd      = "rm %s -f '%s/'" % (flags, tgt_ps)
+        cmd      = "rm %s -f '%s/'" % (cmd_flags, tgt_ps)
         out, err = self._adaptor.run_go_cmd(self.shell, cmd)
 
-        cmd      = "rm %s -f '%s'"  % (flags, tgt_ps)
+        cmd      = "rm %s -f '%s'"  % (cmd_flags, tgt_ps)
         out, err = self._adaptor.run_go_cmd(self.shell, cmd, mode='ignore')
 
     # ----------------------------------------------------------------
@@ -772,7 +775,7 @@ class GODirectory(saga.adaptors.cpi.filesystem.Directory):
             self._adaptor.mkparents(self.session, self.shell, tgt_ps)
 
         else:
-            cmd = "mkdir %s '%s'" % (flags, tgt_ps)
+            cmd = "mkdir '%s'" % tgt_ps
             self._adaptor.run_go_cmd(self.shell, cmd)
 
     # ----------------------------------------------------------------
@@ -1026,7 +1029,11 @@ class GOFile(saga.adaptors.cpi.filesystem.File):
         if flags & saga.filesystem.CREATE_PARENTS:
             self._adaptor.mkparents(self.session, self.shell, tgt_ps)
 
-        cmd = "scp %s -s %d '%s' '%s'" % (flags, sync_level, src_ps, tgt_ps)
+        cmd_flags = ""
+        if flags & saga.filesystem.RECURSIVE:
+            cmd_flags += "-r"
+
+        cmd = "scp %s -s %d '%s' '%s'" % (cmd_flags, sync_level, src_ps, tgt_ps)
         out, err = self._adaptor.run_go_cmd(self.shell, cmd)
    
     # ----------------------------------------------------------------
@@ -1053,8 +1060,8 @@ class GOFile(saga.adaptors.cpi.filesystem.File):
                 self._logger.warn("Rename op failed -- retry as copy/remove")
 
         # either the op spans endpoints, or the 'rename' op failed
-        self.copy(src_ps, tgt_in, flags)
-        self.remove(src_ps, flags)
+        self.copy_self(tgt_in, flags)
+        self.remove_self(flags)
 
     # ----------------------------------------------------------------
     #
@@ -1063,8 +1070,12 @@ class GOFile(saga.adaptors.cpi.filesystem.File):
 
         self._is_valid()
 
+        cmd_flags = ""
+        if flags & saga.filesystem.RECURSIVE:
+            cmd_flags += "-r"
+
         tgt_ps   = self.get_path_spec()
-        cmd      = "rm %s -f '%s'"  % (flags, tgt_ps)
+        cmd      = "rm %s -f '%s'"  % (cmd_flags, tgt_ps)
         out, err = self._adaptor.run_go_cmd(self.shell, cmd, mode='ignore')
 
     # ----------------------------------------------------------------

@@ -36,6 +36,11 @@ STDOUT   = 3    # fetch stdout only, discard stderr
 STDERR   = 4    # fetch stderr only, discard stdout
 
 
+# ------------------------------------------------------------------------------
+#
+DEFAULT_PROMPT = "[\$#%>\]]\s*$"
+
+
 # --------------------------------------------------------------------
 #
 class PTYShell (object) :
@@ -181,40 +186,40 @@ class PTYShell (object) :
 
     # ----------------------------------------------------------------
     #
-    def __init__ (self, url, session=None, logger=None, init=None, opts={}, posix=True) :
+    def __init__ (self, url, session=None, logger=None, options=None, posix=True):
 
-        if   logger  : self.logger  = logger
-        else         : self.logger  = rul.getLogger ('saga', 'PTYShell') 
+        if logger : self.logger  = logger
+        else      : self.logger  = rul.getLogger('saga', 'PTYShell') 
 
-        if   session : self.session = session
-        else         : self.session = ss.Session (default=True)
+        if session: self.session = session
+        else      : self.session = ss.Session(default=True)
+
+        if options: self.options = options
+        else      : self.options = dict()
 
         self.logger.debug ("PTYShell init %s" % self)
 
         self.url         = url      # describes the shell to run
-        self.init        = init     # call after reconnect
-        self.opts        = opts     # options...
         self.posix       = posix    # /bin/sh compatible?
         self.latency     = 0.0      # set by factory
         self.cp_slave    = None     # file copy channel
 
-        self.prompt      = "[\$#%>\]]\s*$"
-        self.prompt_re   = re.compile ("^(.*?)%s\s*$" % self.prompt, re.DOTALL)
         self.initialized = False
 
         self.pty_id       = PTYShell._pty_id
         PTYShell._pty_id += 1
 
-        # get prompt pattern from config
-        self.cfg       = self.session.get_config('saga.utils.pty')
+        self.cfg = self.session.get_config('saga.utils.pty')
 
-        if  'prompt_pattern' in self.cfg :
-            self.prompt    = self.cfg['prompt_pattern'].get_value ()
-            self.prompt_re = re.compile ("^(.*?)%s" % self.prompt, re.DOTALL)
-        else :
-            self.prompt    = "[\$#%>\]]\s*$"
-            self.prompt_re = re.compile ("^(.*?)%s" % self.prompt, re.DOTALL)
+        # get prompt pattern from options, config, or use default
+        if 'prompt_pattern' in self.options:
+            self.prompt = self.options['prompt_pattern']
+        elif 'prompt_pattern' in self.cfg:
+            self.prompt = self.cfg['prompt_pattern'].get_value ()
+        else:
+            self.prompt = DEFAULT_PROMPT
 
+        self.prompt_re = re.compile ("^(.*?)%s" % self.prompt, re.DOTALL)
         self.logger.info ("PTY prompt pattern: %s" % self.prompt)
 
         # we need a local dir for file staging caches.  At this point we use
@@ -276,8 +281,8 @@ class PTYShell (object) :
                 command_shell = "exec /bin/sh -i"
 
                 # use custom shell if so requested
-                if  'shell' in self.opts and self.opts['shell'] :
-                    command_shell = "exec %s" % self.opts['shell']
+                if  'shell' in self.options and self.options['shell'] :
+                    command_shell = "exec %s" % self.options['shell']
                     self.logger.info ("custom  command shell: %s" % command_shell)
 
 

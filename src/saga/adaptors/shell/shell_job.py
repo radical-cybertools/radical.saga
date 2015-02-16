@@ -460,9 +460,9 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
 
         # create and initialize connection for starting jobs
         self.shell   = saga.utils.pty_shell.PTYShell (self.rm, self.session, 
-                                                      self._logger, opts=self.opts)
+                                                      self._logger, options=self.opts)
         self.channel = saga.utils.pty_shell.PTYShell (self.rm, self.session, 
-                                                      self._logger, opts=self.opts)
+                                                      self._logger, options=self.opts)
         self.initialize ()
 
         # the monitoring thread - one per service instance.  We wait for
