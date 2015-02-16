@@ -321,7 +321,12 @@ class Adaptor(saga.adaptors.base.Base):
         # we have the endpoint now, for sure -- make sure its activated
         if not ep['Credential Status'] == 'ACTIVE':
 
-            shell.run_sync("endpoint-activate -g %s" % ep_name)
+            # Only Globus Connect Service Endpoints don't need -g?
+            if ep['MyProxy Server'] == 'myproxy.globusonline.org' and \
+            '/C=US/O=Globus Consortium/OU=Globus Connect Service/CN=' in ep['Subject(s)']:
+                shell.run_sync("endpoint-activate %s" % ep_name)
+            else:
+                shell.run_sync("endpoint-activate -g %s" % ep_name)
 
             # reload list to check status
             ep = self.get_go_endpoint_list(session, shell, ep_name, fetch=True)
