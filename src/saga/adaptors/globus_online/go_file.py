@@ -6,6 +6,7 @@ __license__   = "MIT"
 
 """ (GSI)SSH based Globus Online Adaptor """
 
+import os
 import saga.utils.pty_shell as sups
 import saga.utils.misc      as sumisc
 
@@ -272,8 +273,10 @@ class Adaptor(saga.adaptors.base.Base):
         ps_path = path
         if sumisc.url_is_compatible(cwd_url, url):
             if not path.startswith('/'):
-                if cwd_path:
-                    ps_path = "%s/%s" % (cwd_path, path)
+                if cwd_path and path:
+                    ps_path = os.path.join(cwd_path, path)
+                elif cwd_path:
+                    ps_path = cwd_path
 
         # the pathspec is the concatenation of ps_host and ps_path by a colon
         ps = "%s:%s" % (ep_str, ps_path)
