@@ -6,6 +6,7 @@ __license__   = "MIT"
 
 """ (GSI)SSH based Globus Online Adaptor """
 
+import os
 import saga.utils.pty_shell as sups
 import saga.utils.misc      as sumisc
 
@@ -255,7 +256,7 @@ class Adaptor(saga.adaptors.base.Base):
                 cwd_path = cwd_url.path
 
         if not url.host:
-            url.host   = cwd_url.host
+            url.host = cwd_url.host
         if not url.schema:
             url.schema = cwd_url.schema
 
@@ -272,8 +273,10 @@ class Adaptor(saga.adaptors.base.Base):
         ps_path = path
         if sumisc.url_is_compatible(cwd_url, url):
             if not path.startswith('/'):
-                if cwd_path:
-                    ps_path = "%s/%s" % (cwd_path, path)
+                if cwd_path and path:
+                    ps_path = os.path.join(cwd_path, path)
+                elif cwd_path:
+                    ps_path = cwd_path
 
         # the pathspec is the concatenation of ps_host and ps_path by a colon
         ps = "%s:%s" % (ep_str, ps_path)
@@ -318,7 +321,12 @@ class Adaptor(saga.adaptors.base.Base):
         # we have the endpoint now, for sure -- make sure its activated
         if not ep['Credential Status'] == 'ACTIVE':
 
-            shell.run_sync("endpoint-activate -g %s" % ep_name)
+            # Only Globus Connect Service Endpoints don't need -g?
+            if ep['MyProxy Server'] == 'myproxy.globusonline.org' and \
+            '/C=US/O=Globus Consortium/OU=Globus Connect Service/CN=' in ep['Subject(s)']:
+                shell.run_sync("endpoint-activate %s" % ep_name)
+            else:
+                shell.run_sync("endpoint-activate -g %s" % ep_name)
 
             # reload list to check status
             ep = self.get_go_endpoint_list(session, shell, ep_name, fetch=True)
@@ -427,7 +435,7 @@ class Adaptor(saga.adaptors.base.Base):
 
     # ----------------------------------------------------------------
     #
-    def mkparents(self, session, shell, tgt_ps):
+    def mkparents(self, shell, tgt_ps):
 
         # GO does not support mkdir -p, so we need to split the dir into
         # elements and create one after the other, ignoring errors for already
@@ -471,6 +479,72 @@ class Adaptor(saga.adaptors.base.Base):
 
                     if self.f_mode == 'silent':
                         pass
+
+    def go_transfer(self, shell, flags, source, target):
+
+        # 0: Copy files that do not exist at the destination
+        sync_level = 0
+
+        # Create parents
+        if flags & saga.filesystem.CREATE_PARENTS:
+            self.mkparents(shell, target)
+
+        #if flags & saga.filesystem.OVERWRITE:
+            # 1: Copy files if the size of the destination does not match the
+            #    size of the source
+            # 2: Copy files if the timestamp of the destination is older than
+            #    the timestamp of the source
+            # 3: Copy files if checksums of the source and destination do not match
+        #    sync_level = 3
+
+        # Set recursive flag
+        cmd_flags = ""
+        if flags & saga.filesystem.RECURSIVE:
+            cmd_flags += "-r"
+
+        # Initiate background copy
+        cmd = "scp -D %s -s %d '%s' '%s'" % (cmd_flags, sync_level, source, target)
+        out, _ = self.run_go_cmd(shell, cmd)
+        # 'Task ID: 8c6f989d-b6aa-11e4-adc6-22000a97197b'
+        key, value = out.split(':')
+        if key != 'Task ID':
+            raise Exception("Expected Task ID: <id>, got %s" % out)
+        task_id = value.strip()
+
+        # Wait until background copy has finished
+        cmd = "wait -q %s" % task_id
+        self.run_go_cmd(shell, cmd)
+
+        # Retrieve task status
+        cmd = "status -f status %s" % task_id
+        out, _ = self.run_go_cmd(shell, cmd)
+        # Status: SUCCEEDED
+        key, value = out.split(':')
+        if key != 'Status':
+            raise Exception("Expected Status: <status>, got %s" % out)
+        status = value.strip()
+
+        # Validate task status
+        if status == 'ACTIVE':
+            # The task is in progress.
+            raise Exception('Task still active, this should not happen after wait')
+
+        elif status == 'INACTIVE':
+            # The task has been suspended and will not continue without intervention.
+            # Currently, only credential expiration will cause this state.
+            raise Exception('Task is inactive, probably credentials have expired')
+
+        elif status == 'SUCCEEDED':
+            # The task completed successfully.
+            return
+
+        elif status == 'FAILED':
+            # The task or one of its subtasks failed, expired, or was canceled.
+            raise Exception('Task failed')
+
+        else:
+            raise Exception('Unknown status: %s' % status)
+
 
 
 ################################################################################
@@ -533,7 +607,7 @@ class GODirectory(saga.adaptors.cpi.filesystem.Directory):
             raise saga.BadParameter("invalid dir '%s'" % ps)
 
         if self.flags & saga.filesystem.CREATE_PARENTS:
-            self._adaptor.mkparents(self.session, self.shell, ps)
+            self._adaptor.mkparents(self.shell, ps)
 
         elif self.flags & saga.filesystem.CREATE:
             self._adaptor.run_go_cmd(self.shell, "mkdir '%s'" % ps)
@@ -679,20 +753,11 @@ class GODirectory(saga.adaptors.cpi.filesystem.Directory):
 
         self._is_valid()
 
-        sync_level = 0
-        
         src_ps = self.get_path_spec(url=src_in)
         tgt_ps = self.get_path_spec(url=tgt_in)
 
-        cmd_flags = ""
-        if flags & saga.filesystem.RECURSIVE:
-            cmd_flags += "-r"
+        self._adaptor.go_transfer(self.shell, flags, src_ps, tgt_ps)
 
-        if flags & saga.filesystem.CREATE_PARENTS:
-            self._adaptor.mkparents(self.session, self.shell, tgt_ps)
-
-        cmd      = "scp %s -s %d '%s' '%s'" % (cmd_flags, sync_level, src_ps, tgt_ps)
-        out, err = self._adaptor.run_go_cmd(self.shell, cmd)
 
     # ----------------------------------------------------------------
     #
@@ -772,7 +837,7 @@ class GODirectory(saga.adaptors.cpi.filesystem.Directory):
         tgt_ps = self.get_path_spec(url=tgt_in)
 
         if flags & saga.filesystem.CREATE_PARENTS:
-            self._adaptor.mkparents(self.session, self.shell, tgt_ps)
+            self._adaptor.mkparents(self.shell, tgt_ps)
 
         else:
             cmd = "mkdir '%s'" % tgt_ps
@@ -959,7 +1024,7 @@ class GOFile(saga.adaptors.cpi.filesystem.File):
             raise saga.BadParameter("invalid file '%s'" % ps)
 
         if self.flags & saga.filesystem.CREATE_PARENTS:
-            self._adaptor.mkparents(self.session, self.shell, cwd_ps)
+            self._adaptor.mkparents(self.shell, cwd_ps)
 
         elif self.flags & saga.filesystem.CREATE:
             self._logger.error("CREATE not supported for files via globus online")
@@ -1020,22 +1085,11 @@ class GOFile(saga.adaptors.cpi.filesystem.File):
 
         self._is_valid()
 
-        # FIXME: eval flags
-        sync_level = 0
-
         src_ps = self.get_path_spec()
         tgt_ps = self.get_path_spec(url=tgt_in)
 
-        if flags & saga.filesystem.CREATE_PARENTS:
-            self._adaptor.mkparents(self.session, self.shell, tgt_ps)
+        self._adaptor.go_transfer(self.shell, flags, src_ps, tgt_ps)
 
-        cmd_flags = ""
-        if flags & saga.filesystem.RECURSIVE:
-            cmd_flags += "-r"
-
-        cmd = "scp %s -s %d '%s' '%s'" % (cmd_flags, sync_level, src_ps, tgt_ps)
-        out, err = self._adaptor.run_go_cmd(self.shell, cmd)
-   
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
