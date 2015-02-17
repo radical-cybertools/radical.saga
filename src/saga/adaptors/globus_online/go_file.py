@@ -480,6 +480,20 @@ class Adaptor(saga.adaptors.base.Base):
                     if self.f_mode == 'silent':
                         pass
 
+    def go_transfer(self, shell, flags, source, target):
+
+        sync_level = 0
+
+        cmd_flags = ""
+        if flags & saga.filesystem.RECURSIVE:
+            cmd_flags += "-r"
+
+        if flags & saga.filesystem.CREATE_PARENTS:
+            self.mkparents(shell, target)
+
+        cmd = "scp %s -s %d '%s' '%s'" % (cmd_flags, sync_level, source, target)
+        out, err = self.run_go_cmd(shell, cmd)
+
 
 ################################################################################
 #
@@ -687,20 +701,11 @@ class GODirectory(saga.adaptors.cpi.filesystem.Directory):
 
         self._is_valid()
 
-        sync_level = 0
-        
         src_ps = self.get_path_spec(url=src_in)
         tgt_ps = self.get_path_spec(url=tgt_in)
 
-        cmd_flags = ""
-        if flags & saga.filesystem.RECURSIVE:
-            cmd_flags += "-r"
+        self._adaptor.go_transfer(self.shell, flags, src_ps, tgt_ps)
 
-        if flags & saga.filesystem.CREATE_PARENTS:
-            self._adaptor.mkparents(self.session, self.shell, tgt_ps)
-
-        cmd      = "scp %s -s %d '%s' '%s'" % (cmd_flags, sync_level, src_ps, tgt_ps)
-        out, err = self._adaptor.run_go_cmd(self.shell, cmd)
 
     # ----------------------------------------------------------------
     #
@@ -1028,22 +1033,11 @@ class GOFile(saga.adaptors.cpi.filesystem.File):
 
         self._is_valid()
 
-        # FIXME: eval flags
-        sync_level = 0
-
         src_ps = self.get_path_spec()
         tgt_ps = self.get_path_spec(url=tgt_in)
 
-        if flags & saga.filesystem.CREATE_PARENTS:
-            self._adaptor.mkparents(self.session, self.shell, tgt_ps)
+        self._adaptor.go_transfer(self.shell, flags, src_ps, tgt_ps)
 
-        cmd_flags = ""
-        if flags & saga.filesystem.RECURSIVE:
-            cmd_flags += "-r"
-
-        cmd = "scp %s -s %d '%s' '%s'" % (cmd_flags, sync_level, src_ps, tgt_ps)
-        out, err = self._adaptor.run_go_cmd(self.shell, cmd)
-   
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
