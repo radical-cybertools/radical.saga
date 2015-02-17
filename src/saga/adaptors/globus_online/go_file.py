@@ -482,14 +482,25 @@ class Adaptor(saga.adaptors.base.Base):
 
     def go_transfer(self, shell, flags, source, target):
 
+        # 0: Copy files that do not exist at the destination
         sync_level = 0
 
+        # Create parents
+        if flags & saga.filesystem.CREATE_PARENTS:
+            self.mkparents(shell, target)
+
+        #if flags & saga.filesystem.OVERWRITE:
+            # 1: Copy files if the size of the destination does not match the
+            #    size of the source
+            # 2: Copy files if the timestamp of the destination is older than
+            #    the timestamp of the source
+            # 3: Copy files if checksums of the source and destination do not match
+        #    sync_level = 3
+
+        # Set recursive flag
         cmd_flags = ""
         if flags & saga.filesystem.RECURSIVE:
             cmd_flags += "-r"
-
-        if flags & saga.filesystem.CREATE_PARENTS:
-            self.mkparents(shell, target)
 
         # Initiate background copy
         cmd = "scp -D %s -s %d '%s' '%s'" % (cmd_flags, sync_level, source, target)
