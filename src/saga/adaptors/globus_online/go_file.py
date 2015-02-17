@@ -256,7 +256,7 @@ class Adaptor(saga.adaptors.base.Base):
                 cwd_path = cwd_url.path
 
         if not url.host:
-            url.host   = cwd_url.host
+            url.host = cwd_url.host
         if not url.schema:
             url.schema = cwd_url.schema
 
@@ -435,7 +435,7 @@ class Adaptor(saga.adaptors.base.Base):
 
     # ----------------------------------------------------------------
     #
-    def mkparents(self, session, shell, tgt_ps):
+    def mkparents(self, shell, tgt_ps):
 
         # GO does not support mkdir -p, so we need to split the dir into
         # elements and create one after the other, ignoring errors for already
@@ -555,7 +555,7 @@ class GODirectory(saga.adaptors.cpi.filesystem.Directory):
             raise saga.BadParameter("invalid dir '%s'" % ps)
 
         if self.flags & saga.filesystem.CREATE_PARENTS:
-            self._adaptor.mkparents(self.session, self.shell, ps)
+            self._adaptor.mkparents(self.shell, ps)
 
         elif self.flags & saga.filesystem.CREATE:
             self._adaptor.run_go_cmd(self.shell, "mkdir '%s'" % ps)
@@ -785,7 +785,7 @@ class GODirectory(saga.adaptors.cpi.filesystem.Directory):
         tgt_ps = self.get_path_spec(url=tgt_in)
 
         if flags & saga.filesystem.CREATE_PARENTS:
-            self._adaptor.mkparents(self.session, self.shell, tgt_ps)
+            self._adaptor.mkparents(self.shell, tgt_ps)
 
         else:
             cmd = "mkdir '%s'" % tgt_ps
@@ -972,7 +972,7 @@ class GOFile(saga.adaptors.cpi.filesystem.File):
             raise saga.BadParameter("invalid file '%s'" % ps)
 
         if self.flags & saga.filesystem.CREATE_PARENTS:
-            self._adaptor.mkparents(self.session, self.shell, cwd_ps)
+            self._adaptor.mkparents(self.shell, cwd_ps)
 
         elif self.flags & saga.filesystem.CREATE:
             self._logger.error("CREATE not supported for files via globus online")
