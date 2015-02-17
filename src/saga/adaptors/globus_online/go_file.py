@@ -491,8 +491,11 @@ class Adaptor(saga.adaptors.base.Base):
         if flags & saga.filesystem.CREATE_PARENTS:
             self.mkparents(shell, target)
 
-        cmd = "scp %s -s %d '%s' '%s'" % (cmd_flags, sync_level, source, target)
-        out, err = self.run_go_cmd(shell, cmd)
+        cmd = "scp -D %s -s %d '%s' '%s'" % (cmd_flags, sync_level, source, target)
+        out, _ = self.run_go_cmd(shell, cmd)
+        task_id = out.split(':')[1].strip()
+        cmd = "wait -q %s" % task_id
+        self.run_go_cmd(shell, cmd)
 
 
 ################################################################################
