@@ -491,11 +491,49 @@ class Adaptor(saga.adaptors.base.Base):
         if flags & saga.filesystem.CREATE_PARENTS:
             self.mkparents(shell, target)
 
+        # Initiate background copy
         cmd = "scp -D %s -s %d '%s' '%s'" % (cmd_flags, sync_level, source, target)
         out, _ = self.run_go_cmd(shell, cmd)
-        task_id = out.split(':')[1].strip()
+        # 'Task ID: 8c6f989d-b6aa-11e4-adc6-22000a97197b'
+        key, value = out.split(':')
+        if key != 'Task ID':
+            raise Exception("Expected Task ID: <id>, got %s" % out)
+        task_id = value.strip()
+
+        # Wait until background copy has finished
         cmd = "wait -q %s" % task_id
         self.run_go_cmd(shell, cmd)
+
+        # Retrieve task status
+        cmd = "status -f status %s" % task_id
+        out, _ = self.run_go_cmd(shell, cmd)
+        # Status: SUCCEEDED
+        key, value = out.split(':')
+        if key != 'Status':
+            raise Exception("Expected Status: <status>, got %s" % out)
+        status = value.strip()
+
+        # Validate task status
+        if status == 'ACTIVE':
+            # The task is in progress.
+            raise Exception('Task still active, this should not happen after wait')
+
+        elif status == 'INACTIVE':
+            # The task has been suspended and will not continue without intervention.
+            # Currently, only credential expiration will cause this state.
+            raise Exception('Task is inactive, probably credentials have expired')
+
+        elif status == 'SUCCEEDED':
+            # The task completed successfully.
+            return
+
+        elif status == 'FAILED':
+            # The task or one of its subtasks failed, expired, or was canceled.
+            raise Exception('Task failed')
+
+        else:
+            raise Exception('Unknown status: %s' % status)
+
 
 
 ################################################################################
