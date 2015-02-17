@@ -48,6 +48,12 @@ def SYNC_CALL (sync_function) :
         if 'ttype' in kwargs : 
             del kwargs['ttype']
 
+        # only some functions will provide metrics, and thus need the _from_task
+        # parameter -- strip that as well if its not needed
+        if '_from_task' in kwargs:
+            if not '_from_task' in inspect.getargspec (sync_function).args:
+                del(kwargs['_from_task'])
+
         return sync_function (self, *args, **kwargs)
 
     return wrap_function
@@ -118,7 +124,6 @@ def CPI_ASYNC_CALL (cpi_async_function) :
 
 
         # got the sync call, wrap it in a task
-
         c = { '_call'   : cpi_sync_function,
               '_args'   : args, 
               '_kwargs' : kwargs }   # no ttype!
