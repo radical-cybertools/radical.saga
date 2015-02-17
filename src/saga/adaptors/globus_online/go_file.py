@@ -525,26 +525,21 @@ class Adaptor(saga.adaptors.base.Base):
         status = value.strip()
 
         # Validate task status
-        if status == 'ACTIVE':
+        if status == 'SUCCEEDED':
+            # The task completed successfully.
+            return
+        elif status == 'ACTIVE':
             # The task is in progress.
             raise Exception('Task still active, this should not happen after wait')
-
         elif status == 'INACTIVE':
             # The task has been suspended and will not continue without intervention.
             # Currently, only credential expiration will cause this state.
             raise Exception('Task is inactive, probably credentials have expired')
-
-        elif status == 'SUCCEEDED':
-            # The task completed successfully.
-            return
-
         elif status == 'FAILED':
             # The task or one of its subtasks failed, expired, or was canceled.
             raise Exception('Task failed')
-
         else:
             raise Exception('Unknown status: %s' % status)
-
 
 
 ################################################################################
