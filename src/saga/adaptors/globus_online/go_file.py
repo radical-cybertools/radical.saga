@@ -440,6 +440,7 @@ class Adaptor(saga.adaptors.base.Base):
         # GO does not support mkdir -p, so we need to split the dir into
         # elements and create one after the other, ignoring errors for already
         # existing elements.
+        # TODO: Can't we check for existence? The errors are confusing.
 
         host_ps, path_ps = tgt_ps.split(':', 1)
         
