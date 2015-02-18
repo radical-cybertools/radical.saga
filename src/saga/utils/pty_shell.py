@@ -186,7 +186,7 @@ class PTYShell (object) :
 
     # ----------------------------------------------------------------
     #
-    def __init__ (self, url, session=None, logger=None, options=None, posix=True):
+    def __init__ (self, url, session=None, logger=None, opts=None, posix=True):
 
         if logger : self.logger  = logger
         else      : self.logger  = rul.getLogger('saga', 'PTYShell') 
