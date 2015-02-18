@@ -194,7 +194,7 @@ class PTYShell (object) :
         if session: self.session = session
         else      : self.session = ss.Session(default=True)
 
-        if options: self.options = options
+        if opts   : self.options = opts   
         else      : self.options = dict()
 
         self.logger.debug ("PTYShell init %s" % self)
