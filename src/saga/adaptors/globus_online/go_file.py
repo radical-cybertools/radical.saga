@@ -172,7 +172,7 @@ class Adaptor(saga.adaptors.base.Base):
 
             # create the shell.
             shell = sups.PTYShell(new_url, session=session, logger=self._logger, 
-                                  options=opts, posix=False)
+                                  opts=opts, posix=False)
             self.shells[sid]['shell'] = shell
 
             # confirm the user ID for this shell

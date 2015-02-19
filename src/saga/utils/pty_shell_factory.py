@@ -78,7 +78,6 @@ _SCRIPTS = {
         'copy_from_in' : ''
     },
     'sftp' : {
-
         'copy_to'      : '%(sftp_env)s "%(sftp_exe)s" %(sftp_args)s %(s_flags)s %(host_str)s',
         'copy_from'    : '%(sftp_env)s "%(sftp_exe)s" %(sftp_args)s %(s_flags)s %(host_str)s',
         'copy_to_in'   : 'mput %(cp_flags)s "%(src)s" "%(tgt)s"',
@@ -164,7 +163,7 @@ class PTYShellFactory (object) :
 
             # collect all information we have/need about the requested master
             # connection
-            info = self._create_master_entry (url, session, prompt, logger)
+            info = self._create_master_entry (url, session, prompt, logger, posix)
 
             # we got master info - register the master, and create the instance!
             type_s = str(info['shell_type'])
@@ -189,7 +188,7 @@ class PTYShellFactory (object) :
 
                 # authorization, prompt setup, etc.  Initialize as shell if not
                 # explicitly marked as non-posix shell
-                self._initialize_pty (info['pty'], info, is_shell=posix)
+                self._initialize_pty (info['pty'], info)
 
                 # master was created - register it
                 self.registry[host_s][user_s][type_s] = info
@@ -209,9 +208,9 @@ class PTYShellFactory (object) :
 
     # --------------------------------------------------------------------------
     #
-    def _initialize_pty (self, pty_shell, info, is_shell=False) :
+    def _initialize_pty (self, pty_shell, info) :
 
-        # is_shell: only for shells we use prompt triggers.  sftp for example
+        # posix: only for posix shells we use prompt triggers.  sftp for example
         # does not deal well with triggers (no printf).
 
         with self.rlock :
@@ -239,10 +238,13 @@ class PTYShellFactory (object) :
                                    ".*HELLO_\\d+_SAGA$",           # prompt detection helper
                                    prompt]                         # greedy native shell prompt
 
-                # find a prompt
                 # use a very aggressive, but portable prompt setting scheme.
-                # Error messages may appear for tcsh and others
-                pty_shell.write (" export PS1='$' ; set prompt='$'\n")
+                # Error messages may appear for tcsh and others.  Excuse
+                # non-posix shells
+                if info['posix']:
+                    pty_shell.write (" export PS1='$' ; set prompt='$'\n")
+
+                # find a prompt
                 n, match = pty_shell.find (prompt_patterns, delay)
 
                 # this loop will run until we finally find the shell prompt, or
@@ -279,7 +281,7 @@ class PTYShellFactory (object) :
                             # don't need new ones...
                             continue
 
-                        if  is_shell :
+                        if info['posix']:
                             # use a very aggressive, but portable prompt setting scheme
                             pty_shell.write (" export PS1='$' > /dev/null 2>&1 || set prompt='$'\n")
                             pty_shell.write (" printf 'HELLO_%%d_SAGA\\n' %d\n" % retries)
@@ -377,7 +379,7 @@ class PTYShellFactory (object) :
 
                                         if  not n :
                                             if  attempts == 1 :
-                                                if  is_shell :
+                                                if info['posix']:
                                                     pty_shell.write (" printf 'HELLO_%%d_SAGA\\n' %d\n" % retries)
 
                                             if  attempts > 100 :
@@ -426,21 +428,21 @@ class PTYShellFactory (object) :
             sh_slave = supp.PTYProcess (s_cmd, info['logger'])
 
             # authorization, prompt setup, etc
-            self._initialize_pty (sh_slave, info, is_shell=True)
+            self._initialize_pty (sh_slave, info)
 
             return sh_slave
 
 
     # --------------------------------------------------------------------------
     #
-    def _create_master_entry (self, url, session, prompt, logger) :
+    def _create_master_entry (self, url, session, prompt, logger, posix) :
         # FIXME: cache 'which' results, etc
         # FIXME: check 'which' results
 
         with self.rlock :
 
 
-            info = {}
+            info = {'posix' : posix}
 
             # get and evaluate session config
             if  not session :
@@ -644,4 +646,7 @@ class PTYShellFactory (object) :
             # keep all collected info in the master dict, and return it for
             # registration
             return info
+
+
+# ------------------------------------------------------------------------------
 
