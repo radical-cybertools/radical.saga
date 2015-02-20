@@ -8,13 +8,16 @@ __license__   = "MIT"
 
 import os
 import saga.utils.pty_shell as sups
-import saga.utils.misc      as sumisc
+import saga.utils.misc as sumisc
 
 import saga.adaptors.base
 import saga.adaptors.cpi.filesystem
 
 from saga.adaptors.cpi.decorators import SYNC_CALL
 
+# TODO: We could make this configurable,
+# so people without gsissh can still perform some operations.
+# go+ssh:// vs go+gsissh:// comes to mind
 GO_DEFAULT_URL = "gsissh://cli.globusonline.org/"
 
 # --------------------------------------------------------------------
@@ -46,12 +49,12 @@ _ADAPTOR_OPTIONS       = [
     'default'          : 'report',
     'valid_options'    : ['raise', 'report', 'ignore'],
     'documentation'    : '''Globus-Online seems to behave eratically.  This flag
-                         defines how the adaptor should deal with intermittent
-                         and fatal errors.  'raise' will cause exceptions on
-                         all errors, 'report' will print error messages, but
-                         otherwise continue, and 'ignore' will (duh!) ignore
-                         errors.  'report' is the default, you should only use
-                         'ignore' when you know what you are doing!''',
+                            defines how the adaptor should deal with intermittent
+                            and fatal errors.  'raise' will cause exceptions on
+                            all errors, 'report' will print error messages, but
+                            otherwise continue, and 'ignore' will (duh!) ignore
+                            errors.  'report' is the default, you should only use
+                            'ignore' when you know what you are doing!''',
     'env_variable'     : None
     },
     # Set a GO specific prompt on the PTYShell
@@ -63,6 +66,15 @@ _ADAPTOR_OPTIONS       = [
         'documentation' : 'GO always has a "$ " prompt',
         'env_variable'  : None
     },
+    # Allow to specify which endpoint to use for "localhost"
+    {
+        'category'      : 'saga.adaptor.globus_online_file',
+        'name'          : 'localhost_endpoint',
+        'type'          : str,
+        'default'       : 'None',
+        'documentation' : 'GO always has a "$ " prompt',
+        'env_variable'  : "SAGA_GLOBUS_ONLINE_LOCALHOST_ENDPOINT"
+    }
 ]
 
 # --------------------------------------------------------------------
@@ -133,10 +145,11 @@ class Adaptor(saga.adaptors.base.Base):
 
         saga.adaptors.base.Base.__init__(self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
 
-        self.opts   = self.get_config(_ADAPTOR_NAME)
+        self.opts = self.get_config(_ADAPTOR_NAME)
         self.notify = self.opts['enable_notifications'].get_value()
         self.f_mode = self.opts['failure_mode'].get_value()
         self.prompt = self.opts['prompt_pattern'].get_value()
+        self.localhost_ep = self.opts['localhost_endpoint'].get_value()
         self.shells = {}  # keep go shells for each session
 
     # --------------------------------------------------------------------------
@@ -168,7 +181,7 @@ class Adaptor(saga.adaptors.base.Base):
             else:
                 new_url = saga.Url(go_url) # deep copy
 
-            opts = {'prompt_pattern' : self.prompt}
+            opts = {'prompt_pattern': self.prompt}
 
             # create the shell.
             shell = sups.PTYShell(new_url, session=session, logger=self._logger, 
@@ -201,13 +214,16 @@ class Adaptor(saga.adaptors.base.Base):
             # will contain the set of hosts we can potentially connect to.
             self.get_go_endpoint_list(session, shell, fetch=True)
 
-          # pprint.pprint(self.shells)
-
-
         # we have the shell for sure by now -- return it!
         return self.shells[session._id]['shell']
 
     # ----------------------------------------------------------------
+    #
+    # Constructs the following from a SAGA/user URL:
+    #
+    #   - host: the original host element from the input URL
+    #   - name: the EP name as used to interact with GO
+    #   - url: the URL corrected with the EP name as the host element
     #
     def get_go_endpoint_ids(self, session, url):
 
@@ -216,17 +232,31 @@ class Adaptor(saga.adaptors.base.Base):
         if not sid in self.shells:
             raise saga.IncorrectState("GO shell disconnected")
 
+        ep_url = saga.Url()
+        ep_url.schema = url.schema
+        ep_url.port = url.port
+
         if '#' in url.host:
+            # We assume an already existing EP.
+            # We use the name for the host entry also.
             ep_name = url.host
+            ep_url.host = ep_name
+        elif url.host == 'localhost':
+            # Special case to translate "localhost" to the users own machine.
+            if self.localhost_ep != 'None':
+                ep_name = self.localhost_ep
+                ep_url.host = ep_name
+            else:
+                # TODO: could add more heuristics, like:
+                # - looking for a "username#localhost"
+                # - looking for special type of entries in the endpoint-list
+                raise saga.BadParameter("localhost endpoint not configured")
         else:
+            # Create an EP based on the username and hostname
             ep_name = "%s#%s" % (self.shells[sid]['user'], url.host)
-        ep_url  = saga.Url()
+            ep_url.host = url.host
 
-        ep_url.schema   = url.schema
-        ep_url.host     = url.host
-        ep_url.port     = url.port
-
-        return url.host, ep_name, ep_url
+        return ep_name, ep_url
 
     # ----------------------------------------------------------------
     #
@@ -265,23 +295,23 @@ class Adaptor(saga.adaptors.base.Base):
         if not url.schema:
             raise saga.BadParameter('need schema for GO ops')
 
-        ep_str, ep_name, ep_url = self.get_go_endpoint_ids(session, url)
+        ep_name, ep_url = self.get_go_endpoint_ids(session, url)
 
         # if both URLs point into the same namespace, and if the given path is
         # not absolute, then expand it relative to the cwd_path (if it exists).
         # Otherwise it is left to the unmodified path.
         ps_path = path
-        if sumisc.url_is_compatible(cwd_url, url):
-            if not path.startswith('/'):
-                if cwd_path and path:
-                    ps_path = os.path.join(cwd_path, path)
-                elif cwd_path:
-                    ps_path = cwd_path
+        # TODO: should the check be on cwd_url / url or on ep_url?
+        if sumisc.url_is_compatible(cwd_url, url) and not path.startswith('/'):
+            if cwd_path and path:
+                ps_path = os.path.join(cwd_path, path)
+            elif cwd_path:
+                ps_path = cwd_path
 
         # the pathspec is the concatenation of ps_host and ps_path by a colon
-        ps = "%s:%s" % (ep_str, ps_path)
+        ps = "%s:%s" % (ep_name, ps_path)
 
-        # check if we know the endpoint in ep_str, and create/activate as needed
+        # check if we know the endpoint in XXX, and create/activate as needed
         ep = self.get_go_endpoint(session, shell, ep_url)
 
         return ps
@@ -291,8 +321,7 @@ class Adaptor(saga.adaptors.base.Base):
     def get_go_endpoint(self, session, shell, url):
 
         # for the given URL, derive the endpoint string.
-        # FIXME: make sure that the endpoint is activated 
-        ep_str, ep_name, ep_url = self.get_go_endpoint_ids(session, url)
+        ep_name, ep_url = self.get_go_endpoint_ids(session, url)
 
         ep = self.get_go_endpoint_list(session, shell, ep_name, fetch=False)
 
@@ -320,8 +349,13 @@ class Adaptor(saga.adaptors.base.Base):
 
         # we have the endpoint now, for sure -- make sure its activated
         if not ep['Credential Status'] == 'ACTIVE':
+            # TODO: I had an active endpoint, but still got an activation prompt,
+            # probably because the remaining lifetime was not very long anymore.
+            # or Credential Time Left    : 00:16:35 < ????
 
             # Only Globus Connect Service Endpoints don't need -g?
+            # Had contact on this with Globus Support, they couldn't suggest
+            # anything better.
             if ep['MyProxy Server'] == 'myproxy.globusonline.org' and \
             '/C=US/O=Globus Consortium/OU=Globus Connect Service/CN=' in ep['Subject(s)']:
                 shell.run_sync("endpoint-activate %s" % ep_name)
@@ -422,8 +456,16 @@ class Adaptor(saga.adaptors.base.Base):
 
         if err:
             if mode == 'raise':
-                # FIXME: a 'translate_exception' call would be useful here...
-                raise saga.NoSuccess("Error in '%s': %s" % (cmd, err))
+                if lines[3].startswith('Message:'):
+                    cause = lines[3].split(':')[1].strip()
+                    if cause == 'No such file or directory':
+                        raise saga.DoesNotExist(cause)
+                    elif cause == 'Could not connect to server':
+                        raise saga.BadParameter(cause)
+                    else:
+                        raise saga.NoSuccess('Unknown error: %s' % cause)
+                else:
+                    raise saga.NoSuccess('Could not find find message in error: %s' % err)
 
             if mode == 'report':
                 self._logger.error("Error in '%s': %s" % (cmd, err))
@@ -443,6 +485,7 @@ class Adaptor(saga.adaptors.base.Base):
         # TODO: Can't we check for existence? The errors are confusing.
 
         host_ps, path_ps = tgt_ps.split(':', 1)
+        #path_ps = os.path.dirname(path_ps)
         
         self._logger.info('mkparents %s' % path_ps)
 
@@ -464,7 +507,7 @@ class Adaptor(saga.adaptors.base.Base):
 
         if len(error):
 
-            # some mkdir gave an error.  Check if the error occured on the last
+            # some mkdir gave an error.  Check if the error occurred on the last
             # dir (the tgt), and if that is not a ignorable report that it
             # already exists -- anything else will raise an exception though...
             if cur_path in error:
@@ -472,7 +515,8 @@ class Adaptor(saga.adaptors.base.Base):
                 if not 'Path already exists' in error[cur_path]:
 
                     if self.f_mode == 'raise':
-                        # FIXME: a 'translate_exception' call would be useful here...
+                        # TODO: a 'translate_exception' call would be useful here...
+                        # TODO: We can use the exceptions from run_go_cmd?
                         raise saga.NoSuccess("Could not make dir hierarchy: %s" % str(error))
 
                     if self.f_mode == 'report':
@@ -482,6 +526,8 @@ class Adaptor(saga.adaptors.base.Base):
                         pass
 
     def go_transfer(self, shell, flags, source, target):
+
+        self._logger.debug('Adaptor:go_transfer(%s, %s)' % (source, target))
 
         # 0: Copy files that do not exist at the destination
         sync_level = 0
@@ -504,6 +550,7 @@ class Adaptor(saga.adaptors.base.Base):
             cmd_flags += "-r"
 
         # Initiate background copy
+        # TODO: Should we use a deadline?
         cmd = "scp -D %s -s %d '%s' '%s'" % (cmd_flags, sync_level, source, target)
         out, _ = self.run_go_cmd(shell, cmd)
         # 'Task ID: 8c6f989d-b6aa-11e4-adc6-22000a97197b'
@@ -542,6 +589,31 @@ class Adaptor(saga.adaptors.base.Base):
         else:
             raise Exception('Unknown status: %s' % status)
 
+    ################################################################################
+    #
+    # Helper function to test for existence and type.
+    # Will raise DoesNotExist for non-existing entries.
+    def stat(self, shell, ps):
+
+        out, err = self.run_go_cmd(shell, "ls -la '%s'" % ps, mode='raise')
+
+        mode = out.split('\n')[0].split()[0][0]
+        if mode == '-':
+            mode = 'file'
+        elif mode == 'd':
+            mode = 'dir'
+        elif mode == 'l':
+            mode = 'link'
+        else:
+            raise saga.NoSuccess("stat() unknown mode: '%s' (%s)" % (mode, out))
+
+        size = int(out.split('\n')[0].split()[3])
+
+        return {
+            'mode': mode,
+            'size': size
+        }
+
 
 ################################################################################
 #
@@ -568,7 +640,7 @@ class GODirectory(saga.adaptors.cpi.filesystem.Directory):
     def init_instance(self, adaptor_state, url, flags, session):
         """ Directory instance constructor """
 
-        # FIXME: eval flags!
+        # TODO: eval flags!
         if flags == None:
             flags = 0
 
@@ -594,8 +666,6 @@ class GODirectory(saga.adaptors.cpi.filesystem.Directory):
 
         self.shell = self._adaptor.get_go_shell(self.session)
         self.ep    = self._adaptor.get_go_endpoint(self.session, self.shell, self.url)
-        self.ep_str, self.ep_name, self.ep_url = \
-                     self._adaptor.get_go_endpoint_ids(self.session, self.url)
 
         ps = self.get_path_spec()
 
@@ -606,11 +676,14 @@ class GODirectory(saga.adaptors.cpi.filesystem.Directory):
             self._adaptor.mkparents(self.shell, ps)
 
         elif self.flags & saga.filesystem.CREATE:
+            # TODO: check for errors?
             self._adaptor.run_go_cmd(self.shell, "mkdir '%s'" % ps)
 
         else:
-            # this is as good an existence test as we can manage...
-            self._adaptor.run_go_cmd(self.shell, "ls '%s'" % ps)
+            stat = self._adaptor.stat(self.shell, ps)
+            if stat['mode'] not in ['dir', 'link']:
+                # TODO: if link, check the target
+                raise saga.IncorrectState('Is not a directory')
 
         self._logger.debug("Initialized directory %s/%s" % (self.url, self.path))
 
@@ -631,10 +704,10 @@ class GODirectory(saga.adaptors.cpi.filesystem.Directory):
     def get_path_spec(self, url=None, path=None):
 
         return self._adaptor.get_path_spec(session  = self.session,
-                                            url      = url, 
-                                            path     = path,
-                                            cwd_url  = self.url, 
-                                            cwd_path = self.path)
+                                           url      = url,
+                                           path     = path,
+                                           cwd_url  = self.url,
+                                           cwd_path = self.path)
 
     # ----------------------------------------------------------------
     #
@@ -660,9 +733,9 @@ class GODirectory(saga.adaptors.cpi.filesystem.Directory):
 
         self._is_valid()
 
-        adaptor_state = { "from_open" : True,
-                          "url"       : saga.Url(self.url),   # deep copy
-                          "path"      : self.path}
+        adaptor_state = {"from_open": True,
+                         "url"      : saga.Url(self.url),   # deep copy
+                         "path"     : self.path}
 
         if sumisc.url_is_relative(url):
             url = sumisc.url_make_absolute(self.get_url(), url)
@@ -677,7 +750,7 @@ class GODirectory(saga.adaptors.cpi.filesystem.Directory):
 
         tgt_url = saga.Url(tgt)
 
-        # FIXME: attempt to get new EP
+        # TODO: attempt to get new EP
         if not sumisc.url_is_compatible(self.url, tgt_url):
             raise saga.BadParameter("Target dir outside of namespace '%s': %s" \
                                   % (self.url, tgt_url))
@@ -723,6 +796,7 @@ class GODirectory(saga.adaptors.cpi.filesystem.Directory):
         self._is_valid()
 
         npat_ps  = self.get_path_spec(url=npat)
+        # TODO: catch errors?
         out, err = self._adaptor.run_go_cmd(self.shell, "ls '%s'" % (npat_ps))
         lines = filter(None, out.split("\n"))
         self._logger.debug(lines)
@@ -740,6 +814,8 @@ class GODirectory(saga.adaptors.cpi.filesystem.Directory):
 
         self._is_valid()
 
+        self._logger.debug('Directory:copy_self(%s)' % tgt)
+
         return self.copy(src_in=None, tgt_in=tgt, flags=flags)
 
     # ----------------------------------------------------------------
@@ -747,13 +823,16 @@ class GODirectory(saga.adaptors.cpi.filesystem.Directory):
     @SYNC_CALL
     def copy(self, src_in, tgt_in, flags, _from_task=None):
 
+        self._logger.debug('Directory:copy(%s, %s)' % (src_in, tgt_in))
         self._is_valid()
 
         src_ps = self.get_path_spec(url=src_in)
         tgt_ps = self.get_path_spec(url=tgt_in)
 
-        self._adaptor.go_transfer(self.shell, flags, src_ps, tgt_ps)
+        # Check for existence of source
+        self._adaptor.stat(self.shell, src_ps)
 
+        self._adaptor.go_transfer(self.shell, flags, src_ps, tgt_ps)
 
     # ----------------------------------------------------------------
     #
@@ -812,11 +891,12 @@ class GODirectory(saga.adaptors.cpi.filesystem.Directory):
         if flags & saga.filesystem.RECURSIVE:
             cmd_flags += "-r"
 
-        # oh this is just great... - a dir only gets removed (on some endpoints)
+        # TODO: check for errors
+
+        # TODO: a dir only gets removed (on some endpoints)
         # if the trailing '/' is specified -- otherwise the op *silently fails*!
         # Oh well, since we don't really (want to) know if the target is a dir
         # or not, we remove both versions... :/
-        # FIXME
         cmd      = "rm %s -f '%s/'" % (cmd_flags, tgt_ps)
         out, err = self._adaptor.run_go_cmd(self.shell, cmd)
 
@@ -831,6 +911,8 @@ class GODirectory(saga.adaptors.cpi.filesystem.Directory):
         self._is_valid()
 
         tgt_ps = self.get_path_spec(url=tgt_in)
+
+        # TODO: check for errors
 
         if flags & saga.filesystem.CREATE_PARENTS:
             self._adaptor.mkparents(self.shell, tgt_ps)
@@ -856,17 +938,10 @@ class GODirectory(saga.adaptors.cpi.filesystem.Directory):
         self._is_valid()
 
         tgt_ps = self.get_path_spec(url=tgt_in)
-        cmd = "ls -al '%s/.'"  % tgt_ps
-        out, _ = self._adaptor.run_go_cmd(self.shell, cmd)
 
-        try:
-            size = int(out.split('\n')[0].split()[3])
-        except IndexError:
-            msg = "split failed, out: %s" % out
-            self._logger.error(msg)
-            raise saga.NoSuccess(msg)
+        stat = self._adaptor.stat(self.shell, tgt_ps)
 
-        return size
+        return stat['size']
 
     # ----------------------------------------------------------------
     #
@@ -885,18 +960,13 @@ class GODirectory(saga.adaptors.cpi.filesystem.Directory):
         self._is_valid()
 
         tgt_ps = self.get_path_spec(url=tgt_in)
-        cmd = "ls -al '%s/.'"  % tgt_ps
-        out, _ = self._adaptor.run_go_cmd(self.shell, cmd)
 
-        field = out.split('\n')[0].split()[0][0]
-        if field == 'd':
+        stat = self._adaptor.stat(self.shell, tgt_ps)
+
+        if stat['mode'] == 'dir':
             return True
-        elif field == '-':
-            return False
-        elif field == 'l':
-            return False
         else:
-            raise saga.NoSuccess("is_dir() unknown dirflag: '%s' (%s)" % (field, out))
+            return False
 
     # ----------------------------------------------------------------
     #
@@ -915,18 +985,13 @@ class GODirectory(saga.adaptors.cpi.filesystem.Directory):
         self._is_valid()
 
         tgt_ps = self.get_path_spec(url=tgt_in)
-        cmd = "ls -al '%s/.'"  % tgt_ps
-        out, _ = self._adaptor.run_go_cmd(self.shell, cmd)
 
-        field = out.split('\n')[0].split()[0][0]
-        if field == 'd':
-            return False
-        elif field == '-':
-            return False
-        elif field == 'l':
+        stat = self._adaptor.stat(self.shell, tgt_ps)
+
+        if stat['mode'] == 'link':
             return True
         else:
-            raise saga.NoSuccess("is_link() unknown field: '%s' (%s)" % (field, out))
+            return False
 
     # ----------------------------------------------------------------
     #
@@ -945,18 +1010,29 @@ class GODirectory(saga.adaptors.cpi.filesystem.Directory):
         self._is_valid()
 
         tgt_ps = self.get_path_spec(url=tgt_in)
-        cmd = "ls -al '%s/.'"  % tgt_ps
-        out, _ = self._adaptor.run_go_cmd(self.shell, cmd)
 
-        field = out.split('\n')[0].split()[0][0]
-        if field == 'd':
-            return False
-        elif field == '-':
+        stat = self._adaptor.stat(self.shell, tgt_ps)
+
+        if stat['mode'] == 'file':
             return True
-        elif field == 'l':
-            return False
         else:
-            raise saga.NoSuccess("is_file() unknown field: '%s' (%s)" % (field, out))
+            return False
+
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def exists(self, tgt_in):
+
+        self._is_valid()
+
+        tgt_ps = self.get_path_spec(url=tgt_in)
+
+        try:
+            self._adaptor.stat(self.shell, tgt_ps)
+        except saga.DoesNotExist:
+            return False
+
+        return True
 
 
 ###############################################################################
@@ -984,7 +1060,7 @@ class GOFile(saga.adaptors.cpi.filesystem.File):
     def init_instance(self, adaptor_state, url, flags, session):
         """ File instance constructor """
 
-        # FIXME: eval flags!
+        # TODO: eval flags!
         if flags == None:
             flags = 0
 
@@ -1011,8 +1087,6 @@ class GOFile(saga.adaptors.cpi.filesystem.File):
 
         self.shell = self._adaptor.get_go_shell(self.session)
         self.ep    = self._adaptor.get_go_endpoint(self.session, self.shell, self.url)
-        self.ep_str, self.ep_name, self.ep_url = \
-                     self._adaptor.get_go_endpoint_ids(self.session, self.url)
         ps         = self.get_path_spec()
         cwd_ps     = self.get_path_spec(path=self.cwd)
 
@@ -1026,8 +1100,10 @@ class GOFile(saga.adaptors.cpi.filesystem.File):
             self._logger.error("CREATE not supported for files via globus online")
 
         else:
-            # this is as good an existence test as we can manage...
-            self._adaptor.run_go_cmd(self.shell, "ls '%s'" % ps)
+            stat = self._adaptor.stat(self.shell, ps)
+            if stat['mode'] not in ['file', 'link']:
+                # TODO: if link, check the target
+                raise saga.IncorrectState('Is not a (regular) file')
 
         self._logger.debug("Initialized file %s/%s" % (self.url, self.path))
 
@@ -1101,6 +1177,10 @@ class GOFile(saga.adaptors.cpi.filesystem.File):
         src_ep_str = src_ps.split(':', 1)[0]
         tgt_ep_str = tgt_ps.split(':', 1)[0]
 
+        # TODO: check for errors
+
+        # TODO: should me extracted and merged with operations on Directory?
+
         if src_ep_str == tgt_ep_str:
 
             try:
@@ -1124,6 +1204,10 @@ class GOFile(saga.adaptors.cpi.filesystem.File):
         if flags & saga.filesystem.RECURSIVE:
             cmd_flags += "-r"
 
+        # TODO: check for errors
+
+        # TODO: should me extracted and merged with operations on Directory?
+
         tgt_ps   = self.get_path_spec()
         cmd      = "rm %s -f '%s'"  % (cmd_flags, tgt_ps)
         out, err = self._adaptor.run_go_cmd(self.shell, cmd, mode='ignore')
@@ -1136,17 +1220,10 @@ class GOFile(saga.adaptors.cpi.filesystem.File):
         self._is_valid()
 
         tgt_ps = self.get_path_spec(url=self.url)
-        cmd = "ls -al '%s/.'"  % tgt_ps
-        out, _ = self._adaptor.run_go_cmd(self.shell, cmd)
 
-        try:
-            size = int(out.split('\n')[0].split()[3])
-        except IndexError:
-            msg = "split failed, out: %s" % out
-            self._logger.error(msg)
-            raise saga.NoSuccess(msg)
+        stat = self._adaptor.stat(self.shell, tgt_ps)
 
-        return size
+        return stat['size']
 
     # ----------------------------------------------------------------
     #
@@ -1155,18 +1232,12 @@ class GOFile(saga.adaptors.cpi.filesystem.File):
         self._is_valid()
 
         tgt_ps = self.get_path_spec(url=self.url)
-        cmd = "ls -al '%s/.'"  % tgt_ps
-        out, _ = self._adaptor.run_go_cmd(self.shell, cmd)
 
-        field = out.split('\n')[0].split()[0][0]
-        if field == 'd':
-            return False
-        elif field == '-':
-            return False
-        elif field == 'l':
+        stat = self._adaptor.stat(self.shell, tgt_ps)
+        if stat['mode'] == 'link':
             return True
         else:
-            raise saga.NoSuccess("is_link() unknown field: '%s' (%s)" % (field, out))
+            return False
 
     # ----------------------------------------------------------------
     #
@@ -1175,36 +1246,26 @@ class GOFile(saga.adaptors.cpi.filesystem.File):
         self._is_valid()
 
         tgt_ps = self.get_path_spec(url=self.url)
-        cmd = "ls -al '%s/.'"  % tgt_ps
-        out, _ = self._adaptor.run_go_cmd(self.shell, cmd)
 
-        field = out.split('\n')[0].split()[0][0]
-        if field == 'd':
-            return False
-        elif field == '-':
+        stat = self._adaptor.stat(self.shell, tgt_ps)
+        if stat['mode'] == 'file':
             return True
-        elif field == 'l':
-            return False
         else:
-            raise saga.NoSuccess("is_file() unknown field: '%s' (%s)" % (field, out))
+            return False
 
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
     def is_dir_self(self):
 
+        # TODO: can probably be further extracted and merged with Directory calls
+
         self._is_valid()
 
         tgt_ps = self.get_path_spec(url=self.url)
-        cmd = "ls -al '%s/.'"  % tgt_ps
-        out, _ = self._adaptor.run_go_cmd(self.shell, cmd)
 
-        field = out.split('\n')[0].split()[0][0]
-        if field == 'd':
+        stat = self._adaptor.stat(self.shell, tgt_ps)
+        if stat['mode'] == 'dir':
             return True
-        elif field == '-':
-            return False
-        elif field == 'l':
-            return False
         else:
-            raise saga.NoSuccess("is_dir() unknown field: '%s' (%s)" % (field, out))
+            return False
