@@ -598,6 +598,8 @@ class Adaptor(saga.adaptors.base.Base):
     # Will raise DoesNotExist for non-existing entries.
     def stat(self, shell, ps):
 
+        # TODO: stat() would probably benefit from some caching
+
         out, err = self.run_go_cmd(shell, "ls -la '%s'" % ps, mode='raise')
 
         mode = out.split('\n')[0].split()[0][0]
