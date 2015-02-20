@@ -72,7 +72,10 @@ _ADAPTOR_OPTIONS       = [
         'name'          : 'localhost_endpoint',
         'type'          : str,
         'default'       : 'None',
-        'documentation' : 'GO always has a "$ " prompt',
+        'documentation' : '''Setting this value to the GO endpoint name of your
+                             laptop/desktop/etc., allows you to refer to it by
+                             "localhost" in your code. This enables consistency
+                             with using your code with other adaptors.''',
         'env_variable'  : "SAGA_GLOBUS_ONLINE_LOCALHOST_ENDPOINT"
     }
 ]
