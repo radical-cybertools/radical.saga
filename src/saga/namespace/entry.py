@@ -257,7 +257,7 @@ class Entry (sb.Base, sasync.Async) :
         directory name.  If the target entry exists, it is overwritten::
     
             # copy an entry
-            entry = saga.namespace.Directory("sftp://localhost/tmp/data/data.bin")
+            entry = saga.namespace.Entry("sftp://localhost/tmp/data/data.bin")
             entry.copy ("sftp://localhost/tmp/data/data.bak")
         '''
         
