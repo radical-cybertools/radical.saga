@@ -77,7 +77,7 @@ class Adaptor (saga.adaptors.base.Base):
 
         if not self._have_defaults :
 
-            p = "/tmp/x509up_u%d"  %  os.getuid()
+            p = os.environ.get ('X509_USER_PROXY', "/tmp/x509up_u%d"  %  os.getuid())
 
             if  os.path.exists (p) and \
                 os.path.isfile (p)     :
@@ -86,6 +86,7 @@ class Adaptor (saga.adaptors.base.Base):
                     fh = open (p)
 
                 except Exception as e:
+                    self._logger.warn ("invalid X509 context at %s"  %  p)
                     pass
 
                 else :
@@ -98,6 +99,10 @@ class Adaptor (saga.adaptors.base.Base):
 
                     self._default_contexts.append (c)
                     self._have_defaults = True
+
+            else:
+                if 'X509_USER_PROXY' in os.environ:
+                    self._logger.warn ("no X509 context at %s"  %  p)
 
         # have defaults, and can return them...
         return self._default_contexts
