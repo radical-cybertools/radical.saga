@@ -69,19 +69,22 @@ _SFTP_FLAGS         = ""
 _SCRIPTS = {
     'ssh' : {
         'master'       : '%(ssh_env)s "%(ssh_exe)s" %(ssh_args)s %(m_flags)s %(host_str)s',
-        'shell'        : '%(ssh_env)s "%(ssh_exe)s" %(ssh_args)s %(s_flags)s %(host_str)s'
+        'shell'        : '%(ssh_env)s "%(ssh_exe)s" %(ssh_args)s %(s_flags)s %(host_str)s',
+        'copy_is_posix': True
     },
     'scp' : {
         'copy_to'      : '%(scp_env)s "%(scp_exe)s" %(scp_args)s %(s_flags)s %(cp_flags)s "%(src)s" "%(scp_root)s%(tgt)s"',
         'copy_from'    : '%(scp_env)s "%(scp_exe)s" %(scp_args)s %(s_flags)s %(cp_flags)s "%(scp_root)s%(src)s" "%(tgt)s"',
         'copy_to_in'   : '',
-        'copy_from_in' : ''
+        'copy_from_in' : '',
+        'copy_is_posix': False
     },
     'sftp' : {
         'copy_to'      : '%(sftp_env)s "%(sftp_exe)s" %(sftp_args)s %(s_flags)s %(host_str)s',
         'copy_from'    : '%(sftp_env)s "%(sftp_exe)s" %(sftp_args)s %(s_flags)s %(host_str)s',
         'copy_to_in'   : 'mput %(cp_flags)s "%(src)s" "%(tgt)s"',
-        'copy_from_in' : 'mget %(cp_flags)s "%(src)s" "%(tgt)s"'
+        'copy_from_in' : 'mget %(cp_flags)s "%(src)s" "%(tgt)s"',
+        'copy_is_posix': False
     },
     'sh' : {
         'master'       : '%(sh_env)s "%(sh_exe)s"  %(sh_args)s',
@@ -90,6 +93,7 @@ _SCRIPTS = {
         'copy_from'    : '%(sh_env)s "%(sh_exe)s"  %(sh_args)s',
         'copy_to_in'   : 'cd ~ && "%(cp_exe)s" -v %(cp_flags)s "%(src)s" "%(tgt)s"',
         'copy_from_in' : 'cd ~ && "%(cp_exe)s" -v %(cp_flags)s "%(src)s" "%(tgt)s"',
+        'copy_is_posix': True
     }
 }
 
@@ -408,7 +412,7 @@ class PTYShellFactory (object) :
           # print 'new cp  shell to %s' % s_cmd
 
             cp_slave = supp.PTYProcess (s_cmd, info['logger'])
-            self._initialize_pty (cp_slave, info, posix=False)
+            self._initialize_pty (cp_slave, info, posix=info.get('copy_is_posix'))
 
             return cp_slave
 
