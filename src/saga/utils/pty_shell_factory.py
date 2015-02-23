@@ -208,7 +208,7 @@ class PTYShellFactory (object) :
 
     # --------------------------------------------------------------------------
     #
-    def _initialize_pty (self, pty_shell, info) :
+    def _initialize_pty (self, pty_shell, info, posix=None) :
 
         # posix: only for posix shells we use prompt triggers.  sftp for example
         # does not deal well with triggers (no printf).
@@ -222,6 +222,9 @@ class PTYShellFactory (object) :
             latency    = info['latency']
 
             pty_shell.latency = latency
+
+            if posix == None:
+                posix = info['posix']
 
             # if we did not see a decent prompt within 'delay' time, something
             # went wrong.  Try to prompt a prompt (duh!)  Delay should be
@@ -241,7 +244,7 @@ class PTYShellFactory (object) :
                 # use a very aggressive, but portable prompt setting scheme.
                 # Error messages may appear for tcsh and others.  Excuse
                 # non-posix shells
-                if info['posix']:
+                if posix:
                     pty_shell.write (" export PS1='$' ; set prompt='$'\n")
 
                 # find a prompt
@@ -281,7 +284,7 @@ class PTYShellFactory (object) :
                             # don't need new ones...
                             continue
 
-                        if info['posix']:
+                        if posix:
                             # use a very aggressive, but portable prompt setting scheme
                             pty_shell.write (" export PS1='$' > /dev/null 2>&1 || set prompt='$'\n")
                             pty_shell.write (" printf 'HELLO_%%d_SAGA\\n' %d\n" % retries)
@@ -379,7 +382,7 @@ class PTYShellFactory (object) :
 
                                         if  not n :
                                             if  attempts == 1 :
-                                                if info['posix']:
+                                                if posix:
                                                     pty_shell.write (" printf 'HELLO_%%d_SAGA\\n' %d\n" % retries)
 
                                             if  attempts > 100 :
@@ -388,8 +391,7 @@ class PTYShellFactory (object) :
                                     continue
 
 
-                        logger.debug ("Got initial shell prompt (%s) (%s)" \
-                                   % (n, match))
+                        logger.debug ("Got initial shell prompt (%s) (%s)" % (n, match))
                         # we are done waiting for a prompt
                         break
 
@@ -406,7 +408,7 @@ class PTYShellFactory (object) :
           # print 'new cp  shell to %s' % s_cmd
 
             cp_slave = supp.PTYProcess (s_cmd, info['logger'])
-            self._initialize_pty (cp_slave, info)
+            self._initialize_pty (cp_slave, info, posix=False)
 
             return cp_slave
 
