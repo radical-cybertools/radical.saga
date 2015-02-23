@@ -959,6 +959,7 @@ class PTYShell (object) :
             # at this point, we do have a valid, living master
             s_cmd = info['scripts'][info['copy_mode']]['copy_to']    % repl
             s_in  = info['scripts'][info['copy_mode']]['copy_to_in'] % repl
+            posix = info['scripts'][info['copy_mode']]['copy_is_posix']
 
             if  not s_in :
                 # this code path does not use an interactive shell for copy --
@@ -980,7 +981,7 @@ class PTYShell (object) :
             # run the actual copy command.
             if  not self.cp_slave :
                 self._trace ("get cp slave")
-                self.cp_slave = self.factory.get_cp_slave (s_cmd, info)
+                self.cp_slave = self.factory.get_cp_slave (s_cmd, info, posix)
 
             self.cp_slave.flush ()
             prep = ""
@@ -1069,6 +1070,7 @@ class PTYShell (object) :
             # at this point, we do have a valid, living master
             s_cmd = info['scripts'][info['copy_mode']]['copy_from']    % repl
             s_in  = info['scripts'][info['copy_mode']]['copy_from_in'] % repl
+            posix = info['scripts'][info['copy_mode']]['copy_is_posix']
 
             if  not s_in :
                 # this code path does not use an interactive shell for copy --
@@ -1085,7 +1087,7 @@ class PTYShell (object) :
 
             if  not self.cp_slave :
                 self._trace ("get cp slave")
-                self.cp_slave = self.factory.get_cp_slave (s_cmd, info)
+                self.cp_slave = self.factory.get_cp_slave (s_cmd, info, posix)
 
             self.cp_slave.flush ()
             prep = ""

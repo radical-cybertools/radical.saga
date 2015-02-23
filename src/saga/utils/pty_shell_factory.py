@@ -405,14 +405,17 @@ class PTYShellFactory (object) :
 
     # --------------------------------------------------------------------------
     #
-    def get_cp_slave (self, s_cmd, info) :
+    def get_cp_slave (self, s_cmd, info, posix=None) :
 
         with self.rlock :
 
-          # print 'new cp  shell to %s' % s_cmd
+            if posix == None:
+                posix = info.get('copy_is_posix')
+
+          # print '> -- new cp  shell to %s' % s_cmd
 
             cp_slave = supp.PTYProcess (s_cmd, info['logger'])
-            self._initialize_pty (cp_slave, info, posix=info.get('copy_is_posix'))
+            self._initialize_pty (cp_slave, info, posix)
 
             return cp_slave
 
