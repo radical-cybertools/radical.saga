@@ -43,7 +43,7 @@ import saga.resource
 
 pwd     = os.path.dirname (__file__)
 root    = "%s/.." % pwd
-version, version_detail, version_branch = ru.get_version ([root, pwd])
+version, version_detail, version_branch, sdist_name, sdist_path = ru.get_version ([root, pwd])
 
 # FIXME: the logger init will require a 'classical' ini based config, which is
 # different from the json based config we use now.   May need updating once the
