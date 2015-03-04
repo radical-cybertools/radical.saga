@@ -232,6 +232,7 @@ create_monitor () {
   #   rpid: pid of the actual job              (not exposed to user)
   #   mpid: pid of this monitor.sh instance    (== pid of process group for cancel)
   #   upid: mpid + unique postfix on pid reuse (== SAGA id)
+
   MPID=\$\$
   NOTIFICATIONS="$NOTIFICATIONS"
 
@@ -407,7 +408,7 @@ cmd_run () {
    ( set -m 
      /bin/sh "$BASE/monitor.sh" "$@" 
    ) 1>/dev/null 2>/dev/null 3</dev/null & exit
-  ) 
+  )
 
   # we wait until the job was really started, and get its pid from the fifo
   \read -r UPID < "$BASE/fifo"
