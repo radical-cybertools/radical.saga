@@ -247,10 +247,13 @@ def _pbscript_generator(url, logger, jd, ppn, gres, pbs_version, is_cray=False, 
     if jd.total_cpu_count is None:
         jd.total_cpu_count = 1
 
-    tcc = jd.total_cpu_count
-    nnodes = tcc / ppn
-    if tcc % ppn > 0:
-        nnodes += 1 # Request enough nodes to cater for the number of cores requested
+    # Request enough nodes to cater for the number of cores requested
+    nnodes = jd.total_cpu_count / ppn
+    if jd.total_cpu_count % ppn > 0:
+        nnodes += 1
+
+    # We use the ncpus value for systems that need to specify ncpus as multiple of PPN
+    ncpus = nnodes * ppn
 
     # Node properties are appended to the nodes argument in the resource_list.
     node_properties = []
@@ -290,7 +293,7 @@ def _pbscript_generator(url, logger, jd, ppn, gres, pbs_version, is_cray=False, 
     elif 'version: 2.3.13' in pbs_version:
         # e.g. Blacklight
         # TODO: The more we add, the more it screams for a refactoring
-        pbs_params += "#PBS -l ncpus=%d\n" % tcc
+        pbs_params += "#PBS -l ncpus=%d\n" % ncpus
     elif '4.2.7' in pbs_version:
         logger.info("Using Cray XT @ NERSC (e.g. Hopper) specific '#PBS -l mppwidth=xx' flags (PBSPro_10).")
         pbs_params += "#PBS -l mppwidth=%s \n" % jd.total_cpu_count
