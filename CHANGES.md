@@ -6,7 +6,13 @@
     https://github.com/radical-cybertools/saga-python/issues?q=is%3Aissue+is%3Aopen+
 
 
-Version 0.26 release 2015-02-34
+Version 0.26 release 2015-03-25
+--------------------------------------------------------------------------------
+
+  - fix rounding-up cores for blacklight
+
+
+Version 0.26 release 2015-02-24
 --------------------------------------------------------------------------------
 
   - Major iteration on Globus Online adaptor, including tests and
