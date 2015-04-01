@@ -203,9 +203,13 @@ class Job (sb.Base, st.Task, sasync.Async) :
     def get_stdin (self, ttype=None) :
         """
         get_stdin()
+
+        ttype:     saga.task.type enum
+        ret:       string / saga.Task
     
-        Return the job's STDIN handle. 
+        Return the job's STDIN as string. 
         """
+        # FIXME: we have no means to set a stdin stream
         return self._adaptor.get_stdin (ttype=ttype)
 
 
@@ -218,7 +222,10 @@ class Job (sb.Base, st.Task, sasync.Async) :
         """
         get_stdout()
 
-        Return the job's STDOUT handle. 
+        ttype:     saga.task.type enum
+        ret:       string / saga.Task
+
+        Return the job's STDOUT as string. 
         """
         return self._adaptor.get_stdout (ttype=ttype)
 
@@ -232,9 +239,15 @@ class Job (sb.Base, st.Task, sasync.Async) :
         """
         get_stdout_string()
 
-        Return the job's STDOUT.
+        Return the job's STDOUT as string.
+
+        ttype:     saga.task.type enum
+        ret:       string / saga.Task
+
+        THIS METHOD IS DEPRECATED AND WILL BE REMOVED IN A FUTURE RELEASE.
+        USE job.get_stdout() INSTEAD.
         """
-        return self._adaptor.get_stdout_string (ttype=ttype)
+        return self.get_stdout (ttype=ttype)
 
 
     # --------------------------------------------------------------------------
@@ -246,10 +259,10 @@ class Job (sb.Base, st.Task, sasync.Async) :
         """
         get_stderr()
 
-        Return the job's STDERR handle.
+        Return the job's STDERR as string.
 
         ttype:     saga.task.type enum
-        ret:       File / saga.Task
+        ret:       string / saga.Task
         """
         return self._adaptor.get_stderr (ttype=ttype)
 
@@ -266,7 +279,31 @@ class Job (sb.Base, st.Task, sasync.Async) :
         Return the job's STDERR.
 
         ttype:     saga.task.type enum
-        ret:       string.
+        ret:       string / saga.Task
+
+        THIS METHOD IS DEPRECATED AND WILL BE REMOVED IN A FUTURE RELEASE.
+        USE job.get_stderr() INSTEAD.
+        """
+        return self._adaptor.get_stderr_string (ttype=ttype)
+
+
+    # --------------------------------------------------------------------------
+    #
+    @rus.takes     ('Job',
+                    rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
+    @rus.returns   ((str, st.Task))
+    def get_log (self, ttype=None) :
+        """
+        get_log_string()
+
+        Return the job's log information, ie. backend specific log messages
+        which have been collected during the job execution.  Those messages also
+        include stdout/stderr from the job's pre- and post-exec.  The returned
+        string generally contains one log message per line, but the format of
+        the string is ultimately undefined.
+
+        ttype:     saga.task.type enum
+        ret:       string / saga.Task
         """
         return self._adaptor.get_stderr_string (ttype=ttype)
 
@@ -282,10 +319,15 @@ class Job (sb.Base, st.Task, sasync.Async) :
 
         Return the job's log information, ie. backend specific log messages
         which have been collected during the job execution.  Those messages also
-        include stdout/stderr from the job's pre- and post-exec.
+        include stdout/stderr from the job's pre- and post-exec.  The returned
+        string generally contains one log message per line, but the format of
+        the string is ultimately undefined.
 
         ttype:     saga.task.type enum
-        ret:       string.
+        ret:       string / saga.Task
+
+        THIS METHOD IS DEPRECATED AND WILL BE REMOVED IN A FUTURE RELEASE.
+        USE job.get_log() INSTEAD.
         """
         return self._adaptor.get_stderr_string (ttype=ttype)
 
@@ -365,11 +407,14 @@ class Job (sb.Base, st.Task, sasync.Async) :
         return self._adaptor.signal (signum, ttype=ttype)
 
 
+    #-----------------------------------------------------------------
+    #
     id          = property (get_id)           # string
     description = property (get_description)  # Description
-    #stdin       = property (get_stdin)        # File
-    stdout      = property (get_stdout)       # File
-    stderr      = property (get_stderr)       # File
+    stdin       = property (get_stdin)        # string
+    stdout      = property (get_stdout)       # string
+    stderr      = property (get_stderr)       # string
+    log         = property (get_log)          # string
 
 
     #-----------------------------------------------------------------

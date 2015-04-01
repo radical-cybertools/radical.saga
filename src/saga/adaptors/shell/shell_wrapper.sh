@@ -214,6 +214,14 @@ verify_err () {
 
 
 # --------------------------------------------------------------------
+# ensure that given job id has valid log file
+verify_log () {
+  verify_dir $1
+  if ! test -r "$DIR/log";   then ERROR="pid $1 has no log"; return 1; fi
+}
+
+
+# --------------------------------------------------------------------
 #
 # create the monitor script, used by the command running routines.
 #
@@ -272,9 +280,10 @@ create_monitor () {
   \\chmod 0700               \$DIR/cmd
 
   (
-    \\printf  "RUNNING \\n"          >> "\$DIR/state"
-    \\printf  "\$UPID:RUNNING: \\n"  >> "\$NOTIFICATIONS"
-    \\exec "\$DIR/cmd"   < "\$DIR/in" > "\$DIR/out" 2> "\$DIR/err"
+    \\printf  "`\date` : RUNNING \\n" >> "\$DIR/log"
+    \\printf  "RUNNING \\n"           >> "\$DIR/state"
+    \\printf  "\$UPID:RUNNING: \\n"   >> "\$NOTIFICATIONS"
+    \\exec "\$DIR/cmd"   < "\$DIR/in"  > "\$DIR/out" 2> "\$DIR/err"
   ) 1>/dev/null 2>/dev/null 3</dev/null &
 
   # the real job ID (not exposed to user)
@@ -673,6 +682,18 @@ cmd_stderr () {
 
 # --------------------------------------------------------------------
 #
+# print uuencoded string of job's log
+#
+cmd_log () {
+  verify_log $1 || return
+
+  DIR="$BASE/$1"
+  RETVAL=`cat "$DIR/log" | od -t x1 -A n #| cut -c 2- | tr -d ' \n'`
+}
+
+
+# --------------------------------------------------------------------
+#
 # list all job IDs
 #
 cmd_list () {
@@ -813,7 +834,7 @@ listen() {
     while \read -r CMD ARGS
     do
 
-      # reset err state for each command
+      # reset error state for each command
       ERROR="OK"
       RETVAL=""
 
@@ -833,6 +854,7 @@ listen() {
         STDIN     ) cmd_stdin   "$ARGS"  ;;
         STDOUT    ) cmd_stdout  "$ARGS"  ;;
         STDERR    ) cmd_stderr  "$ARGS"  ;;
+        LOG       ) cmd_log     "$ARGS"  ;;
         LIST      ) cmd_list    "$ARGS"  ;;
         PURGE     ) cmd_purge   "$ARGS"  ;;
         QUIT      ) cmd_quit    "$IDLE"  ;;

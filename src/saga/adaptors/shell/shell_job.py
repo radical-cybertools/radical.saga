@@ -1314,7 +1314,7 @@ class ShellJob (saga.adaptors.cpi.job.Job) :
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
-    def get_stdout_string (self) : 
+    def get_stdout (self) : 
 
         state = self.get_state () # refresh stats
 
@@ -1337,17 +1337,17 @@ class ShellJob (saga.adaptors.cpi.job.Job) :
         if lines[0] != "OK" :
             raise saga.NoSuccess ("failed to get valid job stdout for '%s' (%s)" % (self._id, lines))
 
-        data = ""
+        data = ''
         for line in lines[1:] :
-            data += "%s\n" % line
+            data += "%s\n" % _decode(line)
 
-        return _decode (data)
+        return data
 
 
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
-    def get_stderr_string (self) : 
+    def get_stderr (self) : 
 
         state = self.get_state () # refresh stats
 
@@ -1370,11 +1370,44 @@ class ShellJob (saga.adaptors.cpi.job.Job) :
         if lines[0] != "OK" :
             raise saga.NoSuccess ("failed to get valid job stderr for '%s' (%s)" % (self._id, lines))
 
-        data = ""
+        data = ''
         for line in lines[1:] :
-            data += "%s\n" % line
+            data += "%s\n" % _decode(line)
 
-        return _decode (data)
+        return data
+
+
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def get_log (self) : 
+
+        state = self.get_state () # refresh stats
+
+        if  state == saga.job.NEW      or \
+            state == saga.job.PENDING  :
+            raise saga.IncorrectState ("Job output is only available after the job started")
+
+        if  not self._id :
+            raise saga.IncorrectState ("Job output is only available after the job started")
+
+        rm, pid     = self._adaptor.parse_id (self._id)
+        ret, out, _ = self.js.shell.run_sync ("LOG %s\n" % pid)
+
+        if  ret != 0 :
+            raise saga.NoSuccess ("failed to get job log for '%s': (%s)(%s)" \
+                               % (self._id, ret, out))
+
+        lines = filter (None, out.split ("\n"))
+
+        if lines[0] != "OK" :
+            raise saga.NoSuccess ("failed to get valid job stderr for '%s' (%s)" % (self._id, lines))
+
+        data = '\n'.join (self._log)  # pre-pend all local log messages
+        for line in lines[1:] :
+            data += "%s\n" % _decode(line)
+
+        return data
 
 
     # ----------------------------------------------------------------
