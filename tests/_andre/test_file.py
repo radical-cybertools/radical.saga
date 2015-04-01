@@ -21,8 +21,6 @@ tgt  = saga.Url('file://localhost/tmp/')
 f    = saga.filesystem.File (src)
 f.copy (tgt)
 
-os.system ("rm -rf /tmp/src ; mkdir /tmp/src ; ls -la /tmp > /tmp/src/src.dat; ln -s /tmp/src/src.dat /tmp/src/src.lnk")
-
 def test_tests (url) :
 
     e = saga.namespace.Entry     (url)
@@ -59,9 +57,10 @@ def test_tests (url) :
         print "  is_entry: %s" % e.is_entry ()
         print "  size    : %s" % e.get_size ()
     
-test_tests ("file://localhost/tmp/src/")
-test_tests ("file://localhost/tmp/src/src.dat")
-test_tests ("file://localhost/tmp/src/src.lnk")
+test_tests ("sftp://localhost/tmp/src/")
+# test_tests ("file://localhost/tmp/src/")
+# test_tests ("file://localhost/tmp/src/src.dat")
+# test_tests ("file://localhost/tmp/src/src.lnk")
 
 d = saga.filesystem.Directory ("ssh://localhost/tmp/src/")
 f = saga.filesystem.File("ssh://localhost/etc/passwd")

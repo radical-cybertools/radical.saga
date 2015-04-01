@@ -219,6 +219,9 @@ class PTYShellFactory (object) :
 
         with self.rlock :
 
+            # import pprint
+            # pprint.pprint (info)
+
             shell_pass = info['pass']
             key_pass   = info['key_pass']
             prompt     = info['prompt']

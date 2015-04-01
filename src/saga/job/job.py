@@ -641,8 +641,11 @@ class Job (sb.Base, st.Task, sasync.Async) :
             :note: if job failed, that will get an exception describing 
                    why, if that exists.  Otherwise, the call returns None.
         """
-        # FIXME: add CPI
-        return self._adaptor.get_exception (ttype=ttype)
+        
+        if  self.state == FAILED :
+            return se.NoSuccess ("job stderr: %s" % self.get_stderr_string ())
+        else :
+            return None
 
 
     # --------------------------------------------------------------------------
@@ -655,7 +658,11 @@ class Job (sb.Base, st.Task, sasync.Async) :
             :note: if job failed, that will re-raise an exception describing 
                    why, if that exists.  Otherwise, the call does nothing.
         """
-        self._adaptor.re_raise ()
+
+        if  self.state == FAILED :
+            raise se.NoSuccess ("job stderr: %s" % self.get_stderr_string ())
+        else :
+            return 
 
 
     # ----------------------------------------------------------------

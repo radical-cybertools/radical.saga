@@ -50,6 +50,8 @@ _ADAPTOR_OPTIONS       = []
 _ADAPTOR_CAPABILITIES  = {
     "jdes_attributes"  : [saga.job.NAME, 
                           saga.job.EXECUTABLE,
+                          saga.job.PRE_EXEC,
+                          saga.job.POST_EXEC,
                           saga.job.ARGUMENTS,
                           saga.job.ENVIRONMENT,
                           saga.job.SPMD_VARIATION, #implement later, somehow
@@ -405,10 +407,12 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         
         #define a bunch of default args
         exe = jd.executable
+        pre = jd.pre_exec
+        post= jd.post_exec
         arg = ""
         env = ""
         cwd = ""
-        job_name = "SAGAPythonSLURMJob"
+        job_name = jd.get (saga.job.NAME, "SAGAPythonSLURMJob")
         spmd_variation = None
         total_cpu_count = None
         number_of_processes = None
@@ -432,11 +436,6 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         if jd.attribute_exists ("arguments") :
             for a in jd.arguments :
                 arg += " %s" % a
-
-        if jd.attribute_exists ("environment") :
-            for e in jd.environment :
-                env += "export %s=%s;"  %  (e, jd.environment[e])
-            env=env[:-1] # trim off last ;
 
         if jd.attribute_exists ("spmd_variation"):
             spmd_variation = jd.spmd_variation
@@ -549,13 +548,27 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
                                           "a queue to submit the job to.")
 
         # add on our environment variables
-        slurm_script += env + "\n"
+        if jd.attribute_exists ("environment") :
+            slurm_script += "\n## ENVIRONMENT\n"
+            for key,val in jd.environment.iteritems() :
+                slurm_script += "export %s=%s\n"  %  (key, val)
 
-        # create our commandline - escape $ so that environment variables
-        # get interpreted properly
-        exec_n_args   = exe + arg
-        exec_n_args   = exec_n_args.replace('$', '\\$')
-        slurm_script += exec_n_args
+        if pre :
+            slurm_script += "\n## PRE_EXEC\n"
+            for cmd in pre :
+                slurm_script += "%s\n" % cmd
+
+        # create our commandline
+        slurm_script += "\n## EXEC\n"
+        slurm_script += exe
+        if jd.attribute_exists ("arguments") :
+            slurm_script += ' '.join (jd.arguments)
+        slurm_script += '\n'
+
+        if post :
+            slurm_script += "\n## POST_EXEC\n"
+            for cmd in post :
+                slurm_script += "%s\n" % cmd
 
         # try to create the working directory (if defined)
         # WRANING: this assumes a shared filesystem between login node and
@@ -570,22 +583,15 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
 
 
         # write script into a tmp file for staging
-        fhandle, fname = tempfile.mkstemp (suffix='.slurm', prefix='tmp_', text=True)
-        os.write (fhandle, slurm_script)
-        os.close (fhandle)
-
         self._logger.info ("SLURM script generated:\n%s" % slurm_script)
 
-        tgt = "%s" % fname.split('/')[-1]
-        self.shell.stage_to_remote (src=fname, tgt=tgt)
+        tgt = os.path.basename (tempfile.mktemp (suffix='.slurm', prefix='tmp_'))
+        self.shell.write_to_remote (src=slurm_script, tgt=tgt)
 
         # submit the job
-        ret, out, _ = self.shell.run_sync ("cat '%s' | sbatch && rm -vf '%s'" % (tgt, tgt))
+        ret, out, _ = self.shell.run_sync ("sbatch '%s'; rm -vf '%s'" % (tgt, tgt))
 
-        self._logger.debug ("staged/submit SLURM script (%s) (%s) (%s)" % (fname, tgt, ret))
-
-        # clean up tmp file
-        os.remove (fname)
+        self._logger.debug ("staged/submit SLURM script (%s) (%s)" % (tgt, ret))
 
         # find out what our job ID will be
         # TODO: Could make this more efficient
