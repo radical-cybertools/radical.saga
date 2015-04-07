@@ -562,7 +562,7 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         slurm_script += "\n## EXEC\n"
         slurm_script += exe
         if jd.attribute_exists ("arguments") :
-            slurm_script += ' '.join (jd.arguments)
+            slurm_script += ' ' + ' '.join (jd.arguments)
         slurm_script += '\n'
 
         if post :
