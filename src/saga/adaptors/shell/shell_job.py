@@ -742,8 +742,8 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
                 in_stdout = False
                 continue
 
-            import pprint
-            pprint.pprint (ret)
+          # import pprint
+          # pprint.pprint (ret)
 
         return ret
 
