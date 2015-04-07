@@ -268,7 +268,7 @@ create_monitor () {
 
   # FIXME: timestamp
   START=\`\\awk 'BEGIN{srand(); print srand()}'\`
-  \\printf "START : \$START\n"  > "\$DIR/stats"
+  \\printf "START  : \$START\n" > "\$DIR/stats"
   \\printf "NEW \n"            >> "\$DIR/state"
 
   # create represents the job.  The 'exec' call will replace
@@ -280,10 +280,12 @@ create_monitor () {
   \\chmod 0700               \$DIR/cmd
 
   (
+    export SAGA_PWD="\$DIR"
+    export SAGA_UPID="\$UPID"
     \\printf  "`\date` : RUNNING \\n" >> "\$DIR/log"
     \\printf  "RUNNING \\n"           >> "\$DIR/state"
     \\printf  "\$UPID:RUNNING: \\n"   >> "\$NOTIFICATIONS"
-    \\exec "\$DIR/cmd"   < "\$DIR/in"  > "\$DIR/out" 2> "\$DIR/err"
+    \\exec "\$DIR/cmd"  <  "\$DIR/in"  > "\$DIR/out" 2> "\$DIR/err"
   ) 1>/dev/null 2>/dev/null 3</dev/null &
 
   # the real job ID (not exposed to user)
@@ -491,7 +493,7 @@ cmd_stats () {
 
   # same procedure for stdout -- this will not be returned to the end user, but
   # is mostly for debugging
-  STDERR=`test -f "$DIR/err" && tail -$1 "$DIR/err"`
+  STDERR=`test -f "$DIR/err" && tail -$N "$DIR/err"`
   RETVAL="$RETVAL\nSTART_STDOUT\n$STDERR\nEND_STDOUT\n"
 }
 

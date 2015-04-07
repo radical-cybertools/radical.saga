@@ -209,6 +209,7 @@ class Job (sb.Base, st.Task, sasync.Async) :
     
         Return the job's STDIN as string. 
         """
+
         # FIXME: we have no means to set a stdin stream
         return self._adaptor.get_stdin (ttype=ttype)
 
@@ -284,7 +285,7 @@ class Job (sb.Base, st.Task, sasync.Async) :
         THIS METHOD IS DEPRECATED AND WILL BE REMOVED IN A FUTURE RELEASE.
         USE job.get_stderr() INSTEAD.
         """
-        return self._adaptor.get_stderr_string (ttype=ttype)
+        return self.get_stderr(ttype=ttype)
 
 
     # --------------------------------------------------------------------------
@@ -305,7 +306,7 @@ class Job (sb.Base, st.Task, sasync.Async) :
         ttype:     saga.task.type enum
         ret:       string / saga.Task
         """
-        return self._adaptor.get_stderr_string (ttype=ttype)
+        return self._adaptor.get_log (ttype=ttype)
 
 
     # --------------------------------------------------------------------------
@@ -329,7 +330,7 @@ class Job (sb.Base, st.Task, sasync.Async) :
         THIS METHOD IS DEPRECATED AND WILL BE REMOVED IN A FUTURE RELEASE.
         USE job.get_log() INSTEAD.
         """
-        return self._adaptor.get_stderr_string (ttype=ttype)
+        return self.get_log (ttype=ttype)
 
 
     # --------------------------------------------------------------------------

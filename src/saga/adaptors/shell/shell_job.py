@@ -136,7 +136,7 @@ def _decode (data) :
             code += c
         elif c not in [' ', '\n'] :
             raise saga.BadParameter("Cannot decode '%s' in data (%s)" % (c, data))
-    
+
     return code.decode ('hex')
 
 
@@ -604,7 +604,7 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
 
         if  jd.attribute_exists (PRE_EXEC) :
             for p in jd.pre_exec :
-                cmd += " && %s"  %  p
+                cmd += " && %s 2>&1 >> $SAGA_PWD/log"  %  p
 
         cmd += " && ("
         cmd += " %s" % jd.executable
@@ -626,7 +626,7 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
 
         if  jd.attribute_exists (POST_EXEC) :
             for p in jd.post_exec :
-                cmd += " && %s"  %  p
+                cmd += " && %s 2>&1 >> $SAGA_PWD/log"  %  p
 
         return cmd
 
@@ -1242,6 +1242,7 @@ class ShellJob (saga.adaptors.cpi.job.Job) :
 
             # initialize job attribute values
             self._id              = None
+            self._log             = list()
             self._state           = None
             self._exit_code       = None
             self._exception       = None
@@ -1255,6 +1256,7 @@ class ShellJob (saga.adaptors.cpi.job.Job) :
             # initialize job attribute values
             self.js               = job_info["job_service"] 
             self._id              = job_info['job_id']
+            self._log             = list()
             self._state           = None
             self._exit_code       = None
             self._exception       = None
@@ -1379,11 +1381,7 @@ class ShellJob (saga.adaptors.cpi.job.Job) :
         if lines[0] != "OK" :
             raise saga.NoSuccess ("failed to get valid job stdout for '%s' (%s)" % (self._id, lines))
 
-        data = ''
-        for line in lines[1:] :
-            data += "%s\n" % _decode(line)
-
-        return data
+        return _decode('\n'.join (lines[1:]))
 
 
     # ----------------------------------------------------------------
@@ -1412,11 +1410,7 @@ class ShellJob (saga.adaptors.cpi.job.Job) :
         if lines[0] != "OK" :
             raise saga.NoSuccess ("failed to get valid job stderr for '%s' (%s)" % (self._id, lines))
 
-        data = ''
-        for line in lines[1:] :
-            data += "%s\n" % _decode(line)
-
-        return data
+        return _decode('\n'.join (lines[1:]))
 
 
     # ----------------------------------------------------------------
@@ -1445,11 +1439,10 @@ class ShellJob (saga.adaptors.cpi.job.Job) :
         if lines[0] != "OK" :
             raise saga.NoSuccess ("failed to get valid job stderr for '%s' (%s)" % (self._id, lines))
 
-        data = '\n'.join (self._log)  # pre-pend all local log messages
-        for line in lines[1:] :
-            data += "%s\n" % _decode(line)
+        ret  = '\n'.join(self._log)  # pre-pend all local log messages
+        ret += _decode('\n'.join(lines[1:]))
 
-        return data
+        return ret
 
 
     # ----------------------------------------------------------------

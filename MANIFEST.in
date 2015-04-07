@@ -3,6 +3,6 @@
 include MANIFEST.in README.md LICENSE.md CHANGES.md VERSION
 include bin/sagapython-version
 
-recursive-include saga  *
+recursive-include src   *
 recursive-include tests *
 
