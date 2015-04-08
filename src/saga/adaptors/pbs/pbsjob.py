@@ -244,7 +244,7 @@ def _pbscript_generator(url, logger, jd, ppn, gres, pbs_version, is_cray=False, 
         pbs_params += "#PBS -m abe \n"
 
     # if total_cpu_count is not defined, we assume 1
-    if jd.total_cpu_count:
+    if not jd.total_cpu_count:
         jd.total_cpu_count = 1
 
     # Request enough nodes to cater for the number of cores requested
