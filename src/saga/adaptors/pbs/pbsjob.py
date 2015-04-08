@@ -150,13 +150,13 @@ def _pbscript_generator(url, logger, jd, ppn, gres, pbs_version, is_cray=False, 
     exec_n_args = str()
 
     exec_n_args += 'export SAGA_PPN=%d\n' % ppn
-    if jd.executable is not None:
+    if jd.executable:
         exec_n_args += "%s " % (jd.executable)
-    if jd.arguments is not None:
+    if jd.arguments:
         for arg in jd.arguments:
             exec_n_args += "%s " % (arg)
 
-    if jd.name is not None:
+    if jd.name:
         pbs_params += "#PBS -N %s \n" % jd.name
 
     if (is_cray is "") or not('Version: 4.2.7' in pbs_version):
@@ -168,28 +168,28 @@ def _pbscript_generator(url, logger, jd, ppn, gres, pbs_version, is_cray=False, 
         # batch environment in some cases.
         pbs_params += "#PBS -V \n"
 
-    if jd.environment is not None:
+    if jd.environment:
         pbs_params += "#PBS -v %s\n" % \
                 ','.join (["%s=%s" % (k,v) 
                            for k,v in jd.environment.iteritems()])
 
 # apparently this doesn't work with older PBS installations
-#    if jd.working_directory is not None:
+#    if jd.working_directory:
 #        pbs_params += "#PBS -d %s \n" % jd.working_directory
 
     # a workaround is to do an explicit 'cd'
-    if jd.working_directory is not None:
+    if jd.working_directory:
         workdir_directives  = 'export    PBS_O_WORKDIR=%s \n' % jd.working_directory
         workdir_directives += 'mkdir -p  %s\n' % jd.working_directory
         workdir_directives += 'cd        %s\n' % jd.working_directory
     else:
         workdir_directives = ''
 
-    if jd.output is not None:
+    if jd.output:
         # if working directory is set, we want stdout to end up in
         # the working directory as well, unless it containes a specific
         # path name.
-        if jd.working_directory is not None:
+        if jd.working_directory:
             if os.path.isabs(jd.output):
                 pbs_params += "#PBS -o %s \n" % jd.output
             else:
@@ -200,11 +200,11 @@ def _pbscript_generator(url, logger, jd, ppn, gres, pbs_version, is_cray=False, 
         else:
             pbs_params += "#PBS -o %s \n" % jd.output
 
-    if jd.error is not None:
+    if jd.error:
         # if working directory is set, we want stderr to end up in 
         # the working directory as well, unless it contains a specific
         # path name. 
-        if jd.working_directory is not None:
+        if jd.working_directory:
             if os.path.isabs(jd.error):
                 pbs_params += "#PBS -e %s \n" % jd.error
             else:
@@ -216,20 +216,20 @@ def _pbscript_generator(url, logger, jd, ppn, gres, pbs_version, is_cray=False, 
             pbs_params += "#PBS -e %s \n" % jd.error
 
 
-    if jd.wall_time_limit is not None:
+    if jd.wall_time_limit:
         hours = jd.wall_time_limit / 60
         minutes = jd.wall_time_limit % 60
         pbs_params += "#PBS -l walltime=%s:%s:00 \n" \
             % (str(hours), str(minutes))
 
-    if (jd.queue is not None) and (queue is not None):
+    if jd.queue and queue:
         pbs_params += "#PBS -q %s \n" % queue
-    elif (jd.queue is not None) and (queue is None):
+    elif jd.queue and not queue:
         pbs_params += "#PBS -q %s \n" % jd.queue
-    elif (jd.queue is None) and (queue is not None):
+    elif queue and not jd.queue:
         pbs_params += "#PBS -q %s \n" % queue
 
-    if jd.project is not None:
+    if jd.project:
         if 'PBSPro_1' in pbs_version:
             # On PBS Pro we set both -P(roject) and -A(accounting),
             # as we don't know what the admins decided, and just
@@ -240,11 +240,11 @@ def _pbscript_generator(url, logger, jd, ppn, gres, pbs_version, is_cray=False, 
             # Torque
             pbs_params += "#PBS -A %s \n" % str(jd.project)
 
-    if jd.job_contact is not None:
+    if jd.job_contact:
         pbs_params += "#PBS -m abe \n"
 
     # if total_cpu_count is not defined, we assume 1
-    if jd.total_cpu_count is None:
+    if jd.total_cpu_count:
         jd.total_cpu_count = 1
 
     # Request enough nodes to cater for the number of cores requested
@@ -513,7 +513,7 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
 
         # this adaptor supports options that can be passed via the
         # 'query' component of the job service URL.
-        if rm_url.query is not None:
+        if rm_url.query:
             for key, val in parse_qs(rm_url.query).iteritems():
                 if key == 'queue':
                     self.queue = val[0]
@@ -652,7 +652,7 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
             jd.working_directory = os.path.normpath (jd.working_directory)
 
         # TODO: Why would one want this?
-        if (self.queue is not None) and (jd.queue is not None):
+        if self.queue and jd.queue:
             self._logger.warning("Job service was instantiated explicitly with \
 'queue=%s', but job description tries to a different queue: '%s'. Using '%s'." %
                                 (self.queue, jd.queue, self.queue))
@@ -672,7 +672,7 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
         # try to create the working directory (if defined)
         # WARNING: this assumes a shared filesystem between login node and
         #          compute nodes.
-        if jd.working_directory is not None:
+        if jd.working_directory:
             self._logger.info("Creating working directory %s" % jd.working_directory)
             ret, out, _ = self.shell.run_sync("mkdir -p %s" % (jd.working_directory))
             if ret != 0:
