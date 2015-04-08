@@ -465,6 +465,9 @@ class PTYShellFactory (object) :
             info['ssh_copy_mode']  = session_cfg['ssh_copy_mode'].get_value ()
             info['ssh_share_mode'] = session_cfg['ssh_share_mode'].get_value ()
 
+            logger.info ("ssh copy  mode set to '%s'" % info['ssh_copy_mode' ])
+            logger.info ("ssh share mode set to '%s'" % info['ssh_share_mode'])
+
 
             # fill the info dict with details for this master channel, and all
             # related future slave channels
