@@ -244,6 +244,7 @@ class PTYShellFactory (object) :
                 prompt_patterns = ["[Pp]assword:\s*$",             # password   prompt
                                    "Enter passphrase for .*:\s*$", # passphrase prompt
                                    "Token_Response.*:\s*$",        # passtoken  prompt
+                                   "Enter PASSCODE:$",             # RSA SecureID
                                    "want to continue connecting",  # hostkey confirmation
                                    ".*HELLO_\\d+_SAGA$",           # prompt detection helper
                                    prompt]                         # greedy native shell prompt
@@ -333,7 +334,7 @@ class PTYShellFactory (object) :
 
 
                     # --------------------------------------------------------------
-                    elif n == 2 :
+                    elif n == 2 or n == 3:
                         logger.info ("got token prompt")
                         import getpass
                         token = getpass.getpass ("enter token: ")
@@ -342,14 +343,14 @@ class PTYShellFactory (object) :
 
 
                     # --------------------------------------------------------------
-                    elif n == 3 :
+                    elif n == 4:
                         logger.info ("got hostkey prompt")
                         pty_shell.write ("yes\n")
                         n, match = pty_shell.find (prompt_patterns, delay)
 
 
                     # --------------------------------------------------------------
-                    elif n == 4 :
+                    elif n == 5:
 
                         # one of the trigger commands got through -- we can now
                         # hope to find the prompt (or the next trigger...)
@@ -362,7 +363,7 @@ class PTYShellFactory (object) :
 
 
                     # --------------------------------------------------------------
-                    elif n == 5 :
+                    elif n == 6 :
 
                         logger.debug ("got initial shell prompt (%s) (%s)" %  (n, match))
 
