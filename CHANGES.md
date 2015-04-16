@@ -26,7 +26,7 @@ Version 0.28 release 2015-04-16
   - install sdist, export sdist location
 
 
-Version 0.26 release 2015-03-25
+Version 0.27 release 2015-03-25
 --------------------------------------------------------------------------------
 
   - fix rounding-up cores for blacklight
