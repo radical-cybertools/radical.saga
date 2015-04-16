@@ -214,11 +214,23 @@ verify_err () {
 
 
 # --------------------------------------------------------------------
+# ensure that given job id has valid log file
+verify_log () {
+  verify_dir $1
+  if ! test -r "$DIR/log";   then ERROR="pid $1 has no log"; return 1; fi
+}
+
+
+# --------------------------------------------------------------------
 #
 # create the monitor script, used by the command running routines.
 #
 create_monitor () {
   \cat > "$BASE/monitor.sh" <<EOT
+
+  # the monitor should never finish when the parent shell dies.  This is
+  # equivalent to starting monitor.sh via 'nohup'
+  trap "" HUP
 
   # create the monitor wrapper script once -- this is used by all job startup
   # scripts to actually run job.sh.  The script gets a PID as argument,
@@ -256,7 +268,7 @@ create_monitor () {
 
   # FIXME: timestamp
   START=\`\\awk 'BEGIN{srand(); print srand()}'\`
-  \\printf "START : \$START\n"  > "\$DIR/stats"
+  \\printf "START  : \$START\n" > "\$DIR/stats"
   \\printf "NEW \n"            >> "\$DIR/state"
 
   # create represents the job.  The 'exec' call will replace
@@ -268,22 +280,24 @@ create_monitor () {
   \\chmod 0700               \$DIR/cmd
 
   (
-    \\printf  "RUNNING \\n"          >> "\$DIR/state"
-    \\printf  "\$UPID:RUNNING: \\n"  >> "\$NOTIFICATIONS"
-    \\exec "\$DIR/cmd"   < "\$DIR/in" > "\$DIR/out" 2> "\$DIR/err"
-  ) 1> /dev/null 2>/dev/null 3</dev/null &
+    export SAGA_PWD="\$DIR"
+    export SAGA_UPID="\$UPID"
+    \\printf  "`\date` : RUNNING \\n" >> "\$DIR/log"
+    \\printf  "RUNNING \\n"           >> "\$DIR/state"
+    \\printf  "\$UPID:RUNNING: \\n"   >> "\$NOTIFICATIONS"
+    \\exec "\$DIR/cmd"  <  "\$DIR/in"  > "\$DIR/out" 2> "\$DIR/err"
+  ) 1>/dev/null 2>/dev/null 3</dev/null &
 
   # the real job ID (not exposed to user)
   RPID=\$!
 
-  \\printf "RUNNING \\n" >> "\$DIR/state" # declare as running
   \\printf "\$RPID\\n"    > "\$DIR/rpid"  # real process  pid
   \\printf "\$MPID\\n"    > "\$DIR/mpid"  # monitor shell pid
   \\printf "\$UPID\\n"    > "\$DIR/upid"  # unique job    pid
 
   # signal the wrapper that job startup is done, and report job id
   \\printf "\$UPID\\n" >> "$BASE/fifo"
-  
+
   # start monitoring the job
   while true
   do
@@ -465,6 +479,22 @@ cmd_stats () {
   STATE=`\grep -e ' $' "$DIR/state" | \tail -n 1 | \tr -d ' '`
   RETVAL="STATE : $STATE\n"
   RETVAL="$RETVAL\n`\cat $DIR/stats`\n"
+
+  # if state is FAILED, we also deliver the last couple of lines from stderr,
+  # for obvious reasons.  Oh heck, we always deliver it, that makes parsing
+  # simpler -- but we deliver more on errors
+  N=10
+  if test "$state" = "FAILED" 
+  then
+    N=100
+  fi
+  STDERR=`test -f "$DIR/err" && tail -$N "$DIR/err"`
+  RETVAL="$RETVAL\nSTART_STDERR\n$STDERR\nEND_STDERR\n"
+
+  # same procedure for stdout -- this will not be returned to the end user, but
+  # is mostly for debugging
+  STDERR=`test -f "$DIR/err" && tail -$N "$DIR/err"`
+  RETVAL="$RETVAL\nSTART_STDOUT\n$STDERR\nEND_STDOUT\n"
 }
 
 
@@ -670,6 +700,18 @@ cmd_stderr () {
 
 # --------------------------------------------------------------------
 #
+# print uuencoded string of job's log
+#
+cmd_log () {
+  verify_log $1 || return
+
+  DIR="$BASE/$1"
+  RETVAL=`cat "$DIR/log" | od -t x1 -A n #| cut -c 2- | tr -d ' \n'`
+}
+
+
+# --------------------------------------------------------------------
+#
 # list all job IDs
 #
 cmd_list () {
@@ -810,7 +852,7 @@ listen() {
     while \read -r CMD ARGS
     do
 
-      # reset err state for each command
+      # reset error state for each command
       ERROR="OK"
       RETVAL=""
 
@@ -830,6 +872,7 @@ listen() {
         STDIN     ) cmd_stdin   "$ARGS"  ;;
         STDOUT    ) cmd_stdout  "$ARGS"  ;;
         STDERR    ) cmd_stderr  "$ARGS"  ;;
+        LOG       ) cmd_log     "$ARGS"  ;;
         LIST      ) cmd_list    "$ARGS"  ;;
         PURGE     ) cmd_purge   "$ARGS"  ;;
         QUIT      ) cmd_quit    "$IDLE"  ;;

@@ -136,7 +136,7 @@ def _decode (data) :
             code += c
         elif c not in [' ', '\n'] :
             raise saga.BadParameter("Cannot decode '%s' in data (%s)" % (c, data))
-    
+
     return code.decode ('hex')
 
 
@@ -181,6 +181,8 @@ _ADAPTOR_OPTIONS       = [
 #
 _ADAPTOR_CAPABILITIES  = {
     "jdes_attributes"  : [saga.job.EXECUTABLE,
+                          saga.job.PRE_EXEC,
+                          saga.job.POST_EXEC,
                           saga.job.ARGUMENTS,
                           saga.job.ENVIRONMENT,
                           saga.job.WORKING_DIRECTORY,
@@ -591,33 +593,40 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
     #
     def _jd2cmd (self, jd) :
 
-        exe = jd.executable
-        arg = ""
-        env = ""
-        cwd = ""
-        io  = ""
-
-        if  jd.attribute_exists (ARGUMENTS) :
-            for a in jd.arguments :
-                arg += "%s " % a
+        cmd = "true"
 
         if  jd.attribute_exists (ENVIRONMENT) :
             for e in jd.environment :
-                env += "export %s=%s; "  %  (e, jd.environment[e])
+                cmd += " && export %s=%s"  %  (e, jd.environment[e])
 
         if  jd.attribute_exists (WORKING_DIRECTORY) :
-            cwd = "mkdir -p %s && cd %s && " % (jd.working_directory, jd.working_directory)
+            cmd += " && mkdir -p %s && cd %s" % (jd.working_directory, jd.working_directory)
+
+        if  jd.attribute_exists (PRE_EXEC) :
+            for p in jd.pre_exec :
+                cmd += " && %s 2>&1 >> $SAGA_PWD/log"  %  p
+
+        cmd += " && ("
+        cmd += " %s" % jd.executable
+
+        if  jd.attribute_exists (ARGUMENTS) :
+            for a in jd.arguments :
+                cmd += " %s" % a
+
+        cmd += " )"
 
         if  jd.attribute_exists (INPUT) :
-            io += "<%s " % jd.input
+            cmd += " <%s" % jd.input
 
         if  jd.attribute_exists (OUTPUT) :
-            io += "1>%s " % jd.output
+            cmd += " 1>%s" % jd.output
 
         if  jd.attribute_exists (ERROR) :
-            io += "2>%s " % jd.error
+            cmd += " 2>%s" % jd.error
 
-        cmd = "( %s%s( %s %s) %s)" % (env, cwd, exe, arg, io)
+        if  jd.attribute_exists (POST_EXEC) :
+            for p in jd.post_exec :
+                cmd += " && %s 2>&1 >> $SAGA_PWD/log"  %  p
 
         return cmd
 
@@ -689,6 +698,7 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
             raise saga.NoSuccess ("failed to get job stats for '%s': (%s)(%s)" \
                                % (id, ret, out))
 
+        # the filter removes also empty lines from stdout/stderr.  Oh well...
         lines = filter (None, out.split ("\n"))
         self._logger.debug (lines)
 
@@ -696,12 +706,44 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
             raise saga.NoSuccess ("failed to get valid job state for '%s' (%s)" % (id, lines))
 
         ret = {}
+        ret['STDOUT'] = ""
+        ret['STDERR'] = ""
+        in_stdout = False
+        in_stderr = False
+
         for line in lines :
-            if not ':' in line :
+
+            if  in_stdout :
+                if  'END_STDOUT' in line :
+                    in_stdout = False
+                else :
+                    ret['STDOUT'] += line
                 continue
 
-            key, val = line.split (":", 2)
-            ret[key.strip ().lower ()] = val.strip ()
+            if  in_stderr :
+                if  'END_STDERR' in line :
+                    in_stderr = False
+                else :
+                    ret['STDERR'] += line
+                continue
+
+            if ':' in line :
+                key, val = line.split (":", 2)
+                ret[key.strip ().lower ()] = val.strip ()
+                continue
+
+            if 'START_STDOUT' in line :
+                in_stdout = True
+                in_stderr = False
+                continue
+
+            if 'START_STDERR' in line :
+                in_stderr = True
+                in_stdout = False
+                continue
+
+          # import pprint
+          # pprint.pprint (ret)
 
         return ret
 
@@ -1200,6 +1242,7 @@ class ShellJob (saga.adaptors.cpi.job.Job) :
 
             # initialize job attribute values
             self._id              = None
+            self._log             = list()
             self._state           = None
             self._exit_code       = None
             self._exception       = None
@@ -1213,6 +1256,7 @@ class ShellJob (saga.adaptors.cpi.job.Job) :
             # initialize job attribute values
             self.js               = job_info["job_service"] 
             self._id              = job_info['job_id']
+            self._log             = list()
             self._state           = None
             self._exit_code       = None
             self._exception       = None
@@ -1314,7 +1358,7 @@ class ShellJob (saga.adaptors.cpi.job.Job) :
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
-    def get_stdout_string (self) : 
+    def get_stdout (self) : 
 
         state = self.get_state () # refresh stats
 
@@ -1337,17 +1381,13 @@ class ShellJob (saga.adaptors.cpi.job.Job) :
         if lines[0] != "OK" :
             raise saga.NoSuccess ("failed to get valid job stdout for '%s' (%s)" % (self._id, lines))
 
-        data = ""
-        for line in lines[1:] :
-            data += "%s\n" % line
-
-        return _decode (data)
+        return _decode('\n'.join (lines[1:]))
 
 
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
-    def get_stderr_string (self) : 
+    def get_stderr (self) : 
 
         state = self.get_state () # refresh stats
 
@@ -1370,11 +1410,39 @@ class ShellJob (saga.adaptors.cpi.job.Job) :
         if lines[0] != "OK" :
             raise saga.NoSuccess ("failed to get valid job stderr for '%s' (%s)" % (self._id, lines))
 
-        data = ""
-        for line in lines[1:] :
-            data += "%s\n" % line
+        return _decode('\n'.join (lines[1:]))
 
-        return _decode (data)
+
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def get_log (self) : 
+
+        state = self.get_state () # refresh stats
+
+        if  state == saga.job.NEW      or \
+            state == saga.job.PENDING  :
+            raise saga.IncorrectState ("Job output is only available after the job started")
+
+        if  not self._id :
+            raise saga.IncorrectState ("Job output is only available after the job started")
+
+        rm, pid     = self._adaptor.parse_id (self._id)
+        ret, out, _ = self.js.shell.run_sync ("LOG %s\n" % pid)
+
+        if  ret != 0 :
+            raise saga.NoSuccess ("failed to get job log for '%s': (%s)(%s)" \
+                               % (self._id, ret, out))
+
+        lines = filter (None, out.split ("\n"))
+
+        if lines[0] != "OK" :
+            raise saga.NoSuccess ("failed to get valid job stderr for '%s' (%s)" % (self._id, lines))
+
+        ret  = '\n'.join(self._log)  # pre-pend all local log messages
+        ret += _decode('\n'.join(lines[1:]))
+
+        return ret
 
 
     # ----------------------------------------------------------------

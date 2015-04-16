@@ -20,6 +20,27 @@ import saga.exceptions      as se
 
 import saga.engine.registry  # adaptors to load
 
+# we set the default of the pty share mode to 'no' on CentOS, as that seems to
+# consistently come with old ssh versions which can't handle sharing for sftp
+# channels.
+_share_mode_default='auto'
+try:
+    import subprocess as sp
+    _p = sp.Popen ('lsb_release -a | grep "Distributor ID" | cut -f 2 -d ":"', 
+                   stdout=sp.PIPE, stderr=sp.STDOUT, shell=True)
+    _os_flavor = _p.communicate()[0].strip().lower()
+
+    if 'centos'  in _os_flavor or \
+       'cent_os' in _os_flavor or \
+       'cent-os' in _os_flavor or \
+       'cent os' in _os_flavor :
+        _share_mode_default='no'
+
+except Exception as e:
+    # we ignore this then -- we are relatively sure that the above should work
+    # on CentOS...
+    pass
+
 
 ############# These are all supported options for saga.engine ####################
 ##
@@ -55,9 +76,10 @@ _config_options = [
     'category'      : 'saga.utils.pty',
     'name'          : 'ssh_share_mode',
     'type'          : str,
-    'default'       : 'auto',
+    'default'       : _share_mode_default,
     'valid_options' : ['auto', 'no'],
-    'documentation' : 'use the specified mode as flag for the ssh ControlMaster option',
+    'documentation' : 'use the specified mode as flag for the ssh ControlMaster '
+                      'option.  Is set to "no" on CentOS.',
     'env_variable'  : 'SAGA_PTY_SSH_SHAREMODE'
     },
     {

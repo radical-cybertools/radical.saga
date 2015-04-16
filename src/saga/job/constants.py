@@ -37,10 +37,16 @@ CANCELED              = 'Canceled';  """ The job has been canceled either by the
 ################################################################################
 #
 # JobDescription attributes:
-EXECUTABLE            = 'Executable';          """ The path to the application 
-                                                   executable.  """ 
-ARGUMENTS             = 'Arguments';           """ The arguments for to the 
-                                                   executable.  """ 
+EXECUTABLE            = 'Executable';          """ The path to the application
+                                                   executable """
+PRE_EXEC              = 'PreExec';             """ List of commands to run
+                                                   before job execution, on the
+                                                   target resource """        # non-GFD.90
+POST_EXEC             = 'PostExec';            """ List of commands to run
+                                                   after successfull job execution,
+                                                   on the target resource """ # non-GFD.90
+ARGUMENTS             = 'Arguments';           """ The arguments for to the
+                                                   executable  """
 ENVIRONMENT           = 'Environment';         """ dict, containing environment 
                                                    settings for the job """ 
 WORKING_DIRECTORY     = 'WorkingDirectory';    """ :todo: docstring """ 
@@ -62,12 +68,12 @@ QUEUE                 = 'Queue';               """ :todo: docstring """
 SPMD_VARIATION        = 'SPMDVariation';       """ The type of parallelism 
                                                    required by this job """ 
 TOTAL_CPU_COUNT       = 'TotalCPUCount';       """ The number of CPUs required 
-                                                   by this job.  """ 
+                                                   by this job """
 NUMBER_OF_PROCESSES   = 'NumberOfProcesses';   """ Number of instances of """ 
 PROCESSES_PER_HOST    = 'ProcessesPerHost';    """ :todo: docstring """ 
 THREADS_PER_PROCESS   = 'ThreadsPerProcess';   """ :todo: docstring """ 
 JOB_CONTACT           = 'JobContact';          """ :todo: docstring """
-NAME                  = 'Name';                """ The name of your job. """ # non-GFD.90
+NAME                  = 'Name';                """ The name of your job """ # non-GFD.90
 
 
 ################################################################################
