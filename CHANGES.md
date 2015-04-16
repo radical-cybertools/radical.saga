@@ -6,6 +6,26 @@
     https://github.com/radical-cybertools/saga-python/issues?q=is%3Aissue+is%3Aopen+
 
 
+Version 0.28 release 2015-04-16
+--------------------------------------------------------------------------------
+
+  - set 'ssh_share_mode=no' on CentOS
+  - resilience against missing git in setup.py
+  - Prompt pattern for RSA SecureID (BW, Titan, etc.)
+  - cleaner version string
+  - treat empty strings as unset values in PBS job description
+  - fix slurm script generation
+  - implement discussed changes to job stdio inspection
+  - finish implementation of #202
+  - pre- and post-exec for shell job adaptor
+  - implement pre/post_exec, support in slurm, cleanup slurm submission
+  - clean up stdin/stdout/stderr/log handling for jobs
+  - sync setup.py with recent changes in RP
+  - Fix rounding up cores for blacklight 
+  - ignore SIGHUP in the shell monitor -- fixes #415
+  - install sdist, export sdist location
+
+
 Version 0.26 release 2015-03-25
 --------------------------------------------------------------------------------
 
@@ -475,4 +495,5 @@ Version 0.1.7 released 2011-11-09
 
 
 --------------------------------------------------------------------------------
+
 
