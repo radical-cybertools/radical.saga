@@ -566,7 +566,7 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
                 if cmd == 'qdel':  # qdel doesn't support --version!
                     self._commands[cmd] = {"path":    path,
                                            "version": "?"}
-                elif cmd == 'qsub':  # qdel doesn't always support --version!
+                elif cmd == 'qsub':  # qsub doesn't always support --version!
                     self._commands[cmd] = {"path":    path,
                                            "version": "?"}
                 else:
