@@ -294,8 +294,8 @@ def _torquescript_generator(url, logger, jd, ppn, gres, torque_version, is_cray=
         # e.g. Blacklight
         # TODO: The more we add, the more it screams for a refactoring
         pbs_params += "#PBS -l ncpus=%d\n" % ncpus
-    elif '4.2.7' in torque_version:
-        logger.info("Using Cray XT @ NERSC (e.g. Hopper) specific '#PBS -l mppwidth=xx' flags (PBSPro_10).")
+    elif 'hopper' in url.host:
+        logger.info("Using Hopper@NERSC (Cray XE6) specific '#PBS -l mppwidth=xx' parameter.")
         pbs_params += "#PBS -l mppwidth=%s \n" % jd.total_cpu_count
     elif 'PBSPro_12' in torque_version:
         logger.info("Using PBSPro 12 notation '#PBS -l select=XX' ")
