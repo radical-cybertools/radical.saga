@@ -577,7 +577,7 @@ class Adaptor(saga.adaptors.base.Base):
 
         # Create parents
         if flags & saga.filesystem.CREATE_PARENTS:
-            self.mkparents(shell, target)
+            self.mkparents(shell, os.path.dirname(target))
 
         #if flags & saga.filesystem.OVERWRITE:
             # 1: Copy files if the size of the destination does not match the
