@@ -34,7 +34,7 @@ class SimpleBase (object) :
             self._apitype = self._get_apitype ()
 
         self._logger = rul.getLogger  ('saga', self._apitype)
-        self._id     = ru.generate_id (self._get_apitype () + '.', mode=ru.ID_SIMPLE)
+        self._id     = ru.generate_id (self._get_apitype (), mode=ru.ID_SIMPLE)
 
       # self._logger.debug ("[saga.Base] %s.__init__()" % self._apitype)
 
