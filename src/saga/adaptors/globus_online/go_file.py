@@ -185,62 +185,61 @@ class Adaptor(saga.adaptors.base.Base):
         sid = session._id
 
         self._logger.debug("Acquiring lock")
-        self.shell_lock.acquire()
-        self._logger.debug("Acquired lock")
+        with self.shell_lock:
+            self._logger.debug("Acquired lock")
 
-        if not sid in self.shells:
+            if not sid in self.shells:
 
-            new_shell = {}
+                new_shell = {}
 
-            if not go_url:
-                new_url = saga.Url(GO_DEFAULT_URL)
-            else:
-                new_url = saga.Url(go_url) # deep copy
-
-            opts = {'prompt_pattern': self.prompt}
-
-            # create the shell.
-            shell = sups.PTYShell(new_url, session=session, logger=self._logger, 
-                                  opts=opts, posix=False)
-            new_shell['shell'] = shell
-
-            # confirm the user ID for this shell
-            new_shell['user'] = None
-
-            _, out, _ = shell.run_sync('profile')
-
-            for line in out.split('\n'):
-                if 'User Name:' in line:
-                    new_shell['user'] = line.split(':', 2)[1].strip()
-                    self._logger.debug("using account '%s'" % new_shell['user'])
-                    break
-
-            if not new_shell['user']:
-                raise saga.NoSuccess("Could not confirm user id")
-
-            if self.notify != 'None':
-                if self.notify == 'True':
-                    self._logger.debug("disable email notifications")
-                    shell.run_sync('profile -n on')
+                if not go_url:
+                    new_url = saga.Url(GO_DEFAULT_URL)
                 else:
-                    self._logger.debug("enable email notifications")
-                    shell.run_sync('profile -n off')
+                    new_url = saga.Url(go_url) # deep copy
 
-            # This should not happen
-            assert sid not in self.shells
+                opts = {'prompt_pattern': self.prompt}
 
-            # Now add the entry to the shells dict
-            self.shells[sid] = new_shell
+                # create the shell.
+                shell = sups.PTYShell(new_url, session=session, logger=self._logger,
+                                      opts=opts, posix=False)
+                new_shell['shell'] = shell
 
-            # for this fresh shell, we get the list of public endpoints.  That list
-            # will contain the set of hosts we can potentially connect to.
-            self.get_go_endpoint_list(session, shell, fetch=True)
+                # confirm the user ID for this shell
+                new_shell['user'] = None
 
-        else:
-            self._logger.debug("Shell already in cache.")
+                _, out, _ = shell.run_sync('profile')
 
-        self.shell_lock.release()
-        self._logger.debug("Released lock")
+                for line in out.split('\n'):
+                    if 'User Name:' in line:
+                        new_shell['user'] = line.split(':', 2)[1].strip()
+                        self._logger.debug("using account '%s'" % new_shell['user'])
+                        break
+
+                if not new_shell['user']:
+                    raise saga.NoSuccess("Could not confirm user id")
+
+                if self.notify != 'None':
+                    if self.notify == 'True':
+                        self._logger.debug("disable email notifications")
+                        shell.run_sync('profile -n on')
+                    else:
+                        self._logger.debug("enable email notifications")
+                        shell.run_sync('profile -n off')
+
+                # This should not happen
+                assert sid not in self.shells
+
+                # Now add the entry to the shells dict
+                self.shells[sid] = new_shell
+
+                # for this fresh shell, we get the list of public endpoints.  That list
+                # will contain the set of hosts we can potentially connect to.
+                self.get_go_endpoint_list(session, shell, fetch=True)
+
+            else:
+                self._logger.debug("Shell already in cache.")
+
+            self._logger.debug("Release lock")
 
         # we have the shell for sure by now -- return it!
         return self.shells[sid]['shell']
@@ -405,56 +404,55 @@ class Adaptor(saga.adaptors.base.Base):
     #
     def get_go_endpoint_list(self, session, shell, ep_name=None, fetch=False):
 
-        self.shell_lock.acquire()
-
         # if 'fetch' is True, query the shell for an updated endpoint list.
         # then check if the given ep_name is a known endpoint name, and if so,
         # return that entry -- otherwise return None.  If no ep_name is given,
         # and fetch is True, we thus simply refresh the internal list.
 
         if fetch:
-            endpoints = {}
-            name = None
 
-            _, out, _ = shell.run_sync("endpoint-list -v")
+            with self.shell_lock:
 
-            for line in out.split('\n'):
-                elems = line.split(':', 1)
+                endpoints = {}
+                name = None
 
-                if len(elems) != 2:
-                    continue
+                _, out, _ = shell.run_sync("endpoint-list -v")
 
-                key = elems[0].strip()
-                val = elems[1].strip()
+                for line in out.split('\n'):
+                    elems = line.split(':', 1)
 
-                if not key or not val:
-                    continue
+                    if len(elems) != 2:
+                        continue
 
-                if key == "Name":
+                    key = elems[0].strip()
+                    val = elems[1].strip()
 
-                    # we now operate on a new entry -- initialize it
-                    name = val
+                    if not key or not val:
+                        continue
 
-                    endpoints[name] = {}
-                    
-                    # we make sure that some entries always exist, to simplify error
-                    # checks
-                    endpoints[name]['Name']              = name
-                    endpoints[name]['Credential Status'] = None
-                    endpoints[name]['Host(s)']           = None
+                    if key == "Name":
 
-                else:
+                        # we now operate on a new entry -- initialize it
+                        name = val
 
-                    # Continued passed of an entry, name should always exist
-                    try:
-                        endpoints[name][key] = val
-                    except:
-                        raise saga.NoSuccess("No entry name to operate on")
+                        endpoints[name] = {}
 
-            # replace the ep info dist with the new one, to clean out old entries.
-            self.shells[session._id]['endpoints'] = endpoints
+                        # we make sure that some entries always exist, to simplify error
+                        # checks
+                        endpoints[name]['Name']              = name
+                        endpoints[name]['Credential Status'] = None
+                        endpoints[name]['Host(s)']           = None
 
-        self.shell_lock.release()
+                    else:
+
+                        # Continued passed of an entry, name should always exist
+                        try:
+                            endpoints[name][key] = val
+                        except:
+                            raise saga.NoSuccess("No entry name to operate on")
+
+                # replace the ep info dist with the new one, to clean out old entries.
+                self.shells[session._id]['endpoints'] = endpoints
 
         if ep_name:
             # return the requested entry, or None
