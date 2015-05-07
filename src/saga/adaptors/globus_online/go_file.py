@@ -17,15 +17,18 @@ import saga.adaptors.cpi.filesystem
 from saga.adaptors.cpi.decorators import SYNC_CALL
 
 # TODO: We could make this configurable,
-# so people without gsissh can still perform some operations.
+# so people without gsissh can still perform some operations,
+# as they could activate the endpoints through the globus web interface.
 # go+ssh:// vs go+gsissh:// comes to mind
 GO_DEFAULT_URL = "gsissh://cli.globusonline.org/"
+#GO_DEFAULT_URL = "ssh://cli.globusonline.org/"
+
 
 # --------------------------------------------------------------------
 # the adaptor name
 #
 _ADAPTOR_NAME          = "saga.adaptor.globus_online_file"
-_ADAPTOR_SCHEMAS       = ["go"]
+_ADAPTOR_SCHEMAS       = ["go"] # TODO: also allow file:// ??
 _ADAPTOR_OPTIONS       = [
     { 
     # fuck our config system!  I don't want these to be strings!  And its not
@@ -377,6 +380,9 @@ class Adaptor(saga.adaptors.base.Base):
             # TODO: I had an active endpoint, but still got an activation prompt,
             # probably because the remaining lifetime was not very long anymore.
             # or Credential Time Left    : 00:16:35 < ????
+            # Answer: below 30 min there is a activation prompt,
+            # but it does actually continue normally.
+            # Need to capture that behavior.
 
             # Only Globus Connect Service Endpoints don't need -g?
             # Had contact on this with Globus Support, they couldn't suggest
@@ -496,6 +502,12 @@ class Adaptor(saga.adaptors.base.Base):
                 else:
                     raise saga.NoSuccess('Could not find find message in error: %s' % err)
 
+                # TODO: Handle GO access to directories that are not allowed
+                # TODO: by Globus Personal by default (e.g. /var/ , /tmp)
+                # TODO: '''Message: Fatal FTP Response
+                # TODO:    ---
+                # TODO:    500 Command failed : Path not allowed.'''
+
             if mode == 'report':
                 self._logger.error("Error in '%s': %s" % (cmd, err))
 
@@ -555,6 +567,8 @@ class Adaptor(saga.adaptors.base.Base):
                         pass
 
     def go_transfer(self, shell, flags, source, target):
+
+        # TODO: I dont think we handle relative targets yet
 
         self._logger.debug('Adaptor:go_transfer(%s, %s)' % (source, target))
 
