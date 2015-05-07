@@ -7,6 +7,7 @@ __license__   = "MIT"
 """ (GSI)SSH based Globus Online Adaptor """
 
 import os
+import threading
 import saga.utils.pty_shell as sups
 import saga.utils.misc as sumisc
 
@@ -155,6 +156,11 @@ class Adaptor(saga.adaptors.base.Base):
         self.localhost_ep = self.opts['localhost_endpoint'].get_value()
         self.shells = {}  # keep go shells for each session
 
+        #
+        # Lock to synchronize concurrent access to data structures
+        #
+        self.shell_lock = threading.RLock()
+
     # --------------------------------------------------------------------------
     #
     def sanity_check(self):
@@ -175,9 +181,13 @@ class Adaptor(saga.adaptors.base.Base):
 
         sid = session._id
 
+        self._logger.debug("Acquiring lock")
+        self.shell_lock.acquire()
+        self._logger.debug("Acquired lock")
+
         if not sid in self.shells:
 
-            self.shells[sid] = {}
+            new_shell = {}
 
             if not go_url:
                 new_url = saga.Url(GO_DEFAULT_URL)
@@ -189,20 +199,20 @@ class Adaptor(saga.adaptors.base.Base):
             # create the shell.
             shell = sups.PTYShell(new_url, session=session, logger=self._logger, 
                                   opts=opts, posix=False)
-            self.shells[sid]['shell'] = shell
+            new_shell['shell'] = shell
 
             # confirm the user ID for this shell
-            self.shells[sid]['user'] = None
+            new_shell['user'] = None
 
             _, out, _ = shell.run_sync('profile')
 
             for line in out.split('\n'):
                 if 'User Name:' in line:
-                    self.shells[sid]['user'] = line.split(':', 2)[1].strip()
-                    self._logger.debug("using account '%s'" % self.shells[sid]['user'])
+                    new_shell['user'] = line.split(':', 2)[1].strip()
+                    self._logger.debug("using account '%s'" % new_shell['user'])
                     break
 
-            if not self.shells[sid]['user']:
+            if not new_shell['user']:
                 raise saga.NoSuccess("Could not confirm user id")
 
             if self.notify != 'None':
@@ -213,12 +223,24 @@ class Adaptor(saga.adaptors.base.Base):
                     self._logger.debug("enable email notifications")
                     shell.run_sync('profile -n off')
 
+            # This should not happen
+            assert sid not in self.shells
+
+            # Now add the entry to the shells dict
+            self.shells[sid] = new_shell
+
             # for this fresh shell, we get the list of public endpoints.  That list
             # will contain the set of hosts we can potentially connect to.
             self.get_go_endpoint_list(session, shell, fetch=True)
 
+        else:
+            self._logger.debug("Shell already in cache.")
+
+        self.shell_lock.release()
+        self._logger.debug("Released lock")
+
         # we have the shell for sure by now -- return it!
-        return self.shells[session._id]['shell']
+        return self.shells[sid]['shell']
 
     # ----------------------------------------------------------------
     #
@@ -377,6 +399,8 @@ class Adaptor(saga.adaptors.base.Base):
     #
     def get_go_endpoint_list(self, session, shell, ep_name=None, fetch=False):
 
+        self.shell_lock.acquire()
+
         # if 'fetch' is True, query the shell for an updated endpoint list.
         # then check if the given ep_name is a known endpoint name, and if so,
         # return that entry -- otherwise return None.  If no ep_name is given,
@@ -423,6 +447,8 @@ class Adaptor(saga.adaptors.base.Base):
 
             # replace the ep info dist with the new one, to clean out old entries.
             self.shells[session._id]['endpoints'] = endpoints
+
+        self.shell_lock.release()
 
         if ep_name:
             # return the requested entry, or None
