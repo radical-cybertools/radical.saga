@@ -171,78 +171,81 @@ class Adaptor(saga.adaptors.base.Base):
 
     # --------------------------------------------------------------------------
     #
-    def get_go_shell(self, session, go_url=None):
+    def get_go_shell(self, session, go_url=GO_DEFAULT_URL):
 
-        # this basically return a pty shell for 
-        #
-        #   gsissh username@cli.globusonline.org
+        # This returns a pty shell for: '[gsi]ssh username@cli.globusonline.org'
         #
         # X509 contexts are preferred, but ssh contexts, userpass and myproxy can
         # also be used.  If the given url has username / password encoded, we
         # create an userpass context out of it and add it to the (copy of) the
         # session.
 
-        sid = session._id
-
         self._logger.debug("Acquiring lock")
         with self.shell_lock:
             self._logger.debug("Acquired lock")
 
-            if not sid in self.shells:
+            sid = session._id
 
-                new_shell = {}
+            init = False
+            create = False
 
-                if not go_url:
-                    new_url = saga.Url(GO_DEFAULT_URL)
-                else:
-                    new_url = saga.Url(go_url) # deep copy
+            if sid in self.shells and self.shells[sid]['shell'].alive(recover=False):
+                self._logger.debug("Shell in cache and alive, can reuse.")
+            elif sid in self.shells:
+                self._logger.debug("Shell in cache but not alive.")
+                self.shells[sid]['shell'].finalize()
+                self._logger.debug("Shell is finalized, need to recreate.")
+                create = True
+            else:
+                self._logger.debug("Shell not in cache, create entry.")
+                init = True
+                create = True
+                self.shells[sid] = {}
 
+            # Acquire new shell
+            if create:
+
+                # deep copy URL (because of?)
+                new_url = saga.Url(go_url)
+
+                # GO specific prompt pattern
                 opts = {'prompt_pattern': self.prompt}
 
                 # create the shell.
-                shell = sups.PTYShell(new_url, session=session, logger=self._logger,
-                                      opts=opts, posix=False)
-                new_shell['shell'] = shell
+                shell = sups.PTYShell(new_url, session=session, logger=self._logger, opts=opts, posix=False)
+                self.shells[sid]['shell'] = shell
 
-                # confirm the user ID for this shell
-                new_shell['user'] = None
-
-                _, out, _ = shell.run_sync('profile')
-
-                for line in out.split('\n'):
-                    if 'User Name:' in line:
-                        new_shell['user'] = line.split(':', 2)[1].strip()
-                        self._logger.debug("using account '%s'" % new_shell['user'])
-                        break
-
-                if not new_shell['user']:
-                    raise saga.NoSuccess("Could not confirm user id")
-
-                if self.notify != 'None':
-                    if self.notify == 'True':
-                        self._logger.debug("disable email notifications")
-                        shell.run_sync('profile -n on')
-                    else:
-                        self._logger.debug("enable email notifications")
-                        shell.run_sync('profile -n off')
-
-                # This should not happen
-                assert sid not in self.shells
-
-                # Now add the entry to the shells dict
-                self.shells[sid] = new_shell
-
-                # for this fresh shell, we get the list of public endpoints.  That list
-                # will contain the set of hosts we can potentially connect to.
+                # For this fresh shell, we get the list of public endpoints.
+                # That list will contain the set of hosts we can potentially connect to.
                 self.get_go_endpoint_list(session, shell, fetch=True)
 
-            else:
-                self._logger.debug("Shell already in cache.")
+            # Initialize other dict members and remote shell
+            if init:
+                shell = self.shells[sid]['shell']
+
+                # Confirm the user ID for this shell
+                self.shells[sid]['user'] = None
+                _, out, _ = shell.run_sync('profile')
+                for line in out.split('\n'):
+                    if 'User Name:' in line:
+                        self.shells[sid]['user'] = line.split(':', 2)[1].strip()
+                        self._logger.debug("using account '%s'" % self.shells[sid]['user'])
+                        break
+                if not self.shells[sid]['user']:
+                    raise saga.NoSuccess("Could not confirm user id")
+
+                # Toggle notification
+                if self.notify == 'True':
+                    self._logger.debug("enable email notifications")
+                    shell.run_sync('profile -n on')
+                elif self.notify == 'False':
+                    self._logger.debug("disable email notifications")
+                    shell.run_sync('profile -n off')
 
             self._logger.debug("Release lock")
 
-        # we have the shell for sure by now -- return it!
-        return self.shells[sid]['shell']
+            # we have the shell for sure by now -- return it!
+            return self.shells[sid]['shell']
 
     # ----------------------------------------------------------------
     #
