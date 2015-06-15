@@ -49,6 +49,7 @@ class Description (saga.Attributes) :
         self._attributes_register  (saga.job.JOB_START_TIME       , None, sa.TIME,   sa.SCALAR, sa.WRITEABLE)
         self._attributes_register  (saga.job.WALL_TIME_LIMIT      , None, sa.INT,    sa.SCALAR, sa.WRITEABLE)
         self._attributes_register  (saga.job.TOTAL_PHYSICAL_MEMORY, None, sa.INT,    sa.SCALAR, sa.WRITEABLE)
+        self._attributes_register  (saga.job.NODE_LIST            , None, sa.STRING, sa.VECTOR, sa.WRITEABLE)
         self._attributes_register  (saga.job.CPU_ARCHITECTURE     , None, sa.ENUM,   sa.SCALAR, sa.WRITEABLE)
         self._attributes_register  (saga.job.OPERATING_SYSTEM_TYPE, None, sa.ENUM,   sa.SCALAR, sa.WRITEABLE)
         self._attributes_register  (saga.job.CANDIDATE_HOSTS      , None, sa.STRING, sa.VECTOR, sa.WRITEABLE)
