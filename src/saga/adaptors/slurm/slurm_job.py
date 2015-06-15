@@ -69,10 +69,9 @@ _ADAPTOR_CAPABILITIES  = {
                           saga.job.JOB_START_TIME,
                           saga.job.WALL_TIME_LIMIT, 
                           saga.job.TOTAL_PHYSICAL_MEMORY, 
-                          saga.job.NODE_LIST,
                           #saga.job.CPU_ARCHITECTURE, 
                           #saga.job.OPERATING_SYSTEM_TYPE, 
-                          #saga.job.CANDIDATE_HOSTS,
+                          saga.job.CANDIDATE_HOSTS,
                           saga.job.QUEUE,
                           saga.job.PROJECT,
                           saga.job.JOB_CONTACT],
@@ -426,9 +425,9 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         queue = None
         project = None
         job_memory = None
-        node_list = None
         job_contact = None
-        
+        candidate_hosts = None
+
         # check to see what's available in our job description
         # to override defaults
 
@@ -475,11 +474,11 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         if jd.attribute_exists("total_physical_memory"):
             job_memory = jd.total_physical_memory
 
-        if jd.attribute_exists("node_list"):
-            if isinstance(jd.node_list, (tuple, list)):
-                node_list = ','.join(jd.node_list)
+        if jd.attribute_exists("candidate_hosts"):
+            if isinstance(jd.candidate_hosts, (tuple, list)):
+                candidate_hosts = ','.join(jd.candidate_hosts)
             else:
-                node_list = jd.node_list
+                candidate_hosts = jd.candidate_hosts
 
         if jd.attribute_exists("job_contact"):
             job_contact = jd.job_contact[0]
@@ -543,8 +542,8 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         if  job_memory:
             slurm_script += "#SBATCH --mem=%s\n" % job_memory
 
-        if  node_list:
-            slurm_script += "#SBATCH --nodelist=%s\n" % node_list
+        if  candidate_hosts:
+            slurm_script += "#SBATCH --nodelist=%s\n" % candidate_hosts
 
         if  job_contact:
             slurm_script += "#SBATCH --mail-user=%s\n" % job_contact
