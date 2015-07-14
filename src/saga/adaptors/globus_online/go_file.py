@@ -7,6 +7,7 @@ __license__   = "MIT"
 """ (GSI)SSH based Globus Online Adaptor """
 
 import os
+import threading
 import saga.utils.pty_shell as sups
 import saga.utils.misc as sumisc
 
@@ -16,15 +17,18 @@ import saga.adaptors.cpi.filesystem
 from saga.adaptors.cpi.decorators import SYNC_CALL
 
 # TODO: We could make this configurable,
-# so people without gsissh can still perform some operations.
+# so people without gsissh can still perform some operations,
+# as they could activate the endpoints through the globus web interface.
 # go+ssh:// vs go+gsissh:// comes to mind
 GO_DEFAULT_URL = "gsissh://cli.globusonline.org/"
+#GO_DEFAULT_URL = "ssh://cli.globusonline.org/"
+
 
 # --------------------------------------------------------------------
 # the adaptor name
 #
 _ADAPTOR_NAME          = "saga.adaptor.globus_online_file"
-_ADAPTOR_SCHEMAS       = ["go"]
+_ADAPTOR_SCHEMAS       = ["go"] # TODO: also allow file:// ??
 _ADAPTOR_OPTIONS       = [
     { 
     # fuck our config system!  I don't want these to be strings!  And its not
@@ -155,6 +159,11 @@ class Adaptor(saga.adaptors.base.Base):
         self.localhost_ep = self.opts['localhost_endpoint'].get_value()
         self.shells = {}  # keep go shells for each session
 
+        #
+        # Lock to synchronize concurrent access to data structures
+        #
+        self.shell_lock = threading.RLock()
+
     # --------------------------------------------------------------------------
     #
     def sanity_check(self):
@@ -162,63 +171,81 @@ class Adaptor(saga.adaptors.base.Base):
 
     # --------------------------------------------------------------------------
     #
-    def get_go_shell(self, session, go_url=None):
+    def get_go_shell(self, session, go_url=GO_DEFAULT_URL):
 
-        # this basically return a pty shell for 
-        #
-        #   gsissh username@cli.globusonline.org
+        # This returns a pty shell for: '[gsi]ssh username@cli.globusonline.org'
         #
         # X509 contexts are preferred, but ssh contexts, userpass and myproxy can
         # also be used.  If the given url has username / password encoded, we
         # create an userpass context out of it and add it to the (copy of) the
         # session.
 
-        sid = session._id
+        self._logger.debug("Acquiring lock")
+        with self.shell_lock:
+            self._logger.debug("Acquired lock")
 
-        if not sid in self.shells:
+            sid = session._id
 
-            self.shells[sid] = {}
+            init = False
+            create = False
 
-            if not go_url:
-                new_url = saga.Url(GO_DEFAULT_URL)
+            if sid in self.shells and self.shells[sid]['shell'].alive(recover=False):
+                self._logger.debug("Shell in cache and alive, can reuse.")
+            elif sid in self.shells:
+                self._logger.debug("Shell in cache but not alive.")
+                self.shells[sid]['shell'].finalize()
+                self._logger.debug("Shell is finalized, need to recreate.")
+                create = True
             else:
-                new_url = saga.Url(go_url) # deep copy
+                self._logger.debug("Shell not in cache, create entry.")
+                init = True
+                create = True
+                self.shells[sid] = {}
 
-            opts = {'prompt_pattern': self.prompt}
+            # Acquire new shell
+            if create:
 
-            # create the shell.
-            shell = sups.PTYShell(new_url, session=session, logger=self._logger, 
-                                  opts=opts, posix=False)
-            self.shells[sid]['shell'] = shell
+                # deep copy URL (because of?)
+                new_url = saga.Url(go_url)
 
-            # confirm the user ID for this shell
-            self.shells[sid]['user'] = None
+                # GO specific prompt pattern
+                opts = {'prompt_pattern': self.prompt}
 
-            _, out, _ = shell.run_sync('profile')
+                # create the shell.
+                shell = sups.PTYShell(new_url, session=session, logger=self._logger, opts=opts, posix=False)
+                self.shells[sid]['shell'] = shell
 
-            for line in out.split('\n'):
-                if 'User Name:' in line:
-                    self.shells[sid]['user'] = line.split(':', 2)[1].strip()
-                    self._logger.debug("using account '%s'" % self.shells[sid]['user'])
-                    break
+                # For this fresh shell, we get the list of public endpoints.
+                # That list will contain the set of hosts we can potentially connect to.
+                self.get_go_endpoint_list(session, shell, fetch=True)
 
-            if not self.shells[sid]['user']:
-                raise saga.NoSuccess("Could not confirm user id")
+            # Initialize other dict members and remote shell
+            if init:
+                shell = self.shells[sid]['shell']
 
-            if self.notify != 'None':
+                # Confirm the user ID for this shell
+                self.shells[sid]['user'] = None
+                _, out, _ = shell.run_sync('profile')
+                for line in out.split('\n'):
+                    if 'User Name:' in line:
+                        self.shells[sid]['user'] = line.split(':', 2)[1].strip()
+                        self._logger.debug("using account '%s'" % self.shells[sid]['user'])
+                        break
+                if not self.shells[sid]['user']:
+                    raise saga.NoSuccess("Could not confirm user id")
+
+                # Toggle notification
                 if self.notify == 'True':
-                    self._logger.debug("disable email notifications")
-                    shell.run_sync('profile -n on')
-                else:
                     self._logger.debug("enable email notifications")
+                    shell.run_sync('profile -n on')
+                elif self.notify == 'False':
+                    self._logger.debug("disable email notifications")
                     shell.run_sync('profile -n off')
 
-            # for this fresh shell, we get the list of public endpoints.  That list
-            # will contain the set of hosts we can potentially connect to.
-            self.get_go_endpoint_list(session, shell, fetch=True)
+            self._logger.debug("Release lock")
 
-        # we have the shell for sure by now -- return it!
-        return self.shells[session._id]['shell']
+            # we have the shell for sure by now -- return it!
+            return self.shells[sid]['shell']
 
     # ----------------------------------------------------------------
     #
@@ -355,6 +382,9 @@ class Adaptor(saga.adaptors.base.Base):
             # TODO: I had an active endpoint, but still got an activation prompt,
             # probably because the remaining lifetime was not very long anymore.
             # or Credential Time Left    : 00:16:35 < ????
+            # Answer: below 30 min there is a activation prompt,
+            # but it does actually continue normally.
+            # Need to capture that behavior.
 
             # Only Globus Connect Service Endpoints don't need -g?
             # Had contact on this with Globus Support, they couldn't suggest
@@ -383,46 +413,49 @@ class Adaptor(saga.adaptors.base.Base):
         # and fetch is True, we thus simply refresh the internal list.
 
         if fetch:
-            endpoints = {}
-            name = None
 
-            _, out, _ = shell.run_sync("endpoint-list -v")
+            with self.shell_lock:
 
-            for line in out.split('\n'):
-                elems = line.split(':', 1)
+                endpoints = {}
+                name = None
 
-                if len(elems) != 2:
-                    continue
+                _, out, _ = shell.run_sync("endpoint-list -v")
 
-                key = elems[0].strip()
-                val = elems[1].strip()
+                for line in out.split('\n'):
+                    elems = line.split(':', 1)
 
-                if not key or not val:
-                    continue
+                    if len(elems) != 2:
+                        continue
 
-                if key == "Name":
+                    key = elems[0].strip()
+                    val = elems[1].strip()
 
-                    # we now operate on a new entry -- initialize it
-                    name = val
+                    if not key or not val:
+                        continue
 
-                    endpoints[name] = {}
-                    
-                    # we make sure that some entries always exist, to simplify error
-                    # checks
-                    endpoints[name]['Name']              = name
-                    endpoints[name]['Credential Status'] = None
-                    endpoints[name]['Host(s)']           = None
+                    if key == "Name":
 
-                else:
+                        # we now operate on a new entry -- initialize it
+                        name = val
 
-                    # Continued passed of an entry, name should always exist
-                    try:
-                        endpoints[name][key] = val
-                    except:
-                        raise saga.NoSuccess("No entry name to operate on")
+                        endpoints[name] = {}
 
-            # replace the ep info dist with the new one, to clean out old entries.
-            self.shells[session._id]['endpoints'] = endpoints
+                        # we make sure that some entries always exist, to simplify error
+                        # checks
+                        endpoints[name]['Name']              = name
+                        endpoints[name]['Credential Status'] = None
+                        endpoints[name]['Host(s)']           = None
+
+                    else:
+
+                        # Continued passed of an entry, name should always exist
+                        try:
+                            endpoints[name][key] = val
+                        except:
+                            raise saga.NoSuccess("No entry name to operate on")
+
+                # replace the ep info dist with the new one, to clean out old entries.
+                self.shells[session._id]['endpoints'] = endpoints
 
         if ep_name:
             # return the requested entry, or None
@@ -469,6 +502,12 @@ class Adaptor(saga.adaptors.base.Base):
                         raise saga.NoSuccess('Unknown error: %s' % cause)
                 else:
                     raise saga.NoSuccess('Could not find find message in error: %s' % err)
+
+                # TODO: Handle GO access to directories that are not allowed
+                # TODO: by Globus Personal by default (e.g. /var/ , /tmp)
+                # TODO: '''Message: Fatal FTP Response
+                # TODO:    ---
+                # TODO:    500 Command failed : Path not allowed.'''
 
             if mode == 'report':
                 self._logger.error("Error in '%s': %s" % (cmd, err))
@@ -530,6 +569,8 @@ class Adaptor(saga.adaptors.base.Base):
 
     def go_transfer(self, shell, flags, source, target):
 
+        # TODO: I dont think we handle relative targets yet
+
         self._logger.debug('Adaptor:go_transfer(%s, %s)' % (source, target))
 
         # 0: Copy files that do not exist at the destination
@@ -537,7 +578,7 @@ class Adaptor(saga.adaptors.base.Base):
 
         # Create parents
         if flags & saga.filesystem.CREATE_PARENTS:
-            self.mkparents(shell, target)
+            self.mkparents(shell, os.path.dirname(target))
 
         #if flags & saga.filesystem.OVERWRITE:
             # 1: Copy files if the size of the destination does not match the

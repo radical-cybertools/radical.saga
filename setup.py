@@ -54,7 +54,14 @@ def get_version (mod_root):
 
 
         # attempt to get version detail information from git
+        # We only do that though if we are in a repo root dir, 
+        # ie. if 'git rev-parse --show-prefix' returns an empty string --
+        # otherwise we get confused if the ve lives beneath another repository,
+        # and the pip version used uses an install tmp dir in the ve space
+        # instead of /tmp (which seems to happen with some pip/setuptools 
+        # versions).
         p   = sp.Popen ('cd %s ; '\
+                        'test -z `git rev-parse --show-prefix` || exit -1; '\
                         'tag=`git describe --tags --always` 2>/dev/null ; '\
                         'branch=`git branch | grep -e "^*" | cut -f 2- -d " "` 2>/dev/null ; '\
                         'echo $tag@$branch'  % src_root,
