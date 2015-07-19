@@ -6,6 +6,17 @@
     https://github.com/radical-cybertools/saga-python/issues?q=is%3Aissue+is%3Aopen+
 
 
+Version 0.29 release 2015-07-14
+--------------------------------------------------------------------------------
+
+  - apply setup/git fix
+  - fix exception type exception
+  - convert to locking "with"/by context manager.
+  - only create parents for the dir part of a target.
+  - reentrant lock to guard concurrent cache writing.
+  - fix object._id format
+
+
 Version 0.28 release 2015-04-16
 --------------------------------------------------------------------------------
 
@@ -495,5 +506,4 @@ Version 0.1.7 released 2011-11-09
 
 
 --------------------------------------------------------------------------------
-
 
