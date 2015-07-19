@@ -625,7 +625,7 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
 
         # SGE parameters
 
-        sge_params = ["#$ -S /bin/bash"]
+        sge_params = ["#$ -S /bin/sh"]
 
         if jd.name is not None:
             sge_params += ["#$ -N %s" % jd.name]
@@ -752,7 +752,7 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
         # only escape '$' in args and exe. not in the params
         script_body = "\n".join(script_body).replace('$', '\\$')
 
-        sgescript = "\n#!/bin/bash \n%s \n%s" % (sge_params, script_body)
+        sgescript = "\n#!/bin/sh \n%s \n%s" % (sge_params, script_body)
 
         return sgescript.replace('"', '\\"')
 
