@@ -416,7 +416,6 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         spmd_variation = None
         total_cpu_count = None
         number_of_processes = None
-        threads_per_process = None
         output = "saga-python-slurm-default.out"
         error = None
         file_transfer = None
@@ -448,9 +447,6 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
 
         if jd.attribute_exists ("processes_per_host"):
             processes_per_host = jd.processes_per_host
-
-        if jd.attribute_exists ("threads_per_process"):
-            threads_per_process = jd.threads_per_process
 
         if jd.attribute_exists ("working_directory"):
             cwd = jd.working_directory
