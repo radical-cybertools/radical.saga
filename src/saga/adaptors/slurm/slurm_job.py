@@ -416,6 +416,7 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         spmd_variation = None
         total_cpu_count = None
         number_of_processes = None
+        processes_per_host = None
         output = "saga-python-slurm-default.out"
         error = None
         file_transfer = None
@@ -445,7 +446,7 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         if jd.attribute_exists ("number_of_processes"):
             number_of_processes = jd.number_of_processes
 
-        if jd.attribute_exists ("processes_per_host"):
+        if jd.attribute_exists("processes_per_host"):
             processes_per_host = jd.processes_per_host
 
         if jd.attribute_exists ("working_directory"):
@@ -505,8 +506,12 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
                                  saga.NoSuccess, self._logger)
 
         slurm_script += "#SBATCH --ntasks=%s\n" % (number_of_processes)
+
         if total_cpu_count != number_of_processes:
             slurm_script += "#SBATCH --cpus-per-task=%s\n" % (total_cpu_count / number_of_processes)
+
+        if processes_per_host:
+            slurm_script += "#SBATCH --ntasks-per-node=%s\n" % processes_per_host
 
         if  cwd is not "":
             slurm_script += "#SBATCH -D %s\n" % cwd
