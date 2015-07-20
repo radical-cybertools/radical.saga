@@ -509,8 +509,9 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
                               % (total_cpu_count, number_of_processes), 
                                  saga.NoSuccess, self._logger)
 
-        slurm_script += "#SBATCH --ntasks=%s\n"        % (number_of_processes)
-        slurm_script += "#SBATCH --cpus-per-task=%s\n" % (total_cpu_count/number_of_processes)
+        slurm_script += "#SBATCH --ntasks=%s\n" % (number_of_processes)
+        if total_cpu_count != number_of_processes:
+            slurm_script += "#SBATCH --cpus-per-task=%s\n" % (total_cpu_count / number_of_processes)
 
         if  cwd is not "":
             slurm_script += "#SBATCH -D %s\n" % cwd
