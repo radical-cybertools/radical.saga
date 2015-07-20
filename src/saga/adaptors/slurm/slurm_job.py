@@ -493,13 +493,12 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
 
         # make sure we have something for number_of_processes
         if not number_of_processes:
-            self._logger.warning("number_of_processes not specified in submitted "
+            self._logger.debug("number_of_processes not specified in submitted "
                                  "SLURM job description -- defaulting to 1 per total_cpu_count! (%s)" % total_cpu_count)
-
             number_of_processes = total_cpu_count
 
         # make sure we aren't given more processes than CPUs
-        if number_of_processes>total_cpu_count:
+        if number_of_processes > total_cpu_count:
             log_error_and_raise("More processes (%s) requested than total number of CPUs! (%s)" % (number_of_processes, total_cpu_count), saga.NoSuccess, self._logger)
 
         #make sure we aren't doing funky math
