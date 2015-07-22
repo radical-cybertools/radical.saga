@@ -416,7 +416,7 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         spmd_variation = None
         total_cpu_count = None
         number_of_processes = None
-        threads_per_process = None
+        processes_per_host = None
         output = "saga-python-slurm-default.out"
         error = None
         file_transfer = None
@@ -447,11 +447,8 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         if jd.attribute_exists ("number_of_processes"):
             number_of_processes = jd.number_of_processes
 
-        if jd.attribute_exists ("processes_per_host"):
+        if jd.attribute_exists("processes_per_host"):
             processes_per_host = jd.processes_per_host
-
-        if jd.attribute_exists ("threads_per_process"):
-            threads_per_process = jd.threads_per_process
 
         if jd.attribute_exists ("working_directory"):
             cwd = jd.working_directory
@@ -500,13 +497,12 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
 
         # make sure we have something for number_of_processes
         if not number_of_processes:
-            self._logger.warning("number_of_processes not specified in submitted "
+            self._logger.debug("number_of_processes not specified in submitted "
                                  "SLURM job description -- defaulting to 1 per total_cpu_count! (%s)" % total_cpu_count)
-
             number_of_processes = total_cpu_count
 
         # make sure we aren't given more processes than CPUs
-        if number_of_processes>total_cpu_count:
+        if number_of_processes > total_cpu_count:
             log_error_and_raise("More processes (%s) requested than total number of CPUs! (%s)" % (number_of_processes, total_cpu_count), saga.NoSuccess, self._logger)
 
         #make sure we aren't doing funky math
@@ -516,8 +512,13 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
                               % (total_cpu_count, number_of_processes), 
                                  saga.NoSuccess, self._logger)
 
-        slurm_script += "#SBATCH --ntasks=%s\n"        % (number_of_processes)
-        slurm_script += "#SBATCH --cpus-per-task=%s\n" % (total_cpu_count/number_of_processes)
+        slurm_script += "#SBATCH --ntasks=%s\n" % (number_of_processes)
+
+        if total_cpu_count != number_of_processes:
+            slurm_script += "#SBATCH --cpus-per-task=%s\n" % (total_cpu_count / number_of_processes)
+
+        if processes_per_host:
+            slurm_script += "#SBATCH --ntasks-per-node=%s\n" % processes_per_host
 
         if  cwd is not "":
             slurm_script += "#SBATCH -D %s\n" % cwd
