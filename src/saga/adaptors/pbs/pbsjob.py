@@ -6,6 +6,8 @@ __license__   = "MIT"
 
 """ PBS job adaptor implementation
 """
+""" !!! DEPRECATED !!! USE "PBS Pro" or "TORQUE" adaptor !!!
+"""
 
 import threading
 
