@@ -143,11 +143,15 @@ def _torque_to_saga_jobstate(torquejs):
 
 # --------------------------------------------------------------------
 #
-def _torquescript_generator(url, logger, jd, ppn, gres, torque_version, is_cray=False, queue=None, ):
+def _torquescript_generator(url, logger, jd, ppn, gres, torque_version, is_cray=None, queue=None):
     """ generates a PBS script from a SAGA job description
     """
     pbs_params  = str()
     exec_n_args = str()
+
+    if jd.processes_per_host:
+        logger.info("Overriding the detected ppn (%d) with the user specified processes_per_host (%d)" % (ppn, jd.processes_per_host))
+        ppn = jd.processes_per_host
 
     exec_n_args += 'export SAGA_PPN=%d\n' % ppn
     if jd.executable:
@@ -159,7 +163,7 @@ def _torquescript_generator(url, logger, jd, ppn, gres, torque_version, is_cray=
     if jd.name:
         pbs_params += "#PBS -N %s \n" % jd.name
 
-    if (is_cray is "") or not('Version: 4.2.7' in torque_version):
+    if (is_cray is "") or not ('Version: 4.2.7' in torque_version):
         # qsub on Cray systems complains about the -V option:
         # Warning:
         # Your job uses the -V option, which requests that all of your
@@ -173,10 +177,9 @@ def _torquescript_generator(url, logger, jd, ppn, gres, torque_version, is_cray=
                 ','.join (["%s=%s" % (k,v) 
                            for k,v in jd.environment.iteritems()])
 
-# apparently this doesn't work with older PBS installations
-#    if jd.working_directory:
-#        pbs_params += "#PBS -d %s \n" % jd.working_directory
-
+    # apparently this doesn't work with older PBS installations
+    #    if jd.working_directory:
+    #        pbs_params += "#PBS -d %s \n" % jd.working_directory
     # a workaround is to do an explicit 'cd'
     if jd.working_directory:
         workdir_directives  = 'export    PBS_O_WORKDIR=%s \n' % jd.working_directory
@@ -214,7 +217,6 @@ def _torquescript_generator(url, logger, jd, ppn, gres, torque_version, is_cray=
                 pbs_params += "#PBS -e %s/%s \n" % (jd.working_directory, jd.error)
         else:
             pbs_params += "#PBS -e %s \n" % jd.error
-
 
     if jd.wall_time_limit:
         hours = jd.wall_time_limit / 60
@@ -355,6 +357,7 @@ _ADAPTOR_CAPABILITIES = {
                           saga.job.WALL_TIME_LIMIT,
                           saga.job.WORKING_DIRECTORY,
                           saga.job.WALL_TIME_LIMIT,
+                          saga.job.PROCESSES_PER_HOST,
                           saga.job.SPMD_VARIATION,
                           saga.job.TOTAL_CPU_COUNT],
     "job_attributes":    [saga.job.EXIT_CODE,
@@ -519,8 +522,6 @@ class TORQUEJobService (saga.adaptors.cpi.job.Service):
                     self.queue = val[0]
                 elif key == 'craytype':
                     self.is_cray = val[0]
-                elif key == 'ppn':
-                    self.ppn = int(val[0])
                 elif key == 'gres':
                     self.gres = val[0]
 
@@ -601,13 +602,6 @@ class TORQUEJobService (saga.adaptors.cpi.job.Service):
                 self.is_cray = "unknowncray"
         else: 
             self._logger.info("Assuming host is a Cray since 'craytype' is set to: %s" % self.is_cray)
-
-        #
-        # Get number of processes per node
-        #
-        if self.ppn:
-            self._logger.debug("Using user specified 'ppn': %d" % self.ppn)
-            return
 
         # TODO: this is quite a hack. however, it *seems* to work quite
         #       well in practice.
