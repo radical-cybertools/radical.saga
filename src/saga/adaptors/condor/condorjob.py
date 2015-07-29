@@ -102,7 +102,7 @@ def _condorscript_generator(url, logger, jd, option_dict=None):
     condor_file += "\nexecutable = /bin/env"
 
     # arguments -> arguments
-    arguments = 'arguments = \"/bin/sh -c \''
+    arguments = "arguments = \"/bin/sh -c '"
 
     # The actual executable becomes the first argument.
     if jd.executable is not None:
@@ -121,7 +121,8 @@ def _condorscript_generator(url, logger, jd, option_dict=None):
             # some crap like: "Found illegal unescaped double-quote: ...
             # That's why we escape them by repeating.
             arg = arg.replace('"', '""')
-    
+            arg = arg.replace("'", "''")
+
             # Escape dollars (for environment variables)
             #arg = arg.replace('$', '\\$')
     
