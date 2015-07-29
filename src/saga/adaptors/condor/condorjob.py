@@ -194,7 +194,11 @@ def _condorscript_generator(url, logger, jd, option_dict=None):
         sitelist = "+SiteList = \\\"%s\\\"" % hosts
         requirements += "(stringListMember(GLIDEIN_ResourceName,SiteList) == True)"
         condor_file += "\n%s" % sitelist
-        condor_file += "\n%s" % requirements
+
+    # HACK! We want modules!
+    requirements += "(HAS_CVMFS_oasis_opensciencegrid_org =?= TRUE)"
+
+    condor_file += "\n%s\n" % requirements
 
     condor_file += "\n\nqueue\n"
     condor_file += "\n##### END OF FILE #####\n"
