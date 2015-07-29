@@ -186,6 +186,9 @@ def _condorscript_generator(url, logger, jd, option_dict=None):
     if jd.project is not None:
         condor_file += "\n+ProjectName = \"%s\"" % str(jd.project)
 
+    if jd.total_cpu_count:
+        condor_file += "\nrequest_cpus = %d" % jd.total_cpu_count
+
     # candidate hosts -> SiteList + requirements
     if jd.candidate_hosts is not None:
         hosts = ""
