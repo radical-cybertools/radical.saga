@@ -229,7 +229,7 @@ _ADAPTOR_CAPABILITIES = {
                           saga.job.INPUT,
                           saga.job.OUTPUT,
                           saga.job.ERROR,
-                          saga.job.QUEUE,
+                          saga.job.QUEUE, # TODO: map jd.queue to universe or pool?!
                           saga.job.PROJECT,
                           saga.job.WALL_TIME_LIMIT,
                           saga.job.WORKING_DIRECTORY,
