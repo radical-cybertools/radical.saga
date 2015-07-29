@@ -552,7 +552,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
 
         # run the Condor 'condor_q' command to get some infos about our job
         ret, out, _ = self.shell.run_sync("unset GREP_OPTIONS; %s -long %s | \
-            grep -E '(JobStatus)|(ExitStatus)|(CompletionDate)'" \
+            grep -E '(^JobStatus)|(ExitStatus)|(CompletionDate)'" \
             % (self._commands['condor_q']['path'], pid))
         if ret != 0:
             message = "Couldn't reconnect to job '%s': %s" % (job_id, out)
@@ -680,7 +680,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
 
         # run the Condor 'condor_q' command to get some infos about our job
         ret, out, _ = self.shell.run_sync("unset GREP_OPTIONS; %s -long %s | \
-            grep -E '(JobStatus)|(ExitStatus)|(CompletionDate)'" \
+            grep -E '(^JobStatus)|(ExitStatus)|(CompletionDate)'" \
             % (self._commands['condor_q']['path'], pid))
 
         if ret != 0:
