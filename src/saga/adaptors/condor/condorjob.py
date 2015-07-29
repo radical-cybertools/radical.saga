@@ -152,7 +152,8 @@ def _condorscript_generator(url, logger, jd, option_dict=None):
 
     # always define log. if 'jd.output' is defined, we use it 
     # to name the logfile. if not, we fall back to a standard
-    # name... 
+    # name...
+    # TODO: Is this really a good idea? I rather have a unique name.
     if jd.output is not None:
         filename = str(jd.output)
         idx = filename.rfind('.')
