@@ -95,7 +95,7 @@ def _condorscript_generator(url, logger, jd, option_dict=None):
     ##### OPTIONS PASSED VIA JOB DESCRIPTION #####
     ##
     condor_file += "\n\n##### OPTIONS PASSED VIA JOB DESCRIPTION #####\n##"
-    requirements = "requirements = "
+    requirements = ""
 
     # Condor doesn't expand environment variables in arguments.
     # To support this functionality, we wrap by calling /bin/env.
@@ -178,19 +178,42 @@ def _condorscript_generator(url, logger, jd, option_dict=None):
     if jd.total_cpu_count:
         condor_file += "\nrequest_cpus = %d" % jd.total_cpu_count
 
-    # candidate hosts -> SiteList + requirements
+
     if jd.candidate_hosts is not None:
-        hosts = ""
-        for host in jd.candidate_hosts:
-            hosts += "%s, " % host
-        sitelist = "+SiteList = \\\"%s\\\"" % hosts
-        requirements += "(stringListMember(GLIDEIN_ResourceName,SiteList) == True)"
-        condor_file += "\n%s" % sitelist
 
-    # HACK! We want modules!
-    requirements += "(HAS_CVMFS_oasis_opensciencegrid_org =?= TRUE)"
+        # Special Characters
+        HOST_EXCLUSION_SYMBOL = '!'
+        SPECIAL_REQ_SYMBOL = '~'
 
-    condor_file += "\n%s\n" % requirements
+        # If there are already requirements, starts with an AND operator
+        if requirements:
+            requirements += ' && '
+
+        # TODO: This is bound to GLIDEIN which it shouldnt be.
+        resource_key = 'GLIDEIN_ResourceName'
+
+        # Whitelist sites, filter out "special" entries from the candidate host lists
+        incl_sites = [host for host in jd.candidate_hosts if not host.startswith((SPECIAL_REQ_SYMBOL, HOST_EXCLUSION_SYMBOL))]
+        if incl_sites:
+            requirements += '(' +  ' || '.join(['%s =?= "%s"' % (resource_key, site) for site in incl_sites]) + ')'
+
+        # Blacklist sites
+        excl_sites = [host for host in jd.candidate_hosts if host.startswith(HOST_EXCLUSION_SYMBOL)]
+        if excl_sites:
+            if incl_sites:
+                # If there were sites, start with an AND operator again
+                requirements += ' && '
+            requirements += '(' +  ' && '.join(['%s =!= "%s"' % (resource_key, site.lstrip(' ' + HOST_EXCLUSION_SYMBOL)) for site in excl_sites]) + ')'
+
+        # Generic requirements handling
+        if incl_sites or excl_sites:
+            # If there were white and/or black sites, start with an AND operator again
+            requirements += ' && '
+        # Get the '~special_requirements' and strip leading ~ and possible spaces.
+        requirements += ' && '.join([host.lstrip(' ' + SPECIAL_REQ_SYMBOL) for host in jd.candidate_hosts if host.startswith(SPECIAL_REQ_SYMBOL)])
+
+    if requirements:
+        condor_file += "\nrequirements = %s\n" % requirements
 
     condor_file += "\n\nqueue\n"
     condor_file += "\n##### END OF FILE #####\n"
