@@ -1,6 +1,6 @@
 
 __author__    = "Andre Merzky, Mark Santcroos, Ole Weidner"
-__copyright__ = "Copyright 2012-2013, The SAGA Project"
+__copyright__ = "Copyright 2012-2015, The SAGA Project"
 __license__   = "MIT"
 
 
@@ -239,7 +239,7 @@ _ADAPTOR_CAPABILITIES = {
                           saga.job.WORKING_DIRECTORY,
                           saga.job.CANDIDATE_HOSTS,
                           saga.job.TOTAL_CPU_COUNT,
-                          saga.job.SPMD_VARIATION, # TODO: 'hot'-fix for BigJob
+                          saga.job.SPMD_VARIATION,
                           saga.job.FILE_TRANSFER],
     "job_attributes":    [saga.job.EXIT_CODE,
                           saga.job.EXECUTION_HOSTS,
@@ -431,6 +431,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
                         version = version.strip(" $")
 
                         # add path and version to the command dictionary
+                        # TODO: change indentation below?
                 self._commands[cmd] = {"path":    path,
                                        "version": version}
 
@@ -464,7 +465,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
             if jd.file_transfer:
                 jd.file_transfer.append(exe_transfer)
             else:
-                jd.file_transfer = [ exe_transfer ]
+                jd.file_transfer = [exe_transfer]
 
         if jd.file_transfer is not None:
             jd.transfer_directives = TransferDirectives(jd.file_transfer)
@@ -489,6 +490,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
         if self.shell.url.scheme == "ssh":
             self._logger.info("Transferring Condor script to: %s" % self.shell.url)
             submit_file_name = os.path.basename(submit_file.name)
+            # TODO: the "-P" is a layer violation?
             self.shell.stage_to_remote(submit_file.name, submit_file_name, cp_flags="-P")
 
         elif self.shell.url.scheme == "gsissh":
