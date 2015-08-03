@@ -951,11 +951,11 @@ class PTYShell (object) :
             self._trace ("copy  to  : %s -> %s" % (src, tgt))
             self.pty_shell.flush ()
 
-
             info = self.pty_info
             repl = dict ({'src'      : src, 
-                          'tgt'      : tgt, 
-                          'cp_flags' : cp_flags}.items () + info.items ())
+                          'tgt'      : tgt,
+                          'cp_flags' : '' # cp_flags # TODO: needs to be "translated" for specific backend
+                          }.items () + info.items ())
 
             # at this point, we do have a valid, living master
             s_cmd = info['scripts'][info['copy_mode']]['copy_to']    % repl
