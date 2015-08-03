@@ -600,37 +600,35 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
                 (s_path, s_entry) = os.path.split(source)
                 if len(s_entry) < 1:
                     raise Exception('Condor accepts only files (not directories) as FileTransfer sources: %s' % source)
-                    # make sure target is just a file
+                    # TODO: this doesn't seem true, but dont want to tackle it right now
+                # make sure source and target file are the same
                 (t_path, t_entry) = os.path.split(target)
-                if len(t_path) > 1:
-                    raise Exception('Condor accepts only filenames (without paths) as FileTransfer targets: %s' % target)
-                    # make sure source and target file are the same
                 if s_entry != t_entry:
                     raise Exception('For Condor source file name and target file name have to be identical: %s != %s' % (s_entry, t_entry))
-                    # entry ok - add to job script
 
                 # add for later use by job script generator
                 td.transfer_input_files.append(target)
 
                 if self.shell.url.scheme == "ssh":
                     self._logger.info("Transferring file %s to %s" % (source, target))
-                    self.shell.stage_to_remote(source, target)
+                    self.shell.stage_to_remote(source, target, cp_flags=saga.filesystem.CREATE_PARENTS)
+
+                elif self.shell.url.scheme == "gsissh":
+                    # TODO: this should just work
+                    raise NotImplemented("GSISSH support for Condor not implemented.")
 
         if len(td.out_overwrite_dict) > 0:
             td.transfer_output_files = []
             for (source, target) in td.out_overwrite_dict.iteritems():
-                # make sure source is file an not dir
+                # make sure source is file and not dir
                 (s_path, s_entry) = os.path.split(source)
                 if len(s_entry) < 1:
                     raise Exception('Condor accepts only files (not directories) as FileTransfer sources: %s' % source)
-                    # make sure target is just a file
+                    # TODO: this doesn't seem true, but dont want to tackle it right now
+                # make sure source and target file are the same
                 (t_path, t_entry) = os.path.split(target)
-                if len(t_path) > 1:
-                    raise Exception('Condor accepts only filenames (without paths) as FileTransfer targets: %s' % target)
-                    # make sure source and target file are the same
                 if s_entry != t_entry:
                     raise Exception('For Condor source file name and target file name have to be identical: %s != %s' % (s_entry, t_entry))
-                    # entry ok - add to job script
 
                 # add for later use by job script generator
                 td.transfer_output_files.append(target)
