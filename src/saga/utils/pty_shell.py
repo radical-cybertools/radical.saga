@@ -17,6 +17,7 @@ import saga.utils.pty_process       as supp
 import saga.url                     as surl
 import saga.exceptions              as se
 import saga.session                 as ss
+import saga.filesystem              as sfs
 
 import pty_exceptions               as ptye
 
@@ -984,20 +985,33 @@ class PTYShell (object) :
                 self.cp_slave = self.factory.get_cp_slave (s_cmd, info, posix)
 
             self.cp_slave.flush ()
-            prep = ""
-
             if  'sftp' in s_cmd :
                 # prepare target dirs for recursive copy, if needed
                 import glob
                 src_list = glob.glob (src)
                 for s in src_list :
                     if  os.path.isdir (s) :
-                        prep += "mkdir %s/%s\n" % (tgt, os.path.basename (s))
+                        prep = "mkdir %s/%s\n" % (tgt, os.path.basename (s))
+                        # TODO: this doesn't deal with multiple levels of creation
 
+                        self.cp_slave.flush()
+                        self.cp_slave.write("%s\n" % prep)
+                        self.cp_slave.find(['[\$\>\]]\s*$'], -1)
+                        # TODO: check return values
 
-            self.cp_slave.flush ()
-            _      = self.cp_slave.write    ("%s%s\n" % (prep, s_in))
-            _, out = self.cp_slave.find     (['[\$\>\]]\s*$'], -1)
+                if cp_flags == sfs.CREATE_PARENTS and os.path.split(tgt)[0]:
+                    # TODO: this needs to be numeric and checking the flag
+                    prep = "mkdir %s\n" % os.path.dirname(tgt)
+                    # TODO: this doesn't deal with multiple levels of creation
+
+                    self.cp_slave.flush()
+                    self.cp_slave.write("%s\n" % prep)
+                    self.cp_slave.find(['[\$\>\]]\s*$'], -1)
+                    # TODO: check return values
+
+            self.cp_slave.flush()
+            _ = self.cp_slave.write("%s\n" % s_in)
+            _, out = self.cp_slave.find(['[\$\>\]]\s*$'], -1)
 
             # FIXME: we don't really get exit codes from copy
             # if  self.cp_slave.exit_code != 0 :
