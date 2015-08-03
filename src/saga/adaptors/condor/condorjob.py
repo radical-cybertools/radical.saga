@@ -150,28 +150,16 @@ def _condorscript_generator(url, logger, jd, option_dict=None):
                 transfer_output_files += "%s, " % target
             condor_file += "\n%s" % transfer_output_files
 
-    # always define log. if 'jd.output' is defined, we use it 
-    # to name the logfile. if not, we fall back to a standard
-    # name...
-    # TODO: Is this really a good idea? I rather have a unique name.
-    if jd.output is not None:
-        filename = str(jd.output)
-        idx = filename.rfind('.')
-        if idx != -1:
-            filename = filename[0:idx]
-        filename += ".log"
-    else:
-        filename = "saga-condor-job-$(cluster).log"
-
-    condor_file += "\nlog = %s " % filename
+    logname = "saga-condor-job-$(cluster)_$(process).log"
+    condor_file += "\nlog = %s " % os.path.join(jd.working_directory, logname)
 
     # output -> output
     if jd.output is not None:
-        condor_file += "\noutput = %s " % jd.output
+        condor_file += "\noutput = %s " % os.path.join(jd.working_directory, jd.output)
 
     # error -> error
     if jd.error is not None:
-        condor_file += "\nerror = %s " % jd.error 
+        condor_file += "\nerror = %s " % os.path.join(jd.working_directory, jd.error)
 
     # environment -> environment
     # http://research.cs.wisc.edu/htcondor/manual/current/condor_submit.html#SECTION0012514000000000000000
