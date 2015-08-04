@@ -77,7 +77,9 @@ class _ContextList (list) :
                 raise se.BadParameter (msg)
 
         # context initialized ok, add it to the list of known contexts
-        super (_ContextList, self).append (ctx_clone)
+        # place added context at start of context list to ensure it is tried
+        # first when attempting a connection
+        super (_ContextList, self).insert (0, ctx_clone)
 
 
 
