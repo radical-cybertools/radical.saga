@@ -691,6 +691,9 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
         curr_info['start_time' ] = prev_info.get ('start_time' )
         curr_info['end_time'   ] = prev_info.get ('end_time'   )
         curr_info['gone'       ] = prev_info.get ('gone'       )
+        curr_info['transfers'  ] = prev_info.get ('transfers'  )
+        curr_info['stdout'     ] = prev_info.get ('stdout'     )
+        curr_info['stderr'     ] = prev_info.get ('stderr'     )
 
         rm, pid = self._adaptor.parse_id(job_id)
 
