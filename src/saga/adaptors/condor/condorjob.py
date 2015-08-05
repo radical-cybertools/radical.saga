@@ -250,6 +250,7 @@ _ADAPTOR_CAPABILITIES = {
                           saga.job.WORKING_DIRECTORY,
                           saga.job.CANDIDATE_HOSTS,
                           saga.job.TOTAL_CPU_COUNT,
+                          saga.job.PROCESSES_PER_HOST,
                           saga.job.SPMD_VARIATION,
                           saga.job.FILE_TRANSFER],
     "job_attributes":    [saga.job.EXIT_CODE,

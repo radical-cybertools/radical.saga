@@ -778,7 +778,7 @@ class PTYShell (object) :
 
             try :
                 command = command.strip ()
-                self.send (" %s\n" % command)
+                self.send ("%s\n" % command)
 
             except Exception as e :
                 raise ptye.translate_exception (e)
