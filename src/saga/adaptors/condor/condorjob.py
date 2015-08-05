@@ -1030,8 +1030,8 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
 
         # TODO: this is not optimized yet
         for job in jobs:
-            job._id = self._job_run(job.description)
-            job._started = True
+            job._adaptor._id = self._job_run(job.description)
+            job._adaptor._started = True
 
     # ----------------------------------------------------------------
     #
