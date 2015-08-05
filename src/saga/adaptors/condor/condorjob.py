@@ -1022,30 +1022,51 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
 
         return ids
 
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def container_run(self, jobs):
+        self._logger.debug("container run: %s" % str(jobs))
 
-  # # ----------------------------------------------------------------
-  # #
-  # def container_run (self, jobs) :
-  #     self._logger.debug ("container run: %s"  %  str(jobs))
-  #     # TODO: this is not optimized yet
-  #     for job in jobs:
-  #         job.run ()
-  #
-  #
-  # # ----------------------------------------------------------------
-  # #
-  # def container_wait (self, jobs, mode, timeout) :
-  #     self._logger.debug ("container wait: %s"  %  str(jobs))
-  #     # TODO: this is not optimized yet
-  #     for job in jobs:
-  #         job.wait ()
-  #
-  #
-  # # ----------------------------------------------------------------
-  # #
-  # def container_cancel (self, jobs) :
-  #     self._logger.debug ("container cancel: %s"  %  str(jobs))
-  #     raise saga.NoSuccess ("Not Implemented");
+        # TODO: this is not optimized yet
+        for job in jobs:
+            job.run()
+
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def container_wait(self, jobs, mode, timeout):
+        self._logger.debug("container wait: %s" % str(jobs))
+
+        # TODO: this is not optimized yet
+        for job in jobs:
+            j = job.wait()
+
+        return j
+
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def container_cancel(self, jobs):
+        self._logger.debug("container cancel: %s" % str(jobs))
+
+        # TODO: this is not optimized yet
+        for job in jobs:
+            job.cancel()
+
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def container_get_states(self, jobs):
+        self._logger.debug("container get_states: %s" % str(jobs))
+
+        states = []
+
+        # TODO: this is not optimized yet
+        for job in jobs:
+            states.append(job.get_state())
+
+        return states
 
 
 ###############################################################################
@@ -1068,6 +1089,10 @@ class CondorJob (saga.adaptors.cpi.job.Job):
         # that is created
         self.jd = job_info["job_description"]
         self.js = job_info["job_service"]
+
+        # the js is responsible for job bulk operations -- which
+        # for jobs only work for run()
+        self._container = self.js
 
         if job_info['reconnect'] is True:
             self._id = job_info['reconnect_jobid']
