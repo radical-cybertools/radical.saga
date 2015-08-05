@@ -563,112 +563,6 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
 
     # ----------------------------------------------------------------
     #
-    def _job_run_bulk(self, jd):
-        """ runs a job via condor_submit
-        """
-
-        # Because we do funky shit with env and sh, we need to explicitly add
-        # the executable to the transfer list.
-        # (Of course not if the executable is already on the target systems,
-        # defined by the fact that it starts with ./
-        if jd.executable.startswith('./') and os.path.exists(jd.executable):
-
-            # TODO: Check if the executable is already in the file_transfer list,
-            # because then we don't need to implicitly add it anymore.
-            # (For example, if the executable is not in the local directory, it needs
-            # to be explicitly added.)
-
-            exe = jd.executable[len('./'):]
-            exe_transfer = '%s > %s' % (exe, exe)
-
-            if jd.file_transfer:
-                jd.file_transfer.append(exe_transfer)
-            else:
-                jd.file_transfer = [exe_transfer]
-
-        if jd.file_transfer is not None:
-            jd.transfer_directives = TransferDirectives(jd.file_transfer)
-
-            self._handle_file_transfers(jd)
-
-            td = jd.transfer_directives
-            if not (hasattr(td, 'transfer_output_files') or hasattr(td, 'transfer_input_files')):
-                raise RuntimeError('One of them should be set!')
-
-        # create a Condor job script from SAGA job description
-        script = _condorscript_generator(url=self.rm, logger=self._logger,
-                                         jd=jd, option_dict=self.query_options)
-        self._logger.info("Generated Condor script: %s" % script)
-
-        submit_file = NamedTemporaryFile(mode='w', suffix='.condor',
-                                         prefix='tmp-saga-', delete=False)
-        submit_file.write(script)
-        submit_file.close()
-        self._logger.info("Written Condor script locally: %s" % submit_file.name)
-
-        if self.shell.url.scheme == "ssh":
-            self._logger.info("Transferring Condor script to: %s" % self.shell.url)
-            submit_file_name = os.path.basename(submit_file.name)
-            # TODO: the "-P" is a layer violation?
-            self.shell.stage_to_remote(submit_file.name, submit_file_name, cp_flags="-P")
-
-        elif self.shell.url.scheme == "gsissh":
-            raise NotImplemented("GSISSH support for Condor not implemented.")
-        else:
-            submit_file_name = submit_file.name
-
-
-        ret, out, _ = self.shell.run_sync('%s -verbose %s' \
-                                          % (self._commands['condor_submit']['path'], submit_file_name))
-
-
-        if ret != 0:
-            # something went wrong
-            message = "Error running job via 'condor_submit': %s. Script was: %s" \
-                      % (out, script)
-            log_error_and_raise(message, saga.NoSuccess, self._logger)
-        else:
-            # stdout contains the job id
-            for line in out.split("\n"):
-                if "** Proc" in line:
-                    pid = line.split()[2][:-1]
-
-            # we don't want the 'query' part of the URL to be part of the ID,
-            # simply because it can get terribly long (and ugly). to get rid
-            # of it, we clone the URL and set the query part to None.
-            rm_clone = surl.Url (self.rm)
-            rm_clone.query = ""
-            rm_clone.path = ""
-
-            job_id = "[%s]-[%s]" % (rm_clone, pid)
-            self._logger.info("Submitted Condor job with id: %s" % job_id)
-
-            # add job to internal list of known jobs.
-            self.jobs[job_id] = {
-                'state':        saga.job.PENDING,
-                'exec_hosts':   None,
-                'returncode':   None,
-                'create_time':  None,
-                'start_time':   None,
-                'end_time':     None,
-                'gone':         False,
-                'transfers':    None,
-                'stdout':       None,
-                'stderr':       None
-            }
-
-            # remove submit file(s)
-            # XXX: maybe leave them in case of debugging?
-            if self.shell.url.scheme == 'ssh':
-                ret, out, _ = self.shell.run_sync ('rm %s' % submit_file_name)
-            elif self.shell.url.scheme == 'gsissh':
-                raise NotImplemented("GSISSH support for Condor not implemented.")
-            os.remove(submit_file.name)
-
-            return job_id
-
-    # ----------------------------------------------------------------
-    #
     def _retrieve_job(self, job_id):
         """ see if we can get some info about a job that we don't
             know anything about
@@ -1134,10 +1028,113 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
     def container_run(self, jobs):
         self._logger.debug("container run: %s" % str(jobs))
 
-        # TODO: this is not optimized yet
-        for job in jobs:
-            job._adaptor._id = self._job_run_bulk(job.description)
-            job._adaptor._started = True
+        self._job_run_bulk([job.description for job in jobs])
+
+        # TODO: update job_id's  and _started
+        #job._adaptor._id = job_id
+        #job._adaptor._started = True
+
+        # TODO: Do we need to check that the bulks have at least something in common?
+
+        # Because we do funky shit with env and sh, we need to explicitly add
+        # the executable to the transfer list.
+        # (Of course not if the executable is already on the target systems,
+        # defined by the fact that it starts with ./
+        if jd.executable.startswith('./') and os.path.exists(jd.executable):
+
+            # TODO: Check if the executable is already in the file_transfer list,
+            # because then we don't need to implicitly add it anymore.
+            # (For example, if the executable is not in the local directory, it needs
+            # to be explicitly added.)
+
+            exe = jd.executable[len('./'):]
+            exe_transfer = '%s > %s' % (exe, exe)
+
+            if jd.file_transfer:
+                jd.file_transfer.append(exe_transfer)
+            else:
+                jd.file_transfer = [exe_transfer]
+
+        if jd.file_transfer is not None:
+            jd.transfer_directives = TransferDirectives(jd.file_transfer)
+
+            self._handle_file_transfers(jd)
+
+            td = jd.transfer_directives
+            if not (hasattr(td, 'transfer_output_files') or hasattr(td, 'transfer_input_files')):
+                raise RuntimeError('One of them should be set!')
+
+        # create a Condor job script from SAGA job description
+        script = _condorscript_generator(url=self.rm, logger=self._logger,
+                                         jd=jd, option_dict=self.query_options)
+        self._logger.info("Generated Condor script: %s" % script)
+
+        submit_file = NamedTemporaryFile(mode='w', suffix='.condor',
+                                         prefix='tmp-saga-', delete=False)
+        submit_file.write(script)
+        submit_file.close()
+        self._logger.info("Written Condor script locally: %s" % submit_file.name)
+
+        if self.shell.url.scheme == "ssh":
+            self._logger.info("Transferring Condor script to: %s" % self.shell.url)
+            submit_file_name = os.path.basename(submit_file.name)
+            # TODO: the "-P" is a layer violation?
+            self.shell.stage_to_remote(submit_file.name, submit_file_name, cp_flags="-P")
+
+        elif self.shell.url.scheme == "gsissh":
+            raise NotImplemented("GSISSH support for Condor not implemented.")
+        else:
+            submit_file_name = submit_file.name
+
+
+        ret, out, _ = self.shell.run_sync('%s -verbose %s' \
+                                          % (self._commands['condor_submit']['path'], submit_file_name))
+
+
+        if ret != 0:
+            # something went wrong
+            message = "Error running job via 'condor_submit': %s. Script was: %s" \
+                      % (out, script)
+            log_error_and_raise(message, saga.NoSuccess, self._logger)
+        else:
+            # stdout contains the job id
+            for line in out.split("\n"):
+                if "** Proc" in line:
+                    pid = line.split()[2][:-1]
+
+            # we don't want the 'query' part of the URL to be part of the ID,
+            # simply because it can get terribly long (and ugly). to get rid
+            # of it, we clone the URL and set the query part to None.
+            rm_clone = surl.Url (self.rm)
+            rm_clone.query = ""
+            rm_clone.path = ""
+
+            job_id = "[%s]-[%s]" % (rm_clone, pid)
+            self._logger.info("Submitted Condor job with id: %s" % job_id)
+
+            # add job to internal list of known jobs.
+            self.jobs[job_id] = {
+                'state':        saga.job.PENDING,
+                'exec_hosts':   None,
+                'returncode':   None,
+                'create_time':  None,
+                'start_time':   None,
+                'end_time':     None,
+                'gone':         False,
+                'transfers':    None,
+                'stdout':       None,
+                'stderr':       None
+            }
+
+            # remove submit file(s)
+            # XXX: maybe leave them in case of debugging?
+            if self.shell.url.scheme == 'ssh':
+                ret, out, _ = self.shell.run_sync ('rm %s' % submit_file_name)
+            elif self.shell.url.scheme == 'gsissh':
+                raise NotImplemented("GSISSH support for Condor not implemented.")
+            os.remove(submit_file.name)
+
+            return job_id
 
     # ----------------------------------------------------------------
     #
