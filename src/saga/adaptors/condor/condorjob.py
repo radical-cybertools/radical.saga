@@ -458,7 +458,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
     # ----------------------------------------------------------------
     #
     def _job_run(self, jd):
-        """ runs a job via qsub
+        """ runs a job via condor_submit
         """
 
         # Because we do funky shit with env and sh, we need to explicitly add
@@ -1102,6 +1102,12 @@ class CondorJob (saga.adaptors.cpi.job.Job):
             self._started = False
 
         return self.get_api()
+
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def get_description(self):
+        return self.jd
 
     # ----------------------------------------------------------------
     #
