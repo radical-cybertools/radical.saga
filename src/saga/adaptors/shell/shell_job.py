@@ -1095,7 +1095,7 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
-    def container_cancel (self, jobs, timeout) :
+    def container_cancel (self, jobs) :
 
         self._logger.debug ("container cancel: %s"  %  str(jobs))
 
