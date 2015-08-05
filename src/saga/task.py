@@ -370,11 +370,8 @@ class Container (sbase.SimpleBase, satt.Attributes) :
             # nothing to do
             return None
 
-
         buckets = self._get_buckets ()
         threads = []  # threads running container ops
-        queues  = {}
-
 
         # handle all container
         for c in buckets['bound'] :
@@ -456,7 +453,6 @@ class Container (sbase.SimpleBase, satt.Attributes) :
 
         buckets = self._get_buckets ()
         threads = []  # threads running container ops
-        queues  = {}
 
         # handle all tasks bound to containers
         for c in buckets['bound'] :
@@ -547,7 +543,6 @@ class Container (sbase.SimpleBase, satt.Attributes) :
 
         buckets = self._get_buckets ()
         threads = []  # threads running container ops
-        queues  = {}
 
         # handle all tasks bound to containers
         for c in buckets['bound'] :
@@ -596,7 +591,6 @@ class Container (sbase.SimpleBase, satt.Attributes) :
 
         buckets = self._get_buckets ()
         threads = []  # threads running container ops
-        queues  = {}
 
         # handle all tasks bound to containers
         for c in buckets['bound'] :
