@@ -150,6 +150,7 @@ def _condorscript_generator(url, logger, jd, option_dict=None):
                 transfer_output_files += "%s, " % target
             condor_file += "\n%s" % transfer_output_files
 
+    # TODO: what to do when working directory is not set?
     logname = "saga-condor-job-$(cluster)_$(process).log"
     condor_file += "\nlog = %s " % os.path.join(jd.working_directory, logname)
 
