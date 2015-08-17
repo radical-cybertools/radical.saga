@@ -188,7 +188,7 @@ class Attributes (_AttributesBase, ru.DictMixin) :
 
 
         # --------------------------------------------------------------------------------
-        class Transliterator ( pilot.Attributes ) :
+        class Transliterator ( saga.Attributes ) :
             
             def __init__ (self, *args, **kwargs) :
                 # setting attribs to non-extensible will cause the cal to init below to

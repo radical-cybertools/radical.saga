@@ -38,7 +38,7 @@ class Base (ruc.Configurable) :
         self._schemas = adaptor_info['schemas']
 
         self._lock    = ru.RLock      (self._name)
-        self._logger  = rul.getLogger ('saga', self._name)
+        self._logger  = ru.get_logger('radical.saga.api')
 
         has_enabled = False
         for option in self._opts :
