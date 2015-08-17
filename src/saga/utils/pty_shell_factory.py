@@ -146,7 +146,6 @@ class PTYShellFactory (object) :
     def __init__ (self) :
 
         self.logger     = ru.get_logger ('radical.saga.pty')
-        self.logger.error('I got the logger for %s: (%s)' % ('radical.saga.pty', self.logger))
         self.registry   = {}
         self.rlock      = ru.RLock ('pty shell factory')
 
@@ -165,7 +164,6 @@ class PTYShellFactory (object) :
 
             if  not logger :
                 logger = self.logger
-            logger.error('I got the logger for %s: (%s)' % ('radical.saga.pty', self.logger))
 
             # collect all information we have/need about the requested master
             # connection
