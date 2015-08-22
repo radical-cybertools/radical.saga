@@ -7,6 +7,7 @@ __license__   = "MIT"
 import os
 import sys
 import pwd
+import time
 import string
 import getpass
 
@@ -227,6 +228,7 @@ class PTYShellFactory (object) :
             prompt     = info['prompt']
             logger     = info['logger']
             latency    = info['latency']
+            timeout    = info['ssh_timeout']
 
             pty_shell.latency = latency
 
@@ -237,8 +239,8 @@ class PTYShellFactory (object) :
             # went wrong.  Try to prompt a prompt (duh!)  Delay should be
             # minimum 0.1 second (to avoid flooding of local shells), and at
             # maximum 1 second (to keep startup time reasonable)
-            # most one second.  We try to get within that range with 100*latency.
-            delay = min (1.0, max (0.1, 50 * latency))
+            # most one second.  We try to get within that range with 10*latency.
+            delay = min (1.0, max (0.1, 10 * latency))
 
             try :
                 prompt_patterns = ["[Pp]assword:\s*$",             # password   prompt
@@ -268,6 +270,7 @@ class PTYShellFactory (object) :
                 retry_trigger = True
                 used_trigger  = False
                 found_trigger = ""
+                time_start    = time.time()
 
                 while True :
 
@@ -281,7 +284,7 @@ class PTYShellFactory (object) :
                         # pattern only appears in the result, not in the
                         # command...
 
-                        if  retries > 100 :
+                        if time.time() - time_start > timeout:
                             raise se.NoSuccess ("Could not detect shell prompt (timeout)")
 
                         # make sure we retry a finite time...
@@ -404,6 +407,7 @@ class PTYShellFactory (object) :
                         break
 
             except Exception as e :
+                logger.exception(e)
                 raise ptye.translate_exception (e)
 
 
@@ -464,9 +468,11 @@ class PTYShellFactory (object) :
             session_cfg = session.get_config ('saga.utils.pty')
             info['ssh_copy_mode']  = session_cfg['ssh_copy_mode'].get_value ()
             info['ssh_share_mode'] = session_cfg['ssh_share_mode'].get_value ()
+            info['ssh_timeout']    = session_cfg['ssh_timeout'].get_value ()
 
             logger.info ("ssh copy  mode set to '%s'" % info['ssh_copy_mode' ])
             logger.info ("ssh share mode set to '%s'" % info['ssh_share_mode'])
+            logger.info ("ssh timeout    set to '%s'" % info['ssh_timeout'])
 
 
             # fill the info dict with details for this master channel, and all
