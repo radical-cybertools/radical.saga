@@ -47,8 +47,24 @@ class _ContextList (list) :
     #
     def append (self, ctx, session=None) :
 
+        ctx_clone = self._initialise_context(ctx, session)
+
+        # context initialized ok, add it to the list of known contexts
+        super (_ContextList, self).append (ctx_clone)
+        
+    def insert(self, index, ctx, session=None) :
+
+        ctx_clone = self._initialise_context(ctx, session)
+
+        # context initialized ok, add it to the list of known contexts
+        super (_ContextList, self).insert (0, ctx_clone)
+    
+    # Initialise a context to be added to the list of known contexts
+    # Returns a cloned, initialised context that can be added to the context
+    # list. 
+    def _initialise_context(self, ctx, session=None):
         if  not isinstance (ctx, saga.Context) :
-            raise TypeError, "appended item is not a saga.Context instance"
+            raise TypeError, "item to add is not a saga.Context instance"
 
         # create a deep copy of the context (this keeps _adaptor etc)
         ctx_clone = saga.Context  (ctx.type)
@@ -75,10 +91,7 @@ class _ContextList (list) :
                 msg = "Cannot add context, initialization failed (%s)"  %  str(e)
                 raise se.BadParameter (msg)
 
-        # context initialized ok, add it to the list of known contexts
-        super (_ContextList, self).append (ctx_clone)
-
-
+        return ctx_clone
 
 # ------------------------------------------------------------------------------
 #
@@ -259,7 +272,7 @@ class Session (saga.base.SimpleBase) :
         It is encouraged to use the L{contexts} property instead. 
         """
 
-        return self.contexts.append (ctx=ctx, session=self)
+        return self.contexts.insert (0, ctx=ctx, session=self)
 
 
     # ----------------------------------------------------------------
