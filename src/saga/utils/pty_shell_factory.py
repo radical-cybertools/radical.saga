@@ -59,8 +59,8 @@ _SCHEMAS = _SCHEMAS_SH + _SCHEMAS_SSH + _SCHEMAS_GSI
 # ssh versions...
 
 # ssh master/slave flag magic # FIXME: make timeouts configurable
-_SSH_FLAGS_MASTER   = "-o ControlMaster=%(share_mode)s -o ControlPath=%(ctrl)s -o TCPKeepAlive=no  -o ServerAliveInterval=10 -o ServerAliveCountMax=20"
-_SSH_FLAGS_SLAVE    = "-o ControlMaster=%(share_mode)s -o ControlPath=%(ctrl)s -o TCPKeepAlive=no  -o ServerAliveInterval=10 -o ServerAliveCountMax=20"
+_SSH_FLAGS_MASTER   = "-o ControlMaster=%(share_mode)s -o ControlPath=%(ctrl)s -o TCPKeepAlive=no  -o ServerAliveInterval=10 -o ServerAliveCountMax=20 %(connect_timeout)s"
+_SSH_FLAGS_SLAVE    = "-o ControlMaster=%(share_mode)s -o ControlPath=%(ctrl)s -o TCPKeepAlive=no  -o ServerAliveInterval=10 -o ServerAliveCountMax=20 %(connect_timeout)s"
 _SCP_FLAGS          = ""
 _SFTP_FLAGS         = ""
 
@@ -528,6 +528,14 @@ class PTYShellFactory (object) :
                           "cannot handle schema '%s://'" % url.schema)
 
 
+            # If an SSH timeout has been specified set up the ConnectTimeout
+            # string
+            if info['ssh_timeout']:
+                info['ssh_connect_timeout'] = ('-o ConnectTimeout=%s' 
+                    % int(float(info['ssh_timeout'])))
+            else:
+                info['ssh_connect_timeout'] = ''
+
             # depending on type, create command line (args, env etc)
             #
             # We always set term=vt100 to avoid ansi-escape sequences in the prompt
@@ -641,10 +649,15 @@ class PTYShellFactory (object) :
                     info['ctrl'] = "%s_%%h_%%p.ctrl" % (ctrl_base)
 
                 info['m_flags']  = _SSH_FLAGS_MASTER % ({'share_mode' : info['share_mode'],
-                                                         'ctrl'       : info['ctrl']})
+                                                         'ctrl'       : info['ctrl'],
+                                                         'connect_timeout': info['ssh_connect_timeout']})
                 info['s_flags']  = _SSH_FLAGS_SLAVE  % ({'share_mode' : info['share_mode'],
-                                                         'ctrl'       : info['ctrl']})
+                                                         'ctrl'       : info['ctrl'],
+                                                         'connect_timeout': info['ssh_connect_timeout']})
 
+                logger.debug('SSH Connection M_FLAGS: %s' % info['m_flags'])
+                logger.debug('SSH Connection S_FLAGS: %s' % info['s_flags'])
+                
                 # we want the userauth and hostname parts of the URL, to get the
                 # scp-scope fs root.
                 info['scp_root']  = ""
