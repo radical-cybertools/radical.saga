@@ -307,7 +307,6 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
             else :
                 pre_cmd = ""
              
-
             return cmd_shell.run_sync ("%s cd %s && %s" % (pre_cmd, location.path, command))
 
 
@@ -331,7 +330,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
             cmd = " test -d  '%s' && cd '%s'" % (self.url.path, self.url.path)
             mkl = False
 
-        ret, out, _ = self._command (cmd, make_location=mkl)
+        ret, out, _ = self._command (cmd, location='/', make_location=mkl)
 
         if  ret != 0 :
             raise saga.BadParameter ("invalid dir '%s': %s" % (self.url.path, out))
