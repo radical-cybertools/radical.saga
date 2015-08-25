@@ -149,6 +149,25 @@ class TestFile(unittest.TestCase):
         except saga.SagaException as ex:
             assert False, "Unexpected exception: %s" % ex
 
+    # -------------------------------------------------------------------------
+    #
+    def test_file_copy_remote_local(self):
+        """ Testing if we can copy a file from remote -> local
+        """
+        try:
+            pass
+            tc = testing.get_test_config ()
+            filename1 = deepcopy(saga.Url(tc.filesystem_url))
+            filename1.path = "/etc/passwd"
+            f1 = saga.filesystem.File(filename1)
 
+            filename2 = "file://localhost/tmp/%s" % self.uniquefilename2
+
+            f1.copy(filename2)
+            f2 = saga.filesystem.File(filename2)
+            assert f2.size != 0  # this should fail if the file doesn't exist!
+
+        except saga.SagaException as ex:
+            assert False, "Unexpected exception: %s" % ex
 
 
