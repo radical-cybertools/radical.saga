@@ -6,7 +6,20 @@
     https://github.com/radical-cybertools/saga-python/issues?q=is%3Aissue+is%3Aopen+
 
 
-Version 0.29 release 2015-07-14
+Version 0.35 release                                                  2015-07-14
+--------------------------------------------------------------------------------
+
+  - Add contexts to session at start of context list
+  - add tc.get_task(id)
+  - Add PROCESSES_PER_HOST to all job adaptors.
+  - sync an sdist naming fix
+  - Add dedicated PBS Pro adaptor.
+  - Get ppn from proccess_per_host.
+  - implement candidate_hosts for slurm adaptor
+  - processes_per_host for SLURM.
+
+
+Version 0.29 release                                                  2015-07-14
 --------------------------------------------------------------------------------
 
   - apply setup/git fix
@@ -350,7 +363,7 @@ Version 0.2.5 released 2012-10-24
   - Introduced support for GSISSH: pbs+gsissh://, sge+gsissh://
   - Re-implementation of a (more Python-esque) attribute interface
   - Fixed JobID issues, i.e., job.job_id returns 'None' in case the
-    job is not running instead of "[serviceurl]-[None]"
+    job is not running instead of
   - Introduced dynamic, fault-tolerant plug-in loader. If anything
     goes wrong during loading of a specific plug-in (i.e.,
     dependencies on 3rd party modules cannot be fulfilled, the plug-in
