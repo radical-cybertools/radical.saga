@@ -283,8 +283,8 @@ def _torquescript_generator(url, logger, jd, ppn, gres, torque_version, is_cray=
         elif '4.2.6' in torque_version:
             logger.info("Using Titan (Cray XP) specific '#PBS -l nodes=xx'")
             pbs_params += "#PBS -l nodes=%d\n" % nnodes
-        elif '4.2.7' in torque_version:
-            logger.info("Using Cray XT @ NERSC (e.g. Edison) specific '#PBS -l mppwidth=xx' flags (PBSPro_10).")
+        elif 'edison' in url.host:
+            logger.info("Using Edison@NERSC (Cray XC30) specific '#PBS -l mppwidth=xx' parameter.")
             pbs_params += "#PBS -l mppwidth=%s \n" % jd.total_cpu_count
         elif 'Version: 5.' in torque_version:
             logger.info("Using TORQUE 5.x notation '#PBS -l procs=XX' ")

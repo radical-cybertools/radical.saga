@@ -10,7 +10,7 @@ import sys
 import errno
 
 import saga.utils.misc              as sumisc
-import radical.utils.logger         as rul
+import radical.utils                as ru
 
 import saga.utils.pty_shell_factory as supsf
 import saga.utils.pty_process       as supp
@@ -189,7 +189,7 @@ class PTYShell (object) :
     def __init__ (self, url, session=None, logger=None, opts=None, posix=True):
 
         if logger : self.logger  = logger
-        else      : self.logger  = rul.getLogger('saga', 'PTYShell') 
+        else      : self.logger  = ru.get_logger('radical.saga.pty') 
 
         if session: self.session = session
         else      : self.session = ss.Session(default=True)
