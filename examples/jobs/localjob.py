@@ -23,7 +23,7 @@ def main():
 
         # Next, we describe the job we want to run. A complete set of job
         # description attributes can be found in the API documentation.
-        for i in range (1) :
+        for i in range (100) :
           jd = saga.job.Description()
           jd.environment       = {'FILENAME': 'testfile'}
 
