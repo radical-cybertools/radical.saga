@@ -152,7 +152,8 @@ class PTYShellFactory (object) :
 
     # --------------------------------------------------------------------------
     #
-    def initialize (self, url, session=None, prompt=None, logger=None, posix=True) :
+    def initialize (self, url, session=None, prompt=None, logger=None,
+            posix=True, interactive=True) :
 
         with self.rlock :
 
@@ -167,7 +168,8 @@ class PTYShellFactory (object) :
 
             # collect all information we have/need about the requested master
             # connection
-            info = self._create_master_entry (url, session, prompt, logger, posix)
+            info = self._create_master_entry (url, session, prompt, logger,
+                    posix, interactive)
 
             # we got master info - register the master, and create the instance!
             type_s = str(info['shell_type'])
@@ -448,7 +450,8 @@ class PTYShellFactory (object) :
 
     # --------------------------------------------------------------------------
     #
-    def _create_master_entry (self, url, session, prompt, logger, posix) :
+    def _create_master_entry (self, url, session, prompt, logger, posix,
+            interactive) :
         # FIXME: cache 'which' results, etc
         # FIXME: check 'which' results
 
@@ -505,10 +508,12 @@ class PTYShellFactory (object) :
                 info['shell_type'] = "sh"
                 info['copy_mode']  = "sh"
                 info['share_mode'] = "auto"
-                info['sh_args']    = "-i"
                 info['sh_env']     = "/usr/bin/env TERM=vt100 PS1='PROMPT-$?->'"
                 info['cp_env']     = "/usr/bin/env TERM=vt100 PS1='PROMPT-$?->'"
                 info['scp_root']   = "/"
+
+                if interactive: info['sh_args'] = "-i"
+                else          : info['sh_args'] = ""
 
                 if  "SHELL" in os.environ :
                     info['sh_exe'] =  ru.which (os.environ["SHELL"])
