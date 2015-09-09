@@ -280,7 +280,7 @@ def _torquescript_generator(url, logger, jd, ppn, gres, torque_version, is_cray=
         elif 'PBSPro_12' in torque_version:
             logger.info("Using Cray XT (e.g. Archer) specific '#PBS -l select=xx' flags (PBSPro_12).")
             pbs_params += "#PBS -l select=%d\n" % nnodes
-        elif '4.2.6' in torque_version:
+        elif '5.1.0.h1' in torque_version:
             logger.info("Using Titan (Cray XP) specific '#PBS -l nodes=xx'")
             pbs_params += "#PBS -l nodes=%d\n" % nnodes
         elif 'edison' in url.host:
