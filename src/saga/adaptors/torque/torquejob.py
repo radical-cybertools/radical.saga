@@ -281,12 +281,17 @@ def _torquescript_generator(url, logger, jd, ppn, gres, torque_version, is_cray=
             logger.info("Using Cray XT (e.g. Archer) specific '#PBS -l select=xx' flags (PBSPro_12).")
             pbs_params += "#PBS -l select=%d\n" % nnodes
         elif '5.1.0.h1' in torque_version:
+            # Can't really use hostname as we run also from the headnode
             logger.info("Using Titan (Cray XP) specific '#PBS -l nodes=xx'")
             pbs_params += "#PBS -l nodes=%d\n" % nnodes
         elif 'edison' in url.host:
             logger.info("Using Edison@NERSC (Cray XC30) specific '#PBS -l mppwidth=xx' parameter.")
             pbs_params += "#PBS -l mppwidth=%s \n" % jd.total_cpu_count
+        elif 'bw.ncsa.illinois.edu' in url.host:
+            logger.info("Using Blue Waters (Cray XE6/XK7) specific '#PBS -l nodes=xx'")
+            pbs_params += "#PBS -l nodes=%d\n" % nnodes
         elif 'Version: 5.' in torque_version:
+            # What would removing this catchall break?
             logger.info("Using TORQUE 5.x notation '#PBS -l procs=XX' ")
             pbs_params += "#PBS -l procs=%d\n" % jd.total_cpu_count
         else:
