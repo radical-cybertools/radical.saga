@@ -163,7 +163,7 @@ def _torquescript_generator(url, logger, jd, ppn, gres, torque_version, is_cray=
     if jd.name:
         pbs_params += "#PBS -N %s \n" % jd.name
 
-    if (is_cray is "") or not ('Version: 4.2.7' in torque_version):
+    if (is_cray is ""):
         # qsub on Cray systems complains about the -V option:
         # Warning:
         # Your job uses the -V option, which requests that all of your
