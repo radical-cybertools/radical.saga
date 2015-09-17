@@ -239,7 +239,8 @@ class PTYShell (object) :
         self.factory    = supsf.PTYShellFactory   ()
         self.pty_info   = self.factory.initialize (self.url,    self.session, 
                                                    self.prompt, self.logger, 
-                                                   posix=self.posix)
+                                                   posix=self.posix, 
+                                                   opts=self.options)
         self.pty_shell  = self.factory.run_shell  (self.pty_info)
 
         self._trace ('init : %s' % self.pty_shell.command)

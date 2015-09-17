@@ -152,7 +152,8 @@ class PTYShellFactory (object) :
 
     # --------------------------------------------------------------------------
     #
-    def initialize (self, url, session=None, prompt=None, logger=None, posix=True) :
+    def initialize (self, url, session=None, prompt=None, logger=None, 
+                    posix=True, opts=None) :
 
         with self.rlock :
 
@@ -167,7 +168,8 @@ class PTYShellFactory (object) :
 
             # collect all information we have/need about the requested master
             # connection
-            info = self._create_master_entry (url, session, prompt, logger, posix)
+            info = self._create_master_entry (url, session, prompt, logger, 
+                                              posix, opts)
 
             # we got master info - register the master, and create the instance!
             type_s = str(info['shell_type'])
@@ -448,7 +450,7 @@ class PTYShellFactory (object) :
 
     # --------------------------------------------------------------------------
     #
-    def _create_master_entry (self, url, session, prompt, logger, posix) :
+    def _create_master_entry (self, url, session, prompt, logger, posix, opts):
         # FIXME: cache 'which' results, etc
         # FIXME: check 'which' results
 
@@ -610,6 +612,19 @@ class PTYShellFactory (object) :
                                     info['ssh_env']   += "X509_CERT_DIR='%s' "  % context.cert_repository
                                     info['scp_env']   += "X509_CERT_DIR='%s' "  % context.cert_repository
                                     info['sftp_env']  += "X509_CERT_DIR='%s' "  % context.cert_repository
+
+                # If we have an SSH shell type, see if we have any SSH options 
+                # provided and add them to the args for the command to be run
+                if  info['schema'] in _SCHEMAS_SSH + _SCHEMAS_GSI:
+                    if 'ssh_options' in opts:
+                        for ssh_option_key in opts['ssh_options']:
+                            logger.debug('Adding SSH option <%s=%s> to the ssh command args..' 
+                                         % (ssh_option_key, opts['ssh_options'][ssh_option_key]))
+                            info['ssh_args']  += "-o %s=%s " % (ssh_option_key, opts['ssh_options'][ssh_option_key])
+                            info['scp_args']  += "-o %s=%s " % (ssh_option_key, opts['ssh_options'][ssh_option_key])
+                            info['sftp_args'] += "-o %s=%s " % (ssh_option_key, opts['ssh_options'][ssh_option_key])
+                     
+
 
                 if url.port and url.port != -1 :
                     info['ssh_args']  += "-p %d " % int(url.port)
