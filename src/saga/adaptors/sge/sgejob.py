@@ -753,7 +753,7 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
         # only escape '$' in args and exe. not in the params
         script_body = "\n".join(script_body).replace('$', '\\$')
 
-        sgescript = "\n#!/bin/bash\n%s\n%s\n" % (sge_params, script_body)
+        sgescript = "#!/bin/bash\n%s\n%s\n" % (sge_params, script_body)
 
         return sgescript.replace('"', '\\"')
 
