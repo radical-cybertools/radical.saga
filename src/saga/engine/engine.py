@@ -201,21 +201,16 @@ class Engine(ruc.Configurable):
         # Engine manages cpis from adaptors
         self._adaptor_registry = {}
 
-
         # set the configuration options for this object
         ruc.Configurable.__init__       (self, 'saga')
         ruc.Configurable.config_options (self, 'saga.engine', _config_options)
         self._cfg = self.get_config('saga.engine')
 
-
         # Initialize the logging, and log version (this is a singleton!)
-        self._logger = rul.getLogger ('saga', 'Engine')
-
+        self._logger = ru.get_logger ('radical.saga')
 
         # load adaptors
         self._load_adaptors ()
-
-
 
 
     #-----------------------------------------------------------------

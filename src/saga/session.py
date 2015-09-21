@@ -6,7 +6,6 @@ __license__   = "MIT"
 
 import radical.utils            as ru
 import radical.utils.signatures as rus
-import radical.utils.logger     as rul
 
 import saga.exceptions          as se
 
@@ -38,7 +37,7 @@ class _ContextList (list) :
         if  session : 
             self._logger  = session._logger
         else :
-            self._logger  = rul.getLogger ('saga', 'ContextList')
+            self._logger  = ru.get_logger ('radical.saga')
 
         base_list = super  (_ContextList, self)
         base_list.__init__ (*args, **kwargs)
@@ -112,7 +111,7 @@ class _DefaultSession (object) :
         # default contexts.
 
         self.contexts       = _ContextList ()
-        self._logger        = rul.getLogger ('saga', 'DefaultSession')
+        self._logger        = ru.get_logger ('radical.saga')
 
         # FIXME: at the moment, the lease manager is owned by the session.  
         # Howevwer, the pty layer is the main user of the lease manager,

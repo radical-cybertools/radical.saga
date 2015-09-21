@@ -742,7 +742,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
 
             if  ret != 0 :
                 raise saga.AlreadyExists ("make_dir target (%s) exists (%s)" \
-                    % tgt_in, out)
+                    % (tgt_in, out))
 
 
         options = ""
@@ -753,7 +753,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
             ret, out, _ = self._command (" mkdir '%s'" % tgt.path)
 
         if  ret != 0 :
-            raise saga.NoSuccess ("make_dir (%s) faild: %s" % tgt_in, out)
+            raise saga.NoSuccess ("make_dir (%s) failed: %s" % tgt_in, out)
 
    
     # ----------------------------------------------------------------
