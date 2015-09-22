@@ -116,27 +116,21 @@ def log_error_and_raise(message, exception, logger):
 def _torque_to_saga_jobstate(torquejs):
     """ translates a torque one-letter state to saga
     """
-    if torquejs == 'C': # Torque "Job is completed after having run."
-        return saga.job.DONE
-    elif torquejs == 'F': # PBS Pro "Job is finished."
-        return saga.job.DONE
-    elif torquejs == 'H': # PBS Pro and TORQUE "Job is held."
+    if torquejs == 'H': #  "Job is held."
         return saga.job.PENDING
-    elif torquejs == 'Q': # PBS Pro and TORQUE "Job is queued(, eligible to run or routed.)
+    elif torquejs == 'Q': # "Job is queued(, eligible to run or routed.)
         return saga.job.PENDING
-    elif torquejs == 'S': # PBS Pro and TORQUE "Job is suspended."
+    elif torquejs == 'S': # "Job is suspended."
         return saga.job.PENDING
-    elif torquejs == 'W': # PBS Pro and TORQUE "Job is waiting for its execution time to be reached."
+    elif torquejs == 'W': # "Job is waiting for its execution time to be reached."
         return saga.job.PENDING
-    elif torquejs == 'R': # PBS Pro and TORQUE "Job is running."
+    elif torquejs == 'R': # "Job is running."
         return saga.job.RUNNING
-    elif torquejs == 'E': # PBS Pro and TORQUE "Job is exiting after having run"
+    elif torquejs == 'E': # "Job is exiting after having run"
         return saga.job.RUNNING
-    elif torquejs == 'T': # PBS Pro and TORQUE "Job is being moved to new location."
+    elif torquejs == 'T': # "Job is being moved to new location."
         # TODO: PENDING?
         return saga.job.RUNNING
-    elif torquejs == 'X': # PBS Pro "Subjob has completed execution or has been deleted."
-        return saga.job.CANCELED
     else:
         return saga.job.UNKNOWN
 
@@ -867,8 +861,8 @@ class TORQUEJobService (saga.adaptors.cpi.job.Service):
                     val = val.strip()
 
                     # The ubiquitous job state
-                    if key in ['job_state']: # PBS Pro and TORQUE
-                        job_info['state'] = _torque_to_saga_jobstate(val)
+                    if key in ['job_state']:
+                        job_state = _torque_to_saga_jobstate(val)
 
                     # Hosts where the job ran
                     elif key in ['exec_host']: # PBS Pro and TORQUE
@@ -908,6 +902,17 @@ class TORQUEJobService (saga.adaptors.cpi.job.Service):
                     #
                     if key in ['mtime']: # PBS Pro and TORQUE
                         job_info['end_time'] = val
+
+            # TORQUE doesn't allow us to distinguish DONE/FAILED on final state alone,
+            # we need to consider the exit_status.
+            if job_state == 'C': # "Job is completed after having run."
+                if job_info['returncode'] == 0:
+                    job_info['state'] = saga.job.DONE
+                else:
+                    job_info['state'] = saga.job.FAILED
+
+            else:
+                job_info['state'] = job_state
 
         # return the updated job info
         return job_info
