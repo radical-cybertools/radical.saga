@@ -822,16 +822,14 @@ class TORQUEJobService (saga.adaptors.cpi.job.Service):
 
                     # The ubiquitous job state
                     if key in ['job_state']:
-                        job_state = _torque_to_saga_jobstate(val)
+                        job_state = val
 
                     # Hosts where the job ran
                     elif key in ['exec_host']: # PBS Pro and TORQUE
                         job_info['exec_hosts'] = val.split('+')  # format i73/7+i73/6+...
 
                     # Exit code of the job
-                    elif key in ['exit_status', # TORQUE
-                                 'Exit_status' # PBS Pro
-                                ]:
+                    elif key in ['exit_status']:
                         job_info['returncode'] = int(val)
 
                     # Time job got created in the queue
