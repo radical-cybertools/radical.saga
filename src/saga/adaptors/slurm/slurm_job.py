@@ -664,7 +664,7 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         elif slurmjs == "CONFIGURING" or slurmjs == 'CF':
             return saga.job.PENDING
         elif slurmjs == "COMPLETING" or slurmjs == 'CG':
-            return saga.job.RUNNING
+            return saga.job.CANCELED
         elif slurmjs == "FAILED" or slurmjs == 'F':
             return saga.job.FAILED
         elif slurmjs == "NODE_FAIL" or slurmjs == 'NF':
