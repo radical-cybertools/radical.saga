@@ -731,46 +731,6 @@ class TORQUEJobService (saga.adaptors.cpi.job.Service):
 
     # ----------------------------------------------------------------
     #
-    def _retrieve_job(self, job_id):
-        """ see if we can get some info about a job that we don't
-            know anything about
-        """
-        # rm, pid = self._adaptor.parse_id(job_id)
-
-        # # run the PBS 'qstat' command to get some infos about our job
-        # if 'PBSPro_1' in self._commands['qstat']['version']:
-        #     qstat_flag = '-f'
-        # else:
-        #     qstat_flag ='-f1'
-        #
-        # ret, out, _ = self.shell.run_sync("unset GREP_OPTIONS; %s %s %s | "\
-        #         "grep -E -i '(job_state)|(exec_host)|(exit_status)|(ctime)|"\
-        #         "(start_time)|(comp_time)|(stime)|(qtime)|(mtime)'" \
-        #       % (self._commands['qstat']['path'], qstat_flag, pid))
-
-        # if ret != 0:
-        #     message = "Couldn't reconnect to job '%s': %s" % (job_id, out)
-        #     log_error_and_raise(message, saga.NoSuccess, self._logger)
-
-        # else:
-        #     # the job seems to exist on the backend. let's gather some data
-        #     job_info = {
-        #         'job_id':       job_id,
-        #         'state':        saga.job.UNKNOWN,
-        #         'exec_hosts':   None,
-        #         'returncode':   None,
-        #         'create_time':  None,
-        #         'start_time':   None,
-        #         'end_time':     None,
-        #         'gone':         False
-        #     }
-        #
-        #     job_info = self._parse_qstat(out, job_info)
-        #
-        #     return job_info
-
-    # ----------------------------------------------------------------
-    #
     def _job_get_info(self, job_id, reconnect):
         """ Get job information attributes via qstat.
         """
