@@ -868,9 +868,8 @@ class TORQUEJobService (saga.adaptors.cpi.job.Service):
                     job_info['state'] = saga.job.DONE
                 else:
                     job_info['state'] = saga.job.FAILED
-
             else:
-                job_info['state'] = job_state
+                job_info['state'] = _torque_to_saga_jobstate(job_state)
 
         # return the updated job info
         return job_info
