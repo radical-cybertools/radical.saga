@@ -863,6 +863,7 @@ class TORQUEJobService (saga.adaptors.cpi.job.Service):
 
             # TORQUE doesn't allow us to distinguish DONE/FAILED on final state alone,
             # we need to consider the exit_status.
+            # TODO: move this logic into _torque_to_saga_jobstate in a future life
             if job_state == 'C': # "Job is completed after having run."
                 if job_info['returncode'] == 0:
                     job_info['state'] = saga.job.DONE
