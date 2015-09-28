@@ -133,7 +133,7 @@ def _torque_to_saga_jobstate(job_status, exit_status):
     #define JOB_EXEC_OVERLIMIT_CPUT -12  /* job exceeded a cpu time limit */
     # exit_status=271 : walltime
     # exit_status=265 :
-    if job_status == 'C': # "Job is completed after having run."
+    if job_status == 'C' and exit_status is not None: # "Job is completed after having run."
         if exit_status < 0:
             return saga.job.FAILED
         elif exit_status == 0:
@@ -888,8 +888,8 @@ class TORQUEJobService (saga.adaptors.cpi.job.Service):
                     if key in ['mtime']: # PBS Pro and TORQUE
                         job_info['end_time'] = val
 
-            if job_state and 'returncode' in job_info:
-                job_info['state'] = _torque_to_saga_jobstate(job_state, job_info['returncode'])
+            if job_state:
+                job_info['state'] = _torque_to_saga_jobstate(job_state, job_info.get('returncode'))
 
         # return the updated job info
         return job_info
