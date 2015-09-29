@@ -816,7 +816,8 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
         # run the PBS 'qstat' command to get some infos about our job
         # TODO: create a PBSPRO/TORQUE flag once
         if 'PBSPro_1' in self._commands['qstat']['version']:
-            qstat_flag = '-fx'
+            # jcohen02: Changed from -fx to support my target platform. 
+            qstat_flag = '-f'
         else:
             qstat_flag ='-f1'
             
