@@ -2668,6 +2668,18 @@ class Attributes (_AttributesBase, ru.DictMixin) :
 
     # --------------------------------------------------------------------------
     #
+    @rus.takes   ('Attributes',
+                  dict)
+    @rus.returns (dict)
+    def from_dict (self, seed):
+        """ set attributes from dict """
+
+        for k,v in seed.iteritems():
+            self.set_attribute(k,v)
+
+
+    # --------------------------------------------------------------------------
+    #
     @rus.takes   ('Attributes')
     @rus.returns (dict)
     def as_dict (self) :
