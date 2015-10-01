@@ -330,14 +330,17 @@ class Attributes (_AttributesBase, ru.DictMixin) :
         # we use similar mechanism to initialize attribs here:
 
         for arg in args :
-            if  isinstance (arg, dict) :
+            if arg == None:
+                # be resiliant to empty initialization
+                pass
+            elif isinstance (arg, dict):
                 d['extensible']  = True   # it is just being extended ;)
                 d['camelcasing'] = True   # default for dict inits
-                for key in arg.keys () :
-                    us_key = self._attributes_t_underscore (key)
-                    self._attributes_i_set (us_key, arg[key], force=True, flow=self._UP)
-            else :
-                raise se.BadParameter ("initialization expects dictionary")
+                for key in arg.keys():
+                    us_key = self._attributes_t_underscore(key)
+                    self._attributes_i_set(us_key, arg[key], force=True, flow=self._UP)
+            else:
+                raise se.BadParameter("initialization expects dictionary")
 
         for key in kwargs.keys () :
             self.set_attribute (key, kwargs[key])
