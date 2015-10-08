@@ -346,7 +346,7 @@ class Attributes (_AttributesBase, ru.DictMixin) :
             self.set_attribute (key, kwargs[key])
 
         # make iterable
-        self._iterpos = 0
+        d['_iterpos'] = 0
         self.list_attributes ()
 
 
@@ -1198,7 +1198,6 @@ class Attributes (_AttributesBase, ru.DictMixin) :
                             ret.append (k)
 
         return ret
-
 
 
     # --------------------------------------------------------------------------
@@ -2730,17 +2729,19 @@ class Attributes (_AttributesBase, ru.DictMixin) :
 
         iterlist = self._attributes_i_list (CamelCase=False)
         
-        if  self._iterpos >= len(iterlist) :
-            self._iterpos  = 0
+        d = self._attributes_t_init ()
+
+        if  d['_iterpos'] >= len(iterlist) :
+            d['_iterpos']  = 0
             raise StopIteration
 
         if  not len(iterlist) :
-            self._iterpos  = 0
+            d['_iterpos']  = 0
             raise StopIteration
 
-        self._iterpos += 1
+        d['_iterpos'] += 1
 
-        return iterlist[self._iterpos-1]
+        return iterlist[d['_iterpos']-1]
 
 
 
