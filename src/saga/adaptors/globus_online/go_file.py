@@ -338,8 +338,8 @@ class Adaptor(saga.adaptors.base.Base):
             elif cwd_path:
                 ps_path = cwd_path
 
-        # the pathspec is the concatenation of ps_host and ps_path by a colon
-        ps = "%s:%s" % (ep_name, ps_path)
+        # the pathspec is the concatenation of ps_host and ps_path
+        ps = "%s%s" % (ep_name, ps_path)
 
         # check if we know the endpoint in XXX, and create/activate as needed
         ep = self.get_go_endpoint(session, shell, ep_url)
@@ -526,9 +526,9 @@ class Adaptor(saga.adaptors.base.Base):
         # existing elements.
         # TODO: Can't we check for existence? The errors are confusing.
 
-        host_ps, path_ps = tgt_ps.split(':', 1)
-        #path_ps = os.path.dirname(path_ps)
-        
+        host_ps, path_ps = tgt_ps.split('/', 1)
+        path_ps = '/' + path_ps
+
         self._logger.info('mkparents %s' % path_ps)
 
         if path_ps.startswith('/'):
@@ -542,7 +542,7 @@ class Adaptor(saga.adaptors.base.Base):
         for path_elem in path_elems :
 
             cur_path = "%s/%s" % (cur_path, path_elem)
-            out, err = self.run_go_cmd(shell, "mkdir %s:%s" % (host_ps, cur_path))
+            out, err = self.run_go_cmd(shell, "mkdir %s%s" % (host_ps, cur_path))
 
             if err:
                 error[cur_path] = err
@@ -899,8 +899,8 @@ class GODirectory(saga.adaptors.cpi.filesystem.Directory):
         src_ps = self.get_path_spec(url=src_in)
         tgt_ps = self.get_path_spec(url=tgt_in)
 
-        src_ep_str = src_ps.split(':', 1)[0]
-        tgt_ep_str = tgt_ps.split(':', 1)[0]
+        src_ep_str = src_ps.split('/', 1)[0]
+        tgt_ep_str = tgt_ps.split('/', 1)[0]
 
         if src_ep_str == tgt_ep_str:
 
@@ -1220,8 +1220,8 @@ class GOFile(saga.adaptors.cpi.filesystem.File):
         src_ps = self.get_path_spec()
         tgt_ps = self.get_path_spec(url=tgt_in)
 
-        src_ep_str = src_ps.split(':', 1)[0]
-        tgt_ep_str = tgt_ps.split(':', 1)[0]
+        src_ep_str = src_ps.split('/', 1)[0]
+        tgt_ep_str = tgt_ps.split('/', 1)[0]
 
         # TODO: check for errors
 
