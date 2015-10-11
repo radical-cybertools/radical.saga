@@ -459,9 +459,10 @@ class Adaptor(saga.adaptors.base.Base):
                         try:
                             endpoints[name][key] = val
                         except:
-                            raise saga.NoSuccess("No entry name to operate on")
+                            raise saga.NoSuccess("No entry to operate on for: %s[%s]" % (key,val))
 
                 # replace the ep info dist with the new one, to clean out old entries.
+                # TODO: merge and not replace(?)
                 self.shells[session._id]['endpoints'] = endpoints
 
         if ep_name:
