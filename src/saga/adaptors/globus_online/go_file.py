@@ -419,7 +419,19 @@ class Adaptor(saga.adaptors.base.Base):
                 endpoints = {}
                 name = None
 
-                _, out, _ = shell.run_sync("endpoint-list -v")
+                if ep_name:
+                    endpoint_selection = ep_name
+                else:
+                    endpoint_selection = '-a'
+
+                # Get the details of endpoints _OWNED_ by user
+                _, out, _ = shell.run_sync("endpoint-details %s -f "
+                                           "legacy_name,"        # Legacy Name
+                                           "credential_status,"  # Credential Status
+                                           "credential_subject," # Credential Subject
+                                           "myproxy_server"     # MyProxy Server
+                                           % endpoint_selection
+                                           )
 
                 for line in out.split('\n'):
                     elems = line.split(':', 1)
