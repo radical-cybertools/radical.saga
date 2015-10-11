@@ -390,7 +390,7 @@ class Adaptor(saga.adaptors.base.Base):
             # Had contact on this with Globus Support, they couldn't suggest
             # anything better.
             if ep['MyProxy Server'] == 'myproxy.globusonline.org' and \
-            '/C=US/O=Globus Consortium/OU=Globus Connect Service/CN=' in ep['Subject(s)']:
+            '/C=US/O=Globus Consortium/OU=Globus Connect Service/CN=' in ep['Credential Subject']:
                 shell.run_sync("endpoint-activate %s" % ep_name)
             else:
                 shell.run_sync("endpoint-activate -g %s" % ep_name)
