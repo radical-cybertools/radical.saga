@@ -445,18 +445,13 @@ class Adaptor(saga.adaptors.base.Base):
                     if not key or not val:
                         continue
 
-                    if key == "Name":
+                    if key == "Legacy Name":
 
                         # we now operate on a new entry -- initialize it
                         name = val
 
                         endpoints[name] = {}
-
-                        # we make sure that some entries always exist, to simplify error
-                        # checks
-                        endpoints[name]['Name']              = name
-                        endpoints[name]['Credential Status'] = None
-                        endpoints[name]['Host(s)']           = None
+                        endpoints[name]['Legacy Name']       = name
 
                     else:
 
