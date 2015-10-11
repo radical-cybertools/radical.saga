@@ -595,7 +595,7 @@ class Adaptor(saga.adaptors.base.Base):
 
         # Initiate background copy
         # TODO: Should we use a deadline?
-        cmd = "scp -D %s -s %d '%s' '%s'" % (cmd_flags, sync_level, source, target)
+        cmd = "transfer %s -s %d -- '%s' '%s'" % (cmd_flags, sync_level, source, target)
         out, _ = self.run_go_cmd(shell, cmd)
         # 'Task ID: 8c6f989d-b6aa-11e4-adc6-22000a97197b'
         key, value = out.split(':')
