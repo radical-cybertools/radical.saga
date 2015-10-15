@@ -6,6 +6,13 @@
     https://github.com/radical-cybertools/saga-python/issues?q=is%3Aissue+is%3Aopen+
 
 
+Version 0.36 release                                                  2015-10-15
+--------------------------------------------------------------------------------
+
+  - update of GO adaptor with recent GlobusOnline evolotion
+  - scattered fixes in GO adaptor
+
+
 Version 0.36 release                                                  2015-10-08
 --------------------------------------------------------------------------------
 
