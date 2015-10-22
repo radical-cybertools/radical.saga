@@ -117,7 +117,7 @@ def _lsf_to_saga_jobstate(lsfjs):
 
 # --------------------------------------------------------------------
 #
-def _lsfcript_generator(url, logger, jd, ppn, lsf_version, queue=None, ):
+def _lsfcript_generator(url, logger, jd, ppn, lsf_version, queue, span):
     """ generates an LSF script from a SAGA job description
     """
     lsf_params = str()
@@ -198,14 +198,9 @@ def _lsfcript_generator(url, logger, jd, ppn, lsf_version, queue=None, ):
 
     lsf_params += "#BSUB -n %s \n" % str(jd.total_cpu_count)
 
-    #tcc = int(jd.total_cpu_count)
-    #tbd = float(tcc) / float(ppn)
-    #if float(tbd) > int(tbd):
-    #    lsf_params += "#PBS -l nodes=%s:ppn=%s \n" \
-    #        % (str(int(tbd) + 1), ppn)
-    #else:
-    #    lsf_params += "#PBS -l nodes=%s:ppn=%s \n" \
-    #        % (str(int(tbd)), ppn)
+    # span parameter allows us to influence core spread over nodes
+    if span:
+        lsf_params += '#BSUB -R "span[%s]"\n' % span
 
     # escape all double quotes and dollarsigns, otherwise 'echo |'
     # further down won't work
@@ -283,7 +278,7 @@ controlled HPC clusters.
 #
 _ADAPTOR_INFO = {
     "name"        :    _ADAPTOR_NAME,
-    "version"     : "v0.1",
+    "version"     : "v0.2",
     "schemas"     : _ADAPTOR_SCHEMAS,
     "capabilities":  _ADAPTOR_CAPABILITIES,
     "cpis": [
@@ -390,6 +385,7 @@ class LSFJobService (saga.adaptors.cpi.job.Service):
         self.session = session
         self.ppn     = 1
         self.queue   = None
+        self.span    = None
         self.shell   = None
         self.jobs    = dict()
 
@@ -402,11 +398,12 @@ class LSFJobService (saga.adaptors.cpi.job.Service):
 
         # this adaptor supports options that can be passed via the
         # 'query' component of the job service URL.
-        if rm_url.query is not None:
+        if rm_url.query:
             for key, val in parse_qs(rm_url.query).iteritems():
                 if key == 'queue':
                     self.queue = val[0]
-
+                elif key == 'span':
+                    self.span = val[0]
 
         # we need to extrac the scheme for PTYShell. That's basically the
         # job.Serivce Url withou the lsf+ part. We use the PTYShell to execute
@@ -510,8 +507,7 @@ class LSFJobService (saga.adaptors.cpi.job.Service):
             script = _lsfcript_generator(url=self.rm, logger=self._logger,
                                          jd=jd, ppn=self.ppn,
                                          lsf_version=self._commands['bjobs']['version'],
-                                         queue=self.queue,
-                                         )
+                                         queue=self.queue, span=self.span)
 
             self._logger.info("Generated LSF script: %s" % script)
         except Exception, ex:
