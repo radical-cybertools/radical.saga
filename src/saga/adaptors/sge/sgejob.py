@@ -154,6 +154,7 @@ _ADAPTOR_CAPABILITIES = {
                           saga.job.SPMD_VARIATION,
                           saga.job.TOTAL_CPU_COUNT,
                           saga.job.PROCESSES_PER_HOST,
+                          saga.job.CANDIDATE_HOSTS,
                           saga.job.TOTAL_PHYSICAL_MEMORY],
     "job_attributes":    [saga.job.EXIT_CODE,
                           saga.job.EXECUTION_HOSTS,
@@ -708,6 +709,21 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
         elif jd.total_cpu_count is not None and jd.total_cpu_count > 1:
                 raise Exception("jd.total_cpu_count requires that jd.spmd_variation is not empty. "
                                 "Valid options for jd.spmd_variation are: %s" % (self.pe_list))
+
+
+        # CANDEIDATE_HOSTS - this translates to 'qsub -l h="host1|host2|..."'
+        if jd.candidate_hosts:
+            # -l h="abc|xyz"
+            ch_str = '#$ -l h="'
+            ch_num = 0
+            for host in jd.candidate_hosts:
+                if ch_num > 0:
+                    ch_str += '|'
+                ch_str += host
+                ch_num += 1
+            ch_str += '"'
+            sge_params.append(ch_str)
+
 
         # convert sge params into an string
         sge_params = "\n".join(sge_params)
