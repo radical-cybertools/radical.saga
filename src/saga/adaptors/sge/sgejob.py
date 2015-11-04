@@ -713,16 +713,7 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
 
         # CANDEIDATE_HOSTS - this translates to 'qsub -l h="host1|host2|..."'
         if jd.candidate_hosts:
-            # -l h="abc|xyz"
-            ch_str = '#$ -l h="'
-            ch_num = 0
-            for host in jd.candidate_hosts:
-                if ch_num > 0:
-                    ch_str += '|'
-                ch_str += host
-                ch_num += 1
-            ch_str += '"'
-            sge_params.append(ch_str)
+            sge_params.append('#$ -l h="%s"' % '|'.join(jd.candidate_hosts))
 
 
         # convert sge params into an string
