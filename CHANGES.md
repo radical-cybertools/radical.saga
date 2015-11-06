@@ -6,6 +6,18 @@
     https://github.com/radical-cybertools/saga-python/issues?q=is%3Aissue+is%3Aopen+
 
 
+Version 0.38 release                                                  2015-11-06
+--------------------------------------------------------------------------------
+
+  - support for anaconda client install
+
+
+Version 0.37 release                                                  2015-10-15
+--------------------------------------------------------------------------------
+
+  - scattered bug fixes
+
+
 Version 0.36 release                                                  2015-10-15
 --------------------------------------------------------------------------------
 
