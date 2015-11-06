@@ -94,7 +94,7 @@ def get_version (mod_root):
         sdist_name = sdist_name.replace ('@', '-')
         sdist_name = sdist_name.replace ('#', '-')
         sdist_name = sdist_name.replace ('_', '-')
-        if '--record'  in sys.argv or 'bdist_egg' in sys.argv or 'bdist_wheel' in sys.argv:   
+        if '--record'  in sys.argv or 'bdist_egg' in sys.argv or 'bdist_wheel' in sys.argv:
            # pip install stage 2      easy_install stage 1
            # NOTE: pip install will untar the sdist in a tmp tree.  In that tmp
            # tree, we won't be able to derive git version tags -- so we pack the
