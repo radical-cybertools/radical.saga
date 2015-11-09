@@ -266,8 +266,12 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
         self.valid       = False # will be set by initialize
         self.lm          = session._lease_manager
 
+        # Use `_set_session` method of the base class to set the session object.
+        # `_set_session` and `get_session` methods are provided by `CPIBase`.
+        self._set_session(session)
+
         def _shell_creator (url) :
-            return sups.PTYShell (url, self.session, self._logger)
+            return sups.PTYShell (url, self.get_session(), self._logger)
         self.shell_creator = _shell_creator
 
         # The dir command shell is leased, as the dir seems to be used
@@ -989,9 +993,12 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
             if  not self.flags :
                 self.flags = 0
 
+        # Use `_set_session` method of the base class to set the session object
+        # `_set_session` and `get_session` methods are provided by `CPIBase`.
+        self._set_session(session)
 
         def _shell_creator (url) :
-            return sups.PTYShell (url, self.session, self._logger)
+            return sups.PTYShell (url, self.get_session(), self._logger)
         self.shell_creator = _shell_creator
 
         # self.shell is also a leased shell -- for File, it does not have any
