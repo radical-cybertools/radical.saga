@@ -6,6 +6,12 @@
     https://github.com/radical-cybertools/saga-python/issues?q=is%3Aissue+is%3Aopen+
 
 
+Version 0.38.1 release                                                2015-11-11
+--------------------------------------------------------------------------------
+
+  - fix 0.38 after botched merge
+
+
 Version 0.38 release                                                  2015-11-06
 --------------------------------------------------------------------------------
 
