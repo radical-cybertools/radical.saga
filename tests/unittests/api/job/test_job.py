@@ -110,6 +110,29 @@ def test_job_service_create():
 
 # ------------------------------------------------------------------------------
 #
+def test_job_service_get_session():
+    """ Test if the job service session is set correctly
+    """
+    js = None
+    session = None
+    try:
+        tc = testing.get_test_config ()
+        session = tc.session or saga.Session()
+        js = saga.job.Service(tc.job_service_url, session)
+
+        assert js.get_session() == session, "Setting service session failed."
+        assert js.session == session, "Setting service session failed."
+        assert js._adaptor.get_session() == session, "Setting service session failed."
+        assert js._adaptor.session == session, "Setting service session failed."
+
+    except saga.SagaException as ex:
+        assert False, "unexpected exception %s" % ex
+    finally:
+        _silent_close_js(js)
+
+
+# ------------------------------------------------------------------------------
+#
 def test_job_run():
     """ Test job.run() - expecting state: RUNNING/PENDING
     """
