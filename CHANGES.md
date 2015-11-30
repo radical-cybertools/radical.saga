@@ -6,6 +6,14 @@
     https://github.com/radical-cybertools/saga-python/issues?q=is%3Aissue+is%3Aopen+
 
 
+Version 0.39                                                          2015-12-01
+--------------------------------------------------------------------------------
+
+  - support dynamic adaptor loading 
+  - fix #477, set session for shell job service (thanks Mehdi!)
+  - set session on file and directory instances, #480 
+
+
 Version 0.38.1 release                                                2015-11-11
 --------------------------------------------------------------------------------
 
