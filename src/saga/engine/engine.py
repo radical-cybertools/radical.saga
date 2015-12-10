@@ -54,6 +54,14 @@ _config_options = [
     'documentation' : 'load adaptors which are marked as beta (i.e. not released).',
     'env_variable'  : None
     },
+    {
+    'category'      : 'saga.engine',
+    'name'          : 'adaptor_path',
+    'type'          : str,
+    'default'       : '',
+    'documentation' : 'colon separated list of python module pathes to load adaptors from',
+    'env_variable'  : 'SAGA_ADAPTOR_PATH'
+    },
     # FIXME: is there a better place to register util level options?
     {
     'category'      : 'saga.utils.pty',
@@ -235,24 +243,33 @@ class Engine(ruc.Configurable):
         """
 
         # get the engine config options
-        global_config = ruc.getConfig('saga')
-
+        global_config     = ruc.getConfig('saga')
+        engine_config     = global_config.get_category('saga.engine')
+        saga_adaptor_path = engine_config['adaptor_path'].get_value()
 
         # get the list of adaptors to load
         registry = saga.engine.registry.adaptor_registry
+
+        # add the list of modpaths found in the config options
+        for path in saga_adaptor_path.split(':'):
+            if path:
+                self._logger.debug ("adding   adaptor path: '%s'" % path)
+                registry.append(path)
+
+        self._logger.debug ("listing  adaptor registry: %s" % registry)
 
 
         # check if some unit test wants to use a special registry.  If
         # so, we reset cpi infos from the earlier singleton creation.
         if inject_registry != None :
             self._adaptor_registry = {}
-            registry               = inject_registry
+            registry = inject_registry
 
 
         # attempt to load all registered modules
         for module_name in registry:
 
-            self._logger.info ("Loading  adaptor %s"  %  module_name)
+            self._logger.info ("loading  adaptor %s" % module_name)
 
 
             # first, import the module
