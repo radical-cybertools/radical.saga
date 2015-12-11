@@ -6,7 +6,6 @@ __license__   = "MIT"
 
 import radical.utils            as ru
 import radical.utils.signatures as rus
-import radical.utils.logger     as rul
 
 import saga.exceptions          as se
 
@@ -38,7 +37,7 @@ class _ContextList (list) :
         if  session : 
             self._logger  = session._logger
         else :
-            self._logger  = rul.getLogger ('saga', 'ContextList')
+            self._logger  = ru.get_logger ('radical.saga')
 
         base_list = super  (_ContextList, self)
         base_list.__init__ (*args, **kwargs)
@@ -48,8 +47,24 @@ class _ContextList (list) :
     #
     def append (self, ctx, session=None) :
 
+        ctx_clone = self._initialise_context(ctx, session)
+
+        # context initialized ok, add it to the list of known contexts
+        super (_ContextList, self).append (ctx_clone)
+        
+    def insert(self, index, ctx, session=None) :
+
+        ctx_clone = self._initialise_context(ctx, session)
+
+        # context initialized ok, add it to the list of known contexts
+        super (_ContextList, self).insert (0, ctx_clone)
+    
+    # Initialise a context to be added to the list of known contexts
+    # Returns a cloned, initialised context that can be added to the context
+    # list. 
+    def _initialise_context(self, ctx, session=None):
         if  not isinstance (ctx, saga.Context) :
-            raise TypeError, "appended item is not a saga.Context instance"
+            raise TypeError, "item to add is not a saga.Context instance"
 
         # create a deep copy of the context (this keeps _adaptor etc)
         ctx_clone = saga.Context  (ctx.type)
@@ -76,10 +91,7 @@ class _ContextList (list) :
                 msg = "Cannot add context, initialization failed (%s)"  %  str(e)
                 raise se.BadParameter (msg)
 
-        # context initialized ok, add it to the list of known contexts
-        super (_ContextList, self).append (ctx_clone)
-
-
+        return ctx_clone
 
 # ------------------------------------------------------------------------------
 #
@@ -99,7 +111,7 @@ class _DefaultSession (object) :
         # default contexts.
 
         self.contexts       = _ContextList ()
-        self._logger        = rul.getLogger ('saga', 'DefaultSession')
+        self._logger        = ru.get_logger ('radical.saga')
 
         # FIXME: at the moment, the lease manager is owned by the session.  
         # Howevwer, the pty layer is the main user of the lease manager,
@@ -260,7 +272,7 @@ class Session (saga.base.SimpleBase) :
         It is encouraged to use the L{contexts} property instead. 
         """
 
-        return self.contexts.append (ctx=ctx, session=self)
+        return self.contexts.insert (0, ctx=ctx, session=self)
 
 
     # ----------------------------------------------------------------
