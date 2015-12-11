@@ -157,13 +157,16 @@ def _condorscript_generator(url, logger, jds, option_dict=None):
             requirements += '(' +  ' && '.join(['%s =!= "%s"' % (resource_key, site.lstrip(' ' + HOST_EXCLUSION_SYMBOL)) for site in excl_sites]) + ')'
 
         # Generic requirements handling
-        if incl_sites or excl_sites:
-            # If there were white and/or black sites, start with an AND operator again
-            requirements += ' && '
         # Get the '~special_requirements' and strip leading ~ and possible spaces.
-        requirements += ' && '.join([host.lstrip(' ' + SPECIAL_REQ_SYMBOL) for host in common_jd.candidate_hosts if host.startswith(SPECIAL_REQ_SYMBOL)])
+        special = ' && '.join([host.lstrip(' ' + SPECIAL_REQ_SYMBOL) for host in common_jd.candidate_hosts if host.startswith(SPECIAL_REQ_SYMBOL)])
+        if special:
+            if incl_sites or excl_sites:
+                # If there were white and/or black sites, start with an AND operator again
+                requirements += ' && '
+            requirements += special
 
-        condor_file += "\nrequirements = %s\n" % requirements
+        if requirements:
+            condor_file += "\nrequirements = %s\n" % requirements
 
     # Transfer Directives
     if common_jd.attribute_exists('transfer_directives'):
