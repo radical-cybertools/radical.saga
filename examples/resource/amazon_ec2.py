@@ -55,7 +55,8 @@ def main():
     session.contexts.append(ec2keypair_ctx)
     session.contexts.append(ssh_ctx)
 
-    cr = None  # handle for the compute resource
+    cr  = None  # compute resource handle
+    rid = None  # compute resource ID
     try:
 
         # ----------------------------------------------------------------------

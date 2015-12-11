@@ -248,7 +248,7 @@ class Manager (sb.Base, async.Async) :
             # spec_copy = descr.Description ()
             # spec._attributes_deep_copy (spec_copy)
 
-            return self._adaptor.a-icquire (spec, ttype=ttype)
+            return self._adaptor.acquire (spec, ttype=ttype)
 
 
     # --------------------------------------------------------------------------
