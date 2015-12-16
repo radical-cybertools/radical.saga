@@ -489,6 +489,10 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
         self.jobs    = dict()
         self.njobs   = 0
 
+        # Use `_set_session` method of the base class to set the session object.
+        # `_set_session` and `get_session` methods are provided by `CPIBase`.
+        self._set_session(session)
+
         # if the rm URL specifies a path, we interprete that as shell to run.
         # Otherwise, we default to running /bin/sh (for fork) or the user's
         # login shell (for ssh etc).
@@ -496,9 +500,9 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
             self.opts['shell'] = self.rm.path
 
         # create and initialize connection for starting jobs
-        self.shell   = saga.utils.pty_shell.PTYShell (self.rm, self.session, 
+        self.shell   = saga.utils.pty_shell.PTYShell (self.rm, self.get_session(), 
                                                       self._logger, opts=self.opts)
-        self.channel = saga.utils.pty_shell.PTYShell (self.rm, self.session, 
+        self.channel = saga.utils.pty_shell.PTYShell (self.rm, self.get_session(), 
                                                       self._logger, opts=self.opts)
         self.initialize ()
 
