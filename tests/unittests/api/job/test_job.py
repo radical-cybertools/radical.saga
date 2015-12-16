@@ -110,6 +110,29 @@ def test_job_service_create():
 
 # ------------------------------------------------------------------------------
 #
+def test_job_service_get_session():
+    """ Test if the job service session is set correctly
+    """
+    js = None
+    session = None
+    try:
+        tc = testing.get_test_config ()
+        session = tc.session or saga.Session()
+        js = saga.job.Service(tc.job_service_url, session)
+
+        assert js.get_session() == session, "Setting service session failed."
+        assert js.session == session, "Setting service session failed."
+        assert js._adaptor.get_session() == session, "Setting service session failed."
+        assert js._adaptor.session == session, "Setting service session failed."
+
+    except saga.SagaException as ex:
+        assert False, "unexpected exception %s" % ex
+    finally:
+        _silent_close_js(js)
+
+
+# ------------------------------------------------------------------------------
+#
 def test_job_run():
     """ Test job.run() - expecting state: RUNNING/PENDING
     """
@@ -358,6 +381,52 @@ def test_get_exit_code():
 
         ec = j.exit_code
         assert ec == 1, "%s != 1" % ec
+
+    except saga.NotImplemented as ni:
+        assert tc.notimpl_warn_only, "%s " % ni
+        if tc.notimpl_warn_only:
+            print "%s " % ni
+    except saga.SagaException as se:
+        assert False, "Unexpected exception: %s" % se
+    finally:
+        _silent_cancel(j)
+        _silent_close_js(js)
+
+
+# ------------------------------------------------------------------------------
+#
+def test_get_stdio():
+    """ Test job.get_stdin/get_stdout/get_log
+    """
+    js = None
+    j  = None
+    try:
+        tc = testing.get_test_config ()
+        js = saga.job.Service(tc.job_service_url, tc.session)
+        jd = saga.job.Description()
+        jd.pre_exec   = ['echo pre' ]
+        jd.executable = 'sh'
+        jd.arguments  = ['-c', '"echo out; echo err 1>&2"']
+        jd.post_exec  = ['echo post']
+
+        # add options from the test .cfg file if set
+        jd = sutc.add_tc_params_to_jd(tc=tc, jd=jd)
+
+        j = js.create_job(jd)
+        j.run()
+        j.wait()
+
+        assert 0      == j.exit_code
+
+        assert 'pre'  in j.get_log()
+        assert 'post' in j.get_log()
+        assert 'out'  in j.get_stdout()
+        assert 'err'  in j.get_stderr()
+
+        assert 'pre'  in j.log
+        assert 'post' in j.log
+        assert 'out'  in j.stdout
+        assert 'err'  in j.stderr
 
     except saga.NotImplemented as ni:
         assert tc.notimpl_warn_only, "%s " % ni
