@@ -42,6 +42,10 @@ nosetests.xml
 
 # Sublime 
 saga.sublime-workspace
+saga.sublime-project
 wiki
 # Generated docs
 docs/source/adaptors/saga.adaptor*
+
+# PyCharm
+.idea
