@@ -532,6 +532,7 @@ class Container (sbase.SimpleBase, satt.Attributes) :
 
         # all done - return random task (first from last container, or last
         # unbound task)
+        # FIXME: that task should be removed from the task container
         return ret
 
 
@@ -577,6 +578,24 @@ class Container (sbase.SimpleBase, satt.Attributes) :
     def get_size (self) :
 
         return len (self.tasks)
+
+
+    # --------------------------------------------------------------------------
+    #
+    @rus.takes   ('Container', 
+                  'basestring')
+    @rus.returns (Task)
+    def get_task (self, id) :
+
+        # FIXME: this should not be a search, but a lookup
+        if not id:
+            raise se.NoSuccess ("Lookup requires non-empty id (not '%s')" % id)
+
+        for t in self.tasks:
+            if t.id == id:
+                return t
+
+        raise se.NoSuccess ("task '%s' not found in container" % id)
 
 
     # --------------------------------------------------------------------------
