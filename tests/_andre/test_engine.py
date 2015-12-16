@@ -108,7 +108,7 @@ try :
   print t_2.result
   
   # f_2.copy ('passwd.bak') 
-  f_2.copy ('dummy://boskop/tmp/') 
+  # f_2.copy ('dummy://boskop/tmp/') 
   
   
   t_3 = saga.filesystem.Directory.create ('file://localhost/tmp/test1/test1/',

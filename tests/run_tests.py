@@ -12,7 +12,10 @@ import optparse
 try:
     import saga
     import saga.utils.test_config as sutc
-    import radical.utils.testing as rut
+    import radical.utils.testing  as rut
+    import radical.utils          as ru
+
+    dh = ru.DebugHelper()
 
     print "______________________________________________________________________"
     print "Using saga-python from: %s" % str(saga)

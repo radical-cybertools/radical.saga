@@ -10,8 +10,10 @@ import saga
 
 os.system ("ls -la /tmp > /tmp/tmp.txt")
 
-f = saga.filesystem.File ("file://localhost/tmp/tmp.txt")
-f.copy ("sftp://merzky@india.futuregrid.org/tmp/")
+f = saga.filesystem.File ("go://gridftp.stampede.tacc.xsede.org/~/.bashrc")
+f.copy ("go://gridftp.stampede.tacc.utexs.edu/~/b")
+
+sys.exit()
 
 host = "gw68.quarry.iu.teragrid.org"
 src  = saga.Url('sftp://%s/etc/passwd' % host)
