@@ -6,6 +6,57 @@
     https://github.com/radical-cybertools/saga-python/issues?q=is%3Aissue+is%3Aopen+
 
 
+Version 0.39                                                          2015-12-01
+--------------------------------------------------------------------------------
+
+  - support dynamic adaptor loading 
+  - fix #477, set session for shell job service (thanks Mehdi!)
+  - set session on file and directory instances, #480 
+
+
+Version 0.38.1 release                                                2015-11-11
+--------------------------------------------------------------------------------
+
+  - fix 0.38 after botched merge
+
+
+Version 0.38 release                                                  2015-11-06
+--------------------------------------------------------------------------------
+
+  - support for anaconda client install
+
+
+Version 0.37 release                                                  2015-10-15
+--------------------------------------------------------------------------------
+
+  - scattered bug fixes
+
+
+Version 0.36 release                                                  2015-10-15
+--------------------------------------------------------------------------------
+
+  - update of GO adaptor with recent GlobusOnline evolotion
+  - scattered fixes in GO adaptor
+
+
+Version 0.36 release                                                  2015-10-08
+--------------------------------------------------------------------------------
+
+  Note that RADICAL_SAGA_VERBOSE should now be used instead of SAGA_VERBOSE (but
+  the latter will be supported for a while).  PTY layer debug levels can
+  separately be enabled via RADICAL_SAGA_PTY_VERBOSE.
+
+  - fix cray qsub arguments
+  - fix interpretation of relative / absolute URLs in some cases
+  - fix #449 - thanks jcohen02! 
+  - keep up with logger changes in util 
+  - properly detect failed jobs.
+  - follow changes on resource configurations (BW)
+  - remove dead code.
+  - fix state mapping in some queue adaptors
+  - clean torque/pbs separation
+
+
 Version 0.35 release                                                  2015-07-14
 --------------------------------------------------------------------------------
 
