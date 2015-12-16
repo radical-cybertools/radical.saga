@@ -1099,7 +1099,7 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
-    def container_cancel (self, jobs, timeout) :
+    def container_cancel (self, jobs) :
 
         self._logger.debug ("container cancel: %s"  %  str(jobs))
 
@@ -1243,7 +1243,6 @@ class ShellJob (saga.adaptors.cpi.job.Job) :
             # the js is responsible for job bulk operations -- which
             # for jobs only work for run()
             self._container       = self.js
-            self._method_type     = "run"
 
             # initialize job attribute values
             self._id              = None
