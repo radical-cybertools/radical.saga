@@ -689,8 +689,8 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
     def move (self, src_in, tgt_in, flags):
 
         # we handle move non-atomically, i.e. as copy/remove
-        self.copy   (src_in, tgt_in, flags);
-        self.remove (src_in, flags);
+        self.copy   (src_in, tgt_in, flags)
+        self.remove (src_in, flags)
    
    
     # ----------------------------------------------------------------
@@ -1121,10 +1121,10 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
         if sumisc.url_is_relative (tgt) : tgt = sumisc.url_make_absolute (cwdurl, tgt)
 
         rec_flag = ""
-        if  flags & saga.filesystem.RECURSIVE : 
+        if  flags & saga.filesystem.RECURSIVE :
             rec_flag  += "-r "
 
-        if  flags & saga.filesystem.CREATE_PARENTS : 
+        if  flags & saga.filesystem.CREATE_PARENTS :
             self._create_parent (cwdurl, tgt)
 
         # if cwd, src and tgt point to the same host, we just run a shell cp
@@ -1166,7 +1166,7 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
                     # we cannot support the combination of URLs
                     raise saga.BadParameter ("copy from %s to %s is not supported" \
                                           % (src, tgt))
-   
+
 
             # if cwd is local, and src or tgt are remote, we need to actually
             # create a new pipe to the target host.  note that we may not have
@@ -1207,7 +1207,7 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
                     raise saga.BadParameter ("copy from %s to %s is not supported" \
                                           % (src, tgt))
 
-   
+
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
@@ -1222,10 +1222,10 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
         tgt    = saga.Url (tgt_in)   # deep copy
 
         rec_flag = ""
-        if  flags & saga.filesystem.RECURSIVE : 
+        if  flags & saga.filesystem.RECURSIVE :
             raise saga.BadParameter ("'RECURSIVE' flag not  supported for link()")
 
-        if  flags & saga.filesystem.CREATE_PARENTS : 
+        if  flags & saga.filesystem.CREATE_PARENTS :
             self._create_parent (cwdurl, tgt)
 
         # if src and tgt point to the same host, we just run a shell link
@@ -1264,14 +1264,14 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
     #
     @SYNC_CALL
     def write (self, string, flags=None):
-	"""
-	This call is intended to write a string to a local or remote file.
-	Since write() uses file staging calls, it cannot be used to randomly
-	write certain parts of a file (i.e. seek()). Together with read(),
-	it was designed to manipulate template files and write them back to
-	the remote directory. Be aware, that writing large files will
-	be very slow compared to native read(2) and write(2) calls.
-	"""
+        """
+        This call is intended to write a string to a local or remote file.
+        Since write() uses file staging calls, it cannot be used to randomly
+        write certain parts of a file (i.e. seek()). Together with read(),
+        it was designed to manipulate template files and write them back to
+        the remote directory. Be aware, that writing large files will
+        be very slow compared to native read(2) and write(2) calls.
+        """
         self._is_valid ()
         if  flags==None:
             flags = self.flags
@@ -1279,26 +1279,26 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
             self.flags=flags
 
         tgt = saga.Url (self.url)  # deep copy, is absolute
-            
+
         if  flags==saga.filesystem.APPEND:
-            string = self.read()+string            
+            string = self.read()+string
         # FIXME: eval flags
 
         self.shell.obj.write_to_remote(string,tgt.path)
-                                                    
+
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
     def read (self,size=None):
-	"""
-	This call is intended to read a string wit length size from a local
-	or remote file.	Since read() uses file staging calls, it cannot be
-	used to randomly read certain parts of a file (i.e. seek()).
-	Together with write(), it was designed to manipulate template files
-	and write them back to the remote directory. Be aware, that reading
-	large files will be very slow compared to native read(2) and write(2)
-	calls.
-	"""
+        """
+        This call is intended to read a string wit length size from a local
+        or remote file.	Since read() uses file staging calls, it cannot be
+        used to randomly read certain parts of a file (i.e. seek()).
+        Together with write(), it was designed to manipulate template files
+        and write them back to the remote directory. Be aware, that reading
+        large files will be very slow compared to native read(2) and write(2)
+        calls.
+        """
 
         self._is_valid ()
 
@@ -1311,7 +1311,7 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
             return out
 
 
-   
+
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
@@ -1325,7 +1325,7 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
         tgt = saga.Url (self.url)  # deep copy, is absolute
 
         rec_flag = ""
-        if  flags & saga.filesystem.RECURSIVE : 
+        if  flags & saga.filesystem.RECURSIVE :
             rec_flag  += "-r "
 
         ret, out, _ = self.shell.obj.run_sync (" rm -f %s '%s'\n" % (rec_flag, tgt.path))
@@ -1333,7 +1333,7 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
             raise saga.NoSuccess ("remove (%s) failed (%s): (%s)" \
                                % (tgt, ret, out))
 
-   
+
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
@@ -1364,7 +1364,7 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
 
 
         return size
-   
+
 
     # ----------------------------------------------------------------
     #
@@ -1392,8 +1392,8 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
         ret, out, _ = self.shell.obj.run_sync (" test -f '%s' && test ! -h '%s'" % (cwdurl.path, cwdurl.path))
 
         return True if ret == 0 else False
-   
-   
+
+
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
@@ -1406,8 +1406,8 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
         ret, out, _ = self.shell.obj.run_sync (" test -h '%s'" % cwdurl.path)
 
         return True if ret == 0 else False
-   
-   
+
+
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
