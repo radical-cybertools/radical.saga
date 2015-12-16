@@ -170,4 +170,39 @@ class TestFile(unittest.TestCase):
         except saga.SagaException as ex:
             assert False, "Unexpected exception: %s" % ex
 
+    # -------------------------------------------------------------------------
+    #
+    def test_file_get_session(self):
+        """ Testing if the correct session is being used
+        """
+        try:
+            tc = testing.get_test_config ()
+            session = tc.session or saga.Session()
+            filename = deepcopy(saga.Url(tc.filesystem_url))
+            filename.path += "/%s" % self.uniquefilename1
 
+            f = saga.filesystem.File(filename, saga.filesystem.CREATE,
+                                     session=session)
+            assert f.get_session() == session, 'Failed setting the session'
+
+            f2 = saga.filesystem.File(f.url, session=session)
+            assert f2.get_session() == session, 'Failed setting the session'
+
+        except saga.SagaException as ex:
+            assert False, "Unexpected exception: %s" % ex
+
+    # -------------------------------------------------------------------------
+    #
+    def test_directory_get_session(self):
+        """ Testing if the correct session is being used
+        """
+        try:
+            tc = testing.get_test_config()
+            session = tc.session or saga.Session()
+
+            d = saga.filesystem.Directory(tc.filesystem_url, session=session)
+
+            assert d.get_session() == session, 'Failed setting the session'
+
+        except saga.SagaException as ex:
+            assert False, "Unexpected exception: %s" % ex

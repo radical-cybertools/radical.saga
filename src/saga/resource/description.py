@@ -129,13 +129,14 @@ class Description (sa.Attributes) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Description', 
-                  'Description')
+                  ('Description', dict))
     @rus.returns ('Description')
-    def __deepcopy__ (self, other) :
+    def __deepcopy__ (self, memo) :
         """
         An alias for `clone()`.
         """
-        return self.clone (other)
+        return self.clone()
+
 
     # --------------------------------------------------------------------------
     #
