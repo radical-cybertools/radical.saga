@@ -171,78 +171,81 @@ class Adaptor(saga.adaptors.base.Base):
 
     # --------------------------------------------------------------------------
     #
-    def get_go_shell(self, session, go_url=None):
+    def get_go_shell(self, session, go_url=GO_DEFAULT_URL):
 
-        # this basically return a pty shell for 
-        #
-        #   gsissh username@cli.globusonline.org
+        # This returns a pty shell for: '[gsi]ssh username@cli.globusonline.org'
         #
         # X509 contexts are preferred, but ssh contexts, userpass and myproxy can
         # also be used.  If the given url has username / password encoded, we
         # create an userpass context out of it and add it to the (copy of) the
         # session.
 
-        sid = session._id
-
         self._logger.debug("Acquiring lock")
         with self.shell_lock:
             self._logger.debug("Acquired lock")
 
-            if not sid in self.shells:
+            sid = session._id
 
-                new_shell = {}
+            init = False
+            create = False
 
-                if not go_url:
-                    new_url = saga.Url(GO_DEFAULT_URL)
-                else:
-                    new_url = saga.Url(go_url) # deep copy
+            if sid in self.shells and self.shells[sid]['shell'].alive(recover=False):
+                self._logger.debug("Shell in cache and alive, can reuse.")
+            elif sid in self.shells:
+                self._logger.debug("Shell in cache but not alive.")
+                self.shells[sid]['shell'].finalize()
+                self._logger.debug("Shell is finalized, need to recreate.")
+                create = True
+            else:
+                self._logger.debug("Shell not in cache, create entry.")
+                init = True
+                create = True
+                self.shells[sid] = {}
 
+            # Acquire new shell
+            if create:
+
+                # deep copy URL (because of?)
+                new_url = saga.Url(go_url)
+
+                # GO specific prompt pattern
                 opts = {'prompt_pattern': self.prompt}
 
                 # create the shell.
-                shell = sups.PTYShell(new_url, session=session, logger=self._logger,
-                                      opts=opts, posix=False)
-                new_shell['shell'] = shell
+                shell = sups.PTYShell(new_url, session=session, logger=self._logger, opts=opts, posix=False)
+                self.shells[sid]['shell'] = shell
 
-                # confirm the user ID for this shell
-                new_shell['user'] = None
-
-                _, out, _ = shell.run_sync('profile')
-
-                for line in out.split('\n'):
-                    if 'User Name:' in line:
-                        new_shell['user'] = line.split(':', 2)[1].strip()
-                        self._logger.debug("using account '%s'" % new_shell['user'])
-                        break
-
-                if not new_shell['user']:
-                    raise saga.NoSuccess("Could not confirm user id")
-
-                if self.notify != 'None':
-                    if self.notify == 'True':
-                        self._logger.debug("disable email notifications")
-                        shell.run_sync('profile -n on')
-                    else:
-                        self._logger.debug("enable email notifications")
-                        shell.run_sync('profile -n off')
-
-                # This should not happen
-                assert sid not in self.shells
-
-                # Now add the entry to the shells dict
-                self.shells[sid] = new_shell
-
-                # for this fresh shell, we get the list of public endpoints.  That list
-                # will contain the set of hosts we can potentially connect to.
+                # For this fresh shell, we get the list of public endpoints.
+                # That list will contain the set of hosts we can potentially connect to.
                 self.get_go_endpoint_list(session, shell, fetch=True)
 
-            else:
-                self._logger.debug("Shell already in cache.")
+            # Initialize other dict members and remote shell
+            if init:
+                shell = self.shells[sid]['shell']
+
+                # Confirm the user ID for this shell
+                self.shells[sid]['user'] = None
+                _, out, _ = shell.run_sync('profile')
+                for line in out.split('\n'):
+                    if 'User Name:' in line:
+                        self.shells[sid]['user'] = line.split(':', 2)[1].strip()
+                        self._logger.debug("using account '%s'" % self.shells[sid]['user'])
+                        break
+                if not self.shells[sid]['user']:
+                    raise saga.NoSuccess("Could not confirm user id")
+
+                # Toggle notification
+                if self.notify == 'True':
+                    self._logger.debug("enable email notifications")
+                    shell.run_sync('profile -n on')
+                elif self.notify == 'False':
+                    self._logger.debug("disable email notifications")
+                    shell.run_sync('profile -n off')
 
             self._logger.debug("Release lock")
 
-        # we have the shell for sure by now -- return it!
-        return self.shells[sid]['shell']
+            # we have the shell for sure by now -- return it!
+            return self.shells[sid]['shell']
 
     # ----------------------------------------------------------------
     #
@@ -335,8 +338,8 @@ class Adaptor(saga.adaptors.base.Base):
             elif cwd_path:
                 ps_path = cwd_path
 
-        # the pathspec is the concatenation of ps_host and ps_path by a colon
-        ps = "%s:%s" % (ep_name, ps_path)
+        # the pathspec is the concatenation of ps_host and ps_path
+        ps = "%s%s" % (ep_name, ps_path)
 
         # check if we know the endpoint in XXX, and create/activate as needed
         ep = self.get_go_endpoint(session, shell, ep_url)
@@ -387,7 +390,7 @@ class Adaptor(saga.adaptors.base.Base):
             # Had contact on this with Globus Support, they couldn't suggest
             # anything better.
             if ep['MyProxy Server'] == 'myproxy.globusonline.org' and \
-            '/C=US/O=Globus Consortium/OU=Globus Connect Service/CN=' in ep['Subject(s)']:
+            '/C=US/O=Globus Consortium/OU=Globus Connect Service/CN=' in ep['Credential Subject']:
                 shell.run_sync("endpoint-activate %s" % ep_name)
             else:
                 shell.run_sync("endpoint-activate -g %s" % ep_name)
@@ -416,7 +419,19 @@ class Adaptor(saga.adaptors.base.Base):
                 endpoints = {}
                 name = None
 
-                _, out, _ = shell.run_sync("endpoint-list -v")
+                if ep_name:
+                    endpoint_selection = ep_name
+                else:
+                    endpoint_selection = '-a'
+
+                # Get the details of endpoints _OWNED_ by user
+                _, out, _ = shell.run_sync("endpoint-details %s -f "
+                                           "legacy_name,"        # Legacy Name
+                                           "credential_status,"  # Credential Status
+                                           "credential_subject," # Credential Subject
+                                           "myproxy_server"     # MyProxy Server
+                                           % endpoint_selection
+                                           )
 
                 for line in out.split('\n'):
                     elems = line.split(':', 1)
@@ -430,18 +445,13 @@ class Adaptor(saga.adaptors.base.Base):
                     if not key or not val:
                         continue
 
-                    if key == "Name":
+                    if key == "Legacy Name":
 
                         # we now operate on a new entry -- initialize it
                         name = val
 
                         endpoints[name] = {}
-
-                        # we make sure that some entries always exist, to simplify error
-                        # checks
-                        endpoints[name]['Name']              = name
-                        endpoints[name]['Credential Status'] = None
-                        endpoints[name]['Host(s)']           = None
+                        endpoints[name]['Legacy Name']       = name
 
                     else:
 
@@ -449,9 +459,10 @@ class Adaptor(saga.adaptors.base.Base):
                         try:
                             endpoints[name][key] = val
                         except:
-                            raise saga.NoSuccess("No entry name to operate on")
+                            raise saga.NoSuccess("No entry to operate on for: %s[%s]" % (key,val))
 
                 # replace the ep info dist with the new one, to clean out old entries.
+                # TODO: merge and not replace(?)
                 self.shells[session._id]['endpoints'] = endpoints
 
         if ep_name:
@@ -523,9 +534,9 @@ class Adaptor(saga.adaptors.base.Base):
         # existing elements.
         # TODO: Can't we check for existence? The errors are confusing.
 
-        host_ps, path_ps = tgt_ps.split(':', 1)
-        #path_ps = os.path.dirname(path_ps)
-        
+        host_ps, path_ps = tgt_ps.split('/', 1)
+        path_ps = '/' + path_ps
+
         self._logger.info('mkparents %s' % path_ps)
 
         if path_ps.startswith('/'):
@@ -539,7 +550,7 @@ class Adaptor(saga.adaptors.base.Base):
         for path_elem in path_elems :
 
             cur_path = "%s/%s" % (cur_path, path_elem)
-            out, err = self.run_go_cmd(shell, "mkdir %s:%s" % (host_ps, cur_path))
+            out, err = self.run_go_cmd(shell, "mkdir %s%s" % (host_ps, cur_path))
 
             if err:
                 error[cur_path] = err
@@ -592,7 +603,7 @@ class Adaptor(saga.adaptors.base.Base):
 
         # Initiate background copy
         # TODO: Should we use a deadline?
-        cmd = "scp -D %s -s %d '%s' '%s'" % (cmd_flags, sync_level, source, target)
+        cmd = "transfer %s -s %d -- '%s' '%s'" % (cmd_flags, sync_level, source, target)
         out, _ = self.run_go_cmd(shell, cmd)
         # 'Task ID: 8c6f989d-b6aa-11e4-adc6-22000a97197b'
         key, value = out.split(':')
@@ -896,8 +907,8 @@ class GODirectory(saga.adaptors.cpi.filesystem.Directory):
         src_ps = self.get_path_spec(url=src_in)
         tgt_ps = self.get_path_spec(url=tgt_in)
 
-        src_ep_str = src_ps.split(':', 1)[0]
-        tgt_ep_str = tgt_ps.split(':', 1)[0]
+        src_ep_str = src_ps.split('/', 1)[0]
+        tgt_ep_str = tgt_ps.split('/', 1)[0]
 
         if src_ep_str == tgt_ep_str:
 
@@ -1217,8 +1228,8 @@ class GOFile(saga.adaptors.cpi.filesystem.File):
         src_ps = self.get_path_spec()
         tgt_ps = self.get_path_spec(url=tgt_in)
 
-        src_ep_str = src_ps.split(':', 1)[0]
-        tgt_ep_str = tgt_ps.split(':', 1)[0]
+        src_ep_str = src_ps.split('/', 1)[0]
+        tgt_ep_str = tgt_ps.split('/', 1)[0]
 
         # TODO: check for errors
 
