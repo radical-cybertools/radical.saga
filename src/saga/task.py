@@ -370,11 +370,8 @@ class Container (sbase.SimpleBase, satt.Attributes) :
             # nothing to do
             return None
 
-
         buckets = self._get_buckets ()
         threads = []  # threads running container ops
-        queues  = {}
-
 
         # handle all container
         for c in buckets['bound'] :
@@ -456,7 +453,6 @@ class Container (sbase.SimpleBase, satt.Attributes) :
 
         buckets = self._get_buckets ()
         threads = []  # threads running container ops
-        queues  = {}
 
         # handle all tasks bound to containers
         for c in buckets['bound'] :
@@ -532,6 +528,7 @@ class Container (sbase.SimpleBase, satt.Attributes) :
 
         # all done - return random task (first from last container, or last
         # unbound task)
+        # FIXME: that task should be removed from the task container
         return ret
 
 
@@ -547,7 +544,6 @@ class Container (sbase.SimpleBase, satt.Attributes) :
 
         buckets = self._get_buckets ()
         threads = []  # threads running container ops
-        queues  = {}
 
         # handle all tasks bound to containers
         for c in buckets['bound'] :
@@ -581,6 +577,24 @@ class Container (sbase.SimpleBase, satt.Attributes) :
 
     # --------------------------------------------------------------------------
     #
+    @rus.takes   ('Container', 
+                  'basestring')
+    @rus.returns (Task)
+    def get_task (self, id) :
+
+        # FIXME: this should not be a search, but a lookup
+        if not id:
+            raise se.NoSuccess ("Lookup requires non-empty id (not '%s')" % id)
+
+        for t in self.tasks:
+            if t.id == id:
+                return t
+
+        raise se.NoSuccess ("task '%s' not found in container" % id)
+
+
+    # --------------------------------------------------------------------------
+    #
     @rus.takes   ('Container')
     @rus.returns (rus.list_of (Task))
     def get_tasks (self) :
@@ -596,7 +610,6 @@ class Container (sbase.SimpleBase, satt.Attributes) :
 
         buckets = self._get_buckets ()
         threads = []  # threads running container ops
-        queues  = {}
 
         # handle all tasks bound to containers
         for c in buckets['bound'] :

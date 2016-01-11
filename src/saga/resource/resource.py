@@ -165,14 +165,16 @@ class Resource (sb.Base, sa.Attributes, async.Async) :
             else :
                 scheme = _adaptor_state['resource_schema']
         else :
-            url    = surl.Url (id)
-            scheme = url.scheme.lower ()
-
+            # ID is formatted as '[manager-url]-[resource-id]'
+            import parse
+            res      = parse.parse('[{}]-[{}]', id)
+            url, rid = surl.Url(res[0]), res[1]
+            scheme   = url.scheme.lower ()
 
         if not session :
             session = ss.Session (default=True)
 
-        self._base = super  (Resource, self)
+        self._base  = super (Resource, self)
         self._base.__init__ (scheme, _adaptor, _adaptor_state, 
                              id, session, ttype=_ttype)
 

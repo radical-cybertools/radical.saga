@@ -116,27 +116,21 @@ def log_error_and_raise(message, exception, logger):
 def _torque_to_saga_jobstate(torquejs):
     """ translates a torque one-letter state to saga
     """
-    if torquejs == 'C': # Torque "Job is completed after having run."
-        return saga.job.DONE
-    elif torquejs == 'F': # PBS Pro "Job is finished."
-        return saga.job.DONE
-    elif torquejs == 'H': # PBS Pro and TORQUE "Job is held."
+    if torquejs == 'H': #  "Job is held."
         return saga.job.PENDING
-    elif torquejs == 'Q': # PBS Pro and TORQUE "Job is queued(, eligible to run or routed.)
+    elif torquejs == 'Q': # "Job is queued(, eligible to run or routed.)
         return saga.job.PENDING
-    elif torquejs == 'S': # PBS Pro and TORQUE "Job is suspended."
+    elif torquejs == 'S': # "Job is suspended."
         return saga.job.PENDING
-    elif torquejs == 'W': # PBS Pro and TORQUE "Job is waiting for its execution time to be reached."
+    elif torquejs == 'W': # "Job is waiting for its execution time to be reached."
         return saga.job.PENDING
-    elif torquejs == 'R': # PBS Pro and TORQUE "Job is running."
+    elif torquejs == 'R': # "Job is running."
         return saga.job.RUNNING
-    elif torquejs == 'E': # PBS Pro and TORQUE "Job is exiting after having run"
+    elif torquejs == 'E': # "Job is exiting after having run"
         return saga.job.RUNNING
-    elif torquejs == 'T': # PBS Pro and TORQUE "Job is being moved to new location."
+    elif torquejs == 'T': # "Job is being moved to new location."
         # TODO: PENDING?
         return saga.job.RUNNING
-    elif torquejs == 'X': # PBS Pro "Subjob has completed execution or has been deleted."
-        return saga.job.CANCELED
     else:
         return saga.job.UNKNOWN
 
@@ -163,7 +157,7 @@ def _torquescript_generator(url, logger, jd, ppn, gres, torque_version, is_cray=
     if jd.name:
         pbs_params += "#PBS -N %s \n" % jd.name
 
-    if (is_cray is "") or not ('Version: 4.2.7' in torque_version):
+    if (is_cray is ""):
         # qsub on Cray systems complains about the -V option:
         # Warning:
         # Your job uses the -V option, which requests that all of your
@@ -280,13 +274,18 @@ def _torquescript_generator(url, logger, jd, ppn, gres, torque_version, is_cray=
         elif 'PBSPro_12' in torque_version:
             logger.info("Using Cray XT (e.g. Archer) specific '#PBS -l select=xx' flags (PBSPro_12).")
             pbs_params += "#PBS -l select=%d\n" % nnodes
-        elif '4.2.6' in torque_version:
+        elif '5.1.0.h1' in torque_version:
+            # Can't really use hostname as we run also from the headnode
             logger.info("Using Titan (Cray XP) specific '#PBS -l nodes=xx'")
             pbs_params += "#PBS -l nodes=%d\n" % nnodes
-        elif '4.2.7' in torque_version:
-            logger.info("Using Cray XT @ NERSC (e.g. Edison) specific '#PBS -l mppwidth=xx' flags (PBSPro_10).")
+        elif 'edison' in url.host:
+            logger.info("Using Edison@NERSC (Cray XC30) specific '#PBS -l mppwidth=xx' parameter.")
             pbs_params += "#PBS -l mppwidth=%s \n" % jd.total_cpu_count
+        elif 'bw.ncsa.illinois.edu' in url.host:
+            logger.info("Using Blue Waters (Cray XE6/XK7) specific '#PBS -l nodes=xx:ppn=yy'")
+            pbs_params += "#PBS -l nodes=%d:ppn=%d\n" % (nnodes, ppn)
         elif 'Version: 5.' in torque_version:
+            # What would removing this catchall break?
             logger.info("Using TORQUE 5.x notation '#PBS -l procs=XX' ")
             pbs_params += "#PBS -l procs=%d\n" % jd.total_cpu_count
         else:
@@ -732,46 +731,6 @@ class TORQUEJobService (saga.adaptors.cpi.job.Service):
 
     # ----------------------------------------------------------------
     #
-    def _retrieve_job(self, job_id):
-        """ see if we can get some info about a job that we don't
-            know anything about
-        """
-        # rm, pid = self._adaptor.parse_id(job_id)
-
-        # # run the PBS 'qstat' command to get some infos about our job
-        # if 'PBSPro_1' in self._commands['qstat']['version']:
-        #     qstat_flag = '-f'
-        # else:
-        #     qstat_flag ='-f1'
-        #
-        # ret, out, _ = self.shell.run_sync("unset GREP_OPTIONS; %s %s %s | "\
-        #         "grep -E -i '(job_state)|(exec_host)|(exit_status)|(ctime)|"\
-        #         "(start_time)|(comp_time)|(stime)|(qtime)|(mtime)'" \
-        #       % (self._commands['qstat']['path'], qstat_flag, pid))
-
-        # if ret != 0:
-        #     message = "Couldn't reconnect to job '%s': %s" % (job_id, out)
-        #     log_error_and_raise(message, saga.NoSuccess, self._logger)
-
-        # else:
-        #     # the job seems to exist on the backend. let's gather some data
-        #     job_info = {
-        #         'job_id':       job_id,
-        #         'state':        saga.job.UNKNOWN,
-        #         'exec_hosts':   None,
-        #         'returncode':   None,
-        #         'create_time':  None,
-        #         'start_time':   None,
-        #         'end_time':     None,
-        #         'gone':         False
-        #     }
-        #
-        #     job_info = self._parse_qstat(out, job_info)
-        #
-        #     return job_info
-
-    # ----------------------------------------------------------------
-    #
     def _job_get_info(self, job_id, reconnect):
         """ Get job information attributes via qstat.
         """
@@ -862,17 +821,15 @@ class TORQUEJobService (saga.adaptors.cpi.job.Service):
                     val = val.strip()
 
                     # The ubiquitous job state
-                    if key in ['job_state']: # PBS Pro and TORQUE
-                        job_info['state'] = _torque_to_saga_jobstate(val)
+                    if key in ['job_state']:
+                        job_state = val
 
                     # Hosts where the job ran
                     elif key in ['exec_host']: # PBS Pro and TORQUE
                         job_info['exec_hosts'] = val.split('+')  # format i73/7+i73/6+...
 
                     # Exit code of the job
-                    elif key in ['exit_status', # TORQUE
-                                 'Exit_status' # PBS Pro
-                                ]:
+                    elif key in ['exit_status']:
                         job_info['returncode'] = int(val)
 
                     # Time job got created in the queue
@@ -903,6 +860,17 @@ class TORQUEJobService (saga.adaptors.cpi.job.Service):
                     #
                     if key in ['mtime']: # PBS Pro and TORQUE
                         job_info['end_time'] = val
+
+            # TORQUE doesn't allow us to distinguish DONE/FAILED on final state alone,
+            # we need to consider the exit_status.
+            # TODO: move this logic into _torque_to_saga_jobstate in a future life
+            if job_state == 'C': # "Job is completed after having run."
+                if job_info['returncode'] == 0:
+                    job_info['state'] = saga.job.DONE
+                else:
+                    job_info['state'] = saga.job.FAILED
+            else:
+                job_info['state'] = _torque_to_saga_jobstate(job_state)
 
         # return the updated job info
         return job_info

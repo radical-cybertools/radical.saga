@@ -223,22 +223,21 @@ class Manager (sb.Base, async.Async) :
         Create a new :class:`saga.resource.Resource` handle for a 
         resource specified by the description.
 
-        :type  spec: :class:`Description`
+        :type  spec: :class:`Description` or Url
         :param spec: specifies the resource
 
         Depending on the `RTYPE` attribute in the description, the
         returned resource may be a :class:`saga.resource.Compute`,
         :class:`saga.resource.Storage` or :class:`saga.resource.Network`
-        instance.  The returned resource will be in NEW, PENDING or ACTIVE
-        state.
+        instance. 
+
+        If the `spec` parameter is 
         """
 
         if  isinstance (spec, surl.Url) or \
             isinstance (spec, basestring)  :
 
-            id = surl.Url (spec)
-            
-            return self._adaptor.acquire_by_id (id, ttype=ttype)
+            return self._adaptor.acquire_by_id(spec, ttype=ttype)
 
         else :
 
@@ -246,10 +245,10 @@ class Manager (sb.Base, async.Async) :
             if spec.rtype is None:
                 raise se.BadParameter ("No resource type defined in resource description")
     
-            spec_copy = descr.Description ()
-            spec._attributes_deep_copy (spec_copy)
+            # spec_copy = descr.Description ()
+            # spec._attributes_deep_copy (spec_copy)
 
-            return self._adaptor.acquire (spec_copy, ttype=ttype)
+            return self._adaptor.acquire (spec, ttype=ttype)
 
 
     # --------------------------------------------------------------------------

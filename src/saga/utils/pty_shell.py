@@ -10,13 +10,14 @@ import sys
 import errno
 
 import saga.utils.misc              as sumisc
-import radical.utils.logger         as rul
+import radical.utils                as ru
 
 import saga.utils.pty_shell_factory as supsf
 import saga.utils.pty_process       as supp
 import saga.url                     as surl
 import saga.exceptions              as se
 import saga.session                 as ss
+import saga.filesystem              as sfs
 
 import pty_exceptions               as ptye
 
@@ -189,7 +190,7 @@ class PTYShell (object) :
     def __init__ (self, url, session=None, logger=None, opts=None, posix=True):
 
         if logger : self.logger  = logger
-        else      : self.logger  = rul.getLogger('saga', 'PTYShell') 
+        else      : self.logger  = ru.get_logger('radical.saga.pty') 
 
         if session: self.session = session
         else      : self.session = ss.Session(default=True)
@@ -311,19 +312,18 @@ class PTYShell (object) :
                     raise se.NoSuccess ("Shell startup on target host failed: %s" % e)
 
 
-                try :
-                    # got a command shell, finally!
-                    # for local shells, we now change to the current working
-                    # directory.  Remote shells will remain in the default pwd
-                    # (usually $HOME).
-                    if  sumisc.host_is_local (surl.Url(self.url).host) :
-                        pwd = os.getcwd ()
-                        self.run_sync (' cd %s' % pwd)
-                except Exception as e :
-                    # We will ignore any errors.
-                    self.logger.warning ("local cd to %s failed" % pwd)
-                
-                
+
+                # got a command shell, finally!
+                # for local shells, we now change to the current working
+                # directory.  Remote shells will remain in the default pwd
+                # (usually $HOME).
+                if sumisc.host_is_local(surl.Url(self.url).host):
+                    try:
+                        pwd = os.getcwd()
+                        self.run_sync(' cd %s' % pwd)
+                    except Exception as e:
+                        # We will ignore any errors.
+                        self.logger.exception("local cd to cwd failed (ignored)")
 
             self.pty_shell.flush ()
             self.initialized = True
@@ -778,7 +778,7 @@ class PTYShell (object) :
 
             try :
                 command = command.strip ()
-                self.send (" %s\n" % command)
+                self.send ("%s\n" % command)
 
             except Exception as e :
                 raise ptye.translate_exception (e)
@@ -951,11 +951,11 @@ class PTYShell (object) :
             self._trace ("copy  to  : %s -> %s" % (src, tgt))
             self.pty_shell.flush ()
 
-
             info = self.pty_info
             repl = dict ({'src'      : src, 
-                          'tgt'      : tgt, 
-                          'cp_flags' : cp_flags}.items () + info.items ())
+                          'tgt'      : tgt,
+                          'cp_flags' : '' # cp_flags # TODO: needs to be "translated" for specific backend
+                          }.items () + info.items ())
 
             # at this point, we do have a valid, living master
             s_cmd = info['scripts'][info['copy_mode']]['copy_to']    % repl
@@ -985,20 +985,33 @@ class PTYShell (object) :
                 self.cp_slave = self.factory.get_cp_slave (s_cmd, info, posix)
 
             self.cp_slave.flush ()
-            prep = ""
-
             if  'sftp' in s_cmd :
                 # prepare target dirs for recursive copy, if needed
                 import glob
                 src_list = glob.glob (src)
                 for s in src_list :
                     if  os.path.isdir (s) :
-                        prep += "mkdir %s/%s\n" % (tgt, os.path.basename (s))
+                        prep = "mkdir %s/%s\n" % (tgt, os.path.basename (s))
+                        # TODO: this doesn't deal with multiple levels of creation
 
+                        self.cp_slave.flush()
+                        self.cp_slave.write("%s\n" % prep)
+                        self.cp_slave.find(['[\$\>\]]\s*$'], -1)
+                        # TODO: check return values
 
-            self.cp_slave.flush ()
-            _      = self.cp_slave.write    ("%s%s\n" % (prep, s_in))
-            _, out = self.cp_slave.find     (['[\$\>\]]\s*$'], -1)
+                if cp_flags == sfs.CREATE_PARENTS and os.path.split(tgt)[0]:
+                    # TODO: this needs to be numeric and checking the flag
+                    prep = "mkdir %s\n" % os.path.dirname(tgt)
+                    # TODO: this doesn't deal with multiple levels of creation
+
+                    self.cp_slave.flush()
+                    self.cp_slave.write("%s\n" % prep)
+                    self.cp_slave.find(['[\$\>\]]\s*$'], -1)
+                    # TODO: check return values
+
+            self.cp_slave.flush()
+            _ = self.cp_slave.write("%s\n" % s_in)
+            _, out = self.cp_slave.find(['[\$\>\]]\s*$'], -1)
 
             # FIXME: we don't really get exit codes from copy
             # if  self.cp_slave.exit_code != 0 :
