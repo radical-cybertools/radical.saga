@@ -211,18 +211,21 @@ class ContextSSH (saga.adaptors.cpi.context.Context) :
         # make sure we have can access the key
         api = self.get_api ()
 
-        key = None
-        pub = None
+        unexpanded_key = None
+        unexpanded_pub = None
         pwd = None
 
         
-        if         api.attribute_exists (saga.context.USER_KEY ) :
-            key  = api.get_attribute    (saga.context.USER_KEY )
-        if         api.attribute_exists (saga.context.USER_CERT) :
-            pub  = api.get_attribute    (saga.context.USER_CERT)
-        if         api.attribute_exists (saga.context.USER_PASS) :
+        if api.attribute_exists (saga.context.USER_KEY ) :
+            unexpanded_key  = api.get_attribute    (saga.context.USER_KEY )
+        if api.attribute_exists (saga.context.USER_CERT) :
+            unexpanded_pub  = api.get_attribute    (saga.context.USER_CERT)
+        if api.attribute_exists (saga.context.USER_PASS) :
             pwd  = api.get_attribute    (saga.context.USER_PASS)
 
+        # Expand any environment variables in the key/pub paths
+        key = os.path.expandvars(unexpanded_key)
+        pub = os.path.expandvars(unexpanded_pub)
 
         # either user_key or user_cert should be specified (or both), 
         # then we complement the other, and convert to/from private 
