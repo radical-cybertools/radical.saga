@@ -190,7 +190,7 @@ def _lsfcript_generator(url, logger, jd, ppn, lsf_version, queue, span):
     if jd.project is not None:
         lsf_params += "#BSUB -P %s \n" % str(jd.project)
     if jd.job_contact is not None:
-        lsf_params += "#BSUB -U %s \n" % str(jd.job_contact)
+        lsf_params += "#BSUB -u %s \n" % str(jd.job_contact)
 
     # if total_cpu_count is not defined, we assume 1
     if jd.total_cpu_count is None:
