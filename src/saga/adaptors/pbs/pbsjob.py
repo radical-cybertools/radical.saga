@@ -69,18 +69,13 @@ class _job_state_monitor(threading.Thread):
                     # terminal state, so we can skip the ones that are 
                     # either done, failed or canceled
                     if  job_info['state'] not in [saga.job.DONE, saga.job.FAILED, saga.job.CANCELED] :
-                        
-                        # Store the current state since the current state 
-                        # variable is updated when _job_get_info is called
-                        pre_update_state = job_info['state']
 
                         new_job_info = self.js._job_get_info(job_id, reconnect=False)
-                        self.logger.info ("Job monitoring thread updating Job "
-                                          "%s (old state: %s, new state: %s)" % 
-                                          (job_id, pre_update_state, new_job_info['state']))
+                        self.logger.info ("Job monitoring thread updating Job %s (state: %s)" \
+                                       % (job_id, new_job_info['state']))
 
                         # fire job state callback if 'state' has changed
-                        if  new_job_info['state'] != pre_update_state:
+                        if  new_job_info['state'] != job_info['state']:
                             job_obj = job_info['obj']
                             job_obj._attributes_i_set('state', new_job_info['state'], job_obj._UP, True)
 
