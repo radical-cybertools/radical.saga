@@ -764,7 +764,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
             ret, out, _ = self._command (" mkdir '%s'" % tgt.path)
 
         if  ret != 0 :
-            raise saga.NoSuccess ("make_dir (%s) failed: %s" % tgt_in, out)
+            raise saga.NoSuccess ("make_dir (%s) failed: %s" % (tgt_in, out))
 
    
     # ----------------------------------------------------------------
