@@ -517,16 +517,15 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
         submit_file.close()
         self._logger.info("Written Condor script locally: %s" % submit_file.name)
 
-        if self.shell.url.scheme == "ssh":
+        if self.shell.url.scheme in ["ssh", "gsissh"]:
             self._logger.info("Transferring Condor script to: %s" % self.shell.url)
             submit_file_name = os.path.basename(submit_file.name)
             # TODO: the "-P" is a layer violation?
             self.shell.stage_to_remote(submit_file.name, submit_file_name, cp_flags="-P")
 
-        elif self.shell.url.scheme == "gsissh":
-            raise NotImplemented("GSISSH support for Condor not implemented.")
         else:
-            submit_file_name = submit_file.name
+            raise NotImplementedError("%s support for Condor not implemented." % \
+                    self.shell.url.scheme)
 
 
         ret, out, _ = self.shell.run_sync('%s -verbose %s' \
@@ -570,10 +569,14 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
 
             # remove submit file(s)
             # XXX: maybe leave them in case of debugging?
-            if self.shell.url.scheme == 'ssh':
+            self._logger.info("Submitted Condor job with scheme: '%s'" % self.shell.url.scheme)
+            if self.shell.url.scheme in ['ssh', 'gsissh']:
+                self._logger.info("1")
                 ret, out, _ = self.shell.run_sync ('rm %s' % submit_file_name)
-            elif self.shell.url.scheme == 'gsissh':
-                raise NotImplemented("GSISSH support for Condor not implemented.")
+            else:
+                self._logger.info("2")
+                raise NotImplementedError("%s support for Condor not implemented." % \
+                                 self.shell.url.scheme)
             os.remove(submit_file.name)
 
             return job_id
@@ -651,13 +654,14 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
                 # add for later use by job script generator
                 td.transfer_input_files.append(target)
 
-                if self.shell.url.scheme == "ssh":
+                if self.shell.url.scheme in ["ssh", "gsissh"]:
                     self._logger.info("Transferring file %s to %s" % (source, target))
                     self.shell.stage_to_remote(source, target, cp_flags=saga.filesystem.CREATE_PARENTS)
 
-                elif self.shell.url.scheme == "gsissh":
+                else:
                     # TODO: this should just work
-                    raise NotImplemented("GSISSH support for Condor not implemented.")
+                    raise NotImplementedError("%s support for Condor not implemented." % \
+                            self.shell.url.scheme)
 
         if len(td.out_overwrite_dict) > 0:
             td.transfer_output_files = []
@@ -1268,16 +1272,17 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
         submit_file.close()
         self._logger.info("Written Condor script locally: %s" % submit_file.name)
 
-        if self.shell.url.scheme == "ssh":
+        if self.shell.url.scheme in ["ssh", "gsissh"]:
             self._logger.info("Transferring Condor script to: %s" % self.shell.url)
             submit_file_name = os.path.basename(submit_file.name)
             # TODO: the "-P" is a layer violation?
             self.shell.stage_to_remote(submit_file.name, submit_file_name, cp_flags="-P")
 
-        elif self.shell.url.scheme == "gsissh":
-            raise NotImplemented("GSISSH support for Condor not implemented.")
         else:
-            submit_file_name = submit_file.name
+            raise NotImplementedError("%s support for Condor not implemented." % \
+                    self.shell.url.scheme)
+
+        submit_file_name = submit_file.name
 
         ret, out, _ = self.shell.run_sync('%s -verbose %s' \
                                           % (self._commands['condor_submit']['path'], submit_file_name))
@@ -1331,11 +1336,13 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
 
         # remove submit file(s)
         # XXX: maybe leave them in case of debugging?
-        if self.shell.url.scheme == 'ssh':
+        if self.shell.url.scheme in ['ssh', 'gsissh']:
             #ret, out, _ = self.shell.run_sync ('rm %s' % submit_file_name)
             pass
-        elif self.shell.url.scheme == 'gsissh':
-            raise NotImplemented("GSISSH support for Condor not implemented.")
+        else:
+            raise NotImplementedError("%s support for Condor not implemented." % \
+                    self.shell.url.scheme)
+
         os.remove(submit_file.name)
 
     # ----------------------------------------------------------------
