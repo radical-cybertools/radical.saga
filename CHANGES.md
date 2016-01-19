@@ -6,6 +6,31 @@
     https://github.com/radical-cybertools/saga-python/issues?q=is%3Aissue+is%3Aopen+
 
 
+Version 0.40                                                          2016-01-19
+--------------------------------------------------------------------------------
+
+  - Added job monitor state update fix to PBSPro adapter. 
+  - Add session property to base class. Fix #480. 
+  - add traceback property to exception
+  - support gsissh for condor job submission 
+  - pass span parameter to LSF. 
+  - support SLURM reservation. 
+  - file staging for shell adaptor
+  - Fix #477, set session for shell job service 
+  - Fixed job state monitor to correctly identify state changes. 
+  - Fixed string formatting error. 
+  - Fixes #501. Thanks Javi! 
+  - fix session documentation.  Thanks Jeremy!
+  - Fix to allow use of environment vars in ssh context key/cert property file paths. 
+  - Implement bulk submit, states and wait for condor. 
+  - Improve file staging directives handling. 
+  - Logging goes into working directory. 
+  - make ssh connection timeout configirable (defaults now to 10 seconds) 
+  - Passing ssh_timeout param to ssh ConnectTimeout option 
+  - Updated fix to #494 to take account of empty key/cert parameter. 
+  - deprecate PBS adaptor
+
+
 Version 0.39                                                          2015-12-01
 --------------------------------------------------------------------------------
 
@@ -570,4 +595,5 @@ Version 0.1.7 released 2011-11-09
 
 
 --------------------------------------------------------------------------------
+
 
