@@ -5,6 +5,7 @@ __license__   = "MIT"
 
 
 import os
+import re
 
 import saga.context
 import saga.exceptions as se
@@ -290,7 +291,9 @@ class ContextSSH (saga.adaptors.cpi.context.Context) :
         import subprocess
         if  not subprocess.call (["sh", "-c", "grep ENCRYPTED %s > /dev/null" % key]) :
             if  pwd  :
-                if  subprocess.call (["sh", "-c", "ssh-keygen -y -f %s -P %s > /dev/null" % (key, pwd)]) :
+                # Escape any spaces in password
+                pwd_sub = re.sub(r"\ ", "\\ ", pwd)
+                if  subprocess.call (["sh", "-c", "ssh-keygen -y -f %s -P %s > /dev/null" % (key, pwd_sub)]) :
                     raise se.PermissionDenied ("ssh key '%s' is encrypted, incorrect password" % (key))
             else :
                 self._logger.error ("ssh key '%s' is encrypted, unknown password" % (key))
