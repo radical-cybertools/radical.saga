@@ -590,7 +590,7 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         # try to create the working directory (if defined)
         # WRANING: this assumes a shared filesystem between login node and
         #           comnpute nodes.
-        if  jd.working_directory is not None:
+        if jd.working_directory:
             self._logger.info("Creating working directory %s" % jd.working_directory)
             ret, out, _ = self.shell.run_sync("mkdir -p %s" % (jd.working_directory))
             if ret != 0:
