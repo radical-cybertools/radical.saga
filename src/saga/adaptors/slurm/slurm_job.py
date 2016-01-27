@@ -623,7 +623,7 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         if not found_id:
             raise saga.NoSuccess._log(self._logger, 
                              "Couldn't get job id from submitted job!"
-                              " sbatch output:\n%s" % out)
+                              "pwd; hostname; sbatch output:\n%s" % out)
 
         self._logger.debug("started job %s" % self.job_id)
         self._logger.debug("Batch system output:\n%s" % out)
