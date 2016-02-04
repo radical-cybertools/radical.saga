@@ -8,6 +8,7 @@ import re
 import os
 import sys
 import errno
+import tempfile
 
 import saga.utils.misc              as sumisc
 import radical.utils                as ru
@@ -816,11 +817,10 @@ class PTYShell (object) :
             # prompt, and updating pwd state on every find_prompt.
 
             # first, write data into a tmp file
-            fname   = self.base + "/staging.%s" % id(self)
-            fhandle = open (fname, 'wb')
-            fhandle.write  (src)
-            fhandle.flush  ()
-            fhandle.close  ()
+            fhandle, fname = tempfile.mkstemp(suffix='.tmp', prefix='rs_pty_staging_')
+            os.write(fhandle, src)
+            os.fsync(fhandle)
+            os.close(fhandle)
 
             ret = self.stage_to_remote (fname, tgt)
 
@@ -850,16 +850,17 @@ class PTYShell (object) :
             # prompt, and updating pwd state on every find_prompt.
 
             # first, write data into a tmp file
-            fname = self.base + "/staging.%s" % id(self)
-            _     = self.stage_from_remote (src, fname)
+            fhandle, fname = tempfile.mkstemp(suffix='.tmp', prefix='rs_pty_staging_')
+            _ = self.stage_from_remote (src, fname)
+            os.close(fhandle)
 
-            os.system ('sync') # WTF?  Why do I need this?
+            os.system('sync') # WTF?  Why do I need this?
 
-            fhandle = open (fname, 'r')
-            out     = fhandle.read  ()
-            fhandle.close  ()
+            fhandle2 = open(fname, 'r')
+            out      = fhandle.read()
+            fhandle2.close()
 
-            os.remove (fname)
+            os.remove(fname)
 
             return out
 
