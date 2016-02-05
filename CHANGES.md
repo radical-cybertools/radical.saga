@@ -6,6 +6,12 @@
     https://github.com/radical-cybertools/saga-python/issues?q=is%3Aissue+is%3Aopen+
 
 
+Version 0.40.1                                                        2016-02-05
+--------------------------------------------------------------------------------
+
+  - Hotfix release to address a tmp file race condition on file staging
+
+
 Version 0.40                                                          2016-01-19
 --------------------------------------------------------------------------------
 
