@@ -142,17 +142,32 @@ def _torque_to_saga_jobstate(torquejs):
 
 # --------------------------------------------------------------------
 #
-def _torquescript_generator(url, logger, jd, ppn, gres, torque_version, is_cray=None, queue=None):
+def _torquescript_generator(url, logger, jd, ppn, gres, torque_version, 
+                            is_cray=None, queue=None):
     """ generates a PBS script from a SAGA job description
     """
     pbs_params  = str()
     exec_n_args = str()
 
     if jd.processes_per_host:
-        logger.info("Overriding the detected ppn (%d) with the user specified processes_per_host (%d)" % (ppn, jd.processes_per_host))
+        logger.info("Overriding detected ppn (%d) with ppn (%s)" \
+                    % (ppn, jd.processes_per_host))
         ppn = jd.processes_per_host
 
-    exec_n_args += 'export SAGA_PPN=%d\n' % ppn
+    # on some systems, ppn can have additional non-int specs attached.  For
+    # example on BlueWaters, ppn is used to specify requests for GPU equipped
+    # nodes.  We thus extract any int portion into ppn_int, and use that if we
+    # need the actual number for calculations.
+    # We assume the following format: PPN = <INT>:<STR>
+    # https://bluewaters.ncsa.illinois.edu/queues-and-scheduling-policies
+    if ':' in ppn:
+        ppn_int, ppn_str = ppn.split(':', 1)
+    else:
+        ppn_int, ppn_str = ppn, None
+
+    ppn_int = int(ppn_int)
+
+    exec_n_args += 'export SAGA_PPN=%d\n' % ppn_int
     if jd.executable:
         exec_n_args += "%s " % (jd.executable)
     if jd.arguments:
@@ -249,12 +264,12 @@ def _torquescript_generator(url, logger, jd, ppn, gres, torque_version, is_cray=
         jd.total_cpu_count = 1
 
     # Request enough nodes to cater for the number of cores requested
-    nnodes = jd.total_cpu_count / ppn
-    if jd.total_cpu_count % ppn > 0:
+    nnodes = jd.total_cpu_count / ppn_int
+    if jd.total_cpu_count % ppn_int > 0:
         nnodes += 1
 
     # We use the ncpus value for systems that need to specify ncpus as multiple of PPN
-    ncpus = nnodes * ppn
+    ncpus = nnodes * ppn_int
 
     # Node properties are appended to the nodes argument in the resource_list.
     node_properties = []
@@ -288,7 +303,7 @@ def _torquescript_generator(url, logger, jd, ppn, gres, torque_version, is_cray=
             pbs_params += "#PBS -l mppwidth=%s \n" % jd.total_cpu_count
         elif 'bw.ncsa.illinois.edu' in url.host:
             logger.info("Using Blue Waters (Cray XE6/XK7) specific '#PBS -l nodes=xx:ppn=yy'")
-            pbs_params += "#PBS -l nodes=%d:ppn=%d\n" % (nnodes, ppn)
+            pbs_params += "#PBS -l nodes=%d:ppn=%s\n" % (nnodes, ppn)
         elif 'Version: 5.' in torque_version:
             # What would removing this catchall break?
             logger.info("Using TORQUE 5.x notation '#PBS -l procs=XX' ")
@@ -310,11 +325,16 @@ def _torquescript_generator(url, logger, jd, ppn, gres, torque_version, is_cray=
         # Default case, i.e, standard HPC cluster (non-Cray)
 
         # If we want just a slice of one node
-        if jd.total_cpu_count < ppn:
-            ppn = jd.total_cpu_count
+        if jd.total_cpu_count < ppn_int:
+            ppn_int = jd.total_cpu_count
 
-        pbs_params += "#PBS -l nodes=%d:ppn=%d%s\n" % (
-            nnodes, ppn, ''.join([':%s' % prop for prop in node_properties]))
+        if ppn_str:
+            ppn_new = "%s:%s" % (ppn_int, ppn_str)
+        else:
+            ppn_new = "%s"    % (ppn_int)
+
+        pbs_params += "#PBS -l nodes=%d:ppn=%s%s\n" % (
+            nnodes, ppn_new, ''.join([':%s' % prop for prop in node_properties]))
 
     # Process Generic Resource specification request
     if gres:
