@@ -803,6 +803,31 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
+    def exists_self (self):
+
+        self._is_valid ()
+
+        return self.exists (self.url)
+   
+   
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def exists (self, tgt_in):
+
+        self._is_valid ()
+
+        cwdurl = saga.Url (self.url) # deep copy
+        tgt    = saga.Url (tgt_in)   # deep copy
+
+        ret, out, _ = self._command (" test -e '%s'" % tgt.path)
+
+        return True if ret == 0 else False
+   
+   
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
     def is_dir_self (self):
 
         self._is_valid ()
