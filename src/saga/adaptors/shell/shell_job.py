@@ -1553,7 +1553,7 @@ class ShellJob (saga.adaptors.cpi.job.Job) :
 
             # avoid busy poll
             # FIXME: self-tune by checking call latency
-            time.sleep (0.5)
+            time.sleep (0.1)
 
             # check if we hit timeout
             if  timeout >= 0 :
