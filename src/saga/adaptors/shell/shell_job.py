@@ -1308,7 +1308,7 @@ class ShellJob (saga.adaptors.cpi.job.Job) :
             # initialize job attribute values
             self.js               = job_info["job_service"] 
             self._id              = job_info['job_id']
-            self._name            = job_info['job_name']
+            self._name            = job_info.get('job_name')
             self._log             = list()
             self._state           = None
             self._exit_code       = None
