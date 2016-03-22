@@ -280,6 +280,7 @@ create_monitor () {
   \\chmod 0700               \$DIR/cmd
 
   (
+    trap - HUP
     export SAGA_PWD="\$DIR"
     export SAGA_UPID="\$UPID"
     \\printf  "`\date` : RUNNING \\n" >> "\$DIR/log"
