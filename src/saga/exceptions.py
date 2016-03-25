@@ -316,6 +316,7 @@ class SagaException (Exception) :
     type           = property (get_type)            # exception type
     exceptions     = property (get_all_exceptions)  # list [Exception]
     messages       = property (get_all_messages)    # list [string]
+    traceback      = property (get_traceback)       # string
 
 
 # ------------------------------------------------------------------------------
