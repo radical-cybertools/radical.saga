@@ -43,7 +43,7 @@ class Job (cpi_base.CPIBase, cpi_async.Async) :
     @SYNC
     def get_name                  (self, ttype)          : pass
     @ASYNC
-    def get_name_async           (self, ttype)          : pass
+    def get_name_async            (self, ttype)          : pass
 
     @SYNC
     def get_description           (self, ttype)          : pass

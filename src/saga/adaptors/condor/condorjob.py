@@ -1521,7 +1521,7 @@ class CondorJob (saga.adaptors.cpi.job.Job):
     #
     @SYNC_CALL
     def get_name (self):
-        """ Implements saga.adaptors.cpi.job.Job.get_name() """        
+        """ Implements saga.adaptors.cpi.job.Job.get_name() """
         return self._name
 
     # ----------------------------------------------------------------
