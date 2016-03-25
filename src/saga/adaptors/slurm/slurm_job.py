@@ -521,24 +521,30 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
             slurm_script += "#SBATCH --ntasks-per-node=%s\n" % processes_per_host
 
         if  cwd is not "":
-            slurm_script += "#SBATCH -D %s\n" % cwd
+            slurm_script += "#SBATCH --workdir %s\n" % cwd
 
         if  output:
-            slurm_script += "#SBATCH -o %s\n" % output
+            slurm_script += "#SBATCH --output %s\n" % output
         
         if  error:
-            slurm_script += "#SBATCH -e %s\n" % error
+            slurm_script += "#SBATCH --error %s\n" % error
 
         if  wall_time_limit:
             hours   = wall_time_limit / 60
             minutes = wall_time_limit % 60
-            slurm_script += "#SBATCH -t %02d:%02d:00\n" % (hours, minutes)
+            slurm_script += "#SBATCH --time %02d:%02d:00\n" % (hours, minutes)
 
         if  queue:
-            slurm_script += "#SBATCH -p %s\n" % queue
+            slurm_script += "#SBATCH --partition %s\n" % queue
 
         if  project:
-            slurm_script += "#SBATCH -A %s\n" % project
+            if not ':' in project:
+                account = project
+            else:
+                account, reservation = project.split(':')
+                slurm_script += "#SBATCH --reservation %s\n" % reservation
+
+            slurm_script += "#SBATCH --account %s\n" % account
 
         if  job_memory:
             slurm_script += "#SBATCH --mem=%s\n" % job_memory
@@ -584,7 +590,7 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         # try to create the working directory (if defined)
         # WRANING: this assumes a shared filesystem between login node and
         #           comnpute nodes.
-        if  jd.working_directory is not None:
+        if jd.working_directory:
             self._logger.info("Creating working directory %s" % jd.working_directory)
             ret, out, _ = self.shell.run_sync("mkdir -p %s" % (jd.working_directory))
             if ret != 0:
