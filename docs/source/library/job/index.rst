@@ -363,14 +363,18 @@ SAGA defines the following constants as job states:
 Metrics
 ^^^^^^^
 
-Job metrics provide a way to attach callback functions to a job object. The
-registered callback functions are triggered whenever a job metric changes.
+Job metrics provide a way to attach callback functions to a job object. As long
+as a callback remains registered, it will get triggered whenever a job metric
+changes.
 
 Callback functions require three parameters: 
 
    :source: the watched object instance
    :metric: the watched metric (e.g. :mod:`STATE` or :mod:`STATE_DETAIL`)
    :value: the new value of the watched metric
+
+Their return value determines if they remain registered (when returning `True`),
+or not (when returning `False`).
 
 Callback functions are attached to a job object via the 
 :meth:`~saga.attributes.Attributes.add_callback` method. For example::

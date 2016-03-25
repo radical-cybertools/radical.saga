@@ -453,5 +453,3 @@ class Service (sb.Base, sasync.Async) :
 
 # FIXME: add get_self()
 
-
-
