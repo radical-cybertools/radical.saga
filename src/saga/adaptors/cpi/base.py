@@ -84,6 +84,10 @@ class CPIBase (ruc.Configurable) :
     def get_session (self) :
         return self._session
 
+    @property
+    def session(self):
+        return self._session
 
-
-
+    @session.setter
+    def session(self, session):
+        self._session = session
