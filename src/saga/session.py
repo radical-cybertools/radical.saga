@@ -181,10 +181,9 @@ class Session (saga.base.SimpleBase) :
 
 
         # define an ssh context
-        c = saga.Context()
-        c.context_type = 'ssh'
-        c.user_cert = '$HOME/.ssh/special_id_rsa'
-        c.user_key  = '$HOME/.ssh/special_id_rsa.pub'
+        c = saga.Context('ssh')
+        c.user_cert = '$HOME/.ssh/special_id_rsa.pub'
+        c.user_key  = '$HOME/.ssh/special_id_rsa'
 
         # add it to a session
         s = saga.Session
