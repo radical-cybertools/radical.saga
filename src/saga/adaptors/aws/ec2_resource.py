@@ -714,8 +714,8 @@ class EC2ResourceManager (saga.adaptors.cpi.resource.Manager) :
                 ret = self.conn.ex_create_security_group('saga-sg', 'used by SAGA', None) 
                 ret = self.conn.ex_get_security_groups(group_names=['saga-sg'])
                 gid = ret[0].id
-                ret = self.conn.ex_authorize_security_group_ingress(gid, 22, 22, 
-                        cidr_ips=['0.0.0.0/0'])
+                ret = self.conn.ex_authorize_security_group_ingress(gid, 22, 22, cidr_ips=['0.0.0.0/0'])
+                ret = self.conn.ex_authorize_security_group_egress (gid, 22, 22, cidr_ips=['0.0.0.0/0'])
 
             except Exception as e:
                 # lets hope this was a race and the group now exists...
