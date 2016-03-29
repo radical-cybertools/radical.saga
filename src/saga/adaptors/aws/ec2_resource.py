@@ -699,26 +699,27 @@ class EC2ResourceManager (saga.adaptors.cpi.resource.Manager) :
             if  not rd.template in self.templates_dict : 
                 self._refresh_templates (rd.template)
 
-            if  not rd.image in self.images_dict : 
-                self._refresh_images (uid=rd.image)
-
-
-            # FIXME: interpret / verify size
-
-            # user name as id tag
-            import getpass
-            cid = getpass.getuser()
-
-            # create/use the saga-sg security group which allows ssh access
-            try: 
-                self.conn.ex_create_security_group('saga-sg', 'used by SAGA', None) 
-            except Exception as e:
-                # lets hope this was a race and the group now exists...
-                pass
-
+         #  if  not rd.image in self.images_dict : 
+         #      self._refresh_images (uid=rd.image)
+         #
+         #
+         #  # FIXME: interpret / verify size
+         #
+         #  # user name as id tag
+         #  import getpass
+         #  cid = getpass.getuser()
+         #
+         #  # create/use the saga-sg security group which allows ssh access
+         #  try: 
+         #      self.conn.ex_create_security_group('saga-sg', 'used by SAGA', None) 
+         #  except Exception as e:
+         #      # lets hope this was a race and the group now exists...
+         #      pass
+         #
             ret = self.conn.ex_get_security_groups(group_names=['saga-sg'])
             gid = ret[0].id
-            ret = self.conn.ex_authorize_security_group_ingress(gid, 22, 22, cidr_ips='')
+            ret = self.conn.ex_authorize_security_group_ingress(gid, 22, 22, 
+                    cidr_ips=['0.0.0.0/0'])
 
             # it should be safe to create the VM instance now
             node = self.conn.create_node (name  = 'saga.resource.Compute.%s' % cid,
