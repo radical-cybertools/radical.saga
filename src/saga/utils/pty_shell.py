@@ -857,7 +857,7 @@ class PTYShell (object) :
             os.system('sync') # WTF?  Why do I need this?
 
             fhandle2 = open(fname, 'r')
-            out      = fhandle.read()
+            out      = fhandle2.read()
             fhandle2.close()
 
             os.remove(fname)
