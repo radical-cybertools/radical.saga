@@ -633,12 +633,12 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
         td = jd.transfer_directives
 
         # Condor specific safety checks
-        if len(td.in_append_dict) > 0:
+        if td.in_append_dict:
             raise Exception('FileTransfer append syntax (>>) not supported by Condor: %s' % td.in_append_dict)
-        if len(td.out_append_dict) > 0:
+        if td.out_append_dict:
             raise Exception('FileTransfer append syntax (<<) not supported by Condor: %s' % td.out_append_dict)
 
-        if len(td.in_overwrite_dict) > 0:
+        if td.in_overwrite_dict:
             td.transfer_input_files = []
             for (source, target) in td.in_overwrite_dict.iteritems():
                 # make sure source is file an not dir
@@ -663,7 +663,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
                     raise NotImplementedError("%s support for Condor not implemented." % \
                             self.shell.url.scheme)
 
-        if len(td.out_overwrite_dict) > 0:
+        if td.out_overwrite_dict:
             td.transfer_output_files = []
             for (source, target) in td.out_overwrite_dict.iteritems():
                 # make sure source is file and not dir
