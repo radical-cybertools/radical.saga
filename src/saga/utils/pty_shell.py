@@ -300,7 +300,7 @@ class PTYShell (object) :
                 try :
                     # set and register new prompt
                     self.run_async  ( " unset PROMPT_COMMAND;"
-                                    + " set HISTFILE=~/.saga_history;"
+                                    + " set HISTFILE=$HOME/.saga_history;"
                                     + " PS1='PROMPT-$?->';"
                                     + " PS2='';"
                                     + " export PS1 PS2 2>&1 >/dev/null;"
