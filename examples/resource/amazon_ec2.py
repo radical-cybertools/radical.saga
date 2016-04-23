@@ -91,7 +91,8 @@ def main():
             cd.template = 'Small Instance'
 
             # Create a VM instance from that description.
-            cr = rm.acquire(cd)
+            cr  = rm.acquire(cd)
+            rid = cr.id
 
             print "\nWaiting for VM to become active..."
 

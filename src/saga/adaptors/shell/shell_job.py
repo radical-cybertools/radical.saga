@@ -558,7 +558,9 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
             ret, out, _ = self.shell.run_sync (" test -f %s" % tgt)
             if  ret != 0 :
                 # yep, need to stage...
-                src = shell_wrapper._WRAPPER_SCRIPT % ({ 'PURGE_ON_START' : str(self._adaptor.purge_on_start) })
+              # src = shell_wrapper._WRAPPER_SCRIPT % ({ 'PURGE_ON_START' : str(self._adaptor.purge_on_start) })
+                src = shell_wrapper._WRAPPER_SCRIPT
+                src = src.replace('%(PURGE_ON_START)s', str(self._adaptor.purge_on_start))
                 self.shell.write_to_remote (src, tgt)
 
         # ----------------------------------------------------------------------
@@ -1363,7 +1365,7 @@ class ShellJob (saga.adaptors.cpi.job.Job) :
             self._state == saga.job.CANCELED     :
                 return self._state
 
-        stats     = self.js._job_get_stats (self._id)
+        stats = self.js._job_get_stats (self._id)
 
         if 'start' in stats : self._started  = stats['start']
         if 'stop'  in stats : self._finished = stats['stop']
@@ -1553,7 +1555,7 @@ class ShellJob (saga.adaptors.cpi.job.Job) :
 
             # avoid busy poll
             # FIXME: self-tune by checking call latency
-            time.sleep (0.5)
+            time.sleep (0.1)
 
             # check if we hit timeout
             if  timeout >= 0 :
