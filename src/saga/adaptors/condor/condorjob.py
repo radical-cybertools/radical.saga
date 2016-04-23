@@ -242,7 +242,7 @@ def _condorscript_generator(url, logger, jds, option_dict=None):
 # --------------------------------------------------------------------
 # some private defs
 #
-_PTY_TIMEOUT = 2.0
+_CACHE_TIMEOUT = 5.0
 
 # --------------------------------------------------------------------
 # the adaptor name
@@ -700,7 +700,10 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
         # if the 'gone' flag is set, there's no need to query the job
         # state again. it's gone forever
         if prev_info['gone'] is True:
-            self._logger.warning("Job information is not available anymore.")
+            return prev_info
+
+        # if we just queried the job info, don't query again
+        if time.time() - prev_info['timestamp'] < _CACHE_TIMEOUT:
             return prev_info
 
         # curr. info will contain the new job info collect. it starts off
@@ -719,6 +722,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
         curr_info['stdout'     ] = prev_info.get ('stdout'     )
         curr_info['stderr'     ] = prev_info.get ('stderr'     )
         curr_info['name'       ] = prev_info.get ('name'       )
+        curr_info['timestamp'  ] = prev_info.get ('timestamp'  )
 
         rm, pid = self._adaptor.parse_id(job_id)
 
@@ -774,10 +778,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
 
             else:
                 curr_info['gone'] = True
-            #else:
-            #    # something went wrong
-            #    message = "Error retrieving job info via 'condor_q': %s" % out
-            #    log_error_and_raise(message, saga.NoSuccess, self._logger)
+
         else:
             # parse the egrep result. this should look something like this:
             # JobStatus = 5
@@ -840,21 +841,25 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
                     self.shell.stage_from_remote(f, f)
 
         # return the new job info dict
+        curr_info['timestamp'] = time.time()
         return curr_info
 
 
     # ----------------------------------------------------------------
     #
-    def _job_get_info_bulk(self, cluster_id, cluster_size, rm):
+    def _job_get_info_bulk(self, cluster_id, job_ids):
         """ get job attributes via condor_q
         """
+
+        # NOTE: bulk queries ignore the cache timeout, 
+        #       but they do update the timestamps
 
         prev_info = {}
         curr_info = {}
 
-        proc_ids = map(str, range(cluster_size))
+        proc_ids = map(str, range(len(job_ids)))
 
-        for job_id in ['[%s]-[%s.%s]' % (rm, cluster_id, proc_id) for proc_id in proc_ids]:
+        for job_id in job_ids:
 
             # if we don't have the job in our dictionary, we don't want it
             if job_id not in self.jobs:
@@ -887,6 +892,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
             curr_info[job_id]['stdout']      = prev_info[job_id].get('stdout')
             curr_info[job_id]['stderr']      = prev_info[job_id].get('stderr')
             curr_info[job_id]['name']        = prev_info[job_id].get('name')
+            curr_info[job_id]['timestamp']   = prev_info[job_id].get('timestamp')
 
 
         # run the Condor 'condor_q' command to get some infos about our job
@@ -898,7 +904,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
             raise Exception("condor_q failed")
 
         results = filter(None, out.split('\n'))
-        procs_condor_q_found = set()
+        n_found = 0
 
         for row in results:
             #
@@ -906,15 +912,16 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
             #
             procid, jobstatus, exitstatus, completiondate = tuple([col.strip() for col in row.split(',')])
 
-            job_id = "[%s]-[%s.%s]" % (rm, cluster_id, procid)
-            procs_condor_q_found.update([procid])
-            curr_info[job_id]['state'] = _condor_to_saga_jobstate(jobstatus)
-            curr_info[job_id]['returncode'] = exitstatus
-            curr_info[job_id]['end_time'] = completiondate
+            for job_id in job_ids:
+                if job_id.endswith('.%s]' % procid):
+                    n_found += 1
+                    curr_info[job_id]['state']      = _condor_to_saga_jobstate(jobstatus)
+                    curr_info[job_id]['end_time']   = completiondate
+                    curr_info[job_id]['returncode'] = exitstatus
+                    curr_info[job_id]['timestamp']  = time.time()
+                    break
 
-        procs_missing = set(proc_ids) - procs_condor_q_found
-
-        if procs_missing:
+        if n_found < len(job_ids):
             #
             # (Some) cluster processes not found with condor_q, trying condor_history now
             #
@@ -931,36 +938,34 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
             if ret != 0:
                 raise Exception("Error getting job history via 'condor_history': %s" % out)
 
-            procs_condor_history_found = set()
-
             results = filter(None, out.split('\n'))
             for row in results:
 
                 procid, exitcode, transferoutput, completiondate, jobcurrentstartdate, qdate, stderr, stdout = \
                     tuple([col.strip() for col in row.split(',')])
 
-                procs_condor_history_found.update([procid])
+                for job_id in job_ids:
+                    if job_id.endswith('.%s]' % procid):
+                        n_found += 1
+                        curr_info[job_id]['returncode']  = int(exitcode)
+                        curr_info[job_id]['transfers']   = transferoutput
+                        curr_info[job_id]['create_time'] = qdate
+                        curr_info[job_id]['start_time']  = jobcurrentstartdate
+                        curr_info[job_id]['end_time']    = completiondate
+                        curr_info[job_id]['stdout']      = stdout
+                        curr_info[job_id]['stderr']      = stderr
 
-                job_id = "[%s]-[%s.%s]" % (rm, cluster_id, procid)
+                        if int(exitcode) == 0:
+                            curr_info[job_id]['state'] = saga.job.DONE
+                        else:
+                            curr_info[job_id]['state'] = saga.job.FAILED
 
-                curr_info[job_id]['returncode'] = int(exitcode)
-                curr_info[job_id]['transfers'] = transferoutput
-                curr_info[job_id]['create_time'] = qdate
-                curr_info[job_id]['start_time'] = jobcurrentstartdate
-                curr_info[job_id]['end_time'] = completiondate
-                curr_info[job_id]['stdout'] = stdout
-                curr_info[job_id]['stderr'] = stderr
+                        curr_info[job_id]['gone']      = True
+                        curr_info[job_id]['timestamp'] = time.time()
+                        break
 
-                if curr_info[job_id]['returncode'] == 0:
-                    curr_info[job_id]['state'] = saga.job.DONE
-                else:
-                    curr_info[job_id]['state'] = saga.job.FAILED
-
-                curr_info[job_id]['gone'] = True
-
-            procs_missing = set(proc_ids) - (procs_condor_q_found | procs_condor_history_found)
-            if procs_missing:
-                self._logger.debug('still missing procs: %s' % procs_missing)
+        if n_found < len(job_ids):
+            raise RuntimeError('could not find all jobs')
 
         # Transfer stuff
         # if curr_info['gone'] is True:
@@ -1031,8 +1036,8 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
         """ get the job's exit code
         """
         # check if we can / should update
-        if (self.jobs[job_id]['gone'] is not True) \
-        and (self.jobs[job_id]['returncode'] is None):
+        if  (self.jobs[job_id]['gone'] is not True) and \
+            (self.jobs[job_id]['returncode'] is None):
             self.jobs[job_id] = self._job_get_info(job_id=job_id)
 
         ret = self.jobs[job_id]['returncode']
@@ -1391,25 +1396,26 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
     @SYNC_CALL
     def container_get_states(self, jobs):
 
-        # JobIds also include the rm, so we strip that out.
-        job_ids = [job._adaptor._id for job in jobs]
+        # JobIds also include the rm, so we strip that out.  Then sort in
+        # clusters we can query
+        clusters = dict()
+        for job in jobs:
 
-        proc_ids = [self._adaptor.parse_id(job_id)[1] for job_id in job_ids]
+            job_id     = job._adaptor._id
+            proc_id    = self._adaptor.parse_id(job_id)[1]
+            cluster_id = proc_id.split('.', 1)[0]
 
-        clusters = list(set([id.split('.', 1)[0] for id in proc_ids]))
+            if not cluster_id in clusters:
+                clusters[cluster_id] = list()
+            clusters[cluster_id].append(job_id)
 
-        if len(clusters) > 1:
-            raise Exception("More than one cluster in this container.")
 
-        # Now that we assume we have just one ...
-        cluster_id = clusters[0]
-        cluster_size = len(jobs)
-        self._logger.debug("wait for cluster: %s(%d)", cluster_id, cluster_size)
+        states = list()
+        for cluster_id in clusters:
 
-        rm, _ = self._adaptor.parse_id(job_ids[0])
-        bulk_info = self._job_get_info_bulk(cluster_id, cluster_size, rm)
-
-        states = [bulk_info[job_id]['state'] for job_id in job_ids]
+            job_ids   = clusters[cluster_id]
+            bulk_info = self._job_get_info_bulk(cluster_id, job_ids)
+            states   += [bulk_info[job_id]['state'] for job_id in job_ids]
 
         return states
 

@@ -89,7 +89,7 @@ class LogicalDirectory (nsdir.Directory, sa.Attributes) :
         ret:            bool / saga.Task
         '''
         if    tgt  :  return self._adaptor.is_file      (tgt, ttype=ttype)
-        else       :  return self._nsdirec.is_file_self (      ttype=ttype)
+        else       :  return self._nsdirec.is_entry_self(     ttype=ttype)
 
 
     @rus.takes   ('LogicalDirectory', 
