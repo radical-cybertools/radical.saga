@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 
 __author__    = "Andre Merzky, Ole Weidner"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
@@ -30,9 +31,9 @@ import saga
 def main():
 
     # number of job 'groups' / containers
-    num_job_groups = 3
+    num_job_groups = 10
     # number of jobs per container
-    jobs_per_group = 4
+    jobs_per_group = 40
 
     try:
         # all jobs in this example are running on the same job service
@@ -50,7 +51,7 @@ def main():
                 # add jobs to container. to make things a bit more
                 # interesting, we give each job a random runtime (1-60s)
                 jd = saga.job.Description()
-                jd.environment = {'RUNTIME': random.randrange(1000, 2000, 1)}
+                jd.environment = {'RUNTIME': random.randrange(10, 60)}
                 jd.executable  = '/bin/sleep'
                 jd.arguments   = ['$RUNTIME']
                 jd.name        = ['job.%03d' % j]
@@ -63,7 +64,7 @@ def main():
             containers[c].run()
 
             for j in containers[c].get_tasks():
-                print '%s: %s: %s (%s)' % (j.name, j.id, j.state, type(j))
+                print '%s: %s: %s' % (j.name, j.id, j.state)
 
             print containers[c].get_states ()
             containers[c].cancel()

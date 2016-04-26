@@ -14,7 +14,7 @@ import saga.adaptors.base
 import saga.adaptors.cpi.job
 
 from saga.job.constants import *
-from transferdirectives import TransferDirectives
+from saga.utils.job     import TransferDirectives
 
 import re
 import os
@@ -75,132 +75,89 @@ def _condorscript_generator(url, logger, jds, option_dict=None):
     """
     condor_file = str()
 
-    #
     # HTCondor quoting/escaping:
     # http://research.cs.wisc.edu/htcondor/manual/current/condor_submit.html#SECTION0012514000000000000000
-    #
 
-    # Assuming that most of the JDs are similar, we take the first one
-    common_jd = jds[0]
-
-    ##### OPTIONS PASSED VIA JOB SERVICE URL #####
-    ##
+    ##### options passed via job service url #####
     if option_dict is not None:
-        condor_file += "\n##### OPTIONS PASSED VIA JOB SERVICE URL #####\n##"
+        condor_file += "\n##### OPTIONS PASSED VIA JOB SERVICE URL #####\n"
 
-        for (key, value) in option_dict.iteritems():
+        for key,value in option_dict.iteritems():
             condor_file += "\n%s = %s" % (key, value)
 
-    ##### OPTIONS PASSED VIA JOB DESCRIPTION #####
-    ##
-    condor_file += "\n\n##### OPTIONS PASSED VIA JOB DESCRIPTION #####\n##"
+    ##### options passed via job description #####
+    condor_file += "\n\n##### OPTIONS PASSED VIA JOB DESCRIPTION #####\n"
 
-    # special treatment for universe - defaults to 'vanilla'
-    if common_jd.queue:
-        condor_file += "\nuniverse = %s" % common_jd.queue
-    else:
-        condor_file += "\nuniverse = vanilla"
-
-    # Condor doesn't expand environment variables in arguments.
-    # To support this functionality, we wrap by calling /bin/env.
-    condor_file += "\nexecutable = /bin/env"
-
-    # environment -> environment
-    # http://research.cs.wisc.edu/htcondor/manual/current/condor_submit.html#SECTION0012514000000000000000
-    environment = "environment ="
-    if common_jd.environment is not None:
-        variable_list = str()
-        for key in common_jd.environment.keys():
-            variable_list += "%s=%s " % (key, common_jd.environment[key])
-        environment += " \"%s\"" % variable_list.strip()
-    condor_file += "\n%s" % environment
-
-    # project -> +ProjectName
-    if common_jd.project is not None:
-        condor_file += "\n+ProjectName = \"%s\"" % str(common_jd.project)
-
-    if common_jd.total_cpu_count:
-        condor_file += "\nrequest_cpus = %d" % common_jd.total_cpu_count
-
-    # arguments -> arguments
-    common_arguments = "arguments = \"/bin/sh -c '"
-
-    # The actual executable becomes the first argument.
-    if common_jd.executable is not None:
-        common_arguments += "%s" % common_jd.executable
-    else:
-        message = "Executable not set"
-        log_error_and_raise(message, saga.NoSuccess, logger)
-
-    if common_jd.candidate_hosts is not None:
-
-        # Special Characters
-        HOST_EXCLUSION_SYMBOL = '!'
-        SPECIAL_REQ_SYMBOL = '~'
-
-        requirements = ""
-
-        # TODO: This is bound to GLIDEIN which it shouldnt be.
-        resource_key = 'GLIDEIN_ResourceName'
-
-        # Whitelist sites, filter out "special" entries from the candidate host lists
-        incl_sites = [host for host in common_jd.candidate_hosts if not host.startswith((SPECIAL_REQ_SYMBOL, HOST_EXCLUSION_SYMBOL))]
-        if incl_sites:
-            requirements += '(' +  ' || '.join(['%s =?= "%s"' % (resource_key, site) for site in incl_sites]) + ')'
-
-        # Blacklist sites
-        excl_sites = [host for host in common_jd.candidate_hosts if host.startswith(HOST_EXCLUSION_SYMBOL)]
-        if excl_sites:
-            if incl_sites:
-                # If there were sites, start with an AND operator again
-                requirements += ' && '
-            requirements += '(' +  ' && '.join(['%s =!= "%s"' % (resource_key, site.lstrip(' ' + HOST_EXCLUSION_SYMBOL)) for site in excl_sites]) + ')'
-
-        # Generic requirements handling
-        # Get the '~special_requirements' and strip leading ~ and possible spaces.
-        special = ' && '.join([host.lstrip(' ' + SPECIAL_REQ_SYMBOL) for host in common_jd.candidate_hosts if host.startswith(SPECIAL_REQ_SYMBOL)])
-        if special:
-            if incl_sites or excl_sites:
-                # If there were white and/or black sites, start with an AND operator again
-                requirements += ' && '
-            requirements += special
-
-        if requirements:
-            condor_file += "\nrequirements = %s\n" % requirements
-
-    # Transfer Directives
-    if common_jd.attribute_exists('transfer_directives'):
-        # All checking is done in _handle_file_transfers() already.
-        td = common_jd.transfer_directives
-
-        if hasattr(td, 'transfer_input_files'):
-            transfer_input_files = "transfer_input_files = "
-            for source in td.transfer_input_files:
-                transfer_input_files += "%s, " % source
-            condor_file += "\n%s" % transfer_input_files
-
-        if hasattr(td, 'transfer_output_files'):
-            transfer_output_files = "transfer_output_files = "
-            for target in td.transfer_output_files:
-                transfer_output_files += "%s, " % target
-            condor_file += "\n%s" % transfer_output_files
-
-    #
     # Per Job in Bulk settings
-    #
-
     for jd in jds:
 
-        condor_file += "\n##### PER JOB OPTIONS #####\n##"
+        # special treatment for universe - defaults to 'vanilla'
+        if jd.queue:
+            condor_file += "\nuniverse = %s" % jd.queue
+        else:
+            condor_file += "\nuniverse = vanilla"
 
-        arguments = common_arguments
+        # handle site inclusion/exclusion
+        if jd.candidate_hosts:
 
-        if jd.arguments is not None:
+            # special characters / strings
+            # TODO: this is bound to GLIDEIN which it shouldnt be.
+            EXCLUSION    = '!'
+            REQUIRED     = '~'
+            KEY          = 'GLIDEIN_ResourceName'
+            requirements = ""
+
+            # Whitelist sites, filter out "special" entries from the candidate 
+            # host lists
+            excl_sites = [host for host in jd.candidate_hosts 
+                               if  host.startswith(EXCLUSION)]
+            req_sites  = [host for host in jd.candidate_hosts 
+                               if  host.startswith(REQUIRED)]
+            incl_sites = [host for host in jd.candidate_hosts
+                               if not host.startswith((REQUIRED, EXCLUSION))]
+
+            if incl_sites:
+                requirements += '(' +  ' || '.join(['%s =?= "%s"' % (KEY, site)
+                                for site in incl_sites]) + ')'
+
+            # Blacklist sites, strip out leading '!'
+            if excl_sites:
+                if incl_sites:
+                    # If there were sites, start with an AND operator again
+                    requirements += ' && '
+                requirements += '(' +  ' && '.join(['%s =!= "%s"' % (KEY, site[1:]) 
+                        for site in excl_sites]) + ')'
+
+            # Get the '~special_requirements' and strip leading ~
+            if req_sites:
+                if incl_sites or excl_sites:
+                    # If there were white and/or black sites, start with an AND operator again
+                    requirements += ' && '
+                requirements += ' && '.join(req_sites)
+
+            if requirements:
+                condor_file += "\nrequirements = %s\n" % requirements
+
+        # Condor doesn't expand environment variables in arguments.
+        # To support this functionality, we wrap by calling /bin/env.
+        condor_file += "\nexecutable = /bin/env"
+
+        # arguments -> arguments
+        arguments = "arguments = \"/bin/sh -c '"
+
+        # the actual executable becomes the first argument.
+        if not jd.executable:
+            log_error_and_raise("Executable not set", saga.NoSuccess, logger)
+        arguments += "%s" % jd.executable
+
+        # all other arguments follow
+        if jd.arguments:
 
             for arg in jd.arguments:
+
                 # Condor can't deal with multi-line arguments. yep, that's how
                 # bad of a software it is.
-                if len(arg.split("\n")) > 1:
+                if '\n' in arg:
                     message = "Condor doesn't support multi-line arguments: %s" % arg
                     log_error_and_raise(message, saga.NoSuccess, logger)
 
@@ -216,22 +173,54 @@ def _condorscript_generator(url, logger, jds, option_dict=None):
                 arguments += " %s" % arg
 
         # close the quote opened earlier
-        arguments += '\'\"'
+        arguments   += '\'\"'
         condor_file += "\n%s" % arguments
 
+        # Transfer Directives
+        assert(jd.transfer_directives)
+
+        # all checking is done in _handle_file_transfers() already.
+        td = jd.transfer_directives
+
+        if td.transfer_input_files:
+            condor_file += "\ntransfer_input_files = %s" 
+                         % ','.join(td.transfer_input_files)
+
+        if td.transfer_input_files:
+            condor_file += "\ntransfer_output_files = %s"
+                         % ','.join(td.transfer_output_files)
+
         # TODO: what to do when working directory is not set?
+        job_pwd = './'
+        if jd.working_directory:
+            job_pwd = jd.working_directory
         logname = "saga-condor-job-$(cluster)_$(process).log"
-        condor_file += "\nlog = %s " % os.path.join(jd.working_directory, logname)
+        condor_file += "\nlog = %s " % os.path.join(job_pwd, logname)
 
         # output -> output
         if jd.output is not None:
-            condor_file += "\noutput = %s " % os.path.join(jd.working_directory, jd.output)
+            condor_file += "\noutput = %s " % os.path.join(job_pwd, jd.output)
 
         # error -> error
         if jd.error is not None:
-            condor_file += "\nerror = %s " % os.path.join(jd.working_directory, jd.error)
+            condor_file += "\nerror = %s " % os.path.join(job_pwd, jd.error)
 
+        # environment -> environment
+        # http://research.cs.wisc.edu/htcondor/manual/current/condor_submit.html#SECTION0012514000000000000000
+        environment = "environment ="
+        if jd.environment:
+            for key,val in jd.environment.iteritems():
+                environment += ' "%s=%s"' % (key, val)
+        condor_file += "\n%s" % environment
 
+        # project -> +ProjectName
+        if jd.project:
+            condor_file += "\n+ProjectName = \"%s\"" % jd.project
+
+        if jd.total_cpu_count:
+            condor_file += "\nrequest_cpus = %d" % jd.total_cpu_count
+
+        # 'queue' concludes the description of a job
         condor_file += "\nqueue\n"
 
     condor_file += "\n##### END OF FILE #####\n"
@@ -472,39 +461,60 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
     def finalize(self, kill_shell=False):
         pass
 
+
+    # --------------------------------------------------------------------------
+    #
+    def _prepare_jd(self, jd):
+
+        if not jd.file_transfer:
+            jd.file_transfer = []
+
+        # Our submitted Condor script wraps the executable into a /bin/sh
+        # command, so Condor will not be able to infer the actual executable,
+        # and thus will make no attempt at staging it to the target host --
+        # which is what Condor usually does.  
+        #
+        # To recover that behavior, we add the respective file transfer
+        # directive for the second hop (first hop: laptop -> submission host,
+        # second hop : submission host -> execution site).  However, we only add
+        # that for executables starting with './', as we can't stage to other 
+        # locations than the job's workdir anyway.
+        #
+        # If a SAGA application wants to stage the executable over the *first*
+        # hop, ie. to the submission host, it has to explicitly specify that in
+        # the job description -- just like SAGA requires for all other backends.
+        if jd.executable.startswith('./'):
+
+            exe = jd.executable
+
+            # Check if the executable is already in the file_transfer list,
+            # because then we don't need to implicitly add it anymore.
+            # (For example, if the executable is not in the local directory, it needs
+            # to be explicitly added.)
+            stage_exe = True
+            for ft in jd.file_transfer:
+                if ft.endswith(exe):
+                    stage_exe = False
+
+            if stage_exe:
+                # staging from submission site to execution host is signalled by
+                # using a 'site:' prefix in the staging directive'
+                exe_transfer = 'site:%s > %s' % (exe, exe)
+                jd.file_transfer.append(exe_transfer)
+
+        # translate file transfer directives into actionables
+        jd.transfer_directives = TransferDirectives(jd.file_transfer)
+
+
     # ----------------------------------------------------------------
     #
     def _job_run(self, jd):
         """ runs a job via condor_submit
         """
 
-        # Because we do funky shit with env and sh, we need to explicitly add
-        # the executable to the transfer list.
-        # (Of course not if the executable is already on the target systems,
-        # defined by the fact that it starts with ./
-        if jd.executable.startswith('./') and os.path.exists(jd.executable):
-
-            # TODO: Check if the executable is already in the file_transfer list,
-            # because then we don't need to implicitly add it anymore.
-            # (For example, if the executable is not in the local directory, it needs
-            # to be explicitly added.)
-
-            exe = jd.executable[len('./'):]
-            exe_transfer = '%s > %s' % (exe, exe)
-
-            if jd.file_transfer:
-                jd.file_transfer.append(exe_transfer)
-            else:
-                jd.file_transfer = [exe_transfer]
-
-        if jd.file_transfer is not None:
-            jd.transfer_directives = TransferDirectives(jd.file_transfer)
-
-            self._handle_file_transfers(jd)
-
-            td = jd.transfer_directives
-            if not (hasattr(td, 'transfer_output_files') or hasattr(td, 'transfer_input_files')):
-                raise RuntimeError('One of them should be set!')
+        # ensure consistency and viability of job description
+        self._prepare_jd(jd)
+        self._handle_file_transfers(jd, mode='in')
 
         # create a Condor job script from SAGA job description
         script = _condorscript_generator(url=self.rm, logger=self._logger,
@@ -517,20 +527,16 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
         submit_file.close()
         self._logger.info("Written Condor script locally: %s" % submit_file.name)
 
-        if self.shell.url.scheme in ["ssh", "gsissh"]:
-            self._logger.info("Transferring Condor script to: %s" % self.shell.url)
-            submit_file_name = os.path.basename(submit_file.name)
-            # TODO: the "-P" is a layer violation?
-            self.shell.stage_to_remote(submit_file.name, submit_file_name, cp_flags="-P")
-
-        else:
+        if self.shell.url.scheme not in ["ssh", "gsissh"]:
             raise NotImplementedError("%s support for Condor not implemented." % \
                     self.shell.url.scheme)
 
+        self._logger.info("Transferring Condor script to: %s" % self.shell.url)
+        submit_file_name = os.path.basename(submit_file.name)
+        self.shell.stage_to_remote(submit_file.name, submit_file_name)
 
         ret, out, _ = self.shell.run_sync('%s -verbose %s' \
             % (self._commands['condor_submit']['path'], submit_file_name))
-
 
         if ret != 0:
             # something went wrong
@@ -542,13 +548,14 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
             for line in out.split("\n"):
                 if "** Proc" in line:
                     pid = line.split()[2][:-1]
+                    break
 
             # we don't want the 'query' part of the URL to be part of the ID,
             # simply because it can get terribly long (and ugly). to get rid
             # of it, we clone the URL and set the query part to None.
             rm_clone = surl.Url (self.rm)
             rm_clone.query = ""
-            rm_clone.path = ""
+            rm_clone.path  = ""
 
             job_id = "[%s]-[%s]" % (rm_clone, pid)
             self._logger.info("Submitted Condor job with id: %s" % job_id)
@@ -565,17 +572,16 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
                 'transfers':    None,
                 'stdout':       None,
                 'stderr':       None,
-                'name':         None
+                'name':         None,
+                'timestamp':    0.0
             }
 
             # remove submit file(s)
             # XXX: maybe leave them in case of debugging?
             self._logger.info("Submitted Condor job with scheme: '%s'" % self.shell.url.scheme)
             if self.shell.url.scheme in ['ssh', 'gsissh']:
-                self._logger.info("1")
                 ret, out, _ = self.shell.run_sync ('rm %s' % submit_file_name)
             else:
-                self._logger.info("2")
                 raise NotImplementedError("%s support for Condor not implemented." % \
                                  self.shell.url.scheme)
             os.remove(submit_file.name)
@@ -611,7 +617,8 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
                 'transfers':    None,
                 'stdout':       None,
                 'stderr':       None,
-                'name':         None
+                'name':         None,
+                'timestamp':    0.0
             }
 
             results = out.split('\n')
@@ -630,56 +637,126 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
 
             return job_info
 
-    def _handle_file_transfers(self, jd):
 
-        td = jd.transfer_directives
+    # --------------------------------------------------------------------------
+    #
+    def _handle_file_transfers(self, jd, mode):
+        """
+        if mode == 'in' : perform sanity checks on staging directives.  
 
-        # Condor specific safety checks
-        if td.in_append_dict:
-            raise Exception('FileTransfer append syntax (>>) not supported by Condor: %s' % td.in_append_dict)
-        if td.out_append_dict:
-            raise Exception('FileTransfer append syntax (<<) not supported by Condor: %s' % td.out_append_dict)
+        if mode == 'in' : stage files to   condor submission site
+        if mode == 'out': stage files from condor submission site
+        """
 
-        if td.in_overwrite_dict:
-            td.transfer_input_files = []
-            for (source, target) in td.in_overwrite_dict.iteritems():
-                # make sure source is file an not dir
-                (s_path, s_entry) = os.path.split(source)
-                if len(s_entry) < 1:
-                    raise Exception('Condor accepts only files (not directories) as FileTransfer sources: %s' % source)
-                    # TODO: this doesn't seem true, but dont want to tackle it right now
-                # make sure source and target file are the same
-                (t_path, t_entry) = os.path.split(target)
-                if s_entry != t_entry:
-                    raise Exception('For Condor source file name and target file name have to be identical: %s != %s' % (s_entry, t_entry))
+        assert(mode in ['in', 'out'])
 
-                # add for later use by job script generator
-                td.transfer_input_files.append(target)
+        # Condor data staging happens in two hops, a fact that is not reflected
+        # in SAGA's file transfer directives.  The hops are:
+        #
+        #   1: from the application host to the condor submission site
+        #   2: from the condor submission site to the execution site
+        #
+        # We introduce a condor specific notion to avoid the first hop on
+        # staging, for those cases where we expect the files to already reside
+        # on the submission site, eg. due to out-of-band staging etc.  In those
+        # cases, we prefix the respective input staging source with 'site:'.
+        # That prefix is also evaluated for output staging, where it causes the
+        # files to transfered only over the second hop, but not further back to
+        # the application host.
+        #
+        # The code below filters for those prefixes, and will enact
+        # 'stage_to_remote' and 'stage_from_remote' only for entries w/o the
+        # respective prefixes.  The prefixes are removed, so that the condor
+        # submission file contains clean staging directives for hop 2.
 
-                if self.shell.url.scheme in ["ssh", "gsissh"]:
-                    self._logger.info("Transferring file %s to %s" % (source, target))
-                    self.shell.stage_to_remote(source, target, cp_flags=saga.filesystem.CREATE_PARENTS)
+        if mode == 'in':
 
-                else:
-                    # TODO: this should just work
-                    raise NotImplementedError("%s support for Condor not implemented." % \
-                            self.shell.url.scheme)
-
-        if td.out_overwrite_dict:
+            td = jd.transfer_directives
+            td.prepared = True
+            td.transfer_input_files  = []
             td.transfer_output_files = []
-            for (source, target) in td.out_overwrite_dict.iteritems():
-                # make sure source is file and not dir
-                (s_path, s_entry) = os.path.split(source)
-                if len(s_entry) < 1:
-                    raise Exception('Condor accepts only files (not directories) as FileTransfer sources: %s' % source)
-                    # TODO: this doesn't seem true, but dont want to tackle it right now
-                # make sure source and target file are the same
-                (t_path, t_entry) = os.path.split(target)
-                if s_entry != t_entry:
-                    raise Exception('For Condor source file name and target file name have to be identical: %s != %s' % (s_entry, t_entry))
 
-                # add for later use by job script generator
-                td.transfer_output_files.append(target)
+            # Condor specific safety checks
+            if td.in_append_dict:
+                raise Exception('File append (>>) not supported')
+
+            if td.out_append_dict:
+                raise Exception('File append (<<) not supported')
+
+            if td.in_overwrite_dict:
+                
+                for (source, target) in td.in_overwrite_dict.iteritems():
+
+                    (s_path, s_entry) = os.path.split(source)
+                    (t_path, t_entry) = os.path.split(target)
+
+                    hop_1 = True
+                    if s_entry.starts_with('site:'):
+                        s_entry = s_entry[5:]
+                        hop_1   = False
+
+                    # make sure source is file an not dir
+                    if not s_entry:
+                        # TODO: this doesn't seem true, but dont want to tackle it right now
+                        raise Exception('directory staging not supported: %s' % source)
+
+                    # make sure source and target file are the same
+                    if s_entry != t_entry:
+                        raise Exception('source and target names must be equal: %s != %s' % (s_entry, t_entry))
+
+                    # add for later use by job script generator
+                    td.transfer_input_files.append(target)
+
+                    if hop_1 and self.shell.url.scheme in ["ssh", "gsissh"]:
+                        self._logger.info("Transferring in %s to %s" % (source, target))
+                        self.shell.stage_to_remote(source, target,
+                                                   cp_flags=saga.filesystem.CREATE_PARENTS)
+
+            if td.out_overwrite_dict:
+
+                for (source, target) in td.out_overwrite_dict.iteritems():
+
+                    (s_path, s_entry) = os.path.split(source)
+                    (t_path, t_entry) = os.path.split(target)
+
+                    if t_entry.starts_with('site:'):
+                        t_entry = t_entry[5:]
+
+                    # make sure source is file and not dir
+                    if not s_entry:
+                        # TODO: this doesn't seem true, but dont want to tackle it right now
+                        raise Exception('directory staging not supported: %s' % source)
+
+                    # make sure source and target file are the same
+                    if s_entry != t_entry:
+                        raise Exception('source and target names must be equal: %s != %s' % (s_entry, t_entry))
+
+                    # add for later use by job script generator
+                    td.transfer_output_files.append(target)
+
+
+        # ----------------------------------------------------------------------
+        elif mode == 'out':
+
+            # make sure mode=='in' has been used before
+            assert(td.prepared)
+
+            if td.out_overwrite_dict:
+
+                for (source, target) in td.out_overwrite_dict.iteritems():
+
+                    (s_path, s_entry) = os.path.split(source)
+                    (t_path, t_entry) = os.path.split(target)
+
+                    hop_1 = True
+                    if t_entry.starts_with('site:'):
+                        t_entry = t_entry[5:]
+                        hop_1   = False
+
+                    if hop_1 and self.shell.url.scheme in ["ssh", "gsissh"]:
+                        self._logger.info("Transferring out %s to %s" % (source, target))
+                        self.shell.stage_from_remote(source, target,
+                                                     cp_flags=saga.filesystem.CREATE_PARENTS)
 
 
     # ----------------------------------------------------------------
@@ -710,7 +787,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
         # as a copy of prev_info (don't use deepcopy because there is an API 
         # object in the dict -> recursion)
         curr_info = dict()
-        #curr_info['job_id'     ] = prev_info.get ('job_id'     )
+       #curr_info['job_id'     ] = prev_info.get ('job_id'     )
         curr_info['state'      ] = prev_info.get ('state'      )
         curr_info['exec_hosts' ] = prev_info.get ('exec_hosts' )
         curr_info['returncode' ] = prev_info.get ('returncode' )
@@ -757,7 +834,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
                         if key == 'ExitCode':
                             curr_info['returncode'] = int(val)
                         elif key == 'TransferOutput':
-                            curr_info['transfers'] = val
+                            curr_info['transfers'] = val.strip('"')
                         elif key == 'QDate':
                             curr_info['create_time'] = val
                         elif key == 'JobCurrentStartDate':
@@ -765,9 +842,9 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
                         elif key == 'CompletionDate':
                             curr_info['end_time'] = val
                         elif key == 'Out':
-                            curr_info['stdout'] = val
+                            curr_info['stdout'] = val.strip('"')
                         elif key == 'Err':
-                            curr_info['stderr'] = val
+                            curr_info['stderr'] = val.strip('"')
 
                 if curr_info['returncode'] == 0:
                     curr_info['state'] = saga.job.DONE
@@ -798,47 +875,8 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
                     elif key == 'CompletionDate':
                         curr_info['end_time'] = val
 
-        if curr_info['gone'] is True:
-            # If we are running over SSH, copy the output to our local system
-            if self.shell.url.scheme == "ssh":
-                files = []
-
-                if curr_info['transfers']:
-                    t = curr_info['transfers']
-                    self._logger.debug("TransferOutput: %s" % t)
-
-                    # Remove leading and ending double quotes
-                    if t.startswith('"') and t.endswith('"'):
-                        t = t[1:-1]
-
-                    # Parse comma separated list
-                    files += t.split(',')
-
-                if curr_info['stdout']:
-                    t = curr_info['stdout']
-                    self._logger.debug("StdOut: %s" % t)
-
-                    # Remove leading and ending double quotes
-                    if t.startswith('"') and t.endswith('"'):
-                        t = t[1:-1]
-
-                    files.append(t)
-
-                if curr_info['stderr']:
-                    t = curr_info['stderr']
-                    self._logger.debug("StdErr: %s" % t)
-
-                    # Remove leading and ending double quotes
-                    if t.startswith('"') and t.endswith('"'):
-                        t = t[1:-1]
-
-                    files.append(t)
-
-                # Transfer list of files
-                for f in files:
-                    f = f.strip()
-                    self._logger.info("Transferring file %s" % f)
-                    self.shell.stage_from_remote(f, f)
+        if curr_info['gone']:
+            self._handle_file_transfers(jd, mode='out')
 
         # return the new job info dict
         curr_info['timestamp'] = time.time()
@@ -970,7 +1008,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
         # Transfer stuff
         # if curr_info['gone'] is True:
         #     # If we are running over SSH, copy the output to our local system
-        #     if self.shell.url.scheme == "ssh":
+        #     if self.shell.url.scheme in ["ssh", 'gsissh']:
         #         files = []
         #
         #         if curr_info['transfers']:
@@ -1229,10 +1267,6 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
     @SYNC_CALL
     def container_run(self, jobs):
 
-        # TODO: Do we need to check that the bulks have at least something in common?
-        # How about only allowing arguments to be different for the time being?
-        # How about working_directory?
-
         executables = set([job.description.executable for job in jobs])
         if len(executables) != 1:
             raise Exception('Non-unique executables: %s' % executables)
@@ -1241,38 +1275,13 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
 
         for job in jobs:
 
-            jd = job.description
+            # ensure consistency and viability of job description
+            self._prepare_jd(job.description)
 
-            # Because we do funky shit with env and sh, we need to explicitly add
-            # the executable to the transfer list.
-            # (Of course not if the executable is already on the target systems,
-            # defined by the fact that it starts with ./
-            if jd.executable.startswith('./') and \
-                os.path.exists(jd.executable): # TODO: Why does it need to exist at this very path?
-
-                # TODO: Check if the executable is already in the file_transfer list,
-                # because then we don't need to implicitly add it anymore.
-                # (For example, if the executable is not in the local directory, it needs
-                # to be explicitly added.)
-
-                exe = jd.executable[len('./'):]
-                exe_transfer = '%s > %s' % (exe, exe)
-
-                if jd.file_transfer:
-                    jd.file_transfer.append(exe_transfer)
-                else:
-                    jd.file_transfer = [exe_transfer]
-
-            if jd.file_transfer is not None:
-                jd.transfer_directives = TransferDirectives(jd.file_transfer)
-
-                # TODO: Given that input (and output) are likely similar for bulk tasks,
-                # TODO: we probably don't want to transfer duplicates endlessly
-                self._handle_file_transfers(jd)
-
-                td = jd.transfer_directives
-                if not (hasattr(td, 'transfer_output_files') or hasattr(td, 'transfer_input_files')):
-                    raise RuntimeError('One of them should be set!')
+            # TODO: Given that input (and output) are likely similar for 
+            #       bulk tasks, we probably don't want to transfer 
+            #       duplicates endlessly
+            self._handle_file_transfers(jd, mode='in')
 
 
         # create a Condor job script from SAGA job description
@@ -1291,8 +1300,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
         if self.shell.url.scheme in ["ssh", "gsissh"]:
             self._logger.info("Transferring Condor script to: %s" % self.shell.url)
             submit_file_name = os.path.basename(submit_file.name)
-            # TODO: the "-P" is a layer violation?
-            self.shell.stage_to_remote(submit_file.name, submit_file_name, cp_flags="-P")
+            self.shell.stage_to_remote(submit_file.name, submit_file_name)
 
         else:
             raise NotImplementedError("%s support for Condor not implemented." % \
@@ -1348,7 +1356,8 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
                 'transfers':    None,
                 'stdout':       None,
                 'stderr':       None,
-                'name':         None
+                'name':         None,
+                'timestamp':    0.0
             }
 
         # remove submit file(s)
