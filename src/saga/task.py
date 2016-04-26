@@ -410,8 +410,8 @@ class Container (sbase.SimpleBase, satt.Attributes) :
                 thread.join ()
 
             if  thread.get_state () == FAILED :
-                raise se.NoSuccess ("thread exception: %s" \
-                                 % (thread.get_exception ()))
+                raise se.NoSuccess ("thread exception: %s\n%s" \
+                                 % (thread.exception, thread.traceback))
 
 
     # --------------------------------------------------------------------------

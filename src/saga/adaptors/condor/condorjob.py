@@ -82,6 +82,11 @@ def _condorscript_generator(url, logger, jds, option_dict=None):
     if option_dict is not None:
         condor_file += "\n##### OPTIONS PASSED VIA JOB SERVICE URL #####\n"
 
+        # project -> +ProjectName
+        if jds[0].project:
+            condor_file += "\n+ProjectName = \"%s\"" % jds[0].project
+
+
         for key,value in option_dict.iteritems():
             condor_file += "\n%s = %s" % (key, value)
 
@@ -183,11 +188,11 @@ def _condorscript_generator(url, logger, jds, option_dict=None):
         td = jd.transfer_directives
 
         if td.transfer_input_files:
-            condor_file += "\ntransfer_input_files = %s" 
+            condor_file += "\ntransfer_input_files = %s" \
                          % ','.join(td.transfer_input_files)
 
         if td.transfer_input_files:
-            condor_file += "\ntransfer_output_files = %s"
+            condor_file += "\ntransfer_output_files = %s" \
                          % ','.join(td.transfer_output_files)
 
         # TODO: what to do when working directory is not set?
@@ -212,10 +217,6 @@ def _condorscript_generator(url, logger, jds, option_dict=None):
             for key,val in jd.environment.iteritems():
                 environment += ' "%s=%s"' % (key, val)
         condor_file += "\n%s" % environment
-
-        # project -> +ProjectName
-        if jd.project:
-            condor_file += "\n+ProjectName = \"%s\"" % jd.project
 
         if jd.total_cpu_count:
             condor_file += "\nrequest_cpus = %d" % jd.total_cpu_count
@@ -523,6 +524,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
 
         submit_file = NamedTemporaryFile(mode='w', suffix='.condor',
                     prefix='tmp-saga-', delete=False)
+        submit_file_name = os.path.basename(submit_file.name)
         submit_file.write(script)
         submit_file.close()
         self._logger.info("Written Condor script locally: %s" % submit_file.name)
@@ -532,7 +534,6 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
                     self.shell.url.scheme)
 
         self._logger.info("Transferring Condor script to: %s" % self.shell.url)
-        submit_file_name = os.path.basename(submit_file.name)
         self.shell.stage_to_remote(submit_file.name, submit_file_name)
 
         ret, out, _ = self.shell.run_sync('%s -verbose %s' \
@@ -642,7 +643,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
     #
     def _handle_file_transfers(self, jd, mode):
         """
-        if mode == 'in' : perform sanity checks on staging directives.  
+        if mode == 'in' : perform sanity checks on all staging directives.  
 
         if mode == 'in' : stage files to   condor submission site
         if mode == 'out': stage files from condor submission site
@@ -687,13 +688,13 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
                 
                 for (source, target) in td.in_overwrite_dict.iteritems():
 
+                    hop_1 = True
+                    if source.startswith('site:'):
+                        source = source[5:]
+                        hop_1  = False
+
                     (s_path, s_entry) = os.path.split(source)
                     (t_path, t_entry) = os.path.split(target)
-
-                    hop_1 = True
-                    if s_entry.starts_with('site:'):
-                        s_entry = s_entry[5:]
-                        hop_1   = False
 
                     # make sure source is file an not dir
                     if not s_entry:
@@ -705,7 +706,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
                         raise Exception('source and target names must be equal: %s != %s' % (s_entry, t_entry))
 
                     # add for later use by job script generator
-                    td.transfer_input_files.append(target)
+                    td.transfer_input_files.append(source)
 
                     if hop_1 and self.shell.url.scheme in ["ssh", "gsissh"]:
                         self._logger.info("Transferring in %s to %s" % (source, target))
@@ -719,8 +720,8 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
                     (s_path, s_entry) = os.path.split(source)
                     (t_path, t_entry) = os.path.split(target)
 
-                    if t_entry.starts_with('site:'):
-                        t_entry = t_entry[5:]
+                    if target.startswith('site:'):
+                        target = target[5:]
 
                     # make sure source is file and not dir
                     if not s_entry:
@@ -749,7 +750,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
                     (t_path, t_entry) = os.path.split(target)
 
                     hop_1 = True
-                    if t_entry.starts_with('site:'):
+                    if t_entry.startswith('site:'):
                         t_entry = t_entry[5:]
                         hop_1   = False
 
@@ -1267,16 +1268,32 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
     @SYNC_CALL
     def container_run(self, jobs):
 
-        executables = set([job.description.executable for job in jobs])
-        if len(executables) != 1:
-            raise Exception('Non-unique executables: %s' % executables)
-        else:
-            self._logger.info('Unique executable: %s' % executables)
-
+        # condor can run a bulk under a single project ID, so we cluster before
+        # submit
+        project_bulks = dict()
         for job in jobs:
 
+            jd      = job.description
+            project = jd.get(saga.job.PROJECT, '')
+
+            if not project in project_bulks:
+                project_bulks[project] = list()
+            project_bulks[project].append(job)
+
+        for project,bulk in project_bulks.iteritems():
+            self._container_run_bulk(bulk)
+
+
+    # ----------------------------------------------------------------
+    #
+    def _container_run_bulk(self, jobs):
+
+        jds = [job.description for job in jobs]
+
+        for jd in jds:
+
             # ensure consistency and viability of job description
-            self._prepare_jd(job.description)
+            self._prepare_jd(jd)
 
             # TODO: Given that input (and output) are likely similar for 
             #       bulk tasks, we probably don't want to transfer 
@@ -1285,31 +1302,27 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
 
 
         # create a Condor job script from SAGA job description
-        script = _condorscript_generator(
-            url=self.rm, logger=self._logger,
-            jds=[job.description for job in jobs],
-            option_dict=self.query_options)
+        script = _condorscript_generator(url=self.rm, logger=self._logger, 
+                                         jds=jds, option_dict=self.query_options)
         self._logger.info("Generated Condor script: %s" % script)
 
         submit_file = NamedTemporaryFile(mode='w', suffix='.condor',
                                          prefix='tmp-saga-', delete=False)
+        submit_file_name = os.path.basename(submit_file.name)
         submit_file.write(script)
         submit_file.close()
         self._logger.info("Written Condor script locally: %s" % submit_file.name)
 
         if self.shell.url.scheme in ["ssh", "gsissh"]:
             self._logger.info("Transferring Condor script to: %s" % self.shell.url)
-            submit_file_name = os.path.basename(submit_file.name)
             self.shell.stage_to_remote(submit_file.name, submit_file_name)
 
         else:
             raise NotImplementedError("%s support for Condor not implemented." % \
                     self.shell.url.scheme)
 
-        submit_file_name = submit_file.name
-
         ret, out, _ = self.shell.run_sync('%s -verbose %s' \
-                                          % (self._commands['condor_submit']['path'], submit_file_name))
+                    % (self._commands['condor_submit']['path'], submit_file_name))
 
         if ret != 0:
             # condor_submit went wrong
@@ -1332,14 +1345,14 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
         # we don't want the 'query' part of the URL to be part of the ID,
         # simply because it can get terribly long (and ugly). to get rid
         # of it, we clone the URL and set the query part to None.
-        rm_clone = surl.Url(self.rm)
+        rm_clone       = surl.Url(self.rm)
         rm_clone.query = ""
-        rm_clone.path = ""
+        rm_clone.path  = ""
 
         for job, pid in zip(jobs, pids):
             job_id = "[%s]-[%s]" % (rm_clone, pid)
 
-            job._adaptor._id = job_id
+            job._adaptor._id      = job_id
             job._adaptor._started = True
 
             self._logger.info("Submitted Condor job with id: %s" % job_id)
