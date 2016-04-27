@@ -211,18 +211,27 @@ class ContextSSH (saga.adaptors.cpi.context.Context) :
         # make sure we have can access the key
         api = self.get_api ()
 
-        key = None
-        pub = None
+        unexpanded_key = None
+        unexpanded_pub = None
         pwd = None
 
         
-        if         api.attribute_exists (saga.context.USER_KEY ) :
-            key  = api.get_attribute    (saga.context.USER_KEY )
-        if         api.attribute_exists (saga.context.USER_CERT) :
-            pub  = api.get_attribute    (saga.context.USER_CERT)
-        if         api.attribute_exists (saga.context.USER_PASS) :
+        if api.attribute_exists (saga.context.USER_KEY ) :
+            unexpanded_key  = api.get_attribute    (saga.context.USER_KEY )
+        if api.attribute_exists (saga.context.USER_CERT) :
+            unexpanded_pub  = api.get_attribute    (saga.context.USER_CERT)
+        if api.attribute_exists (saga.context.USER_PASS) :
             pwd  = api.get_attribute    (saga.context.USER_PASS)
 
+        # Expand any environment variables in the key/pub paths
+        if unexpanded_key:
+            key = os.path.expandvars(unexpanded_key)
+        else:
+            key = None
+        if unexpanded_pub:
+            pub = os.path.expandvars(unexpanded_pub)
+        else:
+            pub = None
 
         # either user_key or user_cert should be specified (or both), 
         # then we complement the other, and convert to/from private 
@@ -281,7 +290,7 @@ class ContextSSH (saga.adaptors.cpi.context.Context) :
         import subprocess
         if  not subprocess.call (["sh", "-c", "grep ENCRYPTED %s > /dev/null" % key]) :
             if  pwd  :
-                if  subprocess.call (["sh", "-c", "ssh-keygen -y -f %s -P %s > /dev/null" % (key, pwd)]) :
+                if  subprocess.call (["sh", "-c", "ssh-keygen -y -f %s -P '%s' > /dev/null" % (key, pwd)]) :
                     raise se.PermissionDenied ("ssh key '%s' is encrypted, incorrect password" % (key))
             else :
                 self._logger.error ("ssh key '%s' is encrypted, unknown password" % (key))

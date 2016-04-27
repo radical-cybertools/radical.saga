@@ -92,6 +92,14 @@ _config_options = [
     },
     {
     'category'      : 'saga.utils.pty',
+    'name'          : 'ssh_timeout',
+    'type'          : float,
+    'default'       : 10.0,
+    'documentation' : 'connection attempts time out after that many seconds',
+    'env_variable'  : 'SAGA_PTY_SSH_TIMEOUT'
+    },
+    {
+    'category'      : 'saga.utils.pty',
     'name'          : 'connection_pool_ttl',
     'type'          : int,
     'default'       : 10*60,
@@ -107,6 +115,7 @@ _config_options = [
     'env_variable'  : 'SAGA_PTY_CONN_POOL_SIZE'
     },
     {
+    # FIXME: should that be the same value as 'ssh_timeout'?
     'category'      : 'saga.utils.pty',
     'name'          : 'connection_pool_wait',
     'type'          : int,
