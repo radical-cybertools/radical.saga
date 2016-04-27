@@ -181,7 +181,8 @@ _ADAPTOR_OPTIONS       = [
 # the adaptor capabilities & supported attributes
 #
 _ADAPTOR_CAPABILITIES  = {
-    "jdes_attributes"  : [saga.job.EXECUTABLE,
+    "jdes_attributes"  : [saga.job.NAME,
+                          saga.job.EXECUTABLE,
                           saga.job.PRE_EXEC,
                           saga.job.POST_EXEC,
                           saga.job.ARGUMENTS,
@@ -191,6 +192,7 @@ _ADAPTOR_CAPABILITIES  = {
                           saga.job.INPUT,
                           saga.job.OUTPUT,
                           saga.job.ERROR,
+                          saga.job.NAME,
                           saga.job.WALL_TIME_LIMIT, # TODO: 'hot'-fix for BigJob - implement properly
                           saga.job.TOTAL_CPU_COUNT, # TODO: 'hot'-fix for BigJob - implement properly
                           saga.job.PROCESSES_PER_HOST,
@@ -779,7 +781,7 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
                 continue
 
             if ':' in line :
-                key, val = line.split (":", 2)
+                key, val = line.split (":", 1)
                 ret[key.strip ().lower ()] = val.strip ()
                 continue
 
@@ -1023,6 +1025,9 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
         messages, assigning job IDs etc.
         """
 
+        # FIXME: this just assumes that all tasks are job creation tasks --
+        #        which is not necessarily true...
+
         self._logger.debug ("container run: %s"  %  str(jobs))
 
         bulk = "BULK\n"
@@ -1100,13 +1105,28 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
     @SYNC_CALL
     def container_wait (self, jobs, mode, timeout) :
 
+        # FIXME: this just assumes that all tasks are job wait tasks --
+        #        which is not necessarily true...
+        # FIXME: we ignore the job wait mode (ALL/ANY), and always wait for all
+        #        jobs...
+
         self._logger.debug ("container wait: %s"  %  str(jobs))
 
         bulk = "BULK\n"
 
         for job in jobs :
-            rm, pid = self._adaptor.parse_id (job.id)
-            bulk   += "WAIT %s\n" % pid
+          # print type (job)
+          # print type (job._adaptor)
+
+            if  not isinstance (job._adaptor, ShellJob) :
+                # this is not a job created by this adaptor.  Its probably
+                # a task for a job operation where the job is owned by this
+                # adaptor (FIXME: check).  Fall back to non-container wait.
+                # FIXME: timeout handling is wrong
+                job.wait (timeout)
+            else :
+                rm, pid = self._adaptor.parse_id (job.id)
+                bulk   += "WAIT %s\n" % pid
 
         bulk += "BULK_RUN\n"
         self.shell.run_async (bulk)
@@ -1153,9 +1173,9 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
-    def container_cancel (self, jobs) :
+    def container_cancel (self, jobs, timeout) :
 
-        self._logger.debug ("container cancel: %s"  %  str(jobs))
+        self._logger.debug ("container cancel: %s [%s]"  %  (str(jobs), timeout))
 
         bulk = "BULK\n"
 
@@ -1216,6 +1236,10 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
         states = []
 
         for job in jobs :
+
+          # print job
+          # job._attributes_dump ()
+
             rm, pid = self._adaptor.parse_id (job.id)
             bulk   += "STATE %s\n" % pid
 
@@ -1300,11 +1324,13 @@ class ShellJob (saga.adaptors.cpi.job.Job) :
 
             # initialize job attribute values
             self._id              = None
+            self._name            = self.jd.get(saga.job.NAME)
             self._log             = list()
             self._state           = None
             self._exit_code       = None
             self._exception       = None
             self._created         = time.time ()
+            self._name            = self.jd.name
             self._started         = None
             self._finished        = None
 
@@ -1315,11 +1341,13 @@ class ShellJob (saga.adaptors.cpi.job.Job) :
             self.js               = job_info["job_service"] 
             self.jd               = None
             self._id              = job_info['job_id']
+            self._name            = job_info.get('job_name')
             self._log             = list()
             self._state           = None
             self._exit_code       = None
             self._exception       = None
             self._created         = None
+            self._name            = None
             self._started         = None
             self._finished        = None
 
@@ -1410,6 +1438,15 @@ class ShellJob (saga.adaptors.cpi.job.Job) :
 
         # no need to refresh stats -- this is set locally
         return self._created
+
+
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def get_name (self) : 
+
+        # no need to refresh stats -- this is set locally
+        return self._name
 
 
     # ----------------------------------------------------------------
@@ -1577,6 +1614,13 @@ class ShellJob (saga.adaptors.cpi.job.Job) :
         """ Implements saga.adaptors.cpi.job.Job.get_id() """        
         return self._id
    
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def get_name (self):
+        """ Implements saga.adaptors.cpi.job.Job.get_name() """        
+        return self._name
+
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
