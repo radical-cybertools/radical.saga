@@ -188,7 +188,7 @@ class Attributes (_AttributesBase, ru.DictMixin) :
 
 
         # --------------------------------------------------------------------------------
-        class Transliterator ( pilot.Attributes ) :
+        class Transliterator ( saga.Attributes ) :
             
             def __init__ (self, *args, **kwargs) :
                 # setting attribs to non-extensible will cause the cal to init below to
@@ -330,20 +330,23 @@ class Attributes (_AttributesBase, ru.DictMixin) :
         # we use similar mechanism to initialize attribs here:
 
         for arg in args :
-            if  isinstance (arg, dict) :
+            if arg == None:
+                # be resiliant to empty initialization
+                pass
+            elif isinstance (arg, dict):
                 d['extensible']  = True   # it is just being extended ;)
                 d['camelcasing'] = True   # default for dict inits
-                for key in arg.keys () :
-                    us_key = self._attributes_t_underscore (key)
-                    self._attributes_i_set (us_key, arg[key], force=True, flow=self._UP)
-            else :
-                raise se.BadParameter ("initialization expects dictionary")
+                for key in arg.keys():
+                    us_key = self._attributes_t_underscore(key)
+                    self._attributes_i_set(us_key, arg[key], force=True, flow=self._UP)
+            else:
+                raise se.BadParameter("initialization expects dictionary")
 
         for key in kwargs.keys () :
             self.set_attribute (key, kwargs[key])
 
         # make iterable
-        self._iterpos = 0
+        d['_iterpos'] = 0
         self.list_attributes ()
 
 
@@ -392,6 +395,7 @@ class Attributes (_AttributesBase, ru.DictMixin) :
             d['lister']      = None
             d['caller']      = None
             d['recursion']   = False
+            d['_iterpos']    = 0
 
             _AttributesBase.__setattr__ (self, '_d', d)
 
@@ -1195,7 +1199,6 @@ class Attributes (_AttributesBase, ru.DictMixin) :
                             ret.append (k)
 
         return ret
-
 
 
     # --------------------------------------------------------------------------
@@ -2665,6 +2668,18 @@ class Attributes (_AttributesBase, ru.DictMixin) :
 
     # --------------------------------------------------------------------------
     #
+    @rus.takes   ('Attributes',
+                  dict)
+    @rus.returns (dict)
+    def from_dict (self, seed):
+        """ set attributes from dict """
+
+        for k,v in seed.iteritems():
+            self.set_attribute(k,v)
+
+
+    # --------------------------------------------------------------------------
+    #
     @rus.takes   ('Attributes')
     @rus.returns (dict)
     def as_dict (self) :
@@ -2715,17 +2730,19 @@ class Attributes (_AttributesBase, ru.DictMixin) :
 
         iterlist = self._attributes_i_list (CamelCase=False)
         
-        if  self._iterpos >= len(iterlist) :
-            self._iterpos  = 0
+        d = self._attributes_t_init ()
+
+        if  d['_iterpos'] >= len(iterlist) :
+            d['_iterpos']  = 0
             raise StopIteration
 
         if  not len(iterlist) :
-            self._iterpos  = 0
+            d['_iterpos']  = 0
             raise StopIteration
 
-        self._iterpos += 1
+        d['_iterpos'] += 1
 
-        return iterlist[self._iterpos-1]
+        return iterlist[d['_iterpos']-1]
 
 
 

@@ -6,6 +6,118 @@
     https://github.com/radical-cybertools/saga-python/issues?q=is%3Aissue+is%3Aopen+
 
 
+Version 0.40.2                                                        2016-04-23
+--------------------------------------------------------------------------------
+
+  - Hotfix release to avoid security warnings on Stampede
+
+
+Version 0.40.1                                                        2016-02-05
+--------------------------------------------------------------------------------
+
+  - Hotfix release to address a tmp file race condition on file staging
+
+
+Version 0.40                                                          2016-01-19
+--------------------------------------------------------------------------------
+
+  - Added job monitor state update fix to PBSPro adapter. 
+  - Add session property to base class. Fix #480. 
+  - add traceback property to exception
+  - support gsissh for condor job submission 
+  - pass span parameter to LSF. 
+  - support SLURM reservation. 
+  - file staging for shell adaptor
+  - Fix #477, set session for shell job service 
+  - Fixed job state monitor to correctly identify state changes. 
+  - Fixed string formatting error. 
+  - Fixes #501. Thanks Javi! 
+  - fix session documentation.  Thanks Jeremy!
+  - Fix to allow use of environment vars in ssh context key/cert property file paths. 
+  - Implement bulk submit, states and wait for condor. 
+  - Improve file staging directives handling. 
+  - Logging goes into working directory. 
+  - make ssh connection timeout configirable (defaults now to 10 seconds) 
+  - Passing ssh_timeout param to ssh ConnectTimeout option 
+  - Updated fix to #494 to take account of empty key/cert parameter. 
+  - deprecate PBS adaptor
+
+
+Version 0.39                                                          2015-12-01
+--------------------------------------------------------------------------------
+
+  - support dynamic adaptor loading 
+  - fix #477, set session for shell job service (thanks Mehdi!)
+  - set session on file and directory instances, #480 
+
+
+Version 0.38.1 release                                                2015-11-11
+--------------------------------------------------------------------------------
+
+  - fix 0.38 after botched merge
+
+
+Version 0.38 release                                                  2015-11-06
+--------------------------------------------------------------------------------
+
+  - support for anaconda client install
+
+
+Version 0.37 release                                                  2015-10-15
+--------------------------------------------------------------------------------
+
+  - scattered bug fixes
+
+
+Version 0.36 release                                                  2015-10-15
+--------------------------------------------------------------------------------
+
+  - update of GO adaptor with recent GlobusOnline evolotion
+  - scattered fixes in GO adaptor
+
+
+Version 0.36 release                                                  2015-10-08
+--------------------------------------------------------------------------------
+
+  Note that RADICAL_SAGA_VERBOSE should now be used instead of SAGA_VERBOSE (but
+  the latter will be supported for a while).  PTY layer debug levels can
+  separately be enabled via RADICAL_SAGA_PTY_VERBOSE.
+
+  - fix cray qsub arguments
+  - fix interpretation of relative / absolute URLs in some cases
+  - fix #449 - thanks jcohen02! 
+  - keep up with logger changes in util 
+  - properly detect failed jobs.
+  - follow changes on resource configurations (BW)
+  - remove dead code.
+  - fix state mapping in some queue adaptors
+  - clean torque/pbs separation
+
+
+Version 0.35 release                                                  2015-07-14
+--------------------------------------------------------------------------------
+
+  - Add contexts to session at start of context list
+  - add tc.get_task(id)
+  - Add PROCESSES_PER_HOST to all job adaptors.
+  - sync an sdist naming fix
+  - Add dedicated PBS Pro adaptor.
+  - Get ppn from proccess_per_host.
+  - implement candidate_hosts for slurm adaptor
+  - processes_per_host for SLURM.
+
+
+Version 0.29 release                                                  2015-07-14
+--------------------------------------------------------------------------------
+
+  - apply setup/git fix
+  - fix exception type exception
+  - convert to locking "with"/by context manager.
+  - only create parents for the dir part of a target.
+  - reentrant lock to guard concurrent cache writing.
+  - fix object._id format
+
+
 Version 0.28 release 2015-04-16
 --------------------------------------------------------------------------------
 
@@ -339,7 +451,7 @@ Version 0.2.5 released 2012-10-24
   - Introduced support for GSISSH: pbs+gsissh://, sge+gsissh://
   - Re-implementation of a (more Python-esque) attribute interface
   - Fixed JobID issues, i.e., job.job_id returns 'None' in case the
-    job is not running instead of "[serviceurl]-[None]"
+    job is not running instead of
   - Introduced dynamic, fault-tolerant plug-in loader. If anything
     goes wrong during loading of a specific plug-in (i.e.,
     dependencies on 3rd party modules cannot be fulfilled, the plug-in

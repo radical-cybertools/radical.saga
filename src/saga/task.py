@@ -112,8 +112,10 @@ class Task (sbase.SimpleBase, satt.Attributes) :
             args   = self._method_context['_args']
             kwargs = self._method_context['_kwargs']
 
-            if  not    '_from_task' in kwargs :
-                kwargs['_from_task'] = self
+            # if the called function expects a task handle, provide it.
+            if  '_from_task' in inspect.getargspec (call)[0] :
+                if  not    '_from_task' in kwargs :
+                    kwargs['_from_task'] = self
 
             self._thread = ru.Thread (call, *args, **kwargs)
 
@@ -133,7 +135,7 @@ class Task (sbase.SimpleBase, satt.Attributes) :
     #
     @rus.takes   ('Task')
     @rus.returns (rus.nothing)
-    def run (self) :
+    def run      (self) :
 
         if  self._thread :
             self._thread.run ()
@@ -370,11 +372,8 @@ class Container (sbase.SimpleBase, satt.Attributes) :
             # nothing to do
             return None
 
-
         buckets = self._get_buckets ()
         threads = []  # threads running container ops
-        queues  = {}
-
 
         # handle all container
         for c in buckets['bound'] :
@@ -413,8 +412,8 @@ class Container (sbase.SimpleBase, satt.Attributes) :
                 thread.join ()
 
             if  thread.get_state () == FAILED :
-                raise se.NoSuccess ("thread exception: %s\n%s" \
-                                 %  (thread.get_exception ()))
+                raise se.NoSuccess ("thread exception: %s" \
+                                 % (thread.get_exception ()))
 
 
     # --------------------------------------------------------------------------
@@ -456,7 +455,6 @@ class Container (sbase.SimpleBase, satt.Attributes) :
 
         buckets = self._get_buckets ()
         threads = []  # threads running container ops
-        queues  = {}
 
         # handle all tasks bound to containers
         for c in buckets['bound'] :
@@ -532,6 +530,7 @@ class Container (sbase.SimpleBase, satt.Attributes) :
 
         # all done - return random task (first from last container, or last
         # unbound task)
+        # FIXME: that task should be removed from the task container
         return ret
 
 
@@ -547,7 +546,6 @@ class Container (sbase.SimpleBase, satt.Attributes) :
 
         buckets = self._get_buckets ()
         threads = []  # threads running container ops
-        queues  = {}
 
         # handle all tasks bound to containers
         for c in buckets['bound'] :
@@ -581,6 +579,24 @@ class Container (sbase.SimpleBase, satt.Attributes) :
 
     # --------------------------------------------------------------------------
     #
+    @rus.takes   ('Container', 
+                  'basestring')
+    @rus.returns (Task)
+    def get_task (self, id) :
+
+        # FIXME: this should not be a search, but a lookup
+        if not id:
+            raise se.NoSuccess ("Lookup requires non-empty id (not '%s')" % id)
+
+        for t in self.tasks:
+            if t.id == id:
+                return t
+
+        raise se.NoSuccess ("task '%s' not found in container" % id)
+
+
+    # --------------------------------------------------------------------------
+    #
     @rus.takes   ('Container')
     @rus.returns (rus.list_of (Task))
     def get_tasks (self) :
@@ -596,7 +612,6 @@ class Container (sbase.SimpleBase, satt.Attributes) :
 
         buckets = self._get_buckets ()
         threads = []  # threads running container ops
-        queues  = {}
 
         # handle all tasks bound to containers
         for c in buckets['bound'] :

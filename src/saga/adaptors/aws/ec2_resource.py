@@ -35,6 +35,7 @@ _ADAPTOR_CAPABILITIES  = {
     "rdes_attributes"  : [saga.resource.RTYPE         ,
                           saga.resource.TEMPLATE      ,
                           saga.resource.IMAGE         ,
+                          saga.resource.DYNAMIC       ,
                           saga.resource.MACHINE_OS    ,
                           saga.resource.MACHINE_ARCH  ,
                           saga.resource.SIZE          ,
@@ -225,6 +226,8 @@ class Adaptor (saga.adaptors.base.Base):
         ctx_url = None
         error   = None
 
+        ec2_url = None
+
         for ctx in session.contexts :
 
             if  ctx.type.lower () == 'ec2' :
@@ -263,16 +266,16 @@ class Adaptor (saga.adaptors.base.Base):
 
                 if  backend  == 'aws' :
                     self._logger.debug ("aws backend")
-                    conn     =  driver (ctx_id, ctx_key)
+                    conn = driver (ctx_id, ctx_key)
                     # do we need URL details for different availability zones?
 
                 elif backend == 'euca' :
                     self._logger.debug ("eucalyptus backend")
-                    conn     =  driver (ctx_id, ctx_key,
-                                      # secure = True, # how do we know?
-                                        host   = ctx_url.host, 
-                                        port   = ctx_url.port,
-                                        path   = ctx_url.path)
+                    conn = driver (ctx_id, ctx_key,
+                                 # secure = True, # how do we know?
+                                   host   = ctx_url.host, 
+                                   port   = ctx_url.port,
+                                   path   = ctx_url.path)
                 else :
                     error = "only EC2 supported (not %s)" % ec2_url
                     next
@@ -439,87 +442,88 @@ class EC2Keypair (saga.adaptors.cpi.context.Context) :
             raise saga.exceptions.BadParameter \
                   ("`ec2_keypair` context must specify keypair name as `token`")
 
-        # valid context, connect to backend  
-        # FIXME: use 'Server' if defined
-        conn, backend = self._adaptor.connect (session)
-
-        # check if given keypair exists.  We only can do that by inspecting it,
-        # and capturing an eventual exception.
-        keypair = None
-        token   = self._api ().token
-        ssh_id  = ssh_context.user_id
-        key     = ssh_context.user_key
-        cert    = ssh_context.user_cert
-        keypass = ssh_context.user_pass
-
-        # With theese information, attempt to verify or upload the keypair.
-        upload  = False
-        try:
-            # try to find it
-            keypair = conn.ex_describe_keypairs (token)
-
-            if  not keypair               or \
-                not 'keyName' in keypair  or \
-                not keypair['keyName']       :
-
-                self._logger.info ("keypair check nok: %s" % (keypair))
-                upload = True
-
-            else :
-                self._logger.info ("keypair check ok: %s" % (keypair))
-
-        except Exception as e :
-
-            self._logger.error ("keypair check : %s" % (e))
-
-            # FIXME: actually, key management only seems to work for AWS/EC2
-            # proper (ex_describe_keypairs is documented as EC2 only by
-            # libcloud), so we only raise a warning on errors for other
-            # backends.
-            
-            if  backend == 'aws' :
-
-                if str(e).startswith ("InvalidKeyPair.NotFound") :
-
-                    if  not key :
-                        raise saga.exceptions.BadParameter \
-                              ("'ec2_keypair' not found: %s" % e)
-
-                    # keypair not found, but we have a key, so we can register it!
-                    upload = True
-
-                else :
-                    raise saga.exceptions.BadParameter \
-                          ("'ec2_keypair' invalid: %s" % e)
-
-
-        # upload keypair if we did not find it, and have something to upload.
-        if  upload and key :
-
-            self._logger.info ("import new keypair %s : %s" % (token, key))
-
-            try :
-                keypair = conn.ex_import_keypair (token, key)
-                self._logger.info ("keypair upload gave %s" % keypair)
-
-
-            except Exception as e :
-                raise saga.exceptions.BadParameter \
-                      ("'ec2_keypair' not imported: %s" % e)
-
-            # import worked -- we don't need to import again, so unset the
-            # user_key attribute
-            self._api ().user_key  = None
-            self._api ().user_cert = None
-
-
-        # did not find it, and have nothing to upload?!
-        elif upload and not key :
-            self._logger.error ("no 'UserKey' for ec2_keypair '%s'" % token)
-
-        # keypair found all right
-        else :
-            self._logger.info ("validated ec2_keypair '%s'" % token)
+      # # valid context, connect to backend  
+      # # FIXME: use 'Server' if defined
+      # conn, backend = self._adaptor.connect (session)
+      #
+      # # check if given keypair exists.  We only can do that by inspecting it,
+      # # and capturing an eventual exception.
+      # keypair = None
+      # token   = self._api ().token
+      # ssh_id  = ssh_context.user_id
+      # key     = ssh_context.user_key
+      # cert    = ssh_context.user_cert
+      # keypass = ssh_context.user_pass
+      #
+      # # With theese information, attempt to verify or upload the keypair.
+      # upload  = False
+      # try:
+      #     # try to find it
+      #     print 'describe %s' % token
+      #     keypair = conn.ex_describe_keypairs (token)
+      #
+      #     if  not keypair               or \
+      #         not 'keyName' in keypair  or \
+      #         not keypair['keyName']       :
+      #
+      #         self._logger.info ("keypair check nok: %s" % (keypair))
+      #         upload = True
+      #
+      #     else :
+      #         self._logger.info ("keypair check ok: %s" % (keypair))
+      #
+      # except Exception as e :
+      #
+      #     self._logger.error ("keypair check : %s" % (e))
+      #
+      #     # FIXME: actually, key management only seems to work for AWS/EC2
+      #     # proper (ex_describe_keypairs is documented as EC2 only by
+      #     # libcloud), so we only raise a warning on errors for other
+      #     # backends.
+      #     
+      #     if  backend == 'aws' :
+      #
+      #         if str(e).startswith ("InvalidKeyPair.NotFound") :
+      #
+      #             if  not key :
+      #                 raise saga.exceptions.BadParameter \
+      #                       ("'ec2_keypair' not found: %s" % e)
+      #
+      #             # keypair not found, but we have a key, so we can register it!
+      #             upload = True
+      #
+      #         else :
+      #             raise saga.exceptions.BadParameter \
+      #                   ("'ec2_keypair' invalid: %s" % e)
+      #
+      #
+      # # upload keypair if we did not find it, and have something to upload.
+      # if  upload and key :
+      #
+      #     self._logger.info ("import new keypair %s : %s" % (token, key))
+      #
+      #     try :
+      #         keypair = conn.ex_import_keypair (token, key)
+      #         self._logger.info ("keypair upload gave %s" % keypair)
+      #
+      #
+      #     except Exception as e :
+      #         raise saga.exceptions.BadParameter \
+      #               ("'ec2_keypair' not imported: %s" % e)
+      #
+      #     # import worked -- we don't need to import again, so unset the
+      #     # user_key attribute
+      #     self._api ().user_key  = None
+      #     self._api ().user_cert = None
+      #
+      #
+      # # did not find it, and have nothing to upload?!
+      # elif upload and not key :
+      #     self._logger.error ("no 'UserKey' for ec2_keypair '%s'" % token)
+      #
+      # # keypair found all right
+      # else :
+      #     self._logger.info ("validated ec2_keypair '%s'" % token)
 
 
         # we add the thusly derived ssh context to the session which originally
@@ -581,7 +585,6 @@ class EC2ResourceManager (saga.adaptors.cpi.resource.Manager) :
         self.lccp = self._adaptor.lccp
 
 
-
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
@@ -623,12 +626,17 @@ class EC2ResourceManager (saga.adaptors.cpi.resource.Manager) :
 
     # ----------------------------------------------------------------
     #
-    def _refresh_images (self, pattern=None) :
+    def _refresh_images (self, uid=None) :
 
         self.images      = []
         self.images_dict = {}
 
-        for image in self.conn.list_images (pattern) :
+        if uid:
+            pattern = [uid]
+        else:
+            pattern = None
+
+        for image in self.conn.list_images (ex_image_ids=pattern) :
 
             if  image.id.startswith ('ami-') :
 
@@ -692,20 +700,33 @@ class EC2ResourceManager (saga.adaptors.cpi.resource.Manager) :
                 self._refresh_templates (rd.template)
 
             if  not rd.image in self.images_dict : 
-                self._refresh_images (rd.image)
-
-
+                self._refresh_images (uid=rd.image)
+          
+          
             # FIXME: interpret / verify size
-
+          
             # user name as id tag
             import getpass
             cid = getpass.getuser()
+          
+            # create/use the saga-sg security group which allows ssh access
+            try: 
+                ret = self.conn.ex_create_security_group('saga-sg', 'used by SAGA', None) 
+                ret = self.conn.ex_get_security_groups(group_names=['saga-sg'])
+                gid = ret[0].id
+                ret = self.conn.ex_authorize_security_group_ingress(gid, 22, 22, cidr_ips=['0.0.0.0/0'])
+                ret = self.conn.ex_authorize_security_group_egress (gid, 22, 22, cidr_ips=['0.0.0.0/0'])
 
+            except Exception as e:
+                # lets hope this was a race and the group now exists...
+                pass
+          
             # it should be safe to create the VM instance now
             node = self.conn.create_node (name  = 'saga.resource.Compute.%s' % cid,
                                           size  = self.templates_dict[rd.template], 
                                           image = self.images_dict[rd.image], 
-                                          ex_keyname = token)
+                                          ex_keyname = token, 
+                                          ex_security_groups=['saga-sg'])
 
             resource_info = { 'backend'                 : self.backend   ,
                               'resource'                : node           ,
@@ -731,12 +752,10 @@ class EC2ResourceManager (saga.adaptors.cpi.resource.Manager) :
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
-    def acquire_by_id (self, rid) :
+    def acquire_by_id(self, rid):
 
         if  not self.conn :
             raise saga.IncorrectState ("not connected to backend")
-
-        resource_info = None
 
 
         try :
@@ -766,12 +785,8 @@ class EC2ResourceManager (saga.adaptors.cpi.resource.Manager) :
             # FIXME: translate errors more sensibly
             raise saga.NoSuccess ("Failed with %s" % e)
 
-
-        if  resource_info :
-            return saga.resource.Compute (_adaptor       = self._adaptor, 
-                                          _adaptor_state = resource_info)
-
-        raise saga.NoSuccess ("Could not acquire requested resource")
+        return saga.resource.Compute(_adaptor       = self._adaptor, 
+                                     _adaptor_state = resource_info)
 
 
     # ----------------------------------------------------------------
@@ -857,10 +872,10 @@ class EC2ResourceManager (saga.adaptors.cpi.resource.Manager) :
     @SYNC_CALL
     def get_image (self, img_id) :
 
-        if  not len (self.images) :
-            self._refresh_images ()
+        if  img_id not in self.images_dict:
+            self._refresh_images (uid=img_id)
 
-        if  not img_id in self.images_dict.keys () :
+        if  img_id not in self.images_dict:
             raise saga.BadParameter ("unknown image %s" % img_id)
 
         descr = dict(self.images_dict[img_id].extra)
@@ -906,13 +921,26 @@ class EC2ResourceCompute (saga.adaptors.cpi.resource.Compute) :
         # eval id if given
         if  id :
             self.manager_url, self.rid = self._adaptor.parse_id (id)
-            self.manager = saga.resource.Manager (self.manager_url)
+            self.manager = saga.resource.Manager (self.manager_url, session=session)
 
-            if  self.rid in self.manager.list (COMPUTE) :
-                self.rtype = COMPUTE
 
-            else :
-                raise saga.BadParameter ("Cannot handle resource type for %s", id)
+            if not id in self.manager.list(COMPUTE):
+
+                raise saga.BadParameter ("resource '%s' not found" % id)
+
+            cr = self.manager.acquire(id)
+
+            self.backend     = cr._adaptor.backend
+            self.resource    = cr._adaptor.resource
+            self.rtype       = cr._adaptor.rtype
+            self.descr       = cr._adaptor.descr
+            self.manager     = cr._adaptor.manager
+            self.manager_url = cr._adaptor.manager_url
+            self.conn        = cr._adaptor.conn
+            self.rid         = cr._adaptor.rid
+            self.id          = cr._adaptor.id
+            self.access      = cr._adaptor.access
+
 
         # no id -- grab info from adaptor_info
         elif adaptor_info :
@@ -939,14 +967,13 @@ class EC2ResourceCompute (saga.adaptors.cpi.resource.Compute) :
             self.access = None
 
 
-            # FIXME: we don't actually need new state, it should be fresh at
-            # this point, right?!
-            self._refresh_state ()
-
-
-
         else :
-            raise saga.BadParameter ("Cannot acquire resource, no contact information")
+            raise saga.BadParameter ("Cannot acquire resource, no id / contact info")
+
+
+        # FIXME: we don't actually need new state, it should be fresh at
+        # this point, right?!
+        self._refresh_state ()
 
 
         return self.get_api ()

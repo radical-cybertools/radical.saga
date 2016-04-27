@@ -1,6 +1,6 @@
 
 __author__    = "Andre Merzky, Mark Santcroos, Ole Weidner"
-__copyright__ = "Copyright 2012-2013, The SAGA Project"
+__copyright__ = "Copyright 2012-2015, The SAGA Project"
 __license__   = "MIT"
 
 
@@ -70,7 +70,7 @@ def _condor_to_saga_jobstate(condorjs):
 
 # --------------------------------------------------------------------
 #
-def _condorscript_generator(url, logger, jd, option_dict=None):
+def _condorscript_generator(url, logger, jds, option_dict=None):
     """ generates a Condor script from a SAGA job description
     """
     condor_file = str()
@@ -80,14 +80,13 @@ def _condorscript_generator(url, logger, jd, option_dict=None):
     # http://research.cs.wisc.edu/htcondor/manual/current/condor_submit.html#SECTION0012514000000000000000
     #
 
+    # Assuming that most of the JDs are similar, we take the first one
+    common_jd = jds[0]
+
     ##### OPTIONS PASSED VIA JOB SERVICE URL #####
     ##
     if option_dict is not None:
-        condor_file += "\n##### DEFAULT OPTIONS PASSED VIA JOB SERVICE URL #####\n##"
-        # special treatment for universe - defaults to 'vanilla'
-        if 'universe' not in option_dict:
-            condor_file += "\nuniverse = vanilla"
-
+        condor_file += "\n##### OPTIONS PASSED VIA JOB SERVICE URL #####\n##"
 
         for (key, value) in option_dict.iteritems():
             condor_file += "\n%s = %s" % (key, value)
@@ -95,47 +94,84 @@ def _condorscript_generator(url, logger, jd, option_dict=None):
     ##### OPTIONS PASSED VIA JOB DESCRIPTION #####
     ##
     condor_file += "\n\n##### OPTIONS PASSED VIA JOB DESCRIPTION #####\n##"
-    requirements = "requirements = "
+
+    # special treatment for universe - defaults to 'vanilla'
+    if common_jd.queue:
+        condor_file += "\nuniverse = %s" % common_jd.queue
+    else:
+        condor_file += "\nuniverse = vanilla"
 
     # Condor doesn't expand environment variables in arguments.
     # To support this functionality, we wrap by calling /bin/env.
     condor_file += "\nexecutable = /bin/env"
 
+    # environment -> environment
+    # http://research.cs.wisc.edu/htcondor/manual/current/condor_submit.html#SECTION0012514000000000000000
+    environment = "environment ="
+    if common_jd.environment is not None:
+        variable_list = str()
+        for key in common_jd.environment.keys():
+            variable_list += "%s=%s " % (key, common_jd.environment[key])
+        environment += " \"%s\"" % variable_list.strip()
+    condor_file += "\n%s" % environment
+
+    # project -> +ProjectName
+    if common_jd.project is not None:
+        condor_file += "\n+ProjectName = \"%s\"" % str(common_jd.project)
+
+    if common_jd.total_cpu_count:
+        condor_file += "\nrequest_cpus = %d" % common_jd.total_cpu_count
+
     # arguments -> arguments
-    arguments = 'arguments = \"/bin/sh -c \''
+    common_arguments = "arguments = \"/bin/sh -c '"
 
     # The actual executable becomes the first argument.
-    if jd.executable is not None:
-        arguments += "%s" % jd.executable
+    if common_jd.executable is not None:
+        common_arguments += "%s" % common_jd.executable
+    else:
+        message = "Executable not set"
+        log_error_and_raise(message, saga.NoSuccess, logger)
 
-    if jd.arguments is not None:
+    if common_jd.candidate_hosts is not None:
 
-        for arg in jd.arguments:
-            # Condor can't deal with multi-line arguments. yep, that's how
-            # bad of a software it is.
-            if len(arg.split("\n")) > 1:
-                message = "Condor doesn't support multi-line arguments: %s" % arg
-                log_error_and_raise(message, saga.NoSuccess, logger)
+        # Special Characters
+        HOST_EXCLUSION_SYMBOL = '!'
+        SPECIAL_REQ_SYMBOL = '~'
 
-            # Condor HATES double quotes in the arguments. It'll return
-            # some crap like: "Found illegal unescaped double-quote: ...
-            # That's why we escape them by repeating.
-            arg = arg.replace('"', '""')
-    
-            # Escape dollars (for environment variables)
-            #arg = arg.replace('$', '\\$')
-    
-            arguments += " %s" % arg
+        requirements = ""
 
-    # close the quote opened earlier 
-    arguments += '\'\"'
+        # TODO: This is bound to GLIDEIN which it shouldnt be.
+        resource_key = 'GLIDEIN_ResourceName'
 
-    condor_file += "\n%s" % arguments
+        # Whitelist sites, filter out "special" entries from the candidate host lists
+        incl_sites = [host for host in common_jd.candidate_hosts if not host.startswith((SPECIAL_REQ_SYMBOL, HOST_EXCLUSION_SYMBOL))]
+        if incl_sites:
+            requirements += '(' +  ' || '.join(['%s =?= "%s"' % (resource_key, site) for site in incl_sites]) + ')'
+
+        # Blacklist sites
+        excl_sites = [host for host in common_jd.candidate_hosts if host.startswith(HOST_EXCLUSION_SYMBOL)]
+        if excl_sites:
+            if incl_sites:
+                # If there were sites, start with an AND operator again
+                requirements += ' && '
+            requirements += '(' +  ' && '.join(['%s =!= "%s"' % (resource_key, site.lstrip(' ' + HOST_EXCLUSION_SYMBOL)) for site in excl_sites]) + ')'
+
+        # Generic requirements handling
+        # Get the '~special_requirements' and strip leading ~ and possible spaces.
+        special = ' && '.join([host.lstrip(' ' + SPECIAL_REQ_SYMBOL) for host in common_jd.candidate_hosts if host.startswith(SPECIAL_REQ_SYMBOL)])
+        if special:
+            if incl_sites or excl_sites:
+                # If there were white and/or black sites, start with an AND operator again
+                requirements += ' && '
+            requirements += special
+
+        if requirements:
+            condor_file += "\nrequirements = %s\n" % requirements
 
     # Transfer Directives
-    if jd.attribute_exists('transfer_directives'):
+    if common_jd.attribute_exists('transfer_directives'):
         # All checking is done in _handle_file_transfers() already.
-        td = jd.transfer_directives
+        td = common_jd.transfer_directives
 
         if hasattr(td, 'transfer_input_files'):
             transfer_input_files = "transfer_input_files = "
@@ -149,53 +185,55 @@ def _condorscript_generator(url, logger, jd, option_dict=None):
                 transfer_output_files += "%s, " % target
             condor_file += "\n%s" % transfer_output_files
 
-    # always define log. if 'jd.output' is defined, we use it 
-    # to name the logfile. if not, we fall back to a standard
-    # name... 
-    if jd.output is not None:
-        filename = str(jd.output)
-        idx = filename.rfind('.')
-        if idx != -1:
-            filename = filename[0:idx]
-        filename += ".log"
-    else:
-        filename = "saga-condor-job-$(cluster).log"
+    #
+    # Per Job in Bulk settings
+    #
 
-    condor_file += "\nlog = %s " % filename
+    for jd in jds:
 
-    # output -> output
-    if jd.output is not None:
-        condor_file += "\noutput = %s " % jd.output
+        condor_file += "\n##### PER JOB OPTIONS #####\n##"
 
-    # error -> error
-    if jd.error is not None:
-        condor_file += "\nerror = %s " % jd.error 
+        arguments = common_arguments
 
-    # environment -> environment
-    # http://research.cs.wisc.edu/htcondor/manual/current/condor_submit.html#SECTION0012514000000000000000
-    environment = "environment ="
-    if jd.environment is not None:
-        variable_list = str()
-        for key in jd.environment.keys(): 
-            variable_list += "%s=%s " % (key, jd.environment[key])
-        environment += " \"%s\"" % variable_list.strip()
-    condor_file += "\n%s" % environment
+        if jd.arguments is not None:
 
-    # project -> +ProjectName
-    if jd.project is not None:
-        condor_file += "\n+ProjectName = \"%s\"" % str(jd.project)
+            for arg in jd.arguments:
+                # Condor can't deal with multi-line arguments. yep, that's how
+                # bad of a software it is.
+                if len(arg.split("\n")) > 1:
+                    message = "Condor doesn't support multi-line arguments: %s" % arg
+                    log_error_and_raise(message, saga.NoSuccess, logger)
 
-    # candidate hosts -> SiteList + requirements
-    if jd.candidate_hosts is not None:
-        hosts = ""
-        for host in jd.candidate_hosts:
-            hosts += "%s, " % host
-        sitelist = "+SiteList = \\\"%s\\\"" % hosts
-        requirements += "(stringListMember(GLIDEIN_ResourceName,SiteList) == True)"
-        condor_file += "\n%s" % sitelist
-        condor_file += "\n%s" % requirements
+                # Condor HATES double quotes in the arguments. It'll return
+                # some crap like: "Found illegal unescaped double-quote: ...
+                # That's why we escape them by repeating.
+                arg = arg.replace('"', '""')
+                arg = arg.replace("'", "''")
 
-    condor_file += "\n\nqueue\n"
+                # Escape dollars (for environment variables)
+                #arg = arg.replace('$', '\\$')
+
+                arguments += " %s" % arg
+
+        # close the quote opened earlier
+        arguments += '\'\"'
+        condor_file += "\n%s" % arguments
+
+        # TODO: what to do when working directory is not set?
+        logname = "saga-condor-job-$(cluster)_$(process).log"
+        condor_file += "\nlog = %s " % os.path.join(jd.working_directory, logname)
+
+        # output -> output
+        if jd.output is not None:
+            condor_file += "\noutput = %s " % os.path.join(jd.working_directory, jd.output)
+
+        # error -> error
+        if jd.error is not None:
+            condor_file += "\nerror = %s " % os.path.join(jd.working_directory, jd.error)
+
+
+        condor_file += "\nqueue\n"
+
     condor_file += "\n##### END OF FILE #####\n"
 
     return condor_file
@@ -224,13 +262,14 @@ _ADAPTOR_CAPABILITIES = {
                           saga.job.INPUT,
                           saga.job.OUTPUT,
                           saga.job.ERROR,
-                          saga.job.QUEUE,
+                          saga.job.QUEUE, # TODO: map jd.queue to universe or pool?!
                           saga.job.PROJECT,
                           saga.job.WALL_TIME_LIMIT,
                           saga.job.WORKING_DIRECTORY,
                           saga.job.CANDIDATE_HOSTS,
                           saga.job.TOTAL_CPU_COUNT,
-                          saga.job.SPMD_VARIATION, # TODO: 'hot'-fix for BigJob
+                          saga.job.PROCESSES_PER_HOST,
+                          saga.job.SPMD_VARIATION,
                           saga.job.FILE_TRANSFER],
     "job_attributes":    [saga.job.EXIT_CODE,
                           saga.job.EXECUTION_HOSTS,
@@ -422,6 +461,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
                         version = version.strip(" $")
 
                         # add path and version to the command dictionary
+                        # TODO: change indentation below?
                 self._commands[cmd] = {"path":    path,
                                        "version": version}
 
@@ -435,7 +475,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
     # ----------------------------------------------------------------
     #
     def _job_run(self, jd):
-        """ runs a job via qsub
+        """ runs a job via condor_submit
         """
 
         # Because we do funky shit with env and sh, we need to explicitly add
@@ -455,7 +495,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
             if jd.file_transfer:
                 jd.file_transfer.append(exe_transfer)
             else:
-                jd.file_transfer = [ exe_transfer ]
+                jd.file_transfer = [exe_transfer]
 
         if jd.file_transfer is not None:
             jd.transfer_directives = TransferDirectives(jd.file_transfer)
@@ -468,7 +508,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
 
         # create a Condor job script from SAGA job description
         script = _condorscript_generator(url=self.rm, logger=self._logger,
-                jd=jd, option_dict=self.query_options)
+                jds=[jd], option_dict=self.query_options)
         self._logger.info("Generated Condor script: %s" % script)
 
         submit_file = NamedTemporaryFile(mode='w', suffix='.condor',
@@ -477,15 +517,15 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
         submit_file.close()
         self._logger.info("Written Condor script locally: %s" % submit_file.name)
 
-        if self.shell.url.scheme == "ssh":
+        if self.shell.url.scheme in ["ssh", "gsissh"]:
             self._logger.info("Transferring Condor script to: %s" % self.shell.url)
             submit_file_name = os.path.basename(submit_file.name)
+            # TODO: the "-P" is a layer violation?
             self.shell.stage_to_remote(submit_file.name, submit_file_name, cp_flags="-P")
 
-        elif self.shell.url.scheme == "gsissh":
-            raise NotImplemented("GSISSH support for Condor not implemented.")
         else:
-            submit_file_name = submit_file.name
+            raise NotImplementedError("%s support for Condor not implemented." % \
+                    self.shell.url.scheme)
 
 
         ret, out, _ = self.shell.run_sync('%s -verbose %s' \
@@ -524,15 +564,20 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
                 'gone':         False,
                 'transfers':    None,
                 'stdout':       None,
-                'stderr':       None
+                'stderr':       None,
+                'name':         None
             }
 
             # remove submit file(s)
             # XXX: maybe leave them in case of debugging?
-            if self.shell.url.scheme == 'ssh':
+            self._logger.info("Submitted Condor job with scheme: '%s'" % self.shell.url.scheme)
+            if self.shell.url.scheme in ['ssh', 'gsissh']:
+                self._logger.info("1")
                 ret, out, _ = self.shell.run_sync ('rm %s' % submit_file_name)
-            elif self.shell.url.scheme == 'gsissh':
-                raise NotImplemented("GSISSH support for Condor not implemented.")
+            else:
+                self._logger.info("2")
+                raise NotImplementedError("%s support for Condor not implemented." % \
+                                 self.shell.url.scheme)
             os.remove(submit_file.name)
 
             return job_id
@@ -547,7 +592,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
 
         # run the Condor 'condor_q' command to get some infos about our job
         ret, out, _ = self.shell.run_sync("unset GREP_OPTIONS; %s -long %s | \
-            grep -E '(JobStatus)|(ExitStatus)|(CompletionDate)'" \
+            grep -E '(^JobStatus)|(ExitStatus)|(CompletionDate)'" \
             % (self._commands['condor_q']['path'], pid))
         if ret != 0:
             message = "Couldn't reconnect to job '%s': %s" % (job_id, out)
@@ -565,7 +610,8 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
                 'gone':         False,
                 'transfers':    None,
                 'stdout':       None,
-                'stderr':       None
+                'stderr':       None,
+                'name':         None
             }
 
             results = out.split('\n')
@@ -589,49 +635,48 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
         td = jd.transfer_directives
 
         # Condor specific safety checks
-        if len(td.in_append_dict) > 0:
+        if td.in_append_dict:
             raise Exception('FileTransfer append syntax (>>) not supported by Condor: %s' % td.in_append_dict)
-        if len(td.out_append_dict) > 0:
+        if td.out_append_dict:
             raise Exception('FileTransfer append syntax (<<) not supported by Condor: %s' % td.out_append_dict)
 
-        if len(td.in_overwrite_dict) > 0:
+        if td.in_overwrite_dict:
             td.transfer_input_files = []
             for (source, target) in td.in_overwrite_dict.iteritems():
                 # make sure source is file an not dir
                 (s_path, s_entry) = os.path.split(source)
                 if len(s_entry) < 1:
                     raise Exception('Condor accepts only files (not directories) as FileTransfer sources: %s' % source)
-                    # make sure target is just a file
+                    # TODO: this doesn't seem true, but dont want to tackle it right now
+                # make sure source and target file are the same
                 (t_path, t_entry) = os.path.split(target)
-                if len(t_path) > 1:
-                    raise Exception('Condor accepts only filenames (without paths) as FileTransfer targets: %s' % target)
-                    # make sure source and target file are the same
                 if s_entry != t_entry:
                     raise Exception('For Condor source file name and target file name have to be identical: %s != %s' % (s_entry, t_entry))
-                    # entry ok - add to job script
 
                 # add for later use by job script generator
                 td.transfer_input_files.append(target)
 
-                if self.shell.url.scheme == "ssh":
+                if self.shell.url.scheme in ["ssh", "gsissh"]:
                     self._logger.info("Transferring file %s to %s" % (source, target))
-                    self.shell.stage_to_remote(source, target)
+                    self.shell.stage_to_remote(source, target, cp_flags=saga.filesystem.CREATE_PARENTS)
 
-        if len(td.out_overwrite_dict) > 0:
+                else:
+                    # TODO: this should just work
+                    raise NotImplementedError("%s support for Condor not implemented." % \
+                            self.shell.url.scheme)
+
+        if td.out_overwrite_dict:
             td.transfer_output_files = []
             for (source, target) in td.out_overwrite_dict.iteritems():
-                # make sure source is file an not dir
+                # make sure source is file and not dir
                 (s_path, s_entry) = os.path.split(source)
                 if len(s_entry) < 1:
                     raise Exception('Condor accepts only files (not directories) as FileTransfer sources: %s' % source)
-                    # make sure target is just a file
+                    # TODO: this doesn't seem true, but dont want to tackle it right now
+                # make sure source and target file are the same
                 (t_path, t_entry) = os.path.split(target)
-                if len(t_path) > 1:
-                    raise Exception('Condor accepts only filenames (without paths) as FileTransfer targets: %s' % target)
-                    # make sure source and target file are the same
                 if s_entry != t_entry:
                     raise Exception('For Condor source file name and target file name have to be identical: %s != %s' % (s_entry, t_entry))
-                    # entry ok - add to job script
 
                 # add for later use by job script generator
                 td.transfer_output_files.append(target)
@@ -662,7 +707,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
         # as a copy of prev_info (don't use deepcopy because there is an API 
         # object in the dict -> recursion)
         curr_info = dict()
-        curr_info['job_id'     ] = prev_info.get ('job_id'     )
+        #curr_info['job_id'     ] = prev_info.get ('job_id'     )
         curr_info['state'      ] = prev_info.get ('state'      )
         curr_info['exec_hosts' ] = prev_info.get ('exec_hosts' )
         curr_info['returncode' ] = prev_info.get ('returncode' )
@@ -670,12 +715,16 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
         curr_info['start_time' ] = prev_info.get ('start_time' )
         curr_info['end_time'   ] = prev_info.get ('end_time'   )
         curr_info['gone'       ] = prev_info.get ('gone'       )
+        curr_info['transfers'  ] = prev_info.get ('transfers'  )
+        curr_info['stdout'     ] = prev_info.get ('stdout'     )
+        curr_info['stderr'     ] = prev_info.get ('stderr'     )
+        curr_info['name'       ] = prev_info.get ('name'       )
 
         rm, pid = self._adaptor.parse_id(job_id)
 
         # run the Condor 'condor_q' command to get some infos about our job
         ret, out, _ = self.shell.run_sync("unset GREP_OPTIONS; %s -long %s | \
-            grep -E '(JobStatus)|(ExitStatus)|(CompletionDate)'" \
+            grep -E '(^JobStatus)|(ExitStatus)|(CompletionDate)'" \
             % (self._commands['condor_q']['path'], pid))
 
         if ret != 0:
@@ -793,6 +842,172 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
         # return the new job info dict
         return curr_info
 
+
+    # ----------------------------------------------------------------
+    #
+    def _job_get_info_bulk(self, cluster_id, cluster_size, rm):
+        """ get job attributes via condor_q
+        """
+
+        prev_info = {}
+        curr_info = {}
+
+        proc_ids = map(str, range(cluster_size))
+
+        for job_id in ['[%s]-[%s.%s]' % (rm, cluster_id, proc_id) for proc_id in proc_ids]:
+
+            # if we don't have the job in our dictionary, we don't want it
+            if job_id not in self.jobs:
+                raise Exception("Unknown job ID: %s. Can't update state.", job_id)
+
+            # prev. info contains the info collect when _job_get_info(_bulk)
+            # was called the last time
+            prev_info[job_id] = self.jobs[job_id]
+
+            # if the 'gone' flag is set, there's no need to query the job
+            # state again. it's gone forever
+            # TODO: what and when to return?
+            #if prev_info[job_id]['gone'] is True:
+            #    self._logger.warning("Job information is not available anymore.")
+            #    return prev_info[job_id]
+
+            # curr. info will contain the new job info collect. it starts off
+            # as a copy of prev_info (don't use deepcopy because there is an API
+            # object in the dict -> recursion)
+            curr_info[job_id] = {}
+            #curr_info['job_id'] = prev_info.get ('job_id')
+            curr_info[job_id]['state']       = prev_info[job_id].get('state')
+            curr_info[job_id]['exec_hosts']  = prev_info[job_id].get('exec_hosts')
+            curr_info[job_id]['returncode' ] = prev_info[job_id].get('returncode')
+            curr_info[job_id]['create_time'] = prev_info[job_id].get('create_time')
+            curr_info[job_id]['start_time']  = prev_info[job_id].get('start_time')
+            curr_info[job_id]['end_time']    = prev_info[job_id].get('end_time')
+            curr_info[job_id]['gone']        = prev_info[job_id].get('gone')
+            curr_info[job_id]['transfers']   = prev_info[job_id].get('transfers')
+            curr_info[job_id]['stdout']      = prev_info[job_id].get('stdout')
+            curr_info[job_id]['stderr']      = prev_info[job_id].get('stderr')
+            curr_info[job_id]['name']        = prev_info[job_id].get('name')
+
+
+        # run the Condor 'condor_q' command to get some infos about our job
+        ret, out, _ = self.shell.run_sync(
+            "%s %s -autoformat:,v ProcId JobStatus ExitStatus CompletionDate" %
+            (self._commands['condor_q']['path'], cluster_id))
+
+        if ret != 0:
+            raise Exception("condor_q failed")
+
+        results = filter(None, out.split('\n'))
+        procs_condor_q_found = set()
+
+        for row in results:
+            #
+            # Some processes in cluster found with condor_q!
+            #
+            procid, jobstatus, exitstatus, completiondate = tuple([col.strip() for col in row.split(',')])
+
+            job_id = "[%s]-[%s.%s]" % (rm, cluster_id, procid)
+            procs_condor_q_found.update([procid])
+            curr_info[job_id]['state'] = _condor_to_saga_jobstate(jobstatus)
+            curr_info[job_id]['returncode'] = exitstatus
+            curr_info[job_id]['end_time'] = completiondate
+
+        procs_missing = set(proc_ids) - procs_condor_q_found
+
+        if procs_missing:
+            #
+            # (Some) cluster processes not found with condor_q, trying condor_history now
+            #
+            #self._logger.debug('condor_q only returned (%s) of (%s) processes, missing (%s)', procs_condor_q_found, proc_ids, procs_missing)
+
+            # TODO: Don't know why one would use this check ..., skipping for now
+            # if prev_info['state'] in [saga.job.RUNNING, saga.job.PENDING]:
+
+            # run the Condor 'condor_history' command to get info about finished jobs
+            ret, out, _ = self.shell.run_sync(
+                "%s %s -match %d -autoformat:, ProcId ExitCode TransferOutput CompletionDate JobCurrentStartDate QDate Err Out" %
+                (self._commands['condor_history']['path'], cluster_id, len(procs_missing)))
+
+            if ret != 0:
+                raise Exception("Error getting job history via 'condor_history': %s" % out)
+
+            procs_condor_history_found = set()
+
+            results = filter(None, out.split('\n'))
+            for row in results:
+
+                procid, exitcode, transferoutput, completiondate, jobcurrentstartdate, qdate, stderr, stdout = \
+                    tuple([col.strip() for col in row.split(',')])
+
+                procs_condor_history_found.update([procid])
+
+                job_id = "[%s]-[%s.%s]" % (rm, cluster_id, procid)
+
+                curr_info[job_id]['returncode'] = int(exitcode)
+                curr_info[job_id]['transfers'] = transferoutput
+                curr_info[job_id]['create_time'] = qdate
+                curr_info[job_id]['start_time'] = jobcurrentstartdate
+                curr_info[job_id]['end_time'] = completiondate
+                curr_info[job_id]['stdout'] = stdout
+                curr_info[job_id]['stderr'] = stderr
+
+                if curr_info[job_id]['returncode'] == 0:
+                    curr_info[job_id]['state'] = saga.job.DONE
+                else:
+                    curr_info[job_id]['state'] = saga.job.FAILED
+
+                curr_info[job_id]['gone'] = True
+
+            procs_missing = set(proc_ids) - (procs_condor_q_found | procs_condor_history_found)
+            if procs_missing:
+                self._logger.debug('still missing procs: %s' % procs_missing)
+
+        # Transfer stuff
+        # if curr_info['gone'] is True:
+        #     # If we are running over SSH, copy the output to our local system
+        #     if self.shell.url.scheme == "ssh":
+        #         files = []
+        #
+        #         if curr_info['transfers']:
+        #             t = curr_info['transfers']
+        #             self._logger.debug("TransferOutput: %s" % t)
+        #
+        #             # Remove leading and ending double quotes
+        #             if t.startswith('"') and t.endswith('"'):
+        #                 t = t[1:-1]
+        #
+        #             # Parse comma separated list
+        #             files += t.split(',')
+        #
+        #         if curr_info['stdout']:
+        #             t = curr_info['stdout']
+        #             self._logger.debug("StdOut: %s" % t)
+        #
+        #             # Remove leading and ending double quotes
+        #             if t.startswith('"') and t.endswith('"'):
+        #                 t = t[1:-1]
+        #
+        #             files.append(t)
+        #
+        #         if curr_info['stderr']:
+        #             t = curr_info['stderr']
+        #             self._logger.debug("StdErr: %s" % t)
+        #
+        #             # Remove leading and ending double quotes
+        #             if t.startswith('"') and t.endswith('"'):
+        #                 t = t[1:-1]
+        #
+        #             files.append(t)
+        #
+        #         # Transfer list of files
+        #         for f in files:
+        #             f = f.strip()
+        #             self._logger.info("Transferring file %s" % f)
+        #             self.shell.stage_from_remote(f, f)
+
+        # return the new job info dict
+        return curr_info
+
     # ----------------------------------------------------------------
     #
     def _job_get_state(self, job_id):
@@ -825,6 +1040,13 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
         # FIXME: 'None' should cause an exception
         if ret == None : return None
         else           : return int(ret)
+
+    # ----------------------------------------------------------------
+    #
+    def _job_get_name(self, job_id):
+        """ get the job's name
+        """
+        return self.jobs[job_id]['name']
 
     # ----------------------------------------------------------------
     #
@@ -997,31 +1219,212 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
 
         return ids
 
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def container_run(self, jobs):
 
-  # # ----------------------------------------------------------------
-  # #
-  # def container_run (self, jobs) :
-  #     self._logger.debug ("container run: %s"  %  str(jobs))
-  #     # TODO: this is not optimized yet
-  #     for job in jobs:
-  #         job.run ()
-  #
-  #
-  # # ----------------------------------------------------------------
-  # #
-  # def container_wait (self, jobs, mode, timeout) :
-  #     self._logger.debug ("container wait: %s"  %  str(jobs))
-  #     # TODO: this is not optimized yet
-  #     for job in jobs:
-  #         job.wait ()
-  #
-  #
-  # # ----------------------------------------------------------------
-  # #
-  # def container_cancel (self, jobs) :
-  #     self._logger.debug ("container cancel: %s"  %  str(jobs))
-  #     raise saga.NoSuccess ("Not Implemented");
+        # TODO: Do we need to check that the bulks have at least something in common?
+        # How about only allowing arguments to be different for the time being?
+        # How about working_directory?
 
+        executables = set([job.description.executable for job in jobs])
+        if len(executables) != 1:
+            raise Exception('Non-unique executables: %s' % executables)
+        else:
+            self._logger.info('Unique executable: %s' % executables)
+
+        for job in jobs:
+
+            jd = job.description
+
+            # Because we do funky shit with env and sh, we need to explicitly add
+            # the executable to the transfer list.
+            # (Of course not if the executable is already on the target systems,
+            # defined by the fact that it starts with ./
+            if jd.executable.startswith('./') and \
+                os.path.exists(jd.executable): # TODO: Why does it need to exist at this very path?
+
+                # TODO: Check if the executable is already in the file_transfer list,
+                # because then we don't need to implicitly add it anymore.
+                # (For example, if the executable is not in the local directory, it needs
+                # to be explicitly added.)
+
+                exe = jd.executable[len('./'):]
+                exe_transfer = '%s > %s' % (exe, exe)
+
+                if jd.file_transfer:
+                    jd.file_transfer.append(exe_transfer)
+                else:
+                    jd.file_transfer = [exe_transfer]
+
+            if jd.file_transfer is not None:
+                jd.transfer_directives = TransferDirectives(jd.file_transfer)
+
+                # TODO: Given that input (and output) are likely similar for bulk tasks,
+                # TODO: we probably don't want to transfer duplicates endlessly
+                self._handle_file_transfers(jd)
+
+                td = jd.transfer_directives
+                if not (hasattr(td, 'transfer_output_files') or hasattr(td, 'transfer_input_files')):
+                    raise RuntimeError('One of them should be set!')
+
+
+        # create a Condor job script from SAGA job description
+        script = _condorscript_generator(
+            url=self.rm, logger=self._logger,
+            jds=[job.description for job in jobs],
+            option_dict=self.query_options)
+        self._logger.info("Generated Condor script: %s" % script)
+
+        submit_file = NamedTemporaryFile(mode='w', suffix='.condor',
+                                         prefix='tmp-saga-', delete=False)
+        submit_file.write(script)
+        submit_file.close()
+        self._logger.info("Written Condor script locally: %s" % submit_file.name)
+
+        if self.shell.url.scheme in ["ssh", "gsissh"]:
+            self._logger.info("Transferring Condor script to: %s" % self.shell.url)
+            submit_file_name = os.path.basename(submit_file.name)
+            # TODO: the "-P" is a layer violation?
+            self.shell.stage_to_remote(submit_file.name, submit_file_name, cp_flags="-P")
+
+        else:
+            raise NotImplementedError("%s support for Condor not implemented." % \
+                    self.shell.url.scheme)
+
+        submit_file_name = submit_file.name
+
+        ret, out, _ = self.shell.run_sync('%s -verbose %s' \
+                                          % (self._commands['condor_submit']['path'], submit_file_name))
+
+        if ret != 0:
+            # condor_submit went wrong
+            message = "Error running job via 'condor_submit': %s. Script was: %s" \
+                      % (out, script)
+            log_error_and_raise(message, saga.NoSuccess, self._logger)
+
+        pids = []
+        # stdout contains the job id
+        for line in out.split("\n"):
+            if line.startswith("** Proc "):
+                pid = line.split()[2][:-1]
+                if len(pid.split('.')) != 2:
+                    raise Exception("Pid looks weird: %s" % pid)
+                pids.append(pid)
+
+        if len(pids) != len(jobs):
+            raise Exception("Number of pids (%d) is different than number of jobs (%d)" % (len(pids), len(jobs)))
+
+        # we don't want the 'query' part of the URL to be part of the ID,
+        # simply because it can get terribly long (and ugly). to get rid
+        # of it, we clone the URL and set the query part to None.
+        rm_clone = surl.Url(self.rm)
+        rm_clone.query = ""
+        rm_clone.path = ""
+
+        for job, pid in zip(jobs, pids):
+            job_id = "[%s]-[%s]" % (rm_clone, pid)
+
+            job._adaptor._id = job_id
+            job._adaptor._started = True
+
+            self._logger.info("Submitted Condor job with id: %s" % job_id)
+
+            # add job to internal list of known jobs.
+            self.jobs[job_id] = {
+                'state':        saga.job.PENDING,
+                'exec_hosts':   None,
+                'returncode':   None,
+                'create_time':  None,
+                'start_time':   None,
+                'end_time':     None,
+                'gone':         False,
+                'transfers':    None,
+                'stdout':       None,
+                'stderr':       None,
+                'name':         None
+            }
+
+        # remove submit file(s)
+        # XXX: maybe leave them in case of debugging?
+        if self.shell.url.scheme in ['ssh', 'gsissh']:
+            #ret, out, _ = self.shell.run_sync ('rm %s' % submit_file_name)
+            pass
+        else:
+            raise NotImplementedError("%s support for Condor not implemented." % \
+                    self.shell.url.scheme)
+
+        os.remove(submit_file.name)
+
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def container_wait(self, jobs, mode, timeout):
+
+        if mode == saga.ANY:
+            pass
+        if mode == saga.ALL:
+            pass
+
+        while True:
+            states = self.container_get_states(jobs)
+            if saga.job.RUNNING not in states and saga.job.PENDING not in states:
+                break
+            time.sleep(5)
+
+        return states[0]
+
+
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def container_cancel(self, jobs):
+        self._logger.debug("container cancel: %s" % str(jobs))
+
+        # TODO: this is not optimized yet
+        for job in jobs:
+            job.cancel()
+
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def container_get_states(self, jobs):
+
+        # JobIds also include the rm, so we strip that out.
+        job_ids = [job._adaptor._id for job in jobs]
+
+        proc_ids = [self._adaptor.parse_id(job_id)[1] for job_id in job_ids]
+
+        clusters = list(set([id.split('.', 1)[0] for id in proc_ids]))
+
+        if len(clusters) > 1:
+            raise Exception("More than one cluster in this container.")
+
+        # Now that we assume we have just one ...
+        cluster_id = clusters[0]
+        cluster_size = len(jobs)
+        self._logger.debug("wait for cluster: %s(%d)", cluster_id, cluster_size)
+
+        rm, _ = self._adaptor.parse_id(job_ids[0])
+        bulk_info = self._job_get_info_bulk(cluster_id, cluster_size, rm)
+
+        states = [bulk_info[job_id]['state'] for job_id in job_ids]
+
+        return states
+
+        # TODO: check "cache" for final state jobs
+        # check if we have already reach a terminal state
+        # if self.jobs[job_id]['state'] == saga.job.CANCELED \
+        #         or self.jobs[job_id]['state'] == saga.job.FAILED \
+        #         or self.jobs[job_id]['state'] == saga.job.DONE:
+        #     return self.jobs[job_id]['state']
+        #
+        # # check if we can / should update
+        # if (self.jobs[job_id]['gone'] is not True):
+        #     self.jobs[job_id] = self._job_get_info(job_id=job_id)
+        #
+        # return self.jobs[job_id]['state']
 
 ###############################################################################
 #
@@ -1044,14 +1447,26 @@ class CondorJob (saga.adaptors.cpi.job.Job):
         self.jd = job_info["job_description"]
         self.js = job_info["job_service"]
 
+        # the js is responsible for job bulk operations -- which
+        # for jobs only work for run()
+        self._container = self.js
+
         if job_info['reconnect'] is True:
-            self._id = job_info['reconnect_jobid']
+            self._id      = job_info['reconnect_jobid']
+            self._name    = self.jd.get(saga.job.NAME)
             self._started = True
         else:
-            self._id = None
+            self._id      = None
+            self._name    = self.jd.get(saga.job.NAME)
             self._started = False
 
         return self.get_api()
+
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def get_description(self):
+        return self.jd
 
     # ----------------------------------------------------------------
     #
@@ -1117,6 +1532,13 @@ class CondorJob (saga.adaptors.cpi.job.Job):
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
+    def get_name (self):
+        """ Implements saga.adaptors.cpi.job.Job.get_name() """
+        return self._name
+
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
     def get_exit_code(self):
         """ implements saga.adaptors.cpi.job.Job.get_exit_code()
         """
@@ -1124,6 +1546,14 @@ class CondorJob (saga.adaptors.cpi.job.Job):
             return None
         else:
             return self.js._job_get_exit_code(self._id)
+
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def get_name(self):
+        """ implements saga.adaptors.cpi.job.Job.get_name()
+        """
+        return self.js._job_get_name(self._id)
 
     # ----------------------------------------------------------------
     #

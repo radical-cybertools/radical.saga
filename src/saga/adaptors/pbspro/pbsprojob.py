@@ -1,12 +1,9 @@
-
-__author__    = "Andre Merzky, Ole Weidner"
-__copyright__ = "Copyright 2012-2013, The SAGA Project"
+__author__    = "Andre Merzky, Ole Weidner, Mark Santcroos"
+__copyright__ = "Copyright 2012-2015, The SAGA Project"
 __license__   = "MIT"
 
 
-""" PBS job adaptor implementation
-"""
-""" !!! DEPRECATED !!! USE "PBS Pro" or "TORQUE" adaptor !!!
+""" PBSPro job adaptor implementation
 """
 
 import threading
@@ -72,12 +69,17 @@ class _job_state_monitor(threading.Thread):
                     # either done, failed or canceled
                     if  job_info['state'] not in [saga.job.DONE, saga.job.FAILED, saga.job.CANCELED] :
 
+                        # Store the current state since the current state 
+                        # variable is updated when _job_get_info is called
+                        pre_update_state = job_info['state']
+
                         new_job_info = self.js._job_get_info(job_id, reconnect=False)
-                        self.logger.info ("Job monitoring thread updating Job %s (state: %s)" \
-                                       % (job_id, new_job_info['state']))
+                        self.logger.info ("Job monitoring thread updating Job "
+                                          "%s (old state: %s, new state: %s)" % 
+                                          (job_id, pre_update_state, new_job_info['state']))
 
                         # fire job state callback if 'state' has changed
-                        if  new_job_info['state'] != job_info['state']:
+                        if  new_job_info['state'] != pre_update_state:
                             job_obj = job_info['obj']
                             job_obj._attributes_i_set('state', new_job_info['state'], job_obj._UP, True)
 
@@ -146,7 +148,7 @@ def _pbs_to_saga_jobstate(pbsjs):
 # --------------------------------------------------------------------
 #
 def _pbscript_generator(url, logger, jd, ppn, gres, pbs_version, is_cray=False, queue=None, ):
-    """ generates a PBS script from a SAGA job description
+    """ generates a PBS Pro script from a SAGA job description
     """
     pbs_params  = str()
     exec_n_args = str()
@@ -336,8 +338,8 @@ _PTY_TIMEOUT = 2.0
 # --------------------------------------------------------------------
 # the adaptor name
 #
-_ADAPTOR_NAME          = "saga.adaptor.pbsjob"
-_ADAPTOR_SCHEMAS       = ["pbs", "pbs+ssh", "pbs+gsissh"]
+_ADAPTOR_NAME          = "saga.adaptor.pbsprojob"
+_ADAPTOR_SCHEMAS       = ["pbspro", "pbspro+ssh", "pbspro+gsissh"]
 _ADAPTOR_OPTIONS       = []
 
 # --------------------------------------------------------------------
@@ -380,32 +382,31 @@ _ADAPTOR_DOC = {
     "cfg_options":   _ADAPTOR_OPTIONS,
     "capabilities":  _ADAPTOR_CAPABILITIES,
     "description":  """
-The PBS adaptor allows to run and manage jobs on `PBS <http://www.pbsworks.com/>`_
-and `TORQUE <http://www.adaptivecomputing.com/products/open-source/torque>`_
+The PBSPro adaptor allows to run and manage jobs on `PBS <http://www.pbsworks.com/>`_
 controlled HPC clusters.
 """,
     "example": "examples/jobs/pbsjob.py",
-    "schemas": {"pbs":        "connect to a local cluster",
-                "pbs+ssh":    "conenct to a remote cluster via SSH",
-                "pbs+gsissh": "connect to a remote cluster via GSISSH"}
+    "schemas": {"pbspro":        "connect to a local cluster",
+                "pbspro+ssh":    "connect to a remote cluster via SSH",
+                "pbspro+gsissh": "connect to a remote cluster via GSISSH"}
 }
 
 # --------------------------------------------------------------------
 # the adaptor info is used to register the adaptor with SAGA
 #
 _ADAPTOR_INFO = {
-    "name"        :    _ADAPTOR_NAME,
+    "name"        : _ADAPTOR_NAME,
     "version"     : "v0.1",
     "schemas"     : _ADAPTOR_SCHEMAS,
-    "capabilities":  _ADAPTOR_CAPABILITIES,
+    "capabilities": _ADAPTOR_CAPABILITIES,
     "cpis": [
         {
         "type": "saga.job.Service",
-        "class": "PBSJobService"
+        "class": "PBSProJobService"
         },
         {
         "type": "saga.job.Job",
-        "class": "PBSJob"
+        "class": "PBSProJob"
         }
     ]
 }
@@ -449,7 +450,7 @@ class Adaptor (saga.adaptors.base.Base):
 
 ###############################################################################
 #
-class PBSJobService (saga.adaptors.cpi.job.Service):
+class PBSProJobService (saga.adaptors.cpi.job.Service):
     """ implements saga.adaptors.cpi.job.Service
     """
 
@@ -458,7 +459,7 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
     def __init__(self, api, adaptor):
 
         self._mt  = None
-        _cpi_base = super(PBSJobService, self)
+        _cpi_base = super(PBSProJobService, self)
         _cpi_base.__init__(api, adaptor)
 
         self._adaptor = adaptor
@@ -531,11 +532,11 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
         # we need to extract the scheme for PTYShell. That's basically the
         # job.Service Url without the pbs+ part. We use the PTYShell to execute
         # pbs commands either locally or via gsissh or ssh.
-        if rm_scheme == "pbs":
+        if rm_scheme == "pbspro":
             pty_url.scheme = "fork"
-        elif rm_scheme == "pbs+ssh":
+        elif rm_scheme == "pbspro+ssh":
             pty_url.scheme = "ssh"
-        elif rm_scheme == "pbs+gsissh":
+        elif rm_scheme == "pbspro+gsissh":
             pty_url.scheme = "gsissh"
 
         # these are the commands that we need in order to interact with PBS.
@@ -690,7 +691,7 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
         # (1) we create a temporary file with 'mktemp' and write the contents of 
         #     the generated PBS script into it
         # (2) we call 'qsub <tmpfile>' to submit the script to the queueing system
-        cmdline = """SCRIPTFILE=`mktemp -t SAGA-Python-PBSJobScript.XXXXXX` &&  echo "%s" > $SCRIPTFILE && %s $SCRIPTFILE && rm -f $SCRIPTFILE""" %  (script, self._commands['qsub']['path'])
+        cmdline = """SCRIPTFILE=`mktemp -t SAGA-Python-PBSProJobScript.XXXXXX` &&  echo "%s" > $SCRIPTFILE && %s $SCRIPTFILE && rm -f $SCRIPTFILE""" %  (script, self._commands['qsub']['path'])
         ret, out, _ = self.shell.run_sync(cmdline)
 
         if ret != 0:
@@ -1129,14 +1130,14 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
 
 ###############################################################################
 #
-class PBSJob (saga.adaptors.cpi.job.Job):
+class PBSProJob (saga.adaptors.cpi.job.Job):
     """ implements saga.adaptors.cpi.job.Job
     """
 
     def __init__(self, api, adaptor):
 
         # initialize parent class
-        _cpi_base = super(PBSJob, self)
+        _cpi_base = super(PBSProJob, self)
         _cpi_base.__init__(api, adaptor)
 
     def _get_impl(self):

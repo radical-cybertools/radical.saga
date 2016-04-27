@@ -71,7 +71,7 @@ _ADAPTOR_CAPABILITIES  = {
                           saga.job.TOTAL_PHYSICAL_MEMORY, 
                           #saga.job.CPU_ARCHITECTURE, 
                           #saga.job.OPERATING_SYSTEM_TYPE, 
-                          #saga.job.CANDIDATE_HOSTS,
+                          saga.job.CANDIDATE_HOSTS,
                           saga.job.QUEUE,
                           saga.job.PROJECT,
                           saga.job.JOB_CONTACT],
@@ -416,7 +416,7 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         spmd_variation = None
         total_cpu_count = None
         number_of_processes = None
-        threads_per_process = None
+        processes_per_host = None
         output = "saga-python-slurm-default.out"
         error = None
         file_transfer = None
@@ -426,7 +426,8 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         project = None
         job_memory = None
         job_contact = None
-        
+        candidate_hosts = None
+
         # check to see what's available in our job description
         # to override defaults
 
@@ -446,11 +447,8 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         if jd.attribute_exists ("number_of_processes"):
             number_of_processes = jd.number_of_processes
 
-        if jd.attribute_exists ("processes_per_host"):
+        if jd.attribute_exists("processes_per_host"):
             processes_per_host = jd.processes_per_host
-
-        if jd.attribute_exists ("threads_per_process"):
-            threads_per_process = jd.threads_per_process
 
         if jd.attribute_exists ("working_directory"):
             cwd = jd.working_directory
@@ -473,6 +471,12 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         if jd.attribute_exists("total_physical_memory"):
             job_memory = jd.total_physical_memory
 
+        if jd.attribute_exists("candidate_hosts"):
+            if isinstance(jd.candidate_hosts, list):
+                candidate_hosts = ','.join(jd.candidate_hosts)
+            else:
+                candidate_hosts = jd.candidate_hosts
+
         if jd.attribute_exists("job_contact"):
             job_contact = jd.job_contact[0]
 
@@ -493,13 +497,12 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
 
         # make sure we have something for number_of_processes
         if not number_of_processes:
-            self._logger.warning("number_of_processes not specified in submitted "
+            self._logger.debug("number_of_processes not specified in submitted "
                                  "SLURM job description -- defaulting to 1 per total_cpu_count! (%s)" % total_cpu_count)
-
             number_of_processes = total_cpu_count
 
         # make sure we aren't given more processes than CPUs
-        if number_of_processes>total_cpu_count:
+        if number_of_processes > total_cpu_count:
             log_error_and_raise("More processes (%s) requested than total number of CPUs! (%s)" % (number_of_processes, total_cpu_count), saga.NoSuccess, self._logger)
 
         #make sure we aren't doing funky math
@@ -509,31 +512,45 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
                               % (total_cpu_count, number_of_processes), 
                                  saga.NoSuccess, self._logger)
 
-        slurm_script += "#SBATCH --ntasks=%s\n"        % (number_of_processes)
-        slurm_script += "#SBATCH --cpus-per-task=%s\n" % (total_cpu_count/number_of_processes)
+        slurm_script += "#SBATCH --ntasks=%s\n" % (number_of_processes)
+
+        if total_cpu_count != number_of_processes:
+            slurm_script += "#SBATCH --cpus-per-task=%s\n" % (total_cpu_count / number_of_processes)
+
+        if processes_per_host:
+            slurm_script += "#SBATCH --ntasks-per-node=%s\n" % processes_per_host
 
         if  cwd is not "":
-            slurm_script += "#SBATCH -D %s\n" % cwd
+            slurm_script += "#SBATCH --workdir %s\n" % cwd
 
         if  output:
-            slurm_script += "#SBATCH -o %s\n" % output
+            slurm_script += "#SBATCH --output %s\n" % output
         
         if  error:
-            slurm_script += "#SBATCH -e %s\n" % error
+            slurm_script += "#SBATCH --error %s\n" % error
 
         if  wall_time_limit:
             hours   = wall_time_limit / 60
             minutes = wall_time_limit % 60
-            slurm_script += "#SBATCH -t %02d:%02d:00\n" % (hours, minutes)
+            slurm_script += "#SBATCH --time %02d:%02d:00\n" % (hours, minutes)
 
         if  queue:
-            slurm_script += "#SBATCH -p %s\n" % queue
+            slurm_script += "#SBATCH --partition %s\n" % queue
 
         if  project:
-            slurm_script += "#SBATCH -A %s\n" % project
+            if not ':' in project:
+                account = project
+            else:
+                account, reservation = project.split(':')
+                slurm_script += "#SBATCH --reservation %s\n" % reservation
+
+            slurm_script += "#SBATCH --account %s\n" % account
 
         if  job_memory:
             slurm_script += "#SBATCH --mem=%s\n" % job_memory
+
+        if  candidate_hosts:
+            slurm_script += "#SBATCH --nodelist=%s\n" % candidate_hosts
 
         if  job_contact:
             slurm_script += "#SBATCH --mail-user=%s\n" % job_contact
@@ -573,7 +590,7 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         # try to create the working directory (if defined)
         # WRANING: this assumes a shared filesystem between login node and
         #           comnpute nodes.
-        if  jd.working_directory is not None:
+        if jd.working_directory:
             self._logger.info("Creating working directory %s" % jd.working_directory)
             ret, out, _ = self.shell.run_sync("mkdir -p %s" % (jd.working_directory))
             if ret != 0:
@@ -886,6 +903,7 @@ class SLURMJob (saga.adaptors.cpi.job.Job):
 
         # initialize job attribute values
         self._id              = None
+        self._name            = self.jd.get(saga.job.NAME)
         self._state           = saga.job.NEW
         self._exit_code       = None
         self._exception       = None
@@ -1110,6 +1128,13 @@ class SLURMJob (saga.adaptors.cpi.job.Job):
         """ Implements saga.adaptors.cpi.job.Job.get_id() """        
         return self._id
    
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def get_name (self):
+        """ Implements saga.adaptors.cpi.job.Job.get_name() """        
+        return self._name
+
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
