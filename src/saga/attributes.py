@@ -395,6 +395,7 @@ class Attributes (_AttributesBase, ru.DictMixin) :
             d['lister']      = None
             d['caller']      = None
             d['recursion']   = False
+            d['_iterpos']    = 0
 
             _AttributesBase.__setattr__ (self, '_d', d)
 
