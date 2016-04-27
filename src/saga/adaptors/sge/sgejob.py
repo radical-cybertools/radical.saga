@@ -154,6 +154,7 @@ _ADAPTOR_CAPABILITIES = {
                           saga.job.SPMD_VARIATION,
                           saga.job.TOTAL_CPU_COUNT,
                           saga.job.PROCESSES_PER_HOST,
+                          saga.job.CANDIDATE_HOSTS,
                           saga.job.TOTAL_PHYSICAL_MEMORY],
     "job_attributes":    [saga.job.EXIT_CODE,
                           saga.job.EXECUTION_HOSTS,
@@ -709,6 +710,12 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
                 raise Exception("jd.total_cpu_count requires that jd.spmd_variation is not empty. "
                                 "Valid options for jd.spmd_variation are: %s" % (self.pe_list))
 
+
+        # CANDEIDATE_HOSTS - this translates to 'qsub -l h="host1|host2|..."'
+        if jd.candidate_hosts:
+            sge_params.append('#$ -l h="%s"' % '|'.join(jd.candidate_hosts))
+
+
         # convert sge params into an string
         sge_params = "\n".join(sge_params)
 
@@ -1209,10 +1216,12 @@ class SGEJob (saga.adaptors.cpi.job.Job):
         self.js = job_info["job_service"]
 
         if job_info['reconnect'] is True:
-            self._id = job_info['reconnect_jobid']
+            self._id      = job_info['reconnect_jobid']
+            self._name    = self.jd.get(saga.job.NAME)
             self._started = True
         else:
-            self._id = None
+            self._id      = None
+            self._name    = self.jd.get(saga.job.NAME)
             self._started = False
 
         return self.get_api()
@@ -1283,6 +1292,13 @@ class SGEJob (saga.adaptors.cpi.job.Job):
         """ implements saga.adaptors.cpi.job.Job.get_id()
         """
         return self._id
+
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def get_name (self):
+        """ Implements saga.adaptors.cpi.job.Job.get_name() """        
+        return self._name
 
     # ----------------------------------------------------------------
     #

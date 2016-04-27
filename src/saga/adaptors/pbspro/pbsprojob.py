@@ -1154,9 +1154,11 @@ class PBSProJob (saga.adaptors.cpi.job.Job):
 
         if job_info['reconnect'] is True:
             self._id      = job_info['reconnect_jobid']
+            self._name    = self.jd.get(saga.job.NAME)
             self._started = True
         else:
             self._id      = None
+            self._name    = self.jd.get(saga.job.NAME)
             self._started = False
 
         return self.get_api()
@@ -1220,6 +1222,13 @@ class PBSProJob (saga.adaptors.cpi.job.Job):
         """ implements saga.adaptors.cpi.job.Job.get_id()
         """
         return self._id
+
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def get_name (self):
+        """ Implements saga.adaptors.cpi.job.Job.get_name() """        
+        return self._name
 
     # ----------------------------------------------------------------
     #

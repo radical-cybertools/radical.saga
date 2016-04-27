@@ -6,6 +6,12 @@
     https://github.com/radical-cybertools/saga-python/issues?q=is%3Aissue+is%3Aopen+
 
 
+Version 0.40.2                                                        2016-04-23
+--------------------------------------------------------------------------------
+
+  - Hotfix release to avoid security warnings on Stampede
+
+
 Version 0.40.1                                                        2016-02-05
 --------------------------------------------------------------------------------
 
