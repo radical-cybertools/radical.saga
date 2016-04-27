@@ -112,8 +112,10 @@ class Task (sbase.SimpleBase, satt.Attributes) :
             args   = self._method_context['_args']
             kwargs = self._method_context['_kwargs']
 
-            if  not    '_from_task' in kwargs :
-                kwargs['_from_task'] = self
+            # if the called function expects a task handle, provide it.
+            if  '_from_task' in inspect.getargspec (call)[0] :
+                if  not    '_from_task' in kwargs :
+                    kwargs['_from_task'] = self
 
             self._thread = ru.Thread (call, *args, **kwargs)
 
