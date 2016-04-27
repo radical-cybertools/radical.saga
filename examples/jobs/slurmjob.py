@@ -30,7 +30,7 @@ def main():
         # Create a job service object that represent a remote pbs cluster.
         # The keyword 'pbs' in the url scheme triggers the SGE adaptors
         # and '+ssh' enables SGE remote access via SSH.
-        js = saga.job.Service("slurm+ssh://login1.stampede.tacc.utexas.edu",
+        js = saga.job.Service("slurm+ssh://stampede.tacc.xsede.org",
                               session=session)
 
         # Next, we describe the job we want to run. A complete set of job
