@@ -407,6 +407,9 @@ class Adaptor (saga.adaptors.base.Base):
     #
     def stage_input (self, shell, jd) :
 
+        if not jd:
+            return
+
         if  jd.file_transfer is not None:
             td = TransferDirectives (jd.file_transfer)
 
@@ -423,6 +426,9 @@ class Adaptor (saga.adaptors.base.Base):
     # ----------------------------------------------------------------
     #
     def stage_output (self, shell, jd) :
+
+        if not jd:
+            return
 
         if  jd.file_transfer is not None:
             td = TransferDirectives (jd.file_transfer)
@@ -1309,6 +1315,7 @@ class ShellJob (saga.adaptors.cpi.job.Job) :
         elif 'job_id' in job_info :
             # initialize job attribute values
             self.js               = job_info["job_service"] 
+            self.jd               = None
             self._id              = job_info['job_id']
             self._log             = list()
             self._state           = None
