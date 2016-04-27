@@ -191,6 +191,7 @@ _ADAPTOR_CAPABILITIES  = {
                           saga.job.INPUT,
                           saga.job.OUTPUT,
                           saga.job.ERROR,
+                          saga.job.NAME,
                           saga.job.WALL_TIME_LIMIT, # TODO: 'hot'-fix for BigJob - implement properly
                           saga.job.TOTAL_CPU_COUNT, # TODO: 'hot'-fix for BigJob - implement properly
                           saga.job.PROCESSES_PER_HOST,
@@ -406,6 +407,9 @@ class Adaptor (saga.adaptors.base.Base):
     #
     def stage_input (self, shell, jd) :
 
+        if not jd:
+            return
+
         if  jd.file_transfer is not None:
             td = TransferDirectives (jd.file_transfer)
 
@@ -422,6 +426,9 @@ class Adaptor (saga.adaptors.base.Base):
     # ----------------------------------------------------------------
     #
     def stage_output (self, shell, jd) :
+
+        if not jd:
+            return
 
         if  jd.file_transfer is not None:
             td = TransferDirectives (jd.file_transfer)
@@ -1147,9 +1154,9 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
-    def container_cancel (self, jobs) :
+    def container_cancel (self, jobs, timeout) :
 
-        self._logger.debug ("container cancel: %s"  %  str(jobs))
+        self._logger.debug ("container cancel: %s [%s]"  %  (str(jobs), timeout))
 
         bulk = "BULK\n"
 
@@ -1299,6 +1306,7 @@ class ShellJob (saga.adaptors.cpi.job.Job) :
             self._exit_code       = None
             self._exception       = None
             self._created         = time.time ()
+            self._name            = self.jd.name
             self._started         = None
             self._finished        = None
 
@@ -1307,12 +1315,14 @@ class ShellJob (saga.adaptors.cpi.job.Job) :
         elif 'job_id' in job_info :
             # initialize job attribute values
             self.js               = job_info["job_service"] 
+            self.jd               = None
             self._id              = job_info['job_id']
             self._log             = list()
             self._state           = None
             self._exit_code       = None
             self._exception       = None
             self._created         = None
+            self._name            = None
             self._started         = None
             self._finished        = None
 
@@ -1365,7 +1375,7 @@ class ShellJob (saga.adaptors.cpi.job.Job) :
             self._state == saga.job.CANCELED     :
                 return self._state
 
-        stats     = self.js._job_get_stats (self._id)
+        stats = self.js._job_get_stats (self._id)
 
         if 'start' in stats : self._started  = stats['start']
         if 'stop'  in stats : self._finished = stats['stop']
@@ -1403,6 +1413,15 @@ class ShellJob (saga.adaptors.cpi.job.Job) :
 
         # no need to refresh stats -- this is set locally
         return self._created
+
+
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def get_name (self) : 
+
+        # no need to refresh stats -- this is set locally
+        return self._name
 
 
     # ----------------------------------------------------------------
