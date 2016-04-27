@@ -82,11 +82,6 @@ def _condorscript_generator(url, logger, jds, option_dict=None):
     if option_dict is not None:
         condor_file += "\n##### OPTIONS PASSED VIA JOB SERVICE URL #####\n"
 
-        # project -> +ProjectName
-        if jds[0].project:
-            condor_file += "\n+ProjectName = \"%s\"" % jds[0].project
-
-
         for key,value in option_dict.iteritems():
             condor_file += "\n%s = %s" % (key, value)
 
@@ -101,6 +96,11 @@ def _condorscript_generator(url, logger, jds, option_dict=None):
             condor_file += "\nuniverse = %s" % jd.queue
         else:
             condor_file += "\nuniverse = vanilla"
+
+        # project -> +ProjectName
+        if jd.project:
+            condor_file += "\n+ProjectName = \"%s\"" % jd.project
+
 
         # handle site inclusion/exclusion
         if jd.candidate_hosts:
@@ -263,6 +263,7 @@ _ADAPTOR_CAPABILITIES = {
                           saga.job.FILE_TRANSFER],
     "job_attributes":    [saga.job.EXIT_CODE,
                           saga.job.EXECUTION_HOSTS,
+                          saga.job.NAME,
                           saga.job.CREATED,
                           saga.job.STARTED,
                           saga.job.FINISHED],
@@ -1268,26 +1269,6 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
     @SYNC_CALL
     def container_run(self, jobs):
 
-        # condor can run a bulk under a single project ID, so we cluster before
-        # submit
-        project_bulks = dict()
-        for job in jobs:
-
-            jd      = job.description
-            project = jd.get(saga.job.PROJECT, '')
-
-            if not project in project_bulks:
-                project_bulks[project] = list()
-            project_bulks[project].append(job)
-
-        for project,bulk in project_bulks.iteritems():
-            self._container_run_bulk(bulk)
-
-
-    # ----------------------------------------------------------------
-    #
-    def _container_run_bulk(self, jobs):
-
         jds = [job.description for job in jobs]
 
         for jd in jds:
@@ -1475,12 +1456,14 @@ class CondorJob (saga.adaptors.cpi.job.Job):
         self.jd = job_info["job_description"]
         self.js = job_info["job_service"]
 
+        self._name = self.jd.name
+
         # the js is responsible for job bulk operations -- which
         # for jobs only work for run()
         self._container = self.js
 
         if job_info['reconnect'] is True:
-            self._id = job_info['reconnect_jobid']
+            self._id      = job_info['reconnect_jobid']
             self._started = True
         else:
             self._id = None
@@ -1572,7 +1555,7 @@ class CondorJob (saga.adaptors.cpi.job.Job):
     def get_name(self):
         """ implements saga.adaptors.cpi.job.Job.get_name()
         """
-        return self.js._job_get_name(self._id)
+        return self._name
 
     # ----------------------------------------------------------------
     #
