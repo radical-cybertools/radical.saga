@@ -188,7 +188,8 @@ class PTYShell (object) :
 
     # ----------------------------------------------------------------
     #
-    def __init__ (self, url, session=None, logger=None, opts=None, posix=True):
+    def __init__ (self, url, session=None, logger=None, opts=None, posix=True,
+            interactive=True):
 
         if logger : self.logger  = logger
         else      : self.logger  = ru.get_logger('radical.saga.pty') 
@@ -201,10 +202,11 @@ class PTYShell (object) :
 
         self.logger.debug ("PTYShell init %s" % self)
 
-        self.url         = url      # describes the shell to run
-        self.posix       = posix    # /bin/sh compatible?
-        self.latency     = 0.0      # set by factory
-        self.cp_slave    = None     # file copy channel
+        self.url         = url         # describes the shell to run
+        self.posix       = posix       # /bin/sh compatible?
+        self.interactive = interactive # bash -i ?
+        self.latency     = 0.0         # set by factory
+        self.cp_slave    = None        # file copy channel
 
         self.initialized = False
 
@@ -241,7 +243,8 @@ class PTYShell (object) :
         self.factory    = supsf.PTYShellFactory   ()
         self.pty_info   = self.factory.initialize (self.url,    self.session, 
                                                    self.prompt, self.logger, 
-                                                   posix=self.posix)
+                                                   posix=self.posix,
+                                                   interactive=self.interactive)
         self.pty_shell  = self.factory.run_shell  (self.pty_info)
 
         self._trace ('init : %s' % self.pty_shell.command)
