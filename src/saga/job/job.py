@@ -427,12 +427,12 @@ class Job (sb.Base, st.Task, sasync.Async) :
 
     #-----------------------------------------------------------------
     #
-    id          = property (get_id)           # string
-    description = property (get_description)  # Description
-    stdin       = property (get_stdin)        # string
-    stdout      = property (get_stdout)       # string
-    stderr      = property (get_stderr)       # string
-    log         = property (get_log)          # string
+    id          = property (get_id)            # string
+    description = property (get_description)   # Description
+   #stdin       = property (get_stdin)         # File
+    stdout      = property (get_stdout_string) # string
+    stderr      = property (get_stderr_string) # string
+    log         = property (get_log)           # string
 
 
     #-----------------------------------------------------------------
