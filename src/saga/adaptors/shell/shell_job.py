@@ -181,7 +181,8 @@ _ADAPTOR_OPTIONS       = [
 # the adaptor capabilities & supported attributes
 #
 _ADAPTOR_CAPABILITIES  = {
-    "jdes_attributes"  : [saga.job.EXECUTABLE,
+    "jdes_attributes"  : [saga.job.NAME,
+                          saga.job.EXECUTABLE,
                           saga.job.PRE_EXEC,
                           saga.job.POST_EXEC,
                           saga.job.ARGUMENTS,
@@ -1323,6 +1324,7 @@ class ShellJob (saga.adaptors.cpi.job.Job) :
 
             # initialize job attribute values
             self._id              = None
+            self._name            = self.jd.get(saga.job.NAME)
             self._log             = list()
             self._state           = None
             self._exit_code       = None
@@ -1339,6 +1341,7 @@ class ShellJob (saga.adaptors.cpi.job.Job) :
             self.js               = job_info["job_service"] 
             self.jd               = None
             self._id              = job_info['job_id']
+            self._name            = job_info.get('job_name')
             self._log             = list()
             self._state           = None
             self._exit_code       = None
@@ -1611,6 +1614,13 @@ class ShellJob (saga.adaptors.cpi.job.Job) :
         """ Implements saga.adaptors.cpi.job.Job.get_id() """        
         return self._id
    
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def get_name (self):
+        """ Implements saga.adaptors.cpi.job.Job.get_name() """        
+        return self._name
+
     # ----------------------------------------------------------------
     #
     @SYNC_CALL

@@ -114,7 +114,7 @@ class Job (sb.Base, st.Task, sasync.Async) :
 
         self._attributes_set_getter (STATE,           self.get_state)
         self._attributes_set_getter (ID,              self.get_id)
-        self._attributes_set_getter (NAME           , self.get_name)
+        self._attributes_set_getter (NAME,            self.get_name)
         self._attributes_set_getter (EXIT_CODE,       self._get_exit_code)
         self._attributes_set_getter (CREATED,         self._get_created)
         self._attributes_set_getter (STARTED,         self._get_started)
@@ -155,6 +155,21 @@ class Job (sb.Base, st.Task, sasync.Async) :
         """
         id = self._adaptor.get_id (ttype=ttype)
         return id
+
+
+    # --------------------------------------------------------------------------
+    #
+    @rus.takes   ('Job',
+                  rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
+    @rus.returns ((rus.nothing, basestring, st.Task))
+    def get_name (self, ttype=None) :
+        """
+        get_id()
+
+        Return the job name. 
+        """
+        name = self._adaptor.get_name(ttype=ttype)
+        return name
 
 
     # --------------------------------------------------------------------------
