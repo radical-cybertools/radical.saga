@@ -1114,8 +1114,8 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
         bulk = "BULK\n"
 
         for job in jobs :
-            print type (job)
-            print type (job._adaptor)
+          # print type (job)
+          # print type (job._adaptor)
 
             if  not isinstance (job._adaptor, ShellJob) :
                 # this is not a job created by this adaptor.  Its probably
@@ -1236,8 +1236,8 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
 
         for job in jobs :
 
-            print job
-            job._attributes_dump ()
+          # print job
+          # job._attributes_dump ()
 
             rm, pid = self._adaptor.parse_id (job.id)
             bulk   += "STATE %s\n" % pid
