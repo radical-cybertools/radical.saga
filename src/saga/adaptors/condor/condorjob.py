@@ -564,7 +564,8 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
                 'gone':         False,
                 'transfers':    None,
                 'stdout':       None,
-                'stderr':       None
+                'stderr':       None,
+                'name':         None
             }
 
             # remove submit file(s)
@@ -609,7 +610,8 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
                 'gone':         False,
                 'transfers':    None,
                 'stdout':       None,
-                'stderr':       None
+                'stderr':       None,
+                'name':         None
             }
 
             results = out.split('\n')
@@ -633,12 +635,12 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
         td = jd.transfer_directives
 
         # Condor specific safety checks
-        if len(td.in_append_dict) > 0:
+        if td.in_append_dict:
             raise Exception('FileTransfer append syntax (>>) not supported by Condor: %s' % td.in_append_dict)
-        if len(td.out_append_dict) > 0:
+        if td.out_append_dict:
             raise Exception('FileTransfer append syntax (<<) not supported by Condor: %s' % td.out_append_dict)
 
-        if len(td.in_overwrite_dict) > 0:
+        if td.in_overwrite_dict:
             td.transfer_input_files = []
             for (source, target) in td.in_overwrite_dict.iteritems():
                 # make sure source is file an not dir
@@ -663,7 +665,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
                     raise NotImplementedError("%s support for Condor not implemented." % \
                             self.shell.url.scheme)
 
-        if len(td.out_overwrite_dict) > 0:
+        if td.out_overwrite_dict:
             td.transfer_output_files = []
             for (source, target) in td.out_overwrite_dict.iteritems():
                 # make sure source is file and not dir
@@ -716,6 +718,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
         curr_info['transfers'  ] = prev_info.get ('transfers'  )
         curr_info['stdout'     ] = prev_info.get ('stdout'     )
         curr_info['stderr'     ] = prev_info.get ('stderr'     )
+        curr_info['name'       ] = prev_info.get ('name'       )
 
         rm, pid = self._adaptor.parse_id(job_id)
 
@@ -883,6 +886,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
             curr_info[job_id]['transfers']   = prev_info[job_id].get('transfers')
             curr_info[job_id]['stdout']      = prev_info[job_id].get('stdout')
             curr_info[job_id]['stderr']      = prev_info[job_id].get('stderr')
+            curr_info[job_id]['name']        = prev_info[job_id].get('name')
 
 
         # run the Condor 'condor_q' command to get some infos about our job
@@ -1036,6 +1040,13 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
         # FIXME: 'None' should cause an exception
         if ret == None : return None
         else           : return int(ret)
+
+    # ----------------------------------------------------------------
+    #
+    def _job_get_name(self, job_id):
+        """ get the job's name
+        """
+        return self.jobs[job_id]['name']
 
     # ----------------------------------------------------------------
     #
@@ -1331,7 +1342,8 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
                 'gone':         False,
                 'transfers':    None,
                 'stdout':       None,
-                'stderr':       None
+                'stderr':       None,
+                'name':         None
             }
 
         # remove submit file(s)
@@ -1525,6 +1537,14 @@ class CondorJob (saga.adaptors.cpi.job.Job):
             return None
         else:
             return self.js._job_get_exit_code(self._id)
+
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def get_name(self):
+        """ implements saga.adaptors.cpi.job.Job.get_name()
+        """
+        return self.js._job_get_name(self._id)
 
     # ----------------------------------------------------------------
     #

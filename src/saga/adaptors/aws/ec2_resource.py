@@ -626,12 +626,17 @@ class EC2ResourceManager (saga.adaptors.cpi.resource.Manager) :
 
     # ----------------------------------------------------------------
     #
-    def _refresh_images (self, pattern=None) :
+    def _refresh_images (self, uid=None) :
 
         self.images      = []
         self.images_dict = {}
 
-        for image in self.conn.list_images (pattern) :
+        if uid:
+            pattern = [uid]
+        else:
+            pattern = None
+
+        for image in self.conn.list_images (ex_image_ids=pattern) :
 
             if  image.id.startswith ('ami-') :
 
@@ -695,20 +700,33 @@ class EC2ResourceManager (saga.adaptors.cpi.resource.Manager) :
                 self._refresh_templates (rd.template)
 
             if  not rd.image in self.images_dict : 
-                self._refresh_images (rd.image)
-
-
+                self._refresh_images (uid=rd.image)
+          
+          
             # FIXME: interpret / verify size
-
+          
             # user name as id tag
             import getpass
             cid = getpass.getuser()
+          
+            # create/use the saga-sg security group which allows ssh access
+            try: 
+                ret = self.conn.ex_create_security_group('saga-sg', 'used by SAGA', None) 
+                ret = self.conn.ex_get_security_groups(group_names=['saga-sg'])
+                gid = ret[0].id
+                ret = self.conn.ex_authorize_security_group_ingress(gid, 22, 22, cidr_ips=['0.0.0.0/0'])
+                ret = self.conn.ex_authorize_security_group_egress (gid, 22, 22, cidr_ips=['0.0.0.0/0'])
 
+            except Exception as e:
+                # lets hope this was a race and the group now exists...
+                pass
+          
             # it should be safe to create the VM instance now
             node = self.conn.create_node (name  = 'saga.resource.Compute.%s' % cid,
                                           size  = self.templates_dict[rd.template], 
                                           image = self.images_dict[rd.image], 
-                                          ex_keyname = token)
+                                          ex_keyname = token, 
+                                          ex_security_groups=['saga-sg'])
 
             resource_info = { 'backend'                 : self.backend   ,
                               'resource'                : node           ,
@@ -854,10 +872,10 @@ class EC2ResourceManager (saga.adaptors.cpi.resource.Manager) :
     @SYNC_CALL
     def get_image (self, img_id) :
 
-        if  not len (self.images) :
-            self._refresh_images ()
+        if  img_id not in self.images_dict:
+            self._refresh_images (uid=img_id)
 
-        if  not img_id in self.images_dict.keys () :
+        if  img_id not in self.images_dict:
             raise saga.BadParameter ("unknown image %s" % img_id)
 
         descr = dict(self.images_dict[img_id].extra)
