@@ -1,6 +1,6 @@
 
 
-import saga.utils.benchmark as sb
+import radical.utils.benchmark as rb
 
 import os
 import sys
@@ -9,36 +9,38 @@ import saga
 
 # ------------------------------------------------------------------------------
 #
-def benchmark_pre (tid, test_cfg, bench_cfg, session) :
+def benchmark_pre (tid, app_cfg, bench_cfg) :
 
-    if  not 'job_service_url' in test_cfg :
+    if  not 'saga.tests' in app_cfg :
+        raise saga.NoSuccess ('no tests configured')
+
+    if  not 'job_service_url' in app_cfg['saga.tests'] :
         raise saga.NoSuccess ('no job service URL configured')
 
-    if  not 'load' in bench_cfg : 
-        raise saga.NoSuccess ('no benchmark load configured')
+    if  not 'load' in bench_cfg :
+        raise saga.NoSuccess ('no test load configured')
 
-    host = test_cfg['job_service_url']
-    n_j  = int(bench_cfg['iterations'])  
-    load = int(bench_cfg['load'])       
+    host = str(app_cfg['saga.tests']['job_service_url'])
+    load = int(bench_cfg['load'])
 
-    js = saga.job.Service (host, session=session) 
+    js = saga.job.Service (host) 
     jd = saga.job.Description ()
 
     jd.executable = '/bin/sleep'
     jd.arguments  = ['1']
 
-    return {'js'   : js   , 
-            'jd'   : jd   , 
-            'load' : load }
+    app_cfg['js'  ] = js
+    app_cfg['jd'  ] = jd
+    app_cfg['load'] = load
 
 
 # ------------------------------------------------------------------------------
 #
-def benchmark_core (tid, i, args={}) :
+def benchmark_core (tid, i, app_cfg, bench_cfg) :
 
-    js        = args['js']
-    jd        = args['jd']
-    load      = args['load']
+    js   = app_cfg['js']
+    jd   = app_cfg['jd']
+    load = app_cfg['load']
 
     tc = saga.task.Container  ()
   # jd = saga.job.Description ()
@@ -56,20 +58,16 @@ def benchmark_core (tid, i, args={}) :
 
 # ------------------------------------------------------------------------------
 #
-def benchmark_post (tid, args={}) :
+def benchmark_post (tid, app_cfg, bench_cfg) :
 
     pass
 
 
 # ------------------------------------------------------------------------------
 #
-try:
-
-    sb.benchmark_init ('job_run_bulk', benchmark_pre, benchmark_core, benchmark_post)
-
-except saga.SagaException, ex:
-    print "An exception occured: (%s) %s " % (ex.type, (str(ex)))
-    print " \n*** Backtrace:\n %s" % ex.traceback
+b = rb.Benchmark (sys.argv[1], 'job_run_bulk', benchmark_pre, benchmark_core, benchmark_post)
+b.run  ()
+b.eval ()
 
 
 
