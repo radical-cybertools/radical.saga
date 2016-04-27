@@ -133,7 +133,7 @@ class Task (sbase.SimpleBase, satt.Attributes) :
     #
     @rus.takes   ('Task')
     @rus.returns (rus.nothing)
-    def run (self) :
+    def run      (self) :
 
         if  self._thread :
             self._thread.run ()
@@ -370,11 +370,8 @@ class Container (sbase.SimpleBase, satt.Attributes) :
             # nothing to do
             return None
 
-
         buckets = self._get_buckets ()
         threads = []  # threads running container ops
-        queues  = {}
-
 
         # handle all container
         for c in buckets['bound'] :
@@ -413,8 +410,8 @@ class Container (sbase.SimpleBase, satt.Attributes) :
                 thread.join ()
 
             if  thread.get_state () == FAILED :
-                raise se.NoSuccess ("thread exception: %s\n%s" \
-                                 %  (thread.get_exception ()))
+                raise se.NoSuccess ("thread exception: %s" \
+                                 % (thread.get_exception ()))
 
 
     # --------------------------------------------------------------------------
@@ -456,7 +453,6 @@ class Container (sbase.SimpleBase, satt.Attributes) :
 
         buckets = self._get_buckets ()
         threads = []  # threads running container ops
-        queues  = {}
 
         # handle all tasks bound to containers
         for c in buckets['bound'] :
@@ -548,7 +544,6 @@ class Container (sbase.SimpleBase, satt.Attributes) :
 
         buckets = self._get_buckets ()
         threads = []  # threads running container ops
-        queues  = {}
 
         # handle all tasks bound to containers
         for c in buckets['bound'] :
@@ -615,7 +610,6 @@ class Container (sbase.SimpleBase, satt.Attributes) :
 
         buckets = self._get_buckets ()
         threads = []  # threads running container ops
-        queues  = {}
 
         # handle all tasks bound to containers
         for c in buckets['bound'] :

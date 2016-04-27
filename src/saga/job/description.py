@@ -10,6 +10,7 @@ import radical.utils.signatures as rus
 
 import saga
 
+
 #-------------------------------------------------------------------------------
 #
 class Description (saga.Attributes) :
@@ -82,7 +83,6 @@ class Description (saga.Attributes) :
         return env
 
 
-
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Description',
@@ -91,6 +91,7 @@ class Description (saga.Attributes) :
     def __deepcopy__ (self, memo) :
         other = saga.job.Description ()
         return self.clone (other)
+
 
     # --------------------------------------------------------------------------
     #
@@ -116,6 +117,5 @@ class Description (saga.Attributes) :
         return self._attributes_deep_copy (other)
 
 
-
-
+# ------------------------------------------------------------------------------
 
