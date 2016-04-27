@@ -756,7 +756,7 @@ cmd_stdout () {
   verify_out $1 || return
 
   DIR="$BASE/$1"
-  RETVAL=`cat "$DIR/out" | od -t x1 -A n #| cut -c 2- | tr -d ' \n'`
+  RETVAL=`cat "$DIR/out" | od -t x1 -A n | cut -c 2- | tr -d ' \n'`
 }
 
 
@@ -768,7 +768,7 @@ cmd_stderr () {
   verify_err $1 || return
 
   DIR="$BASE/$1"
-  RETVAL=`cat "$DIR/err" | od -t x1 -A n #| cut -c 2- | tr -d ' \n'`
+  RETVAL=`cat "$DIR/err" | od -t x1 -A n | cut -c 2- | tr -d ' \n'`
 }
 
 
