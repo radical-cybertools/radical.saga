@@ -139,15 +139,7 @@ class Directory (nsdir.Directory) :
         """
         if  not flags : flags = 0
         
-        url = surl.Url(path)
-
-        if  not url.schema :
-            url.schema = 'file'
-
-        if  not url.host :
-            url.host = 'localhost'
-
-        return self._adaptor.open (url, flags, ttype=ttype)
+        return self._adaptor.open (path, flags, ttype=ttype)
 
 
     # --------------------------------------------------------------------------
@@ -176,15 +168,7 @@ class Directory (nsdir.Directory) :
         """
         if  not flags : flags = 0
 
-        url = surl.Url(path)
-
-        if  not url.schema :
-            url.schema = 'file'
-
-        if  not url.host :
-            url.host = 'localhost'
-
-        return self._adaptor.open_dir (url, flags, ttype=ttype)
+        return self._adaptor.open_dir (path, flags, ttype=ttype)
 
 
     # --------------------------------------------------------------------------
@@ -246,7 +230,7 @@ class Directory (nsdir.Directory) :
         :type path:      str()
         """
         if path   :  return self._adaptor.is_file      (path, ttype=ttype)
-        else      :  return self._adaptor.is_file_self (     ttype=ttype)
+        else      :  return self._adaptor.is_file_self (      ttype=ttype)
 
 
     size  = property (get_size)  # int
