@@ -112,8 +112,10 @@ class Task (sbase.SimpleBase, satt.Attributes) :
             args   = self._method_context['_args']
             kwargs = self._method_context['_kwargs']
 
-            if  not    '_from_task' in kwargs :
-                kwargs['_from_task'] = self
+            # if the called function expects a task handle, provide it.
+            if  '_from_task' in inspect.getargspec (call)[0] :
+                if  not    '_from_task' in kwargs :
+                    kwargs['_from_task'] = self
 
             self._thread = ru.Thread (call, *args, **kwargs)
 
@@ -133,7 +135,7 @@ class Task (sbase.SimpleBase, satt.Attributes) :
     #
     @rus.takes   ('Task')
     @rus.returns (rus.nothing)
-    def run (self) :
+    def run      (self) :
 
         if  self._thread :
             self._thread.run ()
@@ -410,8 +412,8 @@ class Container (sbase.SimpleBase, satt.Attributes) :
                 thread.join ()
 
             if  thread.get_state () == FAILED :
-                raise se.NoSuccess ("thread exception: %s\n%s" \
-                                 %  (thread.get_exception ()))
+                raise se.NoSuccess ("thread exception: %s" \
+                                 % (thread.get_exception ()))
 
 
     # --------------------------------------------------------------------------

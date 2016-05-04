@@ -1,5 +1,5 @@
 
-import saga.utils.benchmark as sb
+import radical.utils.benchmark as rb
 
 import os
 import sys
@@ -62,7 +62,7 @@ def benchmark_post (tid, args={}) :
 #
 try:
 
-    sb.benchmark_init ('job_run', benchmark_pre, benchmark_core, benchmark_post)
+    rb.benchmark_init ('job_run', benchmark_pre, benchmark_core, benchmark_post)
 
 except saga.SagaException, ex:
     print "An exception occured: (%s) %s " % (ex.type, (str(ex)))
