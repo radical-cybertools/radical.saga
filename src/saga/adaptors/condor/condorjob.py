@@ -71,19 +71,35 @@ def _condor_to_saga_jobstate(condorjs):
 # --------------------------------------------------------------------
 #
 def _condorscript_generator(url, logger, jds, option_dict=None):
-    """ generates a Condor script from a SAGA job description
+    """ 
+    generates a Condor script from a set of SAGA job descriptions
     """
+
+    if not isinstance(jds, list):
+        jds = [jds]
+
+    # assert that all jds belong to the same project (which might be empty)
+    project = jds[0].project
+    for jd in jds:
+        assert(project == jd.project)
+
+
     condor_file = str()
 
     # HTCondor quoting/escaping:
     # http://research.cs.wisc.edu/htcondor/manual/current/condor_submit.html#SECTION0012514000000000000000
 
     ##### options passed via job service url #####
-    if option_dict is not None:
+    if project or option_dict:
         condor_file += "\n##### OPTIONS PASSED VIA JOB SERVICE URL #####\n"
 
-        for key,value in option_dict.iteritems():
-            condor_file += "\n%s = %s" % (key, value)
+        if project:
+            condor_file += "\n+ProjectName = \"%s\"" % jd.project
+
+        if option_dict:
+            for key,value in option_dict.iteritems():
+                condor_file += "\n%s = %s" % (key, value)
+
 
     ##### options passed via job description #####
     condor_file += "\n\n##### OPTIONS PASSED VIA JOB DESCRIPTION #####\n"
@@ -96,11 +112,6 @@ def _condorscript_generator(url, logger, jds, option_dict=None):
             condor_file += "\nuniverse = %s" % jd.queue
         else:
             condor_file += "\nuniverse = vanilla"
-
-        # project -> +ProjectName
-        if jd.project:
-            condor_file += "\n+ProjectName = \"%s\"" % jd.project
-
 
         # handle site inclusion/exclusion
         if jd.candidate_hosts:
@@ -734,7 +745,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
                         raise Exception('source and target names must be equal: %s != %s' % (s_entry, t_entry))
 
                     # add for later use by job script generator
-                    td.transfer_output_files.append(target)
+                    td.transfer_output_files.append(t_entry)
 
 
         # ----------------------------------------------------------------------
@@ -1269,9 +1280,13 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
     @SYNC_CALL
     def container_run(self, jobs):
 
-        jds = [job.description for job in jobs]
+        # the xsede condor bridge does not accept job clusters with individual
+        # project IDs, thus we cluster the given jobs by project IDs, and create
+        # individual submission scripts for each, and run them.
+        clusters = dict()
+        for job in jobs:
 
-        for jd in jds:
+            jd = job.description
 
             # ensure consistency and viability of job description
             self._prepare_jd(jd)
@@ -1281,6 +1296,25 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
             #       duplicates endlessly
             self._handle_file_transfers(jd, mode='in')
 
+            project = jd.project
+
+            if not project:
+                project = ''
+
+            if project not in clusters:
+                clusters[project] = list()
+
+            clusters[project].append(job)
+
+        for project, _jobs in clusters.iteritems():
+            self._run_cluster(project, _jobs)
+
+
+    # --------------------------------------------------------------------------
+    #
+    def _run_cluster(self, project, jobs):
+
+        jds = [job.description for job in jobs]
 
         # create a Condor job script from SAGA job description
         script = _condorscript_generator(url=self.rm, logger=self._logger, 
@@ -1364,6 +1398,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
                     self.shell.url.scheme)
 
         os.remove(submit_file.name)
+
 
     # ----------------------------------------------------------------
     #

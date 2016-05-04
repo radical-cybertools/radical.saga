@@ -280,20 +280,15 @@ class Service (sb.Base, sasync.Async) :
                 val     = jd_copy   .get_attribute (key)
                 default = jd_default.get_attribute (key)
 
-                # we count empty strings as none, for string type parameters.
-                if  isinstance (val, basestring) :
-                    if  not val :
-                        val = None
-
                 # Also, we make string compares case insensitive
                 if isinstance (val,     basestring) : val     = val    .lower ()
                 if isinstance (default, basestring) : default = default.lower ()
 
                 # supported keys are also valid, as are keys with default or
                 # None values
-                if  not (key in supported_keys or \
-                         val == default        or \
-                         val == None           )  :
+                if  key not in supported_keys and \
+                    val != default            and \
+                    val                       :
 
                     msg = "'JobDescription.%s' (%s) is not supported by adaptor %s" \
                         % (key, val, adaptor_info['name'])
