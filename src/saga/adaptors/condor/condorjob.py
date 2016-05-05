@@ -590,13 +590,13 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
             }
 
             # remove submit file(s)
-            # XXX: maybe leave them in case of debugging?
+            # TODO: leave them in case of debugging?
             self._logger.info("Submitted Condor job with scheme: '%s'" % self.shell.url.scheme)
-            if self.shell.url.scheme in ['ssh', 'gsissh']:
-                ret, out, _ = self.shell.run_sync ('rm %s' % submit_file_name)
-            else:
-                raise NotImplementedError("%s support for Condor not implemented." % \
-                                 self.shell.url.scheme)
+          # if self.shell.url.scheme in ['ssh', 'gsissh']:
+          #     ret, out, _ = self.shell.run_sync ('rm %s' % submit_file_name)
+          # else:
+          #     raise NotImplementedError("%s support for Condor not implemented." % \
+          #                      self.shell.url.scheme)
             os.remove(submit_file.name)
 
             return job_id
