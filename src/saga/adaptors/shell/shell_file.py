@@ -25,7 +25,7 @@ SYNC_CALL  = saga.adaptors.cpi.decorators.SYNC_CALL
 ASYNC_CALL = saga.adaptors.cpi.decorators.ASYNC_CALL
 
 
-# --------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # the adaptor name
 #
 _ADAPTOR_NAME          = "saga.adaptor.shell_file"
@@ -44,7 +44,7 @@ _ADAPTOR_OPTIONS       = [
   # }
 ]
 
-# --------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # the adaptor capabilities & supported attributes
 #
 _ADAPTOR_CAPABILITIES  = {
@@ -54,7 +54,7 @@ _ADAPTOR_CAPABILITIES  = {
                           "userpass" : "username/password pair for ssh"}
 }
 
-# --------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # the adaptor documentation
 #
 _ADAPTOR_DOC           = {
@@ -119,7 +119,7 @@ _ADAPTOR_DOC           = {
                           "gsisftp" :"use gsisftp to access remote filesystems"}
 }
 
-# --------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # the adaptor info is used to register the adaptor with SAGA
 
 _ADAPTOR_INFO          = {
@@ -157,7 +157,7 @@ class Adaptor (saga.adaptors.base.Base):
     """
 
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     def __init__ (self) :
 
@@ -166,7 +166,7 @@ class Adaptor (saga.adaptors.base.Base):
         self.opts  = self.get_config (_ADAPTOR_NAME)
 
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     def sanity_check (self) :
 
@@ -175,7 +175,7 @@ class Adaptor (saga.adaptors.base.Base):
         pass
 
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     def get_lease_target (self, tgt) :
 
@@ -197,7 +197,7 @@ class Adaptor (saga.adaptors.base.Base):
 class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
     """ Implements saga.adaptors.cpi.filesystem.Directory """
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     def __init__ (self, api, adaptor) :
 
@@ -205,21 +205,21 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
         _cpi_base.__init__ (api, adaptor)
 
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     def __del__ (self) :
 
         self.finalize (kill=True)
 
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     def _is_valid (self) :
 
         if  not self.valid :
             raise saga.IncorrectState ("this instance was closed or removed")
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     def _create_parent (self, cwdurl, tgt) :
 
@@ -251,7 +251,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
                 tmp_shell.run_sync ('mkdir -p %s' % dirname)
 
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     @SYNC_CALL
     def init_instance (self, adaptor_state, url, flags, session) :
@@ -283,7 +283,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
 
         # we create a local shell handle, too, if only to support copy and move
         # to and from local file systems (mkdir for staging target, remove of move
-        # source).  Not that we do not perform a cd on the local shell -- all
+        # source).  Note that we do not perform a cd on the local shell -- all
         # operations are assumed to be performed on absolute paths.
         #
         # self.local is not leased -- local shells are always fast and eat
@@ -293,7 +293,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
 
         return self.get_api ()
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     def _command (self, command, location=None, make_location=False) :
 
@@ -314,7 +314,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
             return cmd_shell.run_sync ("%s cd %s && %s" % (pre_cmd, location.path, command))
 
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     def initialize (self) :
 
@@ -351,7 +351,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
         self.valid = True
 
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     def finalize (self, kill = False) :
 
@@ -362,7 +362,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
         self.valid = False
 
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     @SYNC_CALL
     def open (self, url, flags) :
@@ -379,7 +379,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
                                      _adaptor=self._adaptor, _adaptor_state=adaptor_state)
 
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     @SYNC_CALL
     def open_dir (self, url, flags) :
@@ -395,7 +395,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
         return saga.filesystem.Directory (url=url, flags=flags, session=self.session, 
                                           _adaptor=self._adaptor, _adaptor_state=adaptor_state)
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     @SYNC_CALL
     def change_dir (self, tgt, flags) :
@@ -431,7 +431,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
         self.valid = True
 
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     @SYNC_CALL
     def close (self, timeout=None):
@@ -442,7 +442,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
         self.finalize (kill=True)
 
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     @SYNC_CALL
     def get_url (self) :
 
@@ -451,7 +451,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
         return saga.Url (self.url) # deep copy
 
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     @SYNC_CALL
     def list (self, npat, flags):
@@ -482,7 +482,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
         return self.entries
    
    
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     @SYNC_CALL
     def copy_self (self, tgt, flags):
@@ -494,7 +494,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
         return self.copy (self.url, tgt, flags)
    
    
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     @SYNC_CALL
     def copy (self, src_in, tgt_in, flags, _from_task=None):
@@ -616,7 +616,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
             _from_task._set_metric ('files_copied', files_copied)
 
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     @SYNC_CALL
     def link_self (self, tgt, flags):
@@ -628,7 +628,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
         return self.link (self.url, tgt, flags)
    
    
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     @SYNC_CALL
     def link (self, src_in, tgt_in, flags, _from_task=None):
@@ -666,7 +666,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
 
 
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     @SYNC_CALL
     def move_self (self, tgt, flags):
@@ -683,7 +683,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
         self.initialize ()
    
    
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     @SYNC_CALL
     def move (self, src_in, tgt_in, flags):
@@ -693,7 +693,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
         self.remove (src_in, flags)
    
    
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     @SYNC_CALL
     def remove_self (self, flags):
@@ -706,7 +706,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
         self.invalid = True
    
    
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     @SYNC_CALL
     def remove (self, tgt_in, flags):
@@ -736,7 +736,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
             raise saga.BadParameter ("remove of %s is not supported" % tgt)
    
    
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     @SYNC_CALL
     def make_dir (self, tgt_in, flags):
@@ -767,7 +767,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
             raise saga.NoSuccess ("make_dir (%s) failed: %s" % (tgt_in, out))
 
    
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     @SYNC_CALL
     def get_size_self (self) :
@@ -776,7 +776,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
 
         return self.get_size (self.url)
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     @SYNC_CALL
     def get_size (self, tgt_in) :
@@ -800,7 +800,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
         return size
    
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     @SYNC_CALL
     def exists_self (self):
@@ -835,7 +835,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
         return self.is_dir (self.url)
    
    
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     @SYNC_CALL
     def is_dir (self, tgt_in):
@@ -850,7 +850,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
         return True if ret == 0 else False
    
    
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     @SYNC_CALL
     def is_entry_self (self):
@@ -860,7 +860,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
         return self.is_entry (self.url)
    
    
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     @SYNC_CALL
     def is_entry (self, tgt_in):
@@ -875,7 +875,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
         return True if ret == 0 else False
    
    
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     @SYNC_CALL
     def is_link_self (self):
@@ -885,7 +885,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
         return self.is_link (self.url)
    
    
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     @SYNC_CALL
     def is_link (self, tgt_in):
@@ -900,7 +900,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
         return True if ret == 0 else False
    
    
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     @SYNC_CALL
     def is_file_self (self):
@@ -908,7 +908,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
         return self.is_entry_self ()
    
    
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     @SYNC_CALL
     def is_file (self, tgt_in):
@@ -921,7 +921,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
 class ShellFile (saga.adaptors.cpi.filesystem.File) :
     """ Implements saga.adaptors.cpi.filesystem.File
     """
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     def __init__ (self, api, adaptor) :
 
@@ -929,21 +929,21 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
         _cpi_base.__init__ (api, adaptor)
 
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     def __del__ (self) :
 
         self.finalize (kill=True)
 
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     def _is_valid (self) :
 
         if  not self.valid :
             raise saga.IncorrectState ("this instance was closed or removed")
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     def _create_parent (self, cwdurl, tgt) :
 
@@ -951,7 +951,7 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
 
         if  sumisc.url_is_compatible (cwdurl, tgt) :
 
-            ret, out, _ = self.shell.obj.run_sync (" mkdir -p '%s'\n" % (dirname))
+            ret, out, _ = self._run_sync (" mkdir -p '%s'\n" % (dirname))
             if  ret != 0 :
                 raise saga.NoSuccess ("failed at mkdir '%s': (%s) (%s)" \
                                    % (dirname, ret, out))
@@ -974,7 +974,22 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
                 tmp_shell.run_sync ('mkdir -p %s' % dirname)
 
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
+    #
+    def _run_sync(self, cmd):
+        """
+        lease the shell, set $PWD, run command, and release shell again
+        """
+
+        lease_tgt = self._adaptor.get_lease_target(self.cwdurl)
+        cwd_path  = self.cwdurl.path
+
+        with self.lm.lease(lease_tgt, self.shell_creator, self.cwdurl) as shell:
+
+            return shell.obj.run_sync("cd %s && %s\n" % (cwd_path, cmd))
+
+
+    # --------------------------------------------------------------------------
     #
     @SYNC_CALL
     def init_instance (self, adaptor_state, url, flags, session):
@@ -1026,15 +1041,15 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
             return sups.PTYShell (url, self.get_session(), self._logger)
         self.shell_creator = _shell_creator
 
-        # self.shell is also a leased shell -- for File, it does not have any
-        # state, really.
-        # FIXME: get ssh Master connection from _adaptor dict
-        lease_tgt  = self._adaptor.get_lease_target (self.url)
-        self.shell = self.lm.lease (lease_tgt, self.shell_creator, self.url) 
-        # TODO : release shell
-
-      # self.shell.obj.set_initialize_hook (self.initialize)
-      # self.shell.obj.set_finalize_hook   (self.finalize)
+     #  # self.shell is also a leased shell -- for File, it does not have any
+     #  # state, really.
+     #  # FIXME: get ssh Master connection from _adaptor dict
+     #  lease_tgt  = self._adaptor.get_lease_target (self.url)
+     #  self.shell = self.lm.lease (lease_tgt, self.shell_creator, self.url) 
+     #  # TODO : release shell
+     #
+     ## self.shell.obj.set_initialize_hook (self.initialize)
+     ## self.shell.obj.set_finalize_hook   (self.finalize)
 
         self.initialize ()
 
@@ -1049,7 +1064,7 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
         return self.get_api ()
 
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     def initialize (self) :
 
@@ -1077,7 +1092,7 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
         if  self.flags & saga.filesystem.WRITE :
             cmd += "; test -w '%s'" % (self.url.path)
 
-        ret, out, _ = self.shell.obj.run_sync (cmd)
+        ret, out, _ = self._run_sync(cmd)
 
         if  ret != 0 :
             if  self.flags & saga.filesystem.CREATE_PARENTS :
@@ -1092,21 +1107,21 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
         self.valid = True
 
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     def finalize (self, kill=False) :
 
         # release the shells
-        self.lm.release (self.shell) 
+      # self.lm.release (self.shell) 
         self.lm.release (self.local) 
 
-        self.shell = None
+      # self.shell = None
         self.local = None
 
         self.valid = False
 
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     @SYNC_CALL
     def close (self, timeout=None):
@@ -1117,7 +1132,7 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
         self.finalize (kill=True)
 
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     @SYNC_CALL
     def get_url (self):
@@ -1127,7 +1142,7 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
         return saga.Url (self.url) # deep copy
 
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     @SYNC_CALL
     def copy_self (self, tgt_in, flags):
@@ -1158,7 +1173,7 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
             sumisc.url_is_compatible (cwdurl, tgt) :
 
             # print "shell cp"
-            ret, out, _ = self.shell.obj.run_sync (" cp %s '%s' '%s'\n" % (rec_flag, src.path, tgt.path))
+            ret, out, _ = self._run_sync (" cp %s '%s' '%s'\n" % (rec_flag, src.path, tgt.path))
             if  ret != 0 :
                 raise saga.NoSuccess ("copy (%s -> %s) failed (%s): (%s)" \
                                    % (src, tgt, ret, out))
@@ -1178,13 +1193,13 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
                     sumisc.url_is_compatible (cwdurl, tgt) :
 
                     # print "from local to remote"
-                    files_copied = self.shell.obj.stage_to_remote (src.path, tgt.path, rec_flag)
+                    files_copied = self._stage_to_remote (src.path, tgt.path, rec_flag)
 
                 elif sumisc.url_is_local (tgt)          and \
                      sumisc.url_is_compatible (cwdurl, src) :
 
                     # print "from remote to loca"
-                    files_copied = self.shell.obj.stage_from_remote (src.path, tgt.path, rec_flag)
+                    files_copied = self._stage_from_remote (src.path, tgt.path, rec_flag)
 
                 else :
                     # print "from remote to other remote -- fail"
@@ -1233,7 +1248,7 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
                                           % (src, tgt))
 
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     @SYNC_CALL
     def link_self (self, tgt_in, flags, _from_task=None):
@@ -1259,7 +1274,7 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
             sumisc.url_is_compatible (cwdurl, tgt) :
 
             # print "shell ln"
-            ret, out, err = self.shell.obj.run_sync (" ln -s '%s' '%s'\n" % (src.path, tgt.path))
+            ret, out, err = self._run_sync (" ln -s '%s' '%s'\n" % (src.path, tgt.path))
             if  ret != 0 :
                 raise saga.NoSuccess ("link (%s -> %s) failed (%s): (out: %s) (err: %s)" \
                                    % (src, tgt, ret, out, err))
@@ -1271,7 +1286,7 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
 
 
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     @SYNC_CALL
     def move_self (self, tgt_in, flags):
@@ -1285,7 +1300,7 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
         self.flags = flags
         self.initialize ()
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     @SYNC_CALL
     def write (self, string, flags=None):
@@ -1309,9 +1324,12 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
             string = self.read()+string
         # FIXME: eval flags
 
-        self.shell.obj.write_to_remote(string,tgt.path)
+        lease_tgt = self._adaptor.get_lease_target(self.cwdurl)
 
-    # ----------------------------------------------------------------
+        with self.lm.lease(lease_tgt, self.shell_creator, self.cwdurl) as shell:
+            shell.obj.write_to_remote(string,tgt.path)
+
+    # --------------------------------------------------------------------------
     #
     @SYNC_CALL
     def read (self,size=None):
@@ -1327,17 +1345,20 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
 
         self._is_valid ()
 
-        tgt = saga.Url (self.url)  # deep copy, is absolute
-        out = self.shell.obj.read_from_remote(tgt.path)
+        lease_tgt = self._adaptor.get_lease_target(self.cwdurl)
+        tgt       = saga.Url(self.url)  # deep copy, is absolute
 
-        if  size!=None:
+        with self.lm.lease(lease_tgt, self.shell_creator, self.cwdurl) as shell:
+            out = shell.obj.read_from_remote(tgt.path)
+
+        if size != None:
             return out[0:size-1]
         else:
             return out
 
 
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     @SYNC_CALL
     def remove_self (self, flags):
@@ -1353,13 +1374,13 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
         if  flags & saga.filesystem.RECURSIVE :
             rec_flag  += "-r "
 
-        ret, out, _ = self.shell.obj.run_sync (" rm -f %s '%s'\n" % (rec_flag, tgt.path))
+        ret, out, _ = self._run_sync (" rm -f %s '%s'\n" % (rec_flag, tgt.path))
         if  ret != 0 :
             raise saga.NoSuccess ("remove (%s) failed (%s): (%s)" \
                                % (tgt, ret, out))
 
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     @SYNC_CALL
     def get_size_self (self) :
@@ -1372,10 +1393,10 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
 
         if  self.is_dir_self () :
             size_mult   = 1024   # see '-k' option to 'du'
-            ret, out, _ = self.shell.obj.run_sync (" du -ks '%s'  | xargs | cut -f 1 -d ' '\n" \
+            ret, out, _ = self._run_sync (" du -ks '%s'  | xargs | cut -f 1 -d ' '\n" \
                                             % self.url.path)
         else :
-            ret, out, _ = self.shell.obj.run_sync (" wc -c '%s' | xargs | cut -f 1 -d ' '\n" \
+            ret, out, _ = self._run_sync (" wc -c '%s' | xargs | cut -f 1 -d ' '\n" \
                                             % self.url.path)
 
         if  ret != 0 :
@@ -1391,7 +1412,7 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
         return size
 
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     @SYNC_CALL
     def is_dir_self (self):
@@ -1400,12 +1421,12 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
 
         cwdurl = saga.Url (self.url) # deep copy
 
-        ret, out, _ = self.shell.obj.run_sync (" test -d '%s' && test ! -h '%s'" % (cwdurl.path, cwdurl.path))
+        ret, out, _ = self._run_sync (" test -d '%s' && test ! -h '%s'" % (cwdurl.path, cwdurl.path))
 
         return True if ret == 0 else False
 
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     @SYNC_CALL
     def is_entry_self (self):
@@ -1414,12 +1435,12 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
 
         cwdurl = saga.Url (self.url) # deep copy
 
-        ret, out, _ = self.shell.obj.run_sync (" test -f '%s' && test ! -h '%s'" % (cwdurl.path, cwdurl.path))
+        ret, out, _ = self._run_sync (" test -f '%s' && test ! -h '%s'" % (cwdurl.path, cwdurl.path))
 
         return True if ret == 0 else False
 
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     @SYNC_CALL
     def is_link_self (self):
@@ -1428,12 +1449,12 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
 
         cwdurl = saga.Url (self.url) # deep copy
 
-        ret, out, _ = self.shell.obj.run_sync (" test -h '%s'" % cwdurl.path)
+        ret, out, _ = self._run_sync (" test -h '%s'" % cwdurl.path)
 
         return True if ret == 0 else False
 
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     @SYNC_CALL
     def is_file_self (self):
@@ -1442,7 +1463,7 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
 
         cwdurl = saga.Url (self.url) # deep copy
 
-        ret, out, _ = self.shell.obj.run_sync (" test -f '%s' && test ! -h '%s'" % (cwdurl.path, cwdurl.path))
+        ret, out, _ = self._run_sync (" test -f '%s' && test ! -h '%s'" % (cwdurl.path, cwdurl.path))
 
         return True if ret == 0 else False
 

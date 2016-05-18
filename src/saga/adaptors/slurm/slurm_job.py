@@ -903,6 +903,7 @@ class SLURMJob (saga.adaptors.cpi.job.Job):
 
         # initialize job attribute values
         self._id              = None
+        self._name            = self.jd.get(saga.job.NAME)
         self._state           = saga.job.NEW
         self._exit_code       = None
         self._exception       = None
@@ -1127,6 +1128,13 @@ class SLURMJob (saga.adaptors.cpi.job.Job):
         """ Implements saga.adaptors.cpi.job.Job.get_id() """        
         return self._id
    
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def get_name (self):
+        """ Implements saga.adaptors.cpi.job.Job.get_name() """        
+        return self._name
+
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
