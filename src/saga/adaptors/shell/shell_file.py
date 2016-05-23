@@ -962,7 +962,7 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
                 raise saga.BadParameter ("schema of mkdir target is not supported (%s)" \
                                       % (tgt))
 
-            ret, out, _ = self.local.obj.run_sync (" mkdir -p '%s'\n" % (dirname))
+            ret, out, _ = self.local.run_sync (" mkdir -p '%s'\n" % (dirname))
             if  ret != 0 :
                 raise saga.NoSuccess ("failed at mkdir '%s': (%s) (%s)" \
                                    % (dirname, ret, out))
@@ -986,7 +986,7 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
 
         with self.lm.lease(lease_tgt, self.shell_creator, self.cwdurl) as shell:
 
-            return shell.obj.run_sync("cd %s && %s\n" % (cwd_path, cmd))
+            return shell.run_sync("cd %s && %s\n" % (cwd_path, cmd))
 
 
     # --------------------------------------------------------------------------
@@ -1048,8 +1048,8 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
      #  self.shell = self.lm.lease (lease_tgt, self.shell_creator, self.url) 
      #  # TODO : release shell
      #
-     ## self.shell.obj.set_initialize_hook (self.initialize)
-     ## self.shell.obj.set_finalize_hook   (self.finalize)
+     ## self.shell.set_initialize_hook (self.initialize)
+     ## self.shell.set_finalize_hook   (self.finalize)
 
         self.initialize ()
 
@@ -1327,7 +1327,7 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
         lease_tgt = self._adaptor.get_lease_target(self.cwdurl)
 
         with self.lm.lease(lease_tgt, self.shell_creator, self.cwdurl) as shell:
-            shell.obj.write_to_remote(string,tgt.path)
+            shell.write_to_remote(string,tgt.path)
 
     # --------------------------------------------------------------------------
     #
@@ -1349,7 +1349,7 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
         tgt       = saga.Url(self.url)  # deep copy, is absolute
 
         with self.lm.lease(lease_tgt, self.shell_creator, self.cwdurl) as shell:
-            out = shell.obj.read_from_remote(tgt.path)
+            out = shell.read_from_remote(tgt.path)
 
         if size != None:
             return out[0:size-1]
