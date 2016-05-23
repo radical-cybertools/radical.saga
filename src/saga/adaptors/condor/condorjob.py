@@ -210,6 +210,7 @@ def _condorscript_generator(url, logger, jds, option_dict=None):
         job_pwd = './'
         if jd.working_directory:
             job_pwd = jd.working_directory
+            condor_file += "\ninitialdir = %s " % job_pwd
         logname = "saga-condor-job-$(cluster)_$(process).log"
         condor_file += "\nlog = %s " % os.path.join(job_pwd, logname)
 
