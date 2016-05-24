@@ -1193,13 +1193,19 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
                     sumisc.url_is_compatible (cwdurl, tgt) :
 
                     # print "from local to remote"
-                    files_copied = self._stage_to_remote (src.path, tgt.path, rec_flag)
+                    lease_tgt = self._adaptor.get_lease_target (self.url)
+                    with self.lm.lease (lease_tgt, self.shell_creator, self.url) \
+                        as copy_shell :
+                        files_copied = copy_shell.stage_to_remote (src.path, tgt.path, rec_flag)
 
                 elif sumisc.url_is_local (tgt)          and \
                      sumisc.url_is_compatible (cwdurl, src) :
 
-                    # print "from remote to loca"
-                    files_copied = self._stage_from_remote (src.path, tgt.path, rec_flag)
+                    # print "from remote to local"
+                    lease_tgt = self._adaptor.get_lease_target (self.url)
+                    with self.lm.lease (lease_tgt, self.shell_creator, self.url) \
+                        as copy_shell :
+                        files_copied = copy_shell.stage_from_remote (src.path, tgt.path, rec_flag)
 
                 else :
                     # print "from remote to other remote -- fail"
