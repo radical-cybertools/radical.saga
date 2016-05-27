@@ -60,6 +60,11 @@ _ADAPTOR_INFO          = {
     ]
 }
 
+CONNTIMEOUT = 60
+SNDTIMEOUT = 7200
+SRMTIMEOUT = 180
+
+SRM_PTY_URL = 'fork://localhost/'
 
 ###############################################################################
 # The adaptor class
@@ -84,7 +89,12 @@ class Adaptor(saga.adaptors.base.Base):
         # file mode, number of links to the file, user id, group id, file size(bytes), locality, file name.
         # srm://srm.hep.fiu.edu:8443/srm/v2/server?SFN=/mnt/hadoop/osg/marksant/TESTFILE")
         # -rwxr-xr-x   1     1     2      19               ONLINE /mnt/hadoop/osg/marksant/TESTFILE
-        rc, out, _ = shell.run_sync("lcg-ls -l -b -D srmv2 %s" % url)
+        try:
+            # 'lcg-ls' uses the wrong timeout setting for connection timeout
+            rc, out, _ = shell.run_sync("lcg-ls --sendreceive-timeout %d -l -b -D srmv2 %s" % (CONNTIMEOUT, url))
+        except:
+            shell.finalize(kill_pty=True)
+            raise Exception("get_size failed")
 
         if rc != 0:
             if 'SRM_INVALID_PATH' in out:
@@ -107,7 +117,12 @@ class Adaptor(saga.adaptors.base.Base):
         # file mode, number of links to the file, user id, group id, file size(bytes), locality, file name.
         # srm://srm.hep.fiu.edu:8443/srm/v2/server?SFN=/mnt/hadoop/osg/marksant/TESTFILE")
         # -rwxr-xr-x   1     1     2      19               ONLINE /mnt/hadoop/osg/marksant/TESTFILE
-        rc, out, _ = shell.run_sync("lcg-ls -d -l -b -D srmv2 %s" % url)
+        try:
+            # 'lcg-ls' uses the wrong timeout setting for connection timeout
+            rc, out, _ = shell.run_sync("lcg-ls --sendreceive-timeout %d -d -l -b -D srmv2 %s" % (CONNTIMEOUT, url))
+        except:
+            shell.finalize(kill_pty=True)
+            raise Exception("stat failed")
 
         if rc != 0:
             if 'SRM_INVALID_PATH' in out:
@@ -145,7 +160,14 @@ class Adaptor(saga.adaptors.base.Base):
             src = src.__str__()
         if isinstance(dst, saga.filesystem.file.File):
             dst = dst.get_url()
-        rc, out, _ = shell.run_sync("lcg-cp -v -b -D srmv2 %s %s" % (src, dst))
+        try:
+            rc, out, _ = shell.run_sync('lcg-cp -v -b -D srmv2 '
+                '--sendreceive-timeout %d --connect-timeout %d '
+                '--srm-timeout %d %s %s' % (
+                SNDTIMEOUT, CONNTIMEOUT, SRMTIMEOUT, src, dst))
+        except:
+            shell.finalize(kill_pty=True)
+            raise Exception("transfer failed")
 
         if rc != 0:
             if 'SRM_INVALID_PATH' in out:
@@ -161,7 +183,11 @@ class Adaptor(saga.adaptors.base.Base):
         if isinstance(tgt, saga.filesystem.file.File):
             tgt = tgt.get_url()
 
-        rc, out, _ = shell.run_sync("lcg-del -l -b -D srmv2 %s" % tgt)
+        try:
+            rc, out, _ = shell.run_sync("lcg-del -l -b -D srmv2 %s" % tgt)
+        except:
+            shell.finalize(kill_pty=True)
+            raise Exception("remove failed")
 
         if rc != 0:
             if 'SRM_INVALID_PATH' in out:
@@ -176,17 +202,99 @@ class Adaptor(saga.adaptors.base.Base):
 
         if isinstance(tgt, saga.filesystem.directory.Directory):
             tgt = tgt.get_url()
+        if isinstance(tgt, saga.filesystem.file.File):
+            tgt = tgt.get_url()
+        if isinstance(tgt, saga.Url):
+            tgt = str(tgt)
 
-        if flags & saga.filesystem.RECURSIVE:
-            rc, out, _ = shell.run_sync("srmrmdir --recursive %s" % tgt)
-        else:
+        files, dirs = self.srm_list_kind(shell, tgt)
+        for d in dirs:
+            url = tgt + '/' + d
+            self.srm_dir_remove(shell, flags, url)
+
+        for f in files:
+            url = tgt + '/' + f
+            self.srm_file_remove(shell, flags, url)
+
+        # Finally remove self
+        try:
             rc, out, _ = shell.run_sync("lcg-del -d -l -b -D srmv2 %s" % tgt)
+        except:
+            shell.finalize(kill_pty=True)
+            raise Exception("remove failed")
 
         if rc != 0:
             if 'SRM_INVALID_PATH' in out:
                 raise saga.exceptions.DoesNotExist(url)
             else:
                 raise Exception("Remove failed.")
+
+    # --------------------------------------------------------------------------
+    #
+    def srm_list(self, shell, url, npat, flags):
+
+        if npat:
+            raise saga.exceptions.NotImplemented("no pattern selection")
+
+        if isinstance(url, saga.filesystem.directory.Directory):
+            url = url.get_url()
+        if isinstance(url, saga.filesystem.file.File):
+            url = url.get_url()
+
+        try:
+            # 'lcg-ls' uses the wrong timeout setting for connection timeout
+            rc, out, _ = shell.run_sync("lcg-ls --sendreceive-timeout %d -b -D srmv2 %s" % (CONNTIMEOUT, url))
+        except:
+            shell.finalize(kill_pty=True)
+            raise Exception("list failed")
+
+        if rc != 0:
+            if 'SRM_INVALID_PATH' in out:
+                raise saga.exceptions.DoesNotExist(url)
+            else:
+                raise Exception("Couldn't list directory.")
+
+        return [x.rsplit('/', 1)[1] for x in out.split()]
+
+
+    # --------------------------------------------------------------------------
+    #
+    def srm_list_kind(self, shell, url):
+
+        try:
+            # 'lcg-ls' uses the wrong timeout setting for connection timeout
+            rc, out, _ = shell.run_sync("lcg-ls --sendreceive-timeout %d -l -b -D srmv2 %s" % (CONNTIMEOUT, url))
+        except:
+            shell.finalize(kill_pty=True)
+            raise Exception("list failed")
+
+        if rc != 0:
+            if 'SRM_INVALID_PATH' in out:
+                raise saga.exceptions.DoesNotExist(url)
+            else:
+                raise Exception("Couldn't list directory.")
+
+        # Drop checksum entries
+        # * Checksum: 8ea8c8a7 (ADLER32)
+        entries = [x for x in out.split('\n') if not '* Checksum:' in x]
+
+        files = []
+        dirs = []
+        # Output format
+        #d--------- 1 0 0 0 UNKNOWN /xrd/vos/osg/marksant/data/tmp
+        #---------- 1 0 0 1048576 UNKNOWN /xrd/vos/osg/marksant/data/1M
+        for entry in entries:
+            if not entry:
+                continue
+
+            kind = entry.split()[0][0]
+            name = entry.rsplit('/', 1)[1]
+            if kind == '-':
+                files.append(name)
+            elif kind == 'd':
+                dirs.append(name)
+
+        return (files, dirs)
 
 
     # --------------------------------------------------------------------------
@@ -213,6 +321,14 @@ class SRMDirectory (saga.adaptors.cpi.filesystem.Directory):
 
     # --------------------------------------------------------------------------
     #
+    def _alive(self):
+        alive = self.shell.alive()
+        if not alive:
+            self.shell = sups.PTYShell(SRM_PTY_URL)
+
+
+    # --------------------------------------------------------------------------
+    #
     @SYNC_CALL
     def init_instance(self, adaptor_state, url, flags, session):
 
@@ -224,12 +340,16 @@ class SRMDirectory (saga.adaptors.cpi.filesystem.Directory):
 
         try:
             # open a shell
-            self.shell = sups.PTYShell('fork://localhost/', self.session)
-            # self.shell = sups.PTYShell('ssh://localhost/', self.session)
+            self.shell = sups.PTYShell(SRM_PTY_URL, self.session)
 
             # run grid-proxy-info, see if we get any errors -- if so, fail the
             # sanity check
-            rc, out, _ = self.shell.run_sync("grid-proxy-info")
+            try:
+                rc, out, _ = self.shell.run_sync("grid-proxy-info")
+            except:
+                shell.finalize(kill_pty=True)
+                raise Exception("grid-proxy-info failed")
+
             if rc != 0:
                 raise Exception("grid-proxy-info failed")
             
@@ -275,24 +395,26 @@ class SRMDirectory (saga.adaptors.cpi.filesystem.Directory):
     @SYNC_CALL
     def list(self, npat, flags):
 
-        rc, out, _ = self.shell.run_sync("lcg-ls -b -D srmv2 %s" % self._url)
+        self._alive()
 
-        if rc != 0:
-            if 'SRM_INVALID_PATH' in out:
-                raise saga.exceptions.DoesNotExist(url)
-            else:
-                raise Exception("Couldn't list directory.")
-
-        return [x.rsplit('/', 1)[1] for x in out.split()]
+        url = self._adaptor.surl2query(self._url, self._surl, None)
+        return self._adaptor.srm_list(self.shell, url, npat, flags)
 
 
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
     def make_dir(self, tgt_in, flags):
+
+        self._alive()
+
         url = self._adaptor.surl2query(self._url, self._surl, tgt_in)
 
-        rc, out, _ = self.shell.run_sync("srmmkdir %s" % url)
+        try:
+            rc, out, _ = self.shell.run_sync("srmmkdir %s" % url)
+        except:
+            shell.finalize(kill_pty=True)
+            raise Exception(" failed")
 
         if rc != 0:
             if 'SRM_DUPLICATION_ERROR' in out:
@@ -378,21 +500,26 @@ class SRMDirectory (saga.adaptors.cpi.filesystem.Directory):
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
-    def remove(self, flags, tgt):
-        self._adaptor.srm_dir_remove(self.shell, flags, tgt)
+    def remove(self, tgt, flags):
+
+        if flags & saga.filesystem.RECURSIVE:
+            self._adaptor.srm_dir_remove(self.shell, flags, tgt)
+        else:
+            self._adaptor.srm_file_remove(self.shell, flags, tgt)
 
 
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
     def remove_self(self, flags):
-        self.remove(flags, self._url)
+        self.remove(self._url, flags)
 
 
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
     def copy_self(self, tgt, flags):
+
         return self.copy(src_in=None, tgt_in=tgt, flags=flags)
 
 
@@ -400,6 +527,7 @@ class SRMDirectory (saga.adaptors.cpi.filesystem.Directory):
     #
     @SYNC_CALL
     def copy(self, src, tgt, flags):
+        self._alive()
 
         self._adaptor.srm_transfer(self.shell, flags, src, tgt)
 
@@ -407,6 +535,7 @@ class SRMDirectory (saga.adaptors.cpi.filesystem.Directory):
     #
     @SYNC_CALL
     def exists(self, tgt):
+        self._alive()
 
         try:
             self._adaptor.srm_stat(self.shell, tgt)
@@ -414,6 +543,14 @@ class SRMDirectory (saga.adaptors.cpi.filesystem.Directory):
             return False
 
         return True
+
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def close(self, timeout=None):
+
+        if timeout:
+            raise saga.BadParameter("timeout for close not supported")
 
 
 ######################################################################
@@ -433,6 +570,14 @@ class SRMFile(saga.adaptors.cpi.filesystem.File):
         print "session: %s"  % self._session
 
 
+    # --------------------------------------------------------------------------
+    #
+    def _alive(self):
+        alive = self.shell.alive()
+        if not alive:
+            self.shell = sups.PTYShell(SRM_PTY_URL)
+
+
     @SYNC_CALL
     def init_instance(self, adaptor_state, url, flags, session):
 
@@ -444,12 +589,17 @@ class SRMFile(saga.adaptors.cpi.filesystem.File):
 
         try:
             # open a shell
-            self.shell = sups.PTYShell('fork://localhost/', self.session)
-            # self.shell = sups.PTYShell('ssh://localhost/', self.session)
+
+            self.shell = sups.PTYShell(SRM_PTY_URL, self.session)
 
             # run grid-proxy-info, see if we get any errors -- if so, fail the
             # sanity check
-            rc, _, _ = self.shell.run_sync("grid-proxy-info")
+            try:
+                rc, _, _ = self.shell.run_sync("grid-proxy-info")
+            except:
+                shell.finalize(kill_pty=True)
+                raise Exception("grid-proxy-info failed")
+
             if rc != 0:
                 raise Exception("grid-proxy-info failed")
 
@@ -485,6 +635,7 @@ class SRMFile(saga.adaptors.cpi.filesystem.File):
 
     @SYNC_CALL
     def get_size_self(self):
+        self._alive()
         return self._adaptor.file_get_size(self.shell, self._url)
 
 
@@ -492,6 +643,7 @@ class SRMFile(saga.adaptors.cpi.filesystem.File):
     #
     @SYNC_CALL
     def copy_self(self, dst, flags):
+        self._alive()
 
         self._adaptor.srm_transfer(self.shell, flags, self._url, dst)
 
@@ -500,6 +652,7 @@ class SRMFile(saga.adaptors.cpi.filesystem.File):
     #
     @SYNC_CALL
     def remove_self(self, flags):
+        self._alive()
 
         self._adaptor.srm_file_remove(self.shell, flags, self._url)
 
@@ -508,6 +661,7 @@ class SRMFile(saga.adaptors.cpi.filesystem.File):
     #
     @SYNC_CALL
     def is_file_self(self):
+        self._alive()
         stat = self._adaptor.srm_stat(self.shell, self._url)
 
         if stat['mode'] == 'file':
@@ -520,6 +674,7 @@ class SRMFile(saga.adaptors.cpi.filesystem.File):
     #
     @SYNC_CALL
     def is_link_self(self):
+        self._alive()
         stat = self._adaptor.srm_stat(self.shell, self._url)
 
         if stat['mode'] == 'link':
@@ -532,12 +687,22 @@ class SRMFile(saga.adaptors.cpi.filesystem.File):
     #
     @SYNC_CALL
     def is_dir_self(self):
+        self._alive()
         stat = self._adaptor.srm_stat(self.shell, self._url)
 
         if stat['mode'] == 'dir':
             return True
         else:
             return False
+
+
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def close(self, timeout=None):
+
+        if timeout:
+            raise saga.BadParameter("timeout for close not supported")
 
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
