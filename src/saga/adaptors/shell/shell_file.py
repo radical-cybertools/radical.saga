@@ -18,6 +18,7 @@ import radical.utils as ru
 
 import re
 import os
+import errno
 
 import shell_wrapper
 
@@ -146,6 +147,24 @@ _ADAPTOR_INFO          = {
     ]
 }
 
+# ------------------------------------------------------------------------------
+#
+# use the native python facilities to create local directories
+#
+def _mkdir_p(path):
+
+    try:
+        os.makedirs(path)
+
+    except OSError as exc:  # Python >2.5
+        if exc.errno == errno.EEXIST and os.path.isdir(path):
+            pass
+
+    except Exception as e:
+        raise saga.NoSuccess("mkdir failed for '%s': %s" \
+                              % (path, e))
+
+
 ###############################################################################
 # The adaptor class
 
@@ -239,11 +258,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
             if  tgt.scheme and not tgt.scheme.lower () in _ADAPTOR_SCHEMAS :
                 raise saga.BadParameter ("schema of mkdir target is not supported (%s)" \
                                       % (tgt))
-
-            ret, out, _ = self.local.run_sync (" mkdir -p '%s'\n" % (dirname))
-            if  ret != 0 :
-                raise saga.NoSuccess ("failed at mkdir '%s': (%s) (%s)" \
-                                   % (dirname, ret, out))
+            _mkdir_p(dirname)
 
         else :
             lease_tgt = self._adaptor.get_lease_target (tgt)
@@ -280,16 +295,6 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
         # right location (see self._command())
 
         self.initialize ()
-
-        # we create a local shell handle, too, if only to support copy and move
-        # to and from local file systems (mkdir for staging target, remove of move
-        # source).  Note that we do not perform a cd on the local shell -- all
-        # operations are assumed to be performed on absolute paths.
-        #
-        # self.local is not leased -- local shells are always fast and eat
-        # little resourcess
-        self.local = sups.PTYShell ('fork://localhost/', saga.Session(default=True), 
-                                    self._logger)
 
         return self.get_api ()
 
@@ -354,10 +359,6 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
     # --------------------------------------------------------------------------
     #
     def finalize (self, kill = False) :
-
-        if  kill and self.local :
-            self.local.finalize (True)
-            self.local = None
 
         self.valid = False
 
@@ -961,11 +962,7 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
             if  tgt.scheme and not tgt.scheme.lower () in _ADAPTOR_SCHEMAS :
                 raise saga.BadParameter ("schema of mkdir target is not supported (%s)" \
                                       % (tgt))
-
-            ret, out, _ = self.local.run_sync (" mkdir -p '%s'\n" % (dirname))
-            if  ret != 0 :
-                raise saga.NoSuccess ("failed at mkdir '%s': (%s) (%s)" \
-                                   % (dirname, ret, out))
+            _mkdir_p(dirname)
 
         else :
 
@@ -1053,14 +1050,6 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
 
         self.initialize ()
 
-
-        # we lease a local shell handle, too, if only to support copy and move
-        # to and from local file systems (mkdir for staging target, remove of move
-        # source).  Note that we do not perform a cd on the local shell -- all
-        # operations are assumed to be performed on absolute paths.
-        lease_tgt  = self._adaptor.get_lease_target ("fork://localhost")
-        self.local = self.lm.lease (lease_tgt, self.shell_creator, lease_tgt) 
-
         return self.get_api ()
 
 
@@ -1110,13 +1099,6 @@ class ShellFile (saga.adaptors.cpi.filesystem.File) :
     # --------------------------------------------------------------------------
     #
     def finalize (self, kill=False) :
-
-        # release the shells
-      # self.lm.release (self.shell) 
-        self.lm.release (self.local) 
-
-      # self.shell = None
-        self.local = None
 
         self.valid = False
 
