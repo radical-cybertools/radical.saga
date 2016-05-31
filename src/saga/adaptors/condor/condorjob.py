@@ -219,6 +219,8 @@ def _condorscript_generator(url, logger, jds, option_dict=None):
         arguments += '\'\"'
         condor_file += "\n%s" % arguments
 
+        condor_file += "\ninitialdir = %s " % jd.working_directory
+
         # TODO: what to do when working directory is not set?
         logname = "saga-condor-job-$(cluster)_$(process).log"
         condor_file += "\nlog = %s " % os.path.join(jd.working_directory, logname)
