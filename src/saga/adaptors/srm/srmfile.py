@@ -64,13 +64,11 @@ CONNTIMEOUT = 60
 SNDTIMEOUT = 7200
 SRMTIMEOUT = 180
 
-SRM_PTY_URL = 'fork://localhost/'
-
 ###############################################################################
 # The adaptor class
 
 class Adaptor(saga.adaptors.base.Base):
-    """ 
+    """
     This is the actual adaptor class, which gets loaded by SAGA (i.e. by the
     SAGA engine), and which registers the CPI implementation classes which
     provide the adaptor's functionality.
@@ -79,9 +77,16 @@ class Adaptor(saga.adaptors.base.Base):
     def __init__(self) :
         saga.adaptors.base.Base.__init__(self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
 
+        self.cfg = self.get_config('saga.adaptor.srm_file')
+        if 'pty_url' in self.cfg:
+            self.pty_url = self.cfg['pty_url'].get_value()
+        else:
+            self.pty_url = 'fork://localhost/'
+
 
     def sanity_check(self):
         pass
+
 
     def file_get_size(self, shell, url):
 
@@ -324,7 +329,7 @@ class SRMDirectory (saga.adaptors.cpi.filesystem.Directory):
     def _alive(self):
         alive = self.shell.alive()
         if not alive:
-            self.shell = sups.PTYShell(SRM_PTY_URL)
+            self.shell = sups.PTYShell(self._adaptor.pty_url)
 
 
     # --------------------------------------------------------------------------
@@ -340,7 +345,7 @@ class SRMDirectory (saga.adaptors.cpi.filesystem.Directory):
 
         try:
             # open a shell
-            self.shell = sups.PTYShell(SRM_PTY_URL, self.session)
+            self.shell = sups.PTYShell(self._adaptor.pty_url, self.session)
 
             # run grid-proxy-info, see if we get any errors -- if so, fail the
             # sanity check
@@ -575,7 +580,7 @@ class SRMFile(saga.adaptors.cpi.filesystem.File):
     def _alive(self):
         alive = self.shell.alive()
         if not alive:
-            self.shell = sups.PTYShell(SRM_PTY_URL)
+            self.shell = sups.PTYShell(self._adaptor.pty_url)
 
 
     @SYNC_CALL
@@ -590,7 +595,7 @@ class SRMFile(saga.adaptors.cpi.filesystem.File):
         try:
             # open a shell
 
-            self.shell = sups.PTYShell(SRM_PTY_URL, self.session)
+            self.shell = sups.PTYShell(self._adaptor.pty_url, self.session)
 
             # run grid-proxy-info, see if we get any errors -- if so, fail the
             # sanity check
