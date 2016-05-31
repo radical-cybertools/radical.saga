@@ -132,8 +132,10 @@ class Adaptor(saga.adaptors.base.Base):
         if rc != 0:
             if 'SRM_INVALID_PATH' in out:
                 raise saga.exceptions.DoesNotExist(url)
+            elif not out:
+                raise saga.exceptions.Timeout("Connection timeout")
             else:
-                raise Exception("Couldn't list file")
+                raise saga.exceptions.NoSuccess("Couldn't list file")
         
         # Sometimes we get cksum too, which we ignore
         fields = out.split()[:7]
@@ -544,7 +546,7 @@ class SRMDirectory (saga.adaptors.cpi.filesystem.Directory):
 
         try:
             self._adaptor.srm_stat(self.shell, tgt)
-        except saga.DoesNotExist:
+        except saga.exceptions.DoesNotExist:
             return False
 
         return True
