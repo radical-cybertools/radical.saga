@@ -174,11 +174,12 @@ class Adaptor(saga.adaptors.base.Base):
                 SNDTIMEOUT, CONNTIMEOUT, SRMTIMEOUT, src, dst))
         except:
             shell.finalize(kill_pty=True)
+            # TODO: handle failed transfer
             raise Exception("transfer failed")
 
         if rc != 0:
             if 'SRM_INVALID_PATH' in out:
-                raise saga.exceptions.DoesNotExist(url)
+                raise saga.exceptions.DoesNotExist('%s or %s' % (src, dst))
             else:
                 raise Exception("Copy failed.")
 
@@ -198,7 +199,7 @@ class Adaptor(saga.adaptors.base.Base):
 
         if rc != 0:
             if 'SRM_INVALID_PATH' in out:
-                raise saga.exceptions.DoesNotExist(url)
+                raise saga.exceptions.DoesNotExist(tgt)
             else:
                 raise Exception("Remove failed.")
 
@@ -232,7 +233,7 @@ class Adaptor(saga.adaptors.base.Base):
 
         if rc != 0:
             if 'SRM_INVALID_PATH' in out:
-                raise saga.exceptions.DoesNotExist(url)
+                raise saga.exceptions.DoesNotExist(tgt)
             else:
                 raise Exception("Remove failed.")
 
@@ -273,6 +274,7 @@ class Adaptor(saga.adaptors.base.Base):
             rc, out, _ = shell.run_sync("lcg-ls --sendreceive-timeout %d -l -b -D srmv2 %s" % (CONNTIMEOUT, url))
         except:
             shell.finalize(kill_pty=True)
+            # TODO: raise something else or catch better?
             raise Exception("list failed")
 
         if rc != 0:
@@ -354,7 +356,7 @@ class SRMDirectory (saga.adaptors.cpi.filesystem.Directory):
             try:
                 rc, out, _ = self.shell.run_sync("grid-proxy-info")
             except:
-                shell.finalize(kill_pty=True)
+                self.shell.finalize(kill_pty=True)
                 raise Exception("grid-proxy-info failed")
 
             if rc != 0:
@@ -420,7 +422,7 @@ class SRMDirectory (saga.adaptors.cpi.filesystem.Directory):
         try:
             rc, out, _ = self.shell.run_sync("srmmkdir %s" % url)
         except:
-            shell.finalize(kill_pty=True)
+            self.shell.finalize(kill_pty=True)
             raise Exception(" failed")
 
         if rc != 0:
@@ -602,9 +604,9 @@ class SRMFile(saga.adaptors.cpi.filesystem.File):
             # run grid-proxy-info, see if we get any errors -- if so, fail the
             # sanity check
             try:
-                rc, _, _ = self.shell.run_sync("grid-proxy-info")
+                rc, out, _ = self.shell.run_sync("grid-proxy-info")
             except:
-                shell.finalize(kill_pty=True)
+                self.shell.finalize(kill_pty=True)
                 raise Exception("grid-proxy-info failed")
 
             if rc != 0:
