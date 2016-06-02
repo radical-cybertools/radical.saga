@@ -151,19 +151,13 @@ def _condorscript_generator(url, logger, jds, option_dict=None):
         # Blacklist sites
         excl_sites = [host for host in common_jd.candidate_hosts if host.startswith(HOST_EXCLUSION_SYMBOL)]
         if excl_sites:
-            if incl_sites:
-                # If there were sites, start with an AND operator again
-                requirements += ' && '
-            requirements += '(' +  ' && '.join(['%s =!= "%s"' % (resource_key, site.lstrip(' ' + HOST_EXCLUSION_SYMBOL)) for site in excl_sites]) + ')'
+            requirements += ' && (' +  ' && '.join(['%s =!= "%s"' % (resource_key, site.lstrip(' ' + HOST_EXCLUSION_SYMBOL)) for site in excl_sites]) + ')'
 
         # Generic requirements handling
         # Get the '~special_requirements' and strip leading ~ and possible spaces.
         special = ' && '.join([host.lstrip(' ' + SPECIAL_REQ_SYMBOL) for host in common_jd.candidate_hosts if host.startswith(SPECIAL_REQ_SYMBOL)])
         if special:
-            if incl_sites or excl_sites:
-                # If there were white and/or black sites, start with an AND operator again
-                requirements += ' && '
-            requirements += special
+            requirements += ' && %s' % special
 
         condor_file += "\nrequirements = %s\n" % requirements
         condor_file += "periodic_remove = NumJobStarts > 0 && JobStatus == 1\n"
