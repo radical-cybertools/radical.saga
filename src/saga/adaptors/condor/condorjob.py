@@ -138,7 +138,7 @@ def _condorscript_generator(url, logger, jds, option_dict=None):
         HOST_EXCLUSION_SYMBOL = '!'
         SPECIAL_REQ_SYMBOL = '~'
 
-        requirements = ""
+        requirements = "(NumJobStarts =?= 0 || NumJobStarts =?= Undefined)"
 
         # TODO: This is bound to GLIDEIN which it shouldnt be.
         resource_key = 'GLIDEIN_ResourceName'
@@ -146,7 +146,7 @@ def _condorscript_generator(url, logger, jds, option_dict=None):
         # Whitelist sites, filter out "special" entries from the candidate host lists
         incl_sites = [host for host in common_jd.candidate_hosts if not host.startswith((SPECIAL_REQ_SYMBOL, HOST_EXCLUSION_SYMBOL))]
         if incl_sites:
-            requirements += '(' +  ' || '.join(['%s =?= "%s"' % (resource_key, site) for site in incl_sites]) + ')'
+            requirements += ' && (' +  ' || '.join(['%s =?= "%s"' % (resource_key, site) for site in incl_sites]) + ')'
 
         # Blacklist sites
         excl_sites = [host for host in common_jd.candidate_hosts if host.startswith(HOST_EXCLUSION_SYMBOL)]
@@ -165,8 +165,8 @@ def _condorscript_generator(url, logger, jds, option_dict=None):
                 requirements += ' && '
             requirements += special
 
-        if requirements:
-            condor_file += "\nrequirements = %s\n" % requirements
+        condor_file += "\nrequirements = %s\n" % requirements
+        condor_file += "periodic_remove = NumJobStarts > 0 && JobStatus == 1\n"
 
     # Transfer Directives
     if common_jd.attribute_exists('transfer_directives'):
