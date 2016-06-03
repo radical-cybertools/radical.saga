@@ -6,23 +6,32 @@
     https://github.com/radical-cybertools/saga-python/issues?q=is%3Aissue+is%3Aopen+
 
 
-Version 0.41                                                          2016-04-04
+Version 0.41                                                          2016-06-02
 --------------------------------------------------------------------------------
 
-  - address #552 
-  - allow for non-interactive local pty shells 
-  - change HISTFILE settings for pty access
+  - Feature/job name shell (#541) 
   - implementation of job names for shell job adaptor and on API level 
+  - add job.name for condor
+  - address #552 
+  - allow for non-interative local pty shells 
+  - initialidir support for Condor
+  - change HOSTFILE settings 
+
   - fix missing var setting in aws example 
-  - fix port opening directive (make sure port is opened just once)
+  - fix port opening directive, make sure port is opened just once 
   - fix regression in job cancellation 
   - fix rel path on open 
-  - Fix to ssh context to handle passwords containing spaces 
-  - cleanup of the shell spawner, getting in sync with RP
-  - implement dir.exists in shell adaptor
+  - fix staging calls 
+  - fix string formatting error 
+  - fix ssh context to handle passwords containing spaces 
+  - cleanup of the shell spawner, getting in sync with RP version 
+  - implement dir.exists 
   - make sure we have a job description on reconnected jobs 
   - make task passing to async calls optional 
   - aws security group tweaking 
+  - remove invalid obj redirection 
+  - code simplification 
+  - simplify local mkdir in shell file adaptor 
   - sync with updated benchmark tools 
   - use shared shell connection for FS ops 
 
