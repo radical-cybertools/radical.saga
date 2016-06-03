@@ -65,7 +65,7 @@ GID="$$"
 export GID
 
 # this is where this 'daemon' keeps state for all started jobs
-BASE="$*"
+BASE="$1"; shift
 if test -z "$BASE"
 then
   BASE=$HOME/.saga/adaptors/shell_job/
