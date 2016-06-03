@@ -6,7 +6,7 @@
     https://github.com/radical-cybertools/saga-python/issues?q=is%3Aissue+is%3Aopen+
 
 
-Version 0.41                                                          2016-06-02
+Version 0.41.1                                                        2016-06-02
 --------------------------------------------------------------------------------
 
   - Feature/job name shell (#541) 
