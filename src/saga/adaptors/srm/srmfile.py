@@ -47,7 +47,7 @@ _ADAPTOR_DOC           = {
 
 _ADAPTOR_INFO          = {
     'name'             : _ADAPTOR_NAME,
-    'version'          : 'v0.2',
+    'version'          : 'v0.3',
     'schemas'          : _ADAPTOR_SCHEMAS,
     'cpis'             : [
         {
@@ -69,9 +69,10 @@ _ADAPTOR_INFO          = {
     ]
 }
 
-CONNTIMEOUT = 180
-SNDTIMEOUT = 7200
-SRMTIMEOUT = 180
+TRANSFER_TIMEOUT = 3600 # Timeout of the SRM plugin for the transfer
+OPERATION_TIMEOUT = 3600 # Should be greater or equal than TRANSFER_TIMEOUT
+CONNECTION_TIMEOUT = 180 # Technically same as OPERATION_TIMEOUT,
+                         # but used for non-transfer operations.
 
 ###############################################################################
 # The adaptor class
@@ -96,13 +97,10 @@ class Adaptor(saga.adaptors.base.Base):
 
     def file_get_size(self, shell, url):
 
-        # In case of SURL the fields are:
-        # file mode, number of links to the file, user id, group id, file size(bytes), locality, file name.
-        # srm://srm.hep.fiu.edu:8443/srm/v2/server?SFN=/mnt/hadoop/osg/marksant/TESTFILE")
-        # -rwxr-xr-x   1     1     2      19               ONLINE /mnt/hadoop/osg/marksant/TESTFILE
         try:
-            # 'lcg-ls' uses the wrong timeout setting for connection timeout
-            rc, out, _ = shell.run_sync("lcg-ls --sendreceive-timeout %d -l -b -D srmv2 %s" % (CONNTIMEOUT, url))
+            # Following columns are displayed for each entry:
+            # mode, number of links, group id, userid, size, last modification time, and name.
+            rc, out, _ = shell.run_sync("gfal-ls --color never --timeout %d --long %s" % (CONNECTION_TIMEOUT, url))
         except:
             shell.finalize(kill_pty=True)
             raise Exception("get_size failed")
@@ -113,13 +111,11 @@ class Adaptor(saga.adaptors.base.Base):
             else:
                 raise Exception("Couldn't list file")
 
-        # Sometimes we get cksum too, which we ignore
-        fields = out.split()[:7]
-        _, _, _, _, size_str, _, _ = fields
+        fields = out.split()
+        # -rw-r--r-- 1 45 44 19 May 30 15:29 srm://osg-se.sprace.org.br:8443/srm/managerv2?SFN=/pnfs/sprace.org.br/data/osg/marksant/TESTFILE
+        _, _, _, _, size_str, _, _, _, _ = fields
 
-        size = int(size_str)
-
-        return size
+        return int(size_str)
 
 
     def srm_stat(self, shell, url):
@@ -129,8 +125,10 @@ class Adaptor(saga.adaptors.base.Base):
         # srm://srm.hep.fiu.edu:8443/srm/v2/server?SFN=/mnt/hadoop/osg/marksant/TESTFILE")
         # -rwxr-xr-x   1     1     2      19               ONLINE /mnt/hadoop/osg/marksant/TESTFILE
         try:
-            # 'lcg-ls' uses the wrong timeout setting for connection timeout
-            rc, out, _ = shell.run_sync("lcg-ls --sendreceive-timeout %d -d -l -b -D srmv2 %s" % (CONNTIMEOUT, url))
+            # Following columns are displayed for each entry:
+            # mode, number of links, group id, userid, size, last modification time, and name.
+            rc, out, _ = shell.run_sync(
+                "gfal-ls --color never --timeout %d --directory --long %s" % (CONNECTION_TIMEOUT, url))
         except:
             shell.finalize(kill_pty=True)
             raise Exception("stat failed")
@@ -138,7 +136,9 @@ class Adaptor(saga.adaptors.base.Base):
         if rc != 0:
             if 'SRM_INVALID_PATH' in out:
                 raise saga.exceptions.DoesNotExist(url)
-            elif not out:
+            if 'SRM_FAILURE' in out and 'forbidden' in out:
+                raise saga.exceptions.AuthorizationFailed(url)
+            if 'Command timed out after' in out:
                 raise saga.exceptions.Timeout("Connection timeout")
             else:
                 raise saga.exceptions.NoSuccess("Couldn't list file")
@@ -174,18 +174,19 @@ class Adaptor(saga.adaptors.base.Base):
         if isinstance(dst, saga.filesystem.file.File):
             dst = dst.get_url()
         try:
-            rc, out, _ = shell.run_sync('lcg-cp -v -b -D srmv2 '
-                '--sendreceive-timeout %d --connect-timeout %d '
-                '--srm-timeout %d %s %s' % (
-                SNDTIMEOUT, CONNTIMEOUT, SRMTIMEOUT, src, dst))
+            rc, out, _ = shell.run_sync('gfal-copy --parent --timeout %d --transfer-timeout %d %s %s' % (
+                OPERATION_TIMEOUT, TRANSFER_TIMEOUT, src, dst))
         except:
             shell.finalize(kill_pty=True)
-            # TODO: handle failed transfer
             raise Exception("transfer failed")
 
         if rc != 0:
             if 'SRM_INVALID_PATH' in out:
-                raise saga.exceptions.DoesNotExist('%s or %s' % (src, dst))
+                raise saga.exceptions.DoesNotExist(src)
+            elif '(File exists)' in out:
+                raise saga.exceptions.AlreadyExists(dst)
+            elif 'Could not open destination' in out:
+                raise saga.exceptions.DoesNotExist(dst)
             else:
                 raise Exception("Copy failed.")
 
@@ -198,7 +199,7 @@ class Adaptor(saga.adaptors.base.Base):
             tgt = tgt.get_url()
 
         try:
-            rc, out, _ = shell.run_sync("lcg-del -l -b -D srmv2 %s" % tgt)
+            rc, out, _ = shell.run_sync("gfal-rm --timeout %d %s" % (CONNECTION_TIMEOUT, tgt))
         except:
             shell.finalize(kill_pty=True)
             raise Exception("remove failed")
@@ -221,18 +222,8 @@ class Adaptor(saga.adaptors.base.Base):
         if isinstance(tgt, saga.Url):
             tgt = str(tgt)
 
-        files, dirs = self.srm_list_kind(shell, tgt)
-        for d in dirs:
-            url = tgt + '/' + d
-            self.srm_dir_remove(shell, flags, url)
-
-        for f in files:
-            url = tgt + '/' + f
-            self.srm_file_remove(shell, flags, url)
-
-        # Finally remove self
         try:
-            rc, out, _ = shell.run_sync("lcg-del -d -l -b -D srmv2 %s" % tgt)
+            rc, out, _ = shell.run_sync("gfal-rm --recursive %s" % tgt)
         except:
             shell.finalize(kill_pty=True)
             raise Exception("remove failed")
@@ -256,8 +247,7 @@ class Adaptor(saga.adaptors.base.Base):
             url = url.get_url()
 
         try:
-            # 'lcg-ls' uses the wrong timeout setting for connection timeout
-            rc, out, _ = shell.run_sync("lcg-ls --sendreceive-timeout %d -b -D srmv2 %s" % (CONNTIMEOUT, url))
+            rc, out, _ = shell.run_sync("gfal-ls --color never --timeout %d %s" % (CONNECTION_TIMEOUT, url))
         except:
             shell.finalize(kill_pty=True)
             raise Exception("list failed")
@@ -268,7 +258,7 @@ class Adaptor(saga.adaptors.base.Base):
             else:
                 raise Exception("Couldn't list directory.")
 
-        return [x.rsplit('/', 1)[1] for x in out.split()]
+        return out.split('\n')
 
 
     # --------------------------------------------------------------------------
@@ -276,8 +266,7 @@ class Adaptor(saga.adaptors.base.Base):
     def srm_list_kind(self, shell, url):
 
         try:
-            # 'lcg-ls' uses the wrong timeout setting for connection timeout
-            rc, out, _ = shell.run_sync("lcg-ls --sendreceive-timeout %d -l -b -D srmv2 %s" % (CONNTIMEOUT, url))
+            rc, out, _ = shell.run_sync("gfal-ls --color never --timeout %d --long %s" % (CONNECTION_TIMEOUT, url))
         except:
             shell.finalize(kill_pty=True)
             # TODO: raise something else or catch better?
@@ -289,21 +278,22 @@ class Adaptor(saga.adaptors.base.Base):
             else:
                 raise Exception("Couldn't list directory.")
 
-        # Drop checksum entries
-        # * Checksum: 8ea8c8a7 (ADLER32)
-        entries = [x for x in out.split('\n') if not '* Checksum:' in x]
+        entries = out.split('\n')
 
         files = []
         dirs = []
         # Output format
-        #d--------- 1 0 0 0 UNKNOWN /xrd/vos/osg/marksant/data/tmp
-        #---------- 1 0 0 1048576 UNKNOWN /xrd/vos/osg/marksant/data/1M
+        # ----------   1 0     0     1048576000 May 24 23:14 1000M
+        # ----------   1 0     0     104857600 May 24 23:13 100M
+        # ----------   1 0     0      10485760 May 24 23:13 10M
+        # ----------   1 0     0       1048576 May 24 22:59 1M
+        # d---------   1 0     0             0 Jun  1 11:37 tmp
         for entry in entries:
             if not entry:
                 continue
 
-            kind = entry.split()[0][0]
-            name = entry.rsplit('/', 1)[1]
+            kind = entry[0]
+            name = entry.split()[8]
             if kind == '-':
                 files.append(name)
             elif kind == 'd':
@@ -356,23 +346,35 @@ class SRMDirectory (saga.adaptors.cpi.filesystem.Directory):
         try:
             # open a shell
             self.shell = sups.PTYShell(self._adaptor.pty_url, self.session)
-
-            # run grid-proxy-info, see if we get any errors -- if so, fail the
-            # sanity check
-            try:
-                rc, out, _ = self.shell.run_sync("grid-proxy-info")
-            except:
-                self.shell.finalize(kill_pty=True)
-                raise Exception("grid-proxy-info failed")
-
-            if rc != 0:
-                raise Exception("grid-proxy-info failed")
-            
-            if 'timeleft : 0:00:00' in out:
-                raise Exception("x509 proxy expired.")
-
         except:
-            raise saga.NoSuccess("Check environment and certificates.")
+            raise saga.NoSuccess("Couldn't open shell")
+
+        #
+        # Test for valid proxy
+        #
+        try:
+            rc, out, _ = self.shell.run_sync("grid-proxy-info")
+        except:
+            self.shell.finalize(kill_pty=True)
+            raise saga.exceptions.NoSuccess("grid-proxy-info failed")
+
+        if rc != 0:
+            raise saga.exceptions.NoSuccess("grid-proxy-info failed")
+
+        if 'timeleft : 0:00:00' in out:
+            raise saga.exceptions.AuthenticationFailed("x509 proxy expired.")
+
+        #
+        # Test for gfal2 tool
+        #
+        try:
+            rc, _, _ = self.shell.run_sync("gfal2_version")
+        except:
+            self.shell.finalize(kill_pty=True)
+            raise saga.exceptions.NoSuccess("gfal2_version")
+
+        if rc != 0:
+            raise saga.exceptions.DoesNotExist("gfal2 client not found")
 
         return self.get_api()
 
@@ -604,25 +606,36 @@ class SRMFile(saga.adaptors.cpi.filesystem.File):
 
         try:
             # open a shell
-
             self.shell = sups.PTYShell(self._adaptor.pty_url, self.session)
-
-            # run grid-proxy-info, see if we get any errors -- if so, fail the
-            # sanity check
-            try:
-                rc, out, _ = self.shell.run_sync("grid-proxy-info")
-            except:
-                self.shell.finalize(kill_pty=True)
-                raise Exception("grid-proxy-info failed")
-
-            if rc != 0:
-                raise Exception("grid-proxy-info failed")
-
-            if 'timeleft : 0:00:00' in out:
-                raise Exception("x509 proxy expired.")
-
         except:
-            raise saga.NoSuccess("Check environment and certificates.")
+            raise saga.NoSuccess("Couldn't open shell")
+
+        #
+        # Test for valid proxy
+        #
+        try:
+            rc, out, _ = self.shell.run_sync("grid-proxy-info")
+        except:
+            self.shell.finalize(kill_pty=True)
+            raise saga.exceptions.NoSuccess("grid-proxy-info failed")
+
+        if rc != 0:
+            raise saga.exceptions.NoSuccess("grid-proxy-info failed")
+
+        if 'timeleft : 0:00:00' in out:
+            raise saga.exceptions.AuthenticationFailed("x509 proxy expired.")
+
+        #
+        # Test for gfal2 tool
+        #
+        try:
+            rc, _, _ = self.shell.run_sync("gfal2_version")
+        except:
+            self.shell.finalize(kill_pty=True)
+            raise saga.exceptions.NoSuccess("gfal2_version")
+
+        if rc != 0:
+            raise saga.exceptions.DoesNotExist("gfal2 client not found")
 
         return self.get_api()
 
@@ -632,8 +645,6 @@ class SRMFile(saga.adaptors.cpi.filesystem.File):
         url   = self._url
         flags = self._flags 
 
-        # if url.query :
-        #     raise saga.exceptions.BadParameter ("Cannot handle url %s (has query)"     %  url)
         if url.username :
             raise saga.exceptions.BadParameter ("Cannot handle url %s (has username)"  %  url)
         if url.password :
