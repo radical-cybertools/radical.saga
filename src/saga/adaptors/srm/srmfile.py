@@ -22,7 +22,16 @@ from saga.adaptors.cpi.decorators import SYNC_CALL
 
 _ADAPTOR_NAME          = 'saga.adaptor.srm_file'
 _ADAPTOR_SCHEMAS       = ['srm']
-_ADAPTOR_OPTIONS       = []
+_ADAPTOR_OPTIONS       = [
+    {
+        'category': 'saga.adaptor.srm_file',
+        'name': 'pty_url',
+        'type': str,
+        'default': 'fork://localhost/',
+        'documentation': '''The local or remote url the adaptor connects to.''',
+        'env_variable': None
+    }
+]
 _ADAPTOR_CAPABILITIES  = {}
 
 _ADAPTOR_DOC           = {
@@ -77,11 +86,8 @@ class Adaptor(saga.adaptors.base.Base):
     def __init__(self) :
         saga.adaptors.base.Base.__init__(self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
 
-        self.cfg = self.get_config('saga.adaptor.srm_file')
-        if 'pty_url' in self.cfg:
-            self.pty_url = self.cfg['pty_url'].get_value()
-        else:
-            self.pty_url = 'fork://localhost/'
+        self.cfg = self.get_config(_ADAPTOR_NAME)
+        self.pty_url = self.cfg['pty_url'].get_value()
 
 
     def sanity_check(self):
