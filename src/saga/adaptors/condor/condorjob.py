@@ -107,13 +107,23 @@ def _condorscript_generator(url, logger, jds, option_dict=None):
     # Per Job in Bulk settings
     for jd in jds:
 
-        # special treatment for universe - defaults to 'vanilla'
-        if jd.queue:
-            condor_file += "\nuniverse = %s" % jd.queue
-        else:
-            condor_file += "\nuniverse = vanilla"
+        # environment -> environment
+        # http://research.cs.wisc.edu/htcondor/manual/current/condor_submit.html#SECTION0012514000000000000000
+        if jd.environment:
+            environment = ''
+            for key,val in jd.environment.iteritems():
+                environment += ' "%s=%s"'     % (key, val)
+              # condor_file += "\n%-25s = %s" % (key, val)
+            condor_file += "\nenvironment               = %s\n" % environment
+
+        condor_file += "\nstream_output             = True"
+        condor_file += "\nstream_error              = True"
+        condor_file += "\nshould_transfer_files     = YES"
+        condor_file += "\nwhen_to_transfer_output   = ON_EXIT_OR_EVICT\n"
+
 
         # handle site inclusion/exclusion
+        requirements = "(NumJobStarts =?= 0 || NumJobStarts =?= Undefined)"
         if jd.candidate_hosts:
 
             # special characters / strings
@@ -121,7 +131,6 @@ def _condorscript_generator(url, logger, jds, option_dict=None):
             EXCLUSION    = '!'
             REQUIRED     = '~'
             KEY          = 'GLIDEIN_ResourceName'
-            requirements = ""
 
             # Whitelist sites, filter out "special" entries from the candidate 
             # host lists
@@ -133,7 +142,7 @@ def _condorscript_generator(url, logger, jds, option_dict=None):
                                if not host.startswith((REQUIRED, EXCLUSION))]
 
             if incl_sites:
-                requirements += '(' +  ' || '.join(['%s =?= "%s"' % (KEY, site)
+                requirements += ' && (' +  ' || '.join(['%s =?= "%s"' % (KEY, site)
                                 for site in incl_sites]) + ')'
 
             # Blacklist sites, strip out leading '!'
@@ -151,20 +160,26 @@ def _condorscript_generator(url, logger, jds, option_dict=None):
                     requirements += ' && '
                 requirements += ' && '.join(req_sites)
 
-            if requirements:
-                condor_file += "\nrequirements = %s\n" % requirements
+        condor_file += "\nrequirements    = %s" % requirements
+        condor_file += "\nperiodic_remove = NumJobStarts > 0 && JobStatus == 1\n"
+
+
+        # special treatment for universe - defaults to 'vanilla'
+        if jd.queue:
+            condor_file += "\nuniverse     = %s" % jd.queue
+        else:
+            condor_file += "\nuniverse     = vanilla"
 
         # Condor doesn't expand environment variables in arguments.
-        # To support this functionality, we wrap by calling /bin/env.
-        condor_file += "\nexecutable = /bin/env"
-
-        # arguments -> arguments
-        arguments = "arguments = \"/bin/sh -c '"
+        # To support this functionality, we wrap by calling 
+        #     /bin/env /bin/sh -c ""
+        # where the arg string to the shell gets expanded
+        condor_file += "\nexecutable   = /bin/env"
 
         # the actual executable becomes the first argument.
         if not jd.executable:
             log_error_and_raise("Executable not set", saga.NoSuccess, logger)
-        arguments += "%s" % jd.executable
+        arguments = "%s" % jd.executable
 
         # all other arguments follow
         if jd.arguments:
@@ -188,9 +203,8 @@ def _condorscript_generator(url, logger, jds, option_dict=None):
 
                 arguments += " %s" % arg
 
-        # close the quote opened earlier
-        arguments   += '\'\"'
-        condor_file += "\n%s" % arguments
+        # arguments -> arguments
+        condor_file += "\narguments    = \"/bin/sh -c '%s'\"" % arguments
 
         # Transfer Directives
         assert(jd.transfer_directives)
@@ -198,45 +212,39 @@ def _condorscript_generator(url, logger, jds, option_dict=None):
         # all checking is done in _handle_file_transfers() already.
         td = jd.transfer_directives
 
+        condor_file += "\n"
         if td.transfer_input_files:
-            condor_file += "\ntransfer_input_files = %s" \
+            condor_file += "\ntransfer_input_files  = %s\n" \
                          % ','.join(td.transfer_input_files)
 
-        if td.transfer_input_files:
-            condor_file += "\ntransfer_output_files = %s" \
+        if td.transfer_output_files:
+            condor_file += "\ntransfer_output_files = %s\n" \
                          % ','.join(td.transfer_output_files)
 
         # TODO: what to do when working directory is not set?
         job_pwd = './'
         if jd.working_directory:
             job_pwd = jd.working_directory
-            condor_file += "\ninitialdir = %s " % job_pwd
+            condor_file += "\ninitialdir   = %s " % job_pwd
         logname = "saga-condor-job-$(cluster)_$(process).log"
-        condor_file += "\nlog = %s " % os.path.join(job_pwd, logname)
+        condor_file += "\nlog          = %s " % os.path.join(job_pwd, logname)
 
         # output -> output
         if jd.output is not None:
-            condor_file += "\noutput = %s " % os.path.join(job_pwd, jd.output)
+            condor_file += "\noutput       = %s " % os.path.join(job_pwd, jd.output)
 
         # error -> error
         if jd.error is not None:
-            condor_file += "\nerror = %s " % os.path.join(job_pwd, jd.error)
-
-        # environment -> environment
-        # http://research.cs.wisc.edu/htcondor/manual/current/condor_submit.html#SECTION0012514000000000000000
-        environment = "environment ="
-        if jd.environment:
-            for key,val in jd.environment.iteritems():
-                environment += ' "%s=%s"' % (key, val)
-        condor_file += "\n%s" % environment
+            condor_file += "\nerror        = %s " % os.path.join(job_pwd, jd.error)
 
         if jd.total_cpu_count:
             condor_file += "\nrequest_cpus = %d" % jd.total_cpu_count
 
+
         # 'queue' concludes the description of a job
         condor_file += "\nqueue\n"
 
-    condor_file += "\n##### END OF FILE #####\n"
+    condor_file += "\n##### END OF FILE #####\n\n"
 
     return condor_file
 
