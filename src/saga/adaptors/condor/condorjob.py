@@ -147,17 +147,11 @@ def _condorscript_generator(url, logger, jds, option_dict=None):
 
             # Blacklist sites, strip out leading '!'
             if excl_sites:
-                if incl_sites:
-                    # If there were sites, start with an AND operator again
-                    requirements += ' && '
-                requirements += '(' +  ' && '.join(['%s =!= "%s"' % (KEY, site[1:]) 
+                requirements += ' && (' +  ' && '.join(['%s =!= "%s"' % (KEY, site[1:]) 
                         for site in excl_sites]) + ')'
 
             # Get the '~special_requirements' and strip leading ~
             if req_sites:
-                if incl_sites or excl_sites:
-                    # If there were white and/or black sites, start with an AND operator again
-                    requirements += ' && '
                 requirements += ' && '.join(req_sites)
 
         condor_file += "\nrequirements    = %s" % requirements
