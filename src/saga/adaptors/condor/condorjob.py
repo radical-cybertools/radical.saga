@@ -443,32 +443,42 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
     # ----------------------------------------------------------------
     #
     def initialize(self):
-        # check if all required condor tools are available
-        for cmd in self._commands.keys():
-            ret, out, _ = self.shell.run_sync("which %s " % cmd)
-            if ret != 0:
-                message = "Error finding Condor tools: %s" % out
-                log_error_and_raise(message, saga.NoSuccess, self._logger)
-            else:
-                path = out.strip()  # strip removes newline
-                if cmd == 'condor_version':
-                    ret, out, _ = self.shell.run_sync("%s" % cmd)
-                    if ret != 0:
-                        message = "Error determining Condor version: %s" % out
-                        log_error_and_raise(message, saga.NoSuccess,
-                            self._logger)
-                    else:
-                        # version is reported as:
-                        # $CondorVersion: 7.8.6 Oct 25 2012 $
-                        # $CondorPlatform: X86_64-CentOS_5.7 $
-                        lines = out.split('\n')
-                        version = lines[0].replace("$CondorVersion: ", "")
-                        version = version.strip(" $")
 
-                        # add path and version to the command dictionary
-                        # TODO: change indentation below?
-                self._commands[cmd] = {"path":    path,
-                                       "version": version}
+        # check if all required condor tools are available
+        commands = self._commands.keys()
+        ret, out, _ = self.shell.run_sync("which %s " % ' '.join(commands))
+
+        if ret != 0:
+            message = "Error finding Condor tools: %s" % out
+            log_error_and_raise(message, saga.NoSuccess, self._logger)
+
+        # split and remove empty lines
+        lines = filter(bool, out.split('\n'))
+
+        if len(lines) != len(commands):
+            message = "Error finding some Condor tools: %s" % out
+            log_error_and_raise(message, saga.NoSuccess, self._logger)
+
+        for cmd, path in zip(commands, lines):
+            self._commands[cmd] = path.strip()
+
+          # if cmd == 'condor_version':
+          #     ret, out, _ = self.shell.run_sync("%s" % cmd)
+          #     if ret != 0:
+          #         message = "Error determining Condor version: %s" % out
+          #         log_error_and_raise(message, saga.NoSuccess,
+          #             self._logger)
+          #     else:
+          #         # version is reported as:
+          #         # $CondorVersion: 7.8.6 Oct 25 2012 $
+          #         # $CondorPlatform: X86_64-CentOS_5.7 $
+          #         lines = out.split('\n')
+          #         version = lines[0].replace("$CondorVersion: ", "")
+          #         version = version.strip(" $")
+          #
+          #         # add path and version to the command dictionary
+          # self._commands[cmd] = {"path":    path}
+          #                        "version": version}
 
         self._logger.info("Found Condor tools: %s" % self._commands)
 
@@ -552,7 +562,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
         self.shell.stage_to_remote(submit_file.name, submit_file_name)
 
         ret, out, _ = self.shell.run_sync('%s -verbose %s' \
-            % (self._commands['condor_submit']['path'], submit_file_name))
+            % (self._commands['condor_submit'], submit_file_name))
 
         if ret != 0:
             # something went wrong
@@ -615,7 +625,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
         # run the Condor 'condor_q' command to get some infos about our job
         ret, out, _ = self.shell.run_sync("unset GREP_OPTIONS; %s -long %s | \
             grep -E '(^JobStatus)|(ExitStatus)|(CompletionDate)'" \
-            % (self._commands['condor_q']['path'], pid))
+            % (self._commands['condor_q'], pid))
         if ret != 0:
             message = "Couldn't reconnect to job '%s': %s" % (job_id, out)
             log_error_and_raise(message, saga.NoSuccess, self._logger)
@@ -822,7 +832,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
         # run the Condor 'condor_q' command to get some infos about our job
         ret, out, _ = self.shell.run_sync("unset GREP_OPTIONS; %s -long %s | \
             grep -E '(^JobStatus)|(ExitStatus)|(CompletionDate)'" \
-            % (self._commands['condor_q']['path'], pid))
+            % (self._commands['condor_q'], pid))
 
         if ret != 0:
             if prev_info['state'] in [saga.job.RUNNING, saga.job.PENDING]:
@@ -831,7 +841,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
                 # finished jobs
                 ret, out, _ = self.shell.run_sync("unset GREP_OPTIONS; %s -long -match 1 %s | \
                     grep -E '(ExitCode)|(TransferOutput)|(CompletionDate)|(JobCurrentStartDate)|(QDate)|(Err)|(Out)'" \
-                    % (self._commands['condor_history']['path'], pid))
+                    % (self._commands['condor_history'], pid))
                 
                 if ret != 0:
                     message = "Error getting job history via 'condor_history': %s" % out
@@ -952,7 +962,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
         # run the Condor 'condor_q' command to get some infos about our job
         ret, out, _ = self.shell.run_sync(
             "%s %s -autoformat:,v ProcId JobStatus ExitStatus CompletionDate" %
-            (self._commands['condor_q']['path'], cluster_id))
+            (self._commands['condor_q'], cluster_id))
 
         if ret != 0:
             raise Exception("condor_q failed")
@@ -987,7 +997,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
             # run the Condor 'condor_history' command to get info about finished jobs
             ret, out, _ = self.shell.run_sync(
                 "%s %s -match %d -autoformat:, ProcId ExitCode TransferOutput CompletionDate JobCurrentStartDate QDate Err Out" %
-                (self._commands['condor_history']['path'], cluster_id, len(procs_missing)))
+                (self._commands['condor_history'], cluster_id, len(procs_missing)))
 
             if ret != 0:
                 raise Exception("Error getting job history via 'condor_history': %s" % out)
@@ -1163,7 +1173,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
         rm, pid = self._adaptor.parse_id(job_id)
 
         ret, out, _ = self.shell.run_sync("%s %s\n" \
-            % (self._commands['condor_rm']['path'], pid))
+            % (self._commands['condor_rm'], pid))
 
         if ret != 0:
             message = "Error canceling job via 'condor_rm': %s" % out
@@ -1256,7 +1266,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
         ids = []
 
         ret, out, _ = self.shell.run_sync("unset GREP_OPTIONS; %s | grep `whoami`"\
-            % self._commands['condor_q']['path'])
+            % self._commands['condor_q'])
 
         if ret != 0 and len(out) > 0:
             message = "failed to list jobs via 'condor_q': %s" % out
@@ -1340,7 +1350,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
                     self.shell.url.scheme)
 
         ret, out, _ = self.shell.run_sync('%s -verbose %s' \
-                    % (self._commands['condor_submit']['path'], submit_file_name))
+                    % (self._commands['condor_submit'], submit_file_name))
 
         if ret != 0:
             # condor_submit went wrong
