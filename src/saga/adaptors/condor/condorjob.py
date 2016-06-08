@@ -1077,6 +1077,42 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
         # return the new job info dict
         return curr_info
 
+
+    # ----------------------------------------------------------------
+    #
+    def _job_cancel_bulk(self, cluster_id, job_ids):
+        """ cancel jobs via condor_rm
+        """
+
+        # NOTE: bulk queries ignore the cache timeout, 
+        #       but they do update the timestamps
+
+        self._logger.debug('cancel cluster %s %s', cluster_id, job_ids)
+
+        condor_rm = self._commands['condor_rm']
+
+        for job_id in job_ids:
+
+            # if we don't have the job in our dictionary, we don't want it
+            if job_id not in self.jobs:
+                raise ValueError("Unknown job ID: %s. Can't cancel." % job_id)
+
+            info = self.jobs[job_id]
+
+            if info['gone']:
+                self._logger.warning("Job is already gone.")
+
+        # run the Condor 'condor_q' command to get some infos about our job
+        ret, out, _ = self.shell.run_sync( "%s %s" % (condor_rm, cluster_id))
+
+        if ret != 0:
+            raise RuntimeError("condor_rm failed")
+
+        for job_id in job_ids:
+            self._logger.debug('canceled %s', job_id)
+            info['state'] = saga.job.CANCELED
+
+
     # ----------------------------------------------------------------
     #
     def _job_get_state(self, job_id):
@@ -1435,12 +1471,27 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
-    def container_cancel(self, jobs):
-        self._logger.debug("container cancel: %s" % str(jobs))
+    def container_cancel(self, jobs, timeout=None):
 
-        # TODO: this is not optimized yet
+        # JobIds also include the rm, so we strip that out.  Then sort in
+        # clusters we can query
+        clusters = dict()
         for job in jobs:
-            job.cancel()
+
+            job_id     = job._adaptor._id
+            proc_id    = self._adaptor.parse_id(job_id)[1]
+            cluster_id = proc_id.split('.', 1)[0]
+
+            if not cluster_id in clusters:
+                clusters[cluster_id] = list()
+            clusters[cluster_id].append(job_id)
+
+
+        for cluster_id in clusters:
+
+            job_ids   = clusters[cluster_id]
+            bulk_info = self._job_cancel_bulk(cluster_id, job_ids)
+
 
     # ----------------------------------------------------------------
     #

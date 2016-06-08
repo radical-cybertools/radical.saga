@@ -555,13 +555,11 @@ class Container (sbase.SimpleBase, satt.Attributes) :
             for m in buckets['bound'][c] :
                 tasks += buckets['bound'][c][m]
 
-            threads.append (ru.Thread.Run (c.container_cancel, tasks, timeout))
+            threads.append (ru.Thread.Run(c.container_cancel, tasks, timeout))
 
-        
         # handle all tasks not bound to containers
         for task in buckets['unbound'] :
-
-            threads.append (ru.Thread.Run (task.cancel, timeout))
+            threads.append(ru.Thread.Run (task.cancel, timeout))
             
 
         for thread in threads :
