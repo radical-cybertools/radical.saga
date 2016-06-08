@@ -204,16 +204,16 @@ def _condorscript_generator(url, logger, jds, option_dict=None):
         assert(jd.transfer_directives)
 
         # all checking is done in _handle_file_transfers() already.
+        condor_file += "\n"
         td = jd.transfer_directives
 
-        condor_file += "\n"
+        if td.transfer_output_files:
+            condor_file += "\ntransfer_output_files = %s" \
+                         % ','.join(td.transfer_output_files)
+
         if td.transfer_input_files:
             condor_file += "\ntransfer_input_files  = %s\n" \
                          % ','.join(td.transfer_input_files)
-
-        if td.transfer_output_files:
-            condor_file += "\ntransfer_output_files = %s\n" \
-                         % ','.join(td.transfer_output_files)
 
         # TODO: what to do when working directory is not set?
         job_pwd = './'
@@ -237,6 +237,7 @@ def _condorscript_generator(url, logger, jds, option_dict=None):
 
         # 'queue' concludes the description of a job
         condor_file += "\nqueue\n"
+        condor_file += "\n##### END OF JOB #####\n\n"
 
     condor_file += "\n##### END OF FILE #####\n\n"
 
