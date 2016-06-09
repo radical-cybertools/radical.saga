@@ -1034,7 +1034,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
             # alas, condor_history seems not to work on the osg xsede bridge, so
             # we cannot consider this an error.  We will handle all remaining
             # jobs as disappeared, ie. as DONE.
-            self._logger.warn('could not find all jobs (%s < %s)', n_found, len(job_ids))
+            self._logger.warn('could not find all jobs (%s < %s)', len(found), len(job_ids))
 
             not_found = [x for x in job_ids if x not in found]
 
