@@ -997,8 +997,8 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
 
             # run the Condor 'condor_history' command to get info about finished jobs
             ret, out, _ = self.shell.run_sync(
-                "%s %s -match %d -autoformat:, ProcId ExitCode TransferOutput CompletionDate JobCurrentStartDate QDate Err Out" %
-                (self._commands['condor_history'], cluster_id, len(procs_missing)))
+                "%s %s -autoformat:, ProcId ExitCode TransferOutput CompletionDate JobCurrentStartDate QDate Err Out" %
+                (self._commands['condor_history'], cluster_id))
 
             if ret != 0:
                 raise Exception("Error getting job history via 'condor_history': %s" % out)
