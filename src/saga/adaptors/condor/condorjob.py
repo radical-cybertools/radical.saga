@@ -963,7 +963,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
         if ret != 0:
             raise Exception("condor_q failed (%s) (%s)" % (out, err))
 
-        results = filter(None, out.split('\n'))
+        results = filter(bool, out.split('\n'))
         found   = list()  # keep track of jobs for which we found new info
 
         for row in results:
@@ -995,9 +995,13 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
                 (self._commands['condor_history'], cluster_id))
 
             if ret != 0:
-                raise Exception("Error running 'condor_history' (%s) (%s)" % (out, err))
+                # we consider this non-fatal, as that sometimes failes on the
+                # XSEDE OSG bridge without any further indication of errors
+                # raise Exception("Error running 'condor_history' (%s) (%s)" % (out, err))
+                self._logger.warn("condor_history failed: (%s) (%s)", out, err)
+                out = ''
 
-            results = filter(None, out.split('\n'))
+            results = filter(bool, out.split('\n'))
             for row in results:
 
                 procid, exitcode, transferoutput, completiondate, jobcurrentstartdate, qdate, stderr, stdout = \
