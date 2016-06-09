@@ -140,6 +140,13 @@ class Adaptor(saga.adaptors.base.Base):
                 raise saga.exceptions.AuthorizationFailed(url)
             if 'Command timed out after' in out:
                 raise saga.exceptions.Timeout("Connection timeout")
+            if 'Communication error on send' in out:
+                # (gfal-ls error: 70 (Communication error on send) -
+                # srm-ifce err: Communication error on send,
+                # err: [SE][Ls][] httpg://cit-se.ultralight.org:8443/srm/v2/server:
+                # CGSI-gSOAP running on nodo86 reports could not open connection
+                # to cit-se.ultralight.org:8443\n\n\n)
+                raise saga.exceptions.NoSuccess("Connection failed")
             else:
                 raise saga.exceptions.NoSuccess("Couldn't list file")
         
@@ -347,7 +354,7 @@ class SRMDirectory (saga.adaptors.cpi.filesystem.Directory):
             # open a shell
             self.shell = sups.PTYShell(self._adaptor.pty_url, self.session)
         except:
-            raise saga.NoSuccess("Couldn't open shell")
+            raise saga.NoSuccess("Couldn't open shell (%s)" % self._adaptor.pty_url)
 
         #
         # Test for valid proxy
@@ -356,10 +363,10 @@ class SRMDirectory (saga.adaptors.cpi.filesystem.Directory):
             rc, out, _ = self.shell.run_sync("grid-proxy-info")
         except:
             self.shell.finalize(kill_pty=True)
-            raise saga.exceptions.NoSuccess("grid-proxy-info failed")
+            raise saga.exceptions.NoSuccess("grid-proxy-info failed (runsync)")
 
         if rc != 0:
-            raise saga.exceptions.NoSuccess("grid-proxy-info failed")
+            raise saga.exceptions.NoSuccess("grid-proxy-info failed (rc!=0)")
 
         if 'timeleft : 0:00:00' in out:
             raise saga.exceptions.AuthenticationFailed("x509 proxy expired.")
