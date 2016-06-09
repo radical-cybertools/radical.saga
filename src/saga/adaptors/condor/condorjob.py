@@ -919,10 +919,8 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
         # NOTE: bulk queries ignore the cache timeout, 
         #       but they do update the timestamps
 
-        prev_info = {}
         curr_info = {}
-
-        proc_ids = map(str, range(len(job_ids)))
+        to_check  = list()  # we don't check final jobs again
 
         for job_id in job_ids:
 
@@ -930,78 +928,74 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
             if job_id not in self.jobs:
                 raise Exception("Unknown job ID: %s. Can't update state.", job_id)
 
-            # prev. info contains the info collect when _job_get_info(_bulk)
+            # self.jobs contains the info collect when _job_get_info(_bulk)
             # was called the last time
-            prev_info[job_id] = self.jobs[job_id]
-
-            # if the 'gone' flag is set, there's no need to query the job
-            # state again. it's gone forever
-            # TODO: what and when to return?
-            #if prev_info[job_id]['gone'] is True:
-            #    self._logger.warning("Job information is not available anymore.")
-            #    return prev_info[job_id]
+            prev_info = self.jobs[job_id]
 
             # curr. info will contain the new job info collect. it starts off
             # as a copy of prev_info (don't use deepcopy because there is an API
             # object in the dict -> recursion)
             curr_info[job_id] = {}
-            #curr_info['job_id'] = prev_info.get ('job_id')
-            curr_info[job_id]['state']       = prev_info[job_id].get('state')
-            curr_info[job_id]['exec_hosts']  = prev_info[job_id].get('exec_hosts')
-            curr_info[job_id]['returncode' ] = prev_info[job_id].get('returncode')
-            curr_info[job_id]['create_time'] = prev_info[job_id].get('create_time')
-            curr_info[job_id]['start_time']  = prev_info[job_id].get('start_time')
-            curr_info[job_id]['end_time']    = prev_info[job_id].get('end_time')
-            curr_info[job_id]['gone']        = prev_info[job_id].get('gone')
-            curr_info[job_id]['transfers']   = prev_info[job_id].get('transfers')
-            curr_info[job_id]['stdout']      = prev_info[job_id].get('stdout')
-            curr_info[job_id]['stderr']      = prev_info[job_id].get('stderr')
-            curr_info[job_id]['name']        = prev_info[job_id].get('name')
-            curr_info[job_id]['timestamp']   = prev_info[job_id].get('timestamp')
+            curr_info[job_id]['state']       = prev_info.get('state')
+            curr_info[job_id]['exec_hosts']  = prev_info.get('exec_hosts')
+            curr_info[job_id]['returncode' ] = prev_info.get('returncode')
+            curr_info[job_id]['create_time'] = prev_info.get('create_time')
+            curr_info[job_id]['start_time']  = prev_info.get('start_time')
+            curr_info[job_id]['end_time']    = prev_info.get('end_time')
+            curr_info[job_id]['gone']        = prev_info.get('gone')
+            curr_info[job_id]['transfers']   = prev_info.get('transfers')
+            curr_info[job_id]['stdout']      = prev_info.get('stdout')
+            curr_info[job_id]['stderr']      = prev_info.get('stderr')
+            curr_info[job_id]['name']        = prev_info.get('name')
+            curr_info[job_id]['timestamp']   = prev_info.get('timestamp')
+
+            # if the 'gone' flag is set, there's no need to query the job
+            # state again. it's gone forever -- but we check all others
+            if not prev_info['gone']:
+                to_check.append(job_id)
 
 
         # run the Condor 'condor_q' command to get some infos about our job
-        ret, out, _ = self.shell.run_sync(
+        ret, out, err = self.shell.run_sync(
             "%s %s -autoformat:,v ProcId JobStatus ExitStatus CompletionDate" %
             (self._commands['condor_q'], cluster_id))
 
         if ret != 0:
-            raise Exception("condor_q failed")
+            raise Exception("condor_q failed (%s) (%s)" % (out, err))
 
         results = filter(None, out.split('\n'))
-        n_found = 0
+        found   = list()  # keep track of jobs for which we found new info
 
         for row in results:
-            #
+
             # Some processes in cluster found with condor_q!
-            #
             procid, jobstatus, exitstatus, completiondate = tuple([col.strip() for col in row.split(',')])
 
+            matched = False
             for job_id in job_ids:
                 if job_id.endswith('.%s]' % procid):
-                    n_found += 1
+                    found.append(job_id)
                     curr_info[job_id]['state']      = _condor_to_saga_jobstate(jobstatus)
                     curr_info[job_id]['end_time']   = completiondate
                     curr_info[job_id]['returncode'] = exitstatus
                     curr_info[job_id]['timestamp']  = time.time()
+                    matched = True
                     break
 
-        if n_found < len(job_ids):
-            #
+            if not matched:
+                self._logger.warn('cannot match job info to any known job (%s)', row)
+
+        if len(found) < len(job_ids):
+
             # (Some) cluster processes not found with condor_q, trying condor_history now
-            #
-            #self._logger.debug('condor_q only returned (%s) of (%s) processes, missing (%s)', procs_condor_q_found, proc_ids, procs_missing)
+            not_found = [x for x in job_ids if x not in found]
 
-            # TODO: Don't know why one would use this check ..., skipping for now
-            # if prev_info['state'] in [saga.job.RUNNING, saga.job.PENDING]:
-
-            # run the Condor 'condor_history' command to get info about finished jobs
-            ret, out, _ = self.shell.run_sync(
+            ret, out, err = self.shell.run_sync(
                 "%s %s -autoformat:, ProcId ExitCode TransferOutput CompletionDate JobCurrentStartDate QDate Err Out" %
                 (self._commands['condor_history'], cluster_id))
 
             if ret != 0:
-                raise Exception("Error getting job history via 'condor_history': %s" % out)
+                raise Exception("Error running 'condor_history' (%s) (%s)" % (out, err))
 
             results = filter(None, out.split('\n'))
             for row in results:
@@ -1009,9 +1003,11 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
                 procid, exitcode, transferoutput, completiondate, jobcurrentstartdate, qdate, stderr, stdout = \
                     tuple([col.strip() for col in row.split(',')])
 
+                matched = False
                 for job_id in job_ids:
+
                     if job_id.endswith('.%s]' % procid):
-                        n_found += 1
+                        found.append(job_id)
                         curr_info[job_id]['returncode']  = int(exitcode)
                         curr_info[job_id]['transfers']   = transferoutput
                         curr_info[job_id]['create_time'] = qdate
@@ -1027,10 +1023,26 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
 
                         curr_info[job_id]['gone']      = True
                         curr_info[job_id]['timestamp'] = time.time()
+                        matched = True
                         break
 
-        if n_found < len(job_ids):
-            raise RuntimeError('could not find all jobs')
+                if not matched:
+                    self._logger.warn('cannot match job info to any known job (%s)', row)
+
+
+        if len(found) < len(job_ids):
+            # alas, condor_history seems not to work on the osg xsede bridge, so
+            # we cannot consider this an error.  We will handle all remaining
+            # jobs as disappeared, ie. as DONE.
+            self._logger.warn('could not find all jobs (%s < %s)', n_found, len(job_ids))
+
+            not_found = [x for x in job_ids if x not in found]
+
+            for job_id in not_found:
+                self._logger.warn('jobs %s disappeared', job_id)
+                curr_info[job_id]['state']     = saga.job.DONE
+                curr_info[job_id]['gone']      = True
+                curr_info[job_id]['timestamp'] = time.time()
 
         # Transfer stuff
         # if curr_info['gone'] is True:
