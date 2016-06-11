@@ -835,11 +835,9 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
 
                 # run the Condor 'condor_history' command to get info about 
                 # finished jobs
-                print ' > hist'
                 ret, out, _ = self.shell.run_sync("unset GREP_OPTIONS; %s -long -match 1 %s | \
                     grep -E '(ExitCode)|(TransferOutput)|(CompletionDate)|(JobCurrentStartDate)|(QDate)|(Err)|(Out)'" \
                     % (self._commands['condor_history'], pid))
-                print ' < hist'
                 
                 if ret != 0:
                     message = "Error getting job history via 'condor_history': %s" % out
@@ -938,11 +936,9 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
             # (Some) cluster processes not found with condor_q, trying condor_history now
             not_found = [x for x in job_ids if x not in found]
 
-            print ' > hist'
             ret, out, err = self.shell.run_sync(
                 "%s %s -autoformat:, ProcId ExitCode TransferOutput CompletionDate JobCurrentStartDate QDate Err Out" %
                 (self._commands['condor_history'], cluster_id))
-            print ' < hist'
 
             if ret != 0:
                 # we consider this non-fatal, as that sometimes failes on the
