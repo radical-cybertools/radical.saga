@@ -475,21 +475,7 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
     def __del__ (self) :
 
         try :
-            # FIXME: not sure if we should PURGE here -- that removes states which
-            # might not be evaluated, yet.  Should we mark state evaluation
-            # separately? 
-            #   cmd_state () { touch $DIR/purgeable; ... }
-            # When should that be done?
-
-            self._logger.info ("adaptor %s : %s jobs" % (self, self.njobs))
-
-            if  self.shell : 
-             #  self.shell.run_sync  ("PURGE", iomode=None)
-                self.shell.run_async ("QUIT")
-                self.finalize (kill_shell=True)
-
-            if  self.monitor : 
-                self.finalize (kill_shell=True)
+            self.close()
 
         except Exception as e :
           # print str(e)
@@ -541,12 +527,21 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
     #
     def close (self) :
 
-        if  self.monitor :
-            self.monitor.finalize ()
-            # we don't care about join, really
+        if  self.shell : 
+            # FIXME: not sure if we should PURGE here -- that removes states which
+            # might not be evaluated, yet.  Should we mark state evaluation
+            # separately? 
+            #   cmd_state () { touch $DIR/purgeable; ... }
+            # When should that be done?
 
-        if  self.shell :
-            self.shell.finalize (True)
+         #  self.shell.run_sync ("PURGE", iomode=None)
+            self.shell.run_async("QUIT")
+            self.shell.finalize(kill_pty=True)
+            self.shell = None
+
+        if  self.monitor : 
+            self.monitor.finalize()
+            # we don't care about join, really
 
 
     # ----------------------------------------------------------------
@@ -639,16 +634,6 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
         self._logger.debug ("got mon prompt (%s)(%s)" % (ret, out.strip ()))
 
 
-    # ----------------------------------------------------------------
-    #
-    def finalize (self, kill_shell = False) :
-
-        if  kill_shell :
-            if  self.shell :
-                self.shell.finalize (kill_pty=True)
-
-
-    
     # ----------------------------------------------------------------
     #
     #
