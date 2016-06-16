@@ -856,7 +856,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
                         if key == 'ExitCode':
                             info['returncode'] = int(val)
                         elif key == 'TransferOutput':
-                            info['transfers'] = val.strip('"')
+                            info['transfers'] = val.strip('"').split(',')
                         elif key == 'QDate':
                             info['create_time'] = val
                         elif key == 'JobCurrentStartDate':
@@ -951,8 +951,16 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
             results = filter(bool, out.split('\n'))
             for row in results:
 
-                procid, exitcode, transferoutput, completiondate, jobcurrentstartdate, qdate, stderr, stdout = \
-                    tuple([col.strip() for col in row.split(',')])
+                elems = row.split()
+                if len(elems) != 8:
+                    self._logger.error('cannot parse condor_hist' \
+                            'output [%d != 8]\n%s\n%s', len(elems), row, elems)
+                    continue
+
+                procid, exitcode = elems[0:2]
+                transferoutput   = elems[2].split(',')
+                cdate, sdate, qdate, stderr, stdout \
+                                 = elems[3:8]
 
                 matched = False
                 for job_id in job_ids:
@@ -963,8 +971,8 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
                         info['returncode']  = int(exitcode)
                         info['transfers']   = transferoutput
                         info['create_time'] = qdate
-                        info['start_time']  = jobcurrentstartdate
-                        info['end_time']    = completiondate
+                        info['start_time']  = sdate
+                        info['end_time']    = cdate
                         info['stdout']      = stdout
                         info['stderr']      = stderr
 

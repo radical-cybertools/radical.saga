@@ -1070,7 +1070,7 @@ class PTYShell (object) :
             info = self.pty_info
             repl = dict ({'src'      : src, 
                           'tgt'      : tgt, 
-                          'cp_flags' : cp_flags}.items ()+ info.items ())
+                          'cp_flags' : cp_flags}.items() + info.items ())
 
             # at this point, we do have a valid, living master
             s_cmd = info['scripts'][info['copy_mode']]['copy_from']    % repl
