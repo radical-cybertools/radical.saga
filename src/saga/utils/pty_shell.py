@@ -902,12 +902,12 @@ class PTYShell (object) :
     def stage_from_remote (self, src, tgt, cp_flags="") :
         """
         :type  src: string
-        :param tgt: path to source file to stage from.
+        :param src: path to source file to stage from.
                     The tgt path is not an URL, but expected to be a path
                     relative to the shell's URL.
 
         :type  tgt: string
-        :param src: path of local target file to stage to.
+        :param tgt: path of local target file to stage to.
                     The tgt path is not an URL, but expected to be a path
                     relative to the current working directory.
         """

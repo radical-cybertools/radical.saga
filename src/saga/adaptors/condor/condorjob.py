@@ -680,9 +680,9 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
         # staging, for those cases where we expect the files to already reside
         # on the submission site, eg. due to out-of-band staging etc.  In those
         # cases, we prefix the respective input staging source with 'site:'.
-        # That prefix is also evaluated for output staging, where it causes the
-        # files to transfered only over the second hop, but not further back to
-        # the application host.
+        # That prefix is also evaluated for targets of output staging, where it 
+        # causes the files to transfered only over the second hop, but not 
+        # further back to the application host.
         #
         # The code below filters for those prefixes, and will enact
         # 'stage_to_remote' and 'stage_from_remote' only for entries w/o the
@@ -733,7 +733,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
 
             if td.out_overwrite_dict:
 
-                for (source, target) in td.out_overwrite_dict.iteritems():
+                for (target, source) in td.out_overwrite_dict.iteritems():
 
                     (s_path, s_entry) = os.path.split(source)
                     (t_path, t_entry) = os.path.split(target)
@@ -762,7 +762,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
 
             if td.out_overwrite_dict:
 
-                for (source, target) in td.out_overwrite_dict.iteritems():
+                for (target, source) in td.out_overwrite_dict.iteritems():
 
                     (s_path, s_entry) = os.path.split(source)
                     (t_path, t_entry) = os.path.split(target)

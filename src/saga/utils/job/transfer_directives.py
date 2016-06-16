@@ -45,18 +45,18 @@ class TransferDirectives(object):
             if (directive.count('>') > 2) or (directive.count('<') > 2):
                 msg = "'%s' is not a valid transfer directive string."
                 raise se.BadParameter(msg)
-            elif '<<' in directive:
-                (local, remote) = directive.split('<<')
-                self._out_append[local.strip()] = remote.strip()
+            elif '>' in directive:
+                (local, remote) = directive.split('>')
+                self._in_overwrite[local.strip()] = remote.strip()
             elif '>>' in directive:
                 (local, remote) = directive.split('>>')
                 self._in_append[local.strip()] = remote.strip()
             elif '<' in directive:
                 (local, remote) = directive.split('<')
-                self._out_overwrite[local.strip()] = remote.strip()
-            elif '>' in directive:
-                (local, remote) = directive.split('>')
-                self._in_overwrite[local.strip()] = remote.strip()
+                self._out_overwrite[remote.strip()] = local.strip()
+            elif '<<' in directive:
+                (local, remote) = directive.split('<<')
+                self._out_append[remote.strip()] = local.strip()
             else:
                 msg = "'%s' is not a valid transfer directive string." % directive
                 raise se.BadParameter(msg)
@@ -68,11 +68,12 @@ class TransferDirectives(object):
             slist.append('%s > %s' % (local, remote))
         for (local, remote) in self._in_append.iteritems():
             slist.append('%s >> %s' % (local, remote))
-        for (remote, local) in self._out_overwrite.iteritems():
+        for (local, remote) in self._out_overwrite.iteritems():
             slist.append('%s < %s' % (local, remote))
-        for (remote, local) in self._out_append.iteritems():
+        for (local, remote) in self._out_append.iteritems():
             slist.append('%s << %s' % (local, remote))
         return slist
+
 
     def __str__(self):
         """ String representation.
