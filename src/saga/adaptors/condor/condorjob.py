@@ -422,6 +422,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
                           'condor_submit':  None,
                           'condor_q':       None,
                           'condor_history': None,
+                          'condor_vacate':  None,
                           'condor_rm':      None}
 
         self.shell = saga.utils.pty_shell.PTYShell(pty_url, self.session)
@@ -605,9 +606,9 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
             self._logger.info("Submitted Condor job with id: %s", job_id)
 
             # add job to internal list of known jobs.
-            self.jobs[job_id] = self._new_job_info()
+            self.jobs[job_id]         = self._new_job_info()
             self.jobs[job_id]['state'] = saga.job.PENDING
-            self.jobs[job_id]['td']    = jd.transfer_directives,
+            self.jobs[job_id]['td']    = jd.transfer_directives
 
             # remove submit file(s)
             # TODO: leave them in case of debugging?
@@ -696,15 +697,18 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
             td.transfer_output_files = []
 
             # Condor specific safety checks
-            if td.in_append_dict:
+            if td.in_append:
                 raise Exception('File append (>>) not supported')
 
-            if td.out_append_dict:
+            if td.out_append:
                 raise Exception('File append (<<) not supported')
 
-            if td.in_overwrite_dict:
+            if td.in_overwrite:
                 
-                for (source, target) in td.in_overwrite_dict.iteritems():
+                for (local, remote) in td.in_overwrite:
+
+                    source = local
+                    target = remote
 
                     hop_1 = True
                     if source.startswith('site:'):
@@ -731,9 +735,12 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
                         self.shell.stage_to_remote(source, target,
                                                    cp_flags=saga.filesystem.CREATE_PARENTS)
 
-            if td.out_overwrite_dict:
+            if td.out_overwrite:
 
-                for (target, source) in td.out_overwrite_dict.iteritems():
+                for (local, remote) in td.out_overwrite:
+
+                    source = remote
+                    target = local
 
                     (s_path, s_entry) = os.path.split(source)
                     (t_path, t_entry) = os.path.split(target)
@@ -760,9 +767,12 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
             # make sure mode=='in' has been used before
             assert(td.prepared)
 
-            if td.out_overwrite_dict:
+            if td.out_overwrite:
 
-                for (target, source) in td.out_overwrite_dict.iteritems():
+                for (local, remote) in td.out_overwrite:
+
+                    source = remote
+                    target = local
 
                     (s_path, s_entry) = os.path.split(source)
                     (t_path, t_entry) = os.path.split(target)

@@ -31,84 +31,125 @@ import saga.exceptions as se
 #      Appends to the local file if it exists.
 
 
+# ------------------------------------------------------------------------------
+#
 class TransferDirectives(object):
 
-    def __init__(self, directives_list):
+    # --------------------------------------------------------------------------
+    #
+    def __init__(self, directives):
 
-        self._in_overwrite  = dict()
-        self._in_append     = dict()
-        self._out_overwrite = dict()
-        self._out_append    = dict()
+        self._in_overwrite  = list()
+        self._in_append     = list()
+        self._out_overwrite = list()
+        self._out_append    = list()
 
-        # each line in directives_list should contain one directive
-        for directive in directives_list:
-            if (directive.count('>') > 2) or (directive.count('<') > 2):
-                msg = "'%s' is not a valid transfer directive string."
+        for d in directives:
+            
+            if (d.count('>') > 2) or (d.count('<') > 2):
+                msg = "'%s' is not a valid transfer d string."
                 raise se.BadParameter(msg)
-            elif '>' in directive:
-                (local, remote) = directive.split('>')
-                self._in_overwrite[local.strip()] = remote.strip()
-            elif '>>' in directive:
-                (local, remote) = directive.split('>>')
-                self._in_append[local.strip()] = remote.strip()
-            elif '<' in directive:
-                (local, remote) = directive.split('<')
-                self._out_overwrite[remote.strip()] = local.strip()
-            elif '<<' in directive:
-                (local, remote) = directive.split('<<')
-                self._out_append[remote.strip()] = local.strip()
+
+            elif '>' in d:
+                (loc, rem) = d.split('>')
+                self._in_overwrite.append([loc.strip(), rem.strip()])
+
+            elif '>>' in d:
+                (loc, rem) = d.split('>>')
+                self._in_append.append([loc.strip(), rem.strip()])
+
+            elif '<' in d:
+                (loc, rem) = d.split('<')
+                self._out_overwrite.append([loc.strip(), loc.strip()])
+
+            elif '<<' in d:
+                (loc, rem) = d.split('<<')
+                self._out_append.append([loc.strip(), rem.strip()])
+
             else:
-                msg = "'%s' is not a valid transfer directive string." % directive
+                msg = "'%s' is not a valid transfer directive string." % d
                 raise se.BadParameter(msg)
 
 
-    def _dicts_to_string_list(self):
+    # --------------------------------------------------------------------------
+    #
+    def _to_string_list(self):
+
         slist = list()
-        for (local, remote) in self._in_overwrite.iteritems():
-            slist.append('%s > %s' % (local, remote))
-        for (local, remote) in self._in_append.iteritems():
-            slist.append('%s >> %s' % (local, remote))
-        for (local, remote) in self._out_overwrite.iteritems():
-            slist.append('%s < %s' % (local, remote))
-        for (local, remote) in self._out_append.iteritems():
-            slist.append('%s << %s' % (local, remote))
+
+        for (loc, rem) in self._in_overwrite:
+            slist.append('%s > %s' % (loc, rem))
+
+        for (loc, rem) in self._in_append:
+            slist.append('%s >> %s' % (loc, rem))
+
+        for (loc, rem) in self._out_overwrite:
+            slist.append('%s < %s' % (loc, rem))
+
+        for (loc, rem) in self._out_append:
+            slist.append('%s << %s' % (loc, rem))
+
         return slist
 
 
+    # --------------------------------------------------------------------------
+    #
     def __str__(self):
-        """ String representation.
-        """
-        return str(self._dicts_to_string_list())
 
+        return str(self._to_string_list())
+
+
+    # --------------------------------------------------------------------------
+    #
     @property
-    def in_overwrite_dict(self):
+    def in_overwrite(self):
+
         return self._in_overwrite
 
+
+    # --------------------------------------------------------------------------
+    #
     @property
-    def in_append_dict(self):
+    def in_append(self):
+
         return self._in_append
 
+
+    # --------------------------------------------------------------------------
+    #
     @property
-    def out_overwrite_dict(self):
+    def out_overwrite(self):
+
         return self._out_overwrite
 
+
+    # --------------------------------------------------------------------------
+    #
     @property
-    def out_append_dict(self):
+    def out_append(self):
+
         return self._out_append
 
+
+    # --------------------------------------------------------------------------
+    #
     @property
     def string_list(self):
-        return self._dicts_to_string_list()
+
+        return self._to_string_list()
 
 
+# ------------------------------------------------------------------------------
+#
 def _test_():
+
     tdp = TransferDirectives(["ab","a>c", "c>>d","f<a","g<<h"])
-    print tdp.in_append_dict
-    print tdp.in_overwrite_dict
-    print tdp.out_append_dict
-    print tdp.out_overwrite_dict
+
+    print tdp.in_append
+    print tdp.in_overwrite
+    print tdp.out_append
+    print tdp.out_overwrite
 
 
-
-
+# ------------------------------------------------------------------------------
 
