@@ -901,12 +901,23 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
 
         # if the 'gone' flag is set, there's no need to query the job
         # state again. it's gone forever -- but we check all others
-        job_ids = [x for x in job_ids if not self.jobs[x]['gone']]
+        found    = list()  # keep track of jobs for which we found new info
+        to_check = list()  # keep track of jobs for which we found new info
 
+        # we don't need to check final jobs
         for job_id in job_ids:
+
             if not job_id in self.jobs:
                 raise ValueError('job %s: unknown')
 
+            if self.jobs[job_id]['gone']:
+                found.append(job_id)
+            else:
+                to_check.append(job_id)
+
+        # do we have anything to do?
+        if not to_check:
+            return
 
         # run the Condor 'condor_q' command to get some infos about our job
         ret, out, err = self.shell.run_sync(
@@ -916,16 +927,15 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
         if ret != 0:
             raise Exception("condor_q failed (%s) (%s)" % (out, err))
 
-        ts      = time.time()
-        found   = list()  # keep track of jobs for which we found new info
         results = filter(bool, out.split('\n'))
+        ts      = time.time()
         for row in results:
 
             # Some processes in cluster found with condor_q!
             procid, jobstatus, exitstatus, completiondate = tuple([col.strip() for col in row.split(',')])
 
             matched = False
-            for job_id in job_ids:
+            for job_id in to_check:
 
                 if job_id.endswith('.%s]' % procid):
 
@@ -941,10 +951,8 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
             if not matched:
                 self._logger.warn('cannot match job info to any known job (%s)', row)
 
-        if len(found) < len(job_ids):
 
-            # (Some) cluster processes not found with condor_q, trying condor_history now
-            not_found = [x for x in job_ids if x not in found]
+        if len(found) < len(job_ids):
 
             ret, out, err = self.shell.run_sync(
                 "%s %s -autoformat:, ProcId ExitCode TransferOutput CompletionDate JobCurrentStartDate QDate Err Out" %
@@ -957,47 +965,48 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
                 self._logger.warn("condor_history failed: (%s) (%s)", out, err)
                 out = ''
 
-            ts      = time.time()
-            results = filter(bool, out.split('\n'))
-            for row in results:
+            else:
+                results = filter(bool, out.split('\n'))
+                ts      = time.time()
+                for row in results:
 
-                elems = row.split()
-                if len(elems) != 8:
-                    self._logger.error('cannot parse condor_hist' \
-                            'output [%d != 8]\n%s\n%s', len(elems), row, elems)
-                    continue
+                    elems = row.split()
+                    if len(elems) != 8:
+                        self._logger.error('cannot parse condor_hist' \
+                                'output [%d != 8]\n%s\n%s', len(elems), row, elems)
+                        continue
 
-                procid, exitcode = elems[0:2]
-                transferoutput   = elems[2].split(',')
-                cdate, sdate, qdate, stderr, stdout \
-                                 = elems[3:8]
+                    procid, exitcode = elems[0:2]
+                    transferoutput   = elems[2].split(',')
+                    cdate, sdate, qdate, stderr, stdout \
+                                     = elems[3:8]
 
-                matched = False
-                for job_id in job_ids:
+                    matched = False
+                    for job_id in to_check:
 
-                    if job_id.endswith('.%s]' % procid):
-                        found.append(job_id)
-                        info = self.jobs[job_id]
-                        info['returncode']  = int(exitcode)
-                        info['transfers']   = transferoutput
-                        info['create_time'] = qdate
-                        info['start_time']  = sdate
-                        info['end_time']    = cdate
-                        info['stdout']      = stdout
-                        info['stderr']      = stderr
+                        if job_id.endswith('.%s]' % procid):
+                            found.append(job_id)
+                            info = self.jobs[job_id]
+                            info['returncode']  = int(exitcode)
+                            info['transfers']   = transferoutput
+                            info['create_time'] = qdate
+                            info['start_time']  = sdate
+                            info['end_time']    = cdate
+                            info['stdout']      = stdout
+                            info['stderr']      = stderr
 
-                        if int(exitcode) == 0:
-                            info['state'] = saga.job.DONE
-                        else:
-                            info['state'] = saga.job.FAILED
+                            if int(exitcode) == 0:
+                                info['state'] = saga.job.DONE
+                            else:
+                                info['state'] = saga.job.FAILED
 
-                        info['gone']      = True
-                        info['timestamp'] = ts
-                        matched = True
-                        break
+                            info['gone']      = True
+                            info['timestamp'] = ts
+                            matched = True
+                            break
 
-                if not matched:
-                    self._logger.warn('cannot match job info to any known job (%s)', row)
+                    if not matched:
+                        self._logger.warn('cannot match job info to any known job (%s)', row)
 
 
         if len(found) < len(job_ids):
@@ -1006,10 +1015,8 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
             # jobs as disappeared, ie. as DONE.
             self._logger.warn('could not find all jobs (%s < %s)', len(found), len(job_ids))
 
-            not_found = [x for x in job_ids if x not in found]
-
             ts = time.time()
-            for job_id in not_found:
+            for job_id in to_check:
                 self._logger.warn('jobs %s disappeared', job_id)
                 info = self.jobs[job_id]
                 info['state']     = saga.job.DONE

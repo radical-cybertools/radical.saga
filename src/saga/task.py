@@ -636,7 +636,8 @@ class Container (sbase.SimpleBase, satt.Attributes) :
             thread.join ()
 
             if thread.get_state () == FAILED :
-                raise thread.get_exception ()
+                print thread.get_traceback()
+                raise thread.get_exception()
 
             # FIXME: what about ordering tasks / states?
             res = thread.get_result ()

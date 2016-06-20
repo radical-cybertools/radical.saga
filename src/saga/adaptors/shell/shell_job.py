@@ -179,7 +179,7 @@ _ADAPTOR_OPTIONS       = [
     'category'         : 'saga.adaptor.shell_job',
     'name'             : 'base_workdir',
     'type'             : str,
-    'default'          : "$HOME/.saga/adaptors/shell_job/",
+    'default'          : ".saga/adaptors/shell_job/",
     'documentation'    : '''The adaptor stores job state information on the
                           filesystem on the target resource.  This parameter
                           specified what location should be used.''',
