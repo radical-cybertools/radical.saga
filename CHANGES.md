@@ -6,6 +6,12 @@
     https://github.com/radical-cybertools/saga-python/issues?q=is%3Aissue+is%3Aopen+
 
 
+Version 0.41.1                                                        2016-07-07
+--------------------------------------------------------------------------------
+
+  - hotfix: remove some debug code which causes trouble in multiuser envs
+
+
 Version 0.41                                                          2016-06-02
 --------------------------------------------------------------------------------
 
