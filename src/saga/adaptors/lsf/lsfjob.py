@@ -546,7 +546,7 @@ class LSFJobService (saga.adaptors.cpi.job.Service):
 
             lsf_job_id = None
             for line in lines:
-                if re.search('Job <.+> is submitted to queue', line):
+                if re.search('Job <.+> is submitted to.+queue', line):
                     lsf_job_id = re.findall(r'<(.*?)>', line)[0]
                     break
 
