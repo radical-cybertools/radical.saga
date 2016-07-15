@@ -326,8 +326,8 @@ class Service (sb.Base, sasync.Async) :
 
         if  None == host :
             host = "" # FIXME
-
-        return self._adaptor.run_job (cmd, host, ttype=ttype)
+        return self._adaptor.run()
+        #return self._adaptor.run_job (cmd, host, ttype=ttype)
 
 
     # --------------------------------------------------------------------------
