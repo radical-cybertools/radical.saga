@@ -265,9 +265,12 @@ class Engine(ruc.Configurable):
             self._adaptor_registry = {}
             registry = inject_registry
 
+
         # attempt to load all registered modules
         for module_name in registry:
+
             self._logger.info ("loading  adaptor %s" % module_name)
+
 
             # first, import the module
             adaptor_module = None

@@ -320,19 +320,17 @@ class Service (sb.Base, sasync.Async) :
         
         .. warning:: |not_implemented|
         """
-
-    # Create Job and then Run Job via <Adaptor>Run
+    # Given cmd as job description, 1) Create a job, 2) Run the job
+    # 3) Return the Job Object
         if not self.valid :
             raise se.IncorrectState ("This instance was already closed.")
 
         if  None == host :
             host = "" # FIXME
 
-        js = self._adaptor.create_job(cmd)
-        js._adaptor.run()
-        return js
-        #return self._adaptor.run_job (cmd, host, ttype=ttype)
-
+        job = self._adaptor.create_job(cmd)
+        job._adaptor.run()
+        return job
 
 
     # --------------------------------------------------------------------------
