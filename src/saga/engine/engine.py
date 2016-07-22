@@ -281,6 +281,7 @@ class Engine(ruc.Configurable):
                 self._logger.warn ("Skipping adaptor %s 1: module loading failed: %s" % (module_name, e))
                 continue # skip to next adaptor
 
+
             # we expect the module to have an 'Adaptor' class
             # implemented, which, on calling 'register()', returns
             # a info dict for all implemented adaptor classes.
@@ -518,6 +519,7 @@ class Engine(ruc.Configurable):
 
                     self._adaptor_registry[cpi_type][adaptor_schema].append(info)
                     registered_schemas.append(str("%s://" % adaptor_schema))
+
                 self._logger.info("Register adaptor %s for %s API with URL scheme(s) %s" %
                                       (module_name,
                                        cpi_type,
@@ -559,6 +561,7 @@ class Engine(ruc.Configurable):
             This method is used if adaptor or API object implementation need to
             interact with other adaptors.
         '''
+
         for ctype in self._adaptor_registry.keys () :
             for schema in self._adaptor_registry[ctype].keys () :
                 for info in self._adaptor_registry[ctype][schema] :
@@ -582,6 +585,7 @@ class Engine(ruc.Configurable):
         considered, and adaptor classes are only created from that specific
         adaptor.
         '''
+
         if not ctype in self._adaptor_registry:
             error_msg = "No adaptor found for '%s' and URL scheme %s://" \
                                   % (ctype, schema)
