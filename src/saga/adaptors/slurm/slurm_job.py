@@ -598,13 +598,13 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
                 message = "Couldn't create working directory - %s" % (out)
                 log_error_and_raise(message, saga.NoSuccess, self._logger)
 
-        
+
         # write script into a tmp file for staging
         self._logger.info ("SLURM script generated:\n%s" % slurm_script)
 
         tgt = os.path.basename (tempfile.mktemp (suffix='.slurm', prefix='tmp_'))
         self.shell.write_to_remote (src=slurm_script, tgt=tgt)
-        
+
         # submit the job
         ret, out, _ = self.shell.run_sync ("sbatch '%s'; rm -vf '%s'" % (tgt, tgt))
 
