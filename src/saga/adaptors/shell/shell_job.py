@@ -174,7 +174,17 @@ _ADAPTOR_OPTIONS       = [
                           suitable jobs, including the ones managed by another,
                           live job service instance.''',
     'env_variable'     : None
-}
+    },
+    {
+    'category'         : 'saga.adaptor.shell_job',
+    'name'             : 'base_workdir',
+    'type'             : str,
+    'default'          : "$HOME/.saga/adaptors/shell_job/",
+    'documentation'    : '''The adaptor stores job state information on the
+                          filesystem on the target resource.  This parameter
+                          specified what location should be used.''',
+    'env_variable'     : None
+    }
 ]
 
 # --------------------------------------------------------------------
@@ -361,6 +371,7 @@ class Adaptor (saga.adaptors.base.Base):
 
         self.notifications  = self.opts['enable_notifications'].get_value ()
         self.purge_on_start = self.opts['purge_on_start'      ].get_value ()
+        self.base_workdir   = self.opts['base_workdir'        ].get_value ()
 
 
     # ----------------------------------------------------------------
@@ -464,21 +475,7 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
     def __del__ (self) :
 
         try :
-            # FIXME: not sure if we should PURGE here -- that removes states which
-            # might not be evaluated, yet.  Should we mark state evaluation
-            # separately? 
-            #   cmd_state () { touch $DIR/purgeable; ... }
-            # When should that be done?
-
-            self._logger.info ("adaptor %s : %s jobs" % (self, self.njobs))
-
-            if  self.shell : 
-             #  self.shell.run_sync  ("PURGE", iomode=None)
-                self.shell.run_async ("QUIT")
-                self.finalize (kill_shell=True)
-
-            if  self.monitor : 
-                self.finalize (kill_shell=True)
+            self.close()
 
         except Exception as e :
           # print str(e)
@@ -530,12 +527,21 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
     #
     def close (self) :
 
-        if  self.monitor :
-            self.monitor.finalize ()
-            # we don't care about join, really
+        if  self.shell : 
+            # FIXME: not sure if we should PURGE here -- that removes states which
+            # might not be evaluated, yet.  Should we mark state evaluation
+            # separately? 
+            #   cmd_state () { touch $DIR/purgeable; ... }
+            # When should that be done?
 
-        if  self.shell :
-            self.shell.finalize (True)
+         #  self.shell.run_sync ("PURGE", iomode=None)
+            self.shell.run_async("QUIT")
+            self.shell.finalize(kill_pty=True)
+            self.shell = None
+
+        if  self.monitor : 
+            self.monitor.finalize()
+            # we don't care about join, really
 
 
     # ----------------------------------------------------------------
@@ -549,7 +555,7 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
         # and running, we can requests job start / management operations via its
         # stdio.
 
-        base = "~/.saga/adaptors/shell_job"
+        base = self._adaptor.base_workdir
 
         ret, out, _ = self.shell.run_sync (" mkdir -p %s" % base)
         if  ret != 0 :
@@ -557,7 +563,7 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
 
         # TODO: replace some constants in the script with values from config
         # files, such as 'timeout' or 'purge_on_quit' ...
-        tgt = ".saga/adaptors/shell_job/wrapper.sh"
+        tgt = "%s/wrapper.sh" % base
 
         # lets check if we actually need to stage the wrapper script.  We need
         # an adaptor lock on this one.
@@ -585,7 +591,8 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
         # Well, actually, we do not use exec, as that does not give us good
         # feedback on failures (the shell just quits) -- so we replace it with
         # this poor-man's version...
-        ret, out, _ = self.shell.run_sync (" /bin/sh %s/wrapper.sh" % base)
+        ret, out, _ = self.shell.run_sync (" /bin/sh %s/wrapper.sh %s" % (base,
+            base))
 
         # shell_wrapper.sh will report its own PID -- we use that to sync prompt
         # detection, too.
@@ -607,7 +614,7 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
 
         # ----------------------------------------------------------------------
         # now do the same for the monitoring shell
-        ret, out, _ = self.channel.run_sync (" /bin/sh %s/wrapper.sh" % base)
+        ret, out, _ = self.channel.run_sync (" /bin/sh %s/wrapper.sh %s" % (base, base))
 
         # shell_wrapper.sh will report its own PID -- we use that to sync prompt
         # detection, too.
@@ -627,16 +634,6 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
         self._logger.debug ("got mon prompt (%s)(%s)" % (ret, out.strip ()))
 
 
-    # ----------------------------------------------------------------
-    #
-    def finalize (self, kill_shell = False) :
-
-        if  kill_shell :
-            if  self.shell :
-                self.shell.finalize (kill_pty=True)
-
-
-    
     # ----------------------------------------------------------------
     #
     #
