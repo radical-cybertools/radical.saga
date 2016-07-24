@@ -1,4 +1,6 @@
 
+from __future__ import absolute_import
+from __future__ import print_function
 __author__    = "Andre Merzky, Ole Weidner"
 __copyright__ = "Copyright 2013, The SAGA Project"
 __license__   = "MIT"
@@ -41,14 +43,14 @@ def main():
         # list 'h*' in local /tmp/ directory
         local_dir = saga.filesystem.Directory('file://localhost/tmp/')
         for entry in local_dir.list(pattern='h*'):
-            print entry
+            print(entry)
         return 0
 
-    except saga.SagaException, ex:
+    except saga.SagaException as ex:
         # Catch all saga exceptions
-        print "An exception occured: (%s) %s " % (ex.type, (str(ex)))
+        print("An exception occured: (%s) %s " % (ex.type, (str(ex))))
         # Trace back the exception. That can be helpful for debugging.
-        print " \n*** Backtrace:\n %s" % ex.traceback
+        print(" \n*** Backtrace:\n %s" % ex.traceback)
         return -1
 
 if __name__ == "__main__":

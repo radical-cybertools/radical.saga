@@ -1,4 +1,6 @@
 
+from __future__ import absolute_import
+import six
 __author__    = "Andre Merzky, Ole Weidner"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
@@ -32,6 +34,7 @@ class SimpleBase (object) :
 
         if  not hasattr (self, '_apitype') :
             self._apitype = self._get_apitype ()
+            print("Got here.")
 
         self._logger = ru.get_logger  ('radical.saga')
         self._id     = ru.generate_id (self._get_apitype (), mode=ru.ID_SIMPLE)
@@ -42,7 +45,7 @@ class SimpleBase (object) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('SimpleBase')
-    @rus.returns (basestring)
+    @rus.returns (six.string_types)
     def _get_apitype (self) :
 
         # apitype for saga.job.service.Service should be saga.job.Service --
@@ -74,7 +77,7 @@ class Base (SimpleBase) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Base',
-                  basestring, 
+                  six.string_types, 
                   rus.optional (sab.Base), 
                   rus.optional (dict), 
                   rus.optional (rus.anything),

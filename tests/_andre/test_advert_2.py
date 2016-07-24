@@ -1,6 +1,8 @@
 
+from __future__ import absolute_import
 import sys
 import saga
+from six.moves import range
 
 start = False
 stop  = False
@@ -17,7 +19,7 @@ d_1 = saga.advert.Directory ('redis://repex1.tacc.utexas.edu:10001/tmp/test1/tes
 if start : d_1.set_attribute ('foo', 'start')
 
 # send 1000 attribute updates
-for i in xrange (100) :
+for i in range (100) :
     d_1.set_attribute ('foo', str(i))
 
 # should we notify the master that we are done?

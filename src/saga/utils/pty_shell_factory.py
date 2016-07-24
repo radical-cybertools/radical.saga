@@ -1,4 +1,6 @@
 
+from __future__ import absolute_import
+import six
 __author__    = "Andre Merzky, Ole Weidner"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
@@ -19,7 +21,7 @@ import saga.exceptions         as se
 import saga.utils.misc         as sumisc
 import saga.utils.pty_process  as supp
 
-import pty_exceptions               as ptye
+from . import pty_exceptions               as ptye
 
 
 # ------------------------------------------------------------------------------
@@ -100,7 +102,7 @@ _SCRIPTS = {
 
 # ------------------------------------------------------------------------------
 #
-class PTYShellFactory (object) :
+class PTYShellFactory (six.with_metaclass(ru.Singleton, object)) :
     """
     This is the place where all master and all client shell connections get
     created.  But also, this factory maintains a registry of master connections,
@@ -138,8 +140,6 @@ class PTYShellFactory (object) :
     for gsiscp and gsisftp slaves; and sh master for file slaves
 
     """
-
-    __metaclass__ = ru.Singleton
 
 
     # --------------------------------------------------------------------------
@@ -554,7 +554,7 @@ class PTYShellFactory (object) :
                 # FIXME: note that get_host_latency is considered broken (see
                 # saga/utils/misc.py line 73), and will return a constant 250ms.
 
-            except Exception  as e :
+            except Exception as e :
                 info['latency'] = 1.0  # generic value assuming slow link
                 info['logger'].warning ("Could not contact host '%s': %s" % (url, e))
 

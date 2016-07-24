@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
 
+from __future__ import absolute_import
+import six
+from six.moves import zip
 __author__    = "Andre Merzky, Christian P.-Llamas, Ole Weidner, Thomas Schatz, Alexander Grill"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
@@ -46,7 +49,7 @@ class SgeKeyValueParser(object):
         """
 
         # check whether it is an string or a file-like object
-        if isinstance(stream, basestring):
+        if isinstance(stream, six.string_types):
             self.stream = StringIO(stream)
         else:
             self.stream = stream
@@ -81,6 +84,9 @@ class SgeKeyValueParser(object):
                     key = None # skip this pair
 
         return key, value
+
+    def __next__(self):
+        return self.next()
 
     def __iter__(self):
         return self
@@ -290,7 +296,7 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
         # this adaptor supports options that can be passed via the
         # 'query' component of the job service URL.
         if rm_url.query is not None:
-            for key, val in parse_qs(rm_url.query).iteritems():
+            for key, val in six.iteritems(parse_qs(rm_url.query)):
                 if key == 'queue':
                     self.queue = val[0]
                 elif key == 'memreqs':
@@ -789,7 +795,7 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
             script = self.__generate_qsub_script(jd)
 
             self._logger.info("Generated SGE script: %s" % script)
-        except Exception, ex:
+        except Exception as ex:
             log_error_and_raise(str(ex), saga.BadParameter, self._logger)
 
         # try to create the working/output/error directories (if defined)

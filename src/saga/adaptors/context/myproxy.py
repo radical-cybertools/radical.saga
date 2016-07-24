@@ -1,4 +1,5 @@
 
+from __future__ import absolute_import
 __author__    = "Andre Merzky, Ole Weidner"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
@@ -151,7 +152,8 @@ class ContextMyProxy (saga.adaptors.cpi.context.Context) :
 
         process          = subprocess.Popen (cmd, shell=True,
                                              stdout=subprocess.PIPE,
-                                             stderr=subprocess.PIPE)
+                                             stderr=subprocess.PIPE,
+                                             universal_newlines=True)
         (stdout, stderr) = process.communicate ()
 
         if expected_result == stdout :

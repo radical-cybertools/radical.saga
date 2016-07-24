@@ -1,4 +1,7 @@
 
+from __future__ import absolute_import
+from __future__ import print_function
+from six.moves import range
 __author__    = "Ole Weidner"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
@@ -28,29 +31,29 @@ def main():
             sleepjob = js.create_job(jd)
 
             # Check our job's id and state
-            print "Job ID    : %s" % (sleepjob.id)
-            print "Job State : %s" % (sleepjob.state)
+            print("Job ID    : %s" % (sleepjob.id))
+            print("Job State : %s" % (sleepjob.state))
 
             # Now we can start our job.
-            print "\n...starting job...\n"
+            print("\n...starting job...\n")
             sleepjob.run()
 
             while sleepjob.state != saga.job.RUNNING:
                 time.sleep(2) # wait two seconds
 
-            print "\n...canceling job....\n"
+            print("\n...canceling job....\n")
             sleepjob.cancel()
 
-            print "Job State : %s" % (sleepjob.state)
+            print("Job State : %s" % (sleepjob.state))
 
         return 0
 
-    except saga.SagaException, ex:
+    except saga.SagaException as ex:
         # Catch all saga exceptions
-        print "An exception occured: (%s) %s " % (ex.type, (str(ex)))
+        print("An exception occured: (%s) %s " % (ex.type, (str(ex))))
         # Get the whole traceback in case of an exception -
         # this can be helpful for debugging the problem
-        print " \n*** Backtrace:\n %s" % ex.traceback
+        print(" \n*** Backtrace:\n %s" % ex.traceback)
         return -1
 
 if __name__ == "__main__":

@@ -10,6 +10,8 @@
 #   - map code snippets to SAGA calls below
 #
 
+from __future__ import absolute_import
+from __future__ import print_function
 import saga
 import pprint
 
@@ -38,8 +40,8 @@ for template in templates :
 
 # type(vm):  saga.resource.Resource 
 vm = rm.acquire ({'template' : 'EGI-WeNMR-Demo3-CESGA'})
-print vm.id
-print vm.state # NEW
+print(vm.id)
+print(vm.state) # NEW
 
 vm.wait (ACTIVE)
 

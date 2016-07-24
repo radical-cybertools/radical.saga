@@ -1,4 +1,6 @@
 
+from __future__ import absolute_import
+import six
 __author__    = "Andre Merzky, Ole Weidner"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
@@ -18,7 +20,7 @@ import re
 import time
 import threading
 
-import shell_wrapper
+from . import shell_wrapper
 
 SYNC_CALL  = saga.adaptors.cpi.decorators.SYNC_CALL
 ASYNC_CALL = saga.adaptors.cpi.decorators.ASYNC_CALL
@@ -430,7 +432,7 @@ class Adaptor (saga.adaptors.base.Base):
                 raise saga.BadParameter('FileTransfer append (<</>>) not supported')
 
             if  td.in_overwrite_dict :
-                for (source, target) in td.in_overwrite_dict.iteritems():
+                for (source, target) in six.iteritems(td.in_overwrite_dict):
                     self._logger.info("Transferring file %s to %s" % (source, target))
                     shell.stage_to_remote(source, target)
 
@@ -449,7 +451,7 @@ class Adaptor (saga.adaptors.base.Base):
                 raise saga.BadParameter('FileTransfer append (<</>>) not supported')
 
             if  td.out_overwrite_dict :
-                for (source, target) in td.out_overwrite_dict.iteritems():
+                for (source, target) in six.iteritems(td.out_overwrite_dict):
                     self._logger.info("Transferring file %s to %s" % (source, target))
                     shell.stage_from_remote(source, target)
 
@@ -706,7 +708,7 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
         if  ret != 0 :
             raise saga.NoSuccess ("failed to run Job '%s': (%s)(%s)" % (cmd, ret, out))
 
-        lines = filter (None, out.split ("\n"))
+        lines = [_f for _f in out.split ("\n") if _f]
         self._logger.debug (lines)
 
         if  len (lines) < 2 :
@@ -749,7 +751,7 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
                                % (id, ret, out))
 
         # the filter removes also empty lines from stdout/stderr.  Oh well...
-        lines = filter (None, out.split ("\n"))
+        lines = [_f for _f in out.split ("\n") if _f]
         self._logger.debug (lines)
 
         if lines[0] != "OK" :
@@ -816,7 +818,7 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
                                % (id, ret, out))
             return None
 
-        lines = filter (None, out.split ("\n"))
+        lines = [_f for _f in out.split ("\n") if _f]
         self._logger.debug (lines)
 
         if  len (lines) == 3 :
@@ -882,7 +884,7 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
             raise saga.NoSuccess ("failed to cancel job '%s': (%s)(%s)" \
                                % (id, ret, out))
 
-        lines = filter (None, out.split ("\n"))
+        lines = [_f for _f in out.split ("\n") if _f]
         self._logger.debug (lines)
 
         if  len (lines) == 3 :
@@ -959,7 +961,7 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
             raise saga.NoSuccess ("failed to list jobs: (%s)(%s)" \
                                % (ret, out))
 
-        lines = filter (None, out.split ("\n"))
+        lines = [_f for _f in out.split ("\n") if _f]
         self._logger.debug (lines)
 
         if lines[0] != "OK" :
@@ -1053,7 +1055,7 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
                 job._adaptor._exception = saga.NoSuccess ("failed to run job: (%s)(%s)" % (ret, out))
                 continue
 
-            lines = filter (None, out.split ("\n"))
+            lines = [_f for _f in out.split ("\n") if _f]
 
             if  len (lines) < 2 :
                 job._adaptor._set_state (saga.job.FAILED)
@@ -1086,7 +1088,7 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
             self._logger.error ("failed to run (parts of the) bulk jobs: (%s)(%s)" % (ret, out))
             return
 
-        lines = filter (None, out.split ("\n"))
+        lines = [_f for _f in out.split ("\n") if _f]
 
         if  len (lines) < 2 :
             self._logger.error ("Cannot evaluate status of bulk job submission: (%s)(%s)" % (ret, out))
@@ -1137,7 +1139,7 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
                 job._adaptor._exception = saga.NoSuccess ("failed to wait for job: (%s)(%s)" % (ret, out))
                 continue
 
-            lines = filter (None, out.split ("\n"))
+            lines = [_f for _f in out.split ("\n") if _f]
 
             if  len (lines) < 2 :
                 job._adaptor._set_state (saga.job.FAILED)
@@ -1156,7 +1158,7 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
             self._logger.error ("failed to wait for (parts of the) bulk jobs: (%s)(%s)" % (ret, out))
             return
 
-        lines = filter (None, out.split ("\n"))
+        lines = [_f for _f in out.split ("\n") if _f]
 
         if  len (lines) < 2 :
             self._logger.error ("Cannot evaluate status of bulk job wait: (%s)(%s)" % (ret, out))
@@ -1192,7 +1194,7 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
                 job._adaptor._exception = saga.NoSuccess ("failed to cancel job: (%s)(%s)" % (ret, out))
                 continue
 
-            lines = filter (None, out.split ("\n"))
+            lines = [_f for _f in out.split ("\n") if _f]
 
             if  len (lines) < 2 :
                 job._adaptor._set_state (saga.job.FAILED)
@@ -1211,7 +1213,7 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
             self._logger.error ("failed to cancel (parts of the) bulk jobs: (%s)(%s)" % (ret, out))
             return
 
-        lines = filter (None, out.split ("\n"))
+        lines = [_f for _f in out.split ("\n") if _f]
 
         if  len (lines) < 2 :
             self._logger.error ("Cannot evaluate status of bulk job cancel: (%s)(%s)" % (ret, out))
@@ -1252,7 +1254,7 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
                 job._adaptor._exception = saga.NoSuccess ("failed to get job state: (%s)(%s)" % (ret, out))
                 continue
 
-            lines = filter (None, out.split ("\n"))
+            lines = [_f for _f in out.split ("\n") if _f]
 
             if  len (lines) < 2 :
                 job._adaptor._set_state (saga.job.FAILED)
@@ -1277,7 +1279,7 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
             self._logger.error ("failed to get state for (parts of the) bulk jobs: (%s)(%s)" % (ret, out))
             return
 
-        lines = filter (None, out.split ("\n"))
+        lines = [_f for _f in out.split ("\n") if _f]
 
         if  len (lines) < 2 :
             self._logger.error ("Cannot evaluate status of bulk job get_state: (%s)(%s)" % (ret, out))
@@ -1485,7 +1487,7 @@ class ShellJob (saga.adaptors.cpi.job.Job) :
             raise saga.NoSuccess ("failed to get job stdout for '%s': (%s)(%s)" \
                                % (self._id, ret, out))
 
-        lines = filter (None, out.split ("\n"))
+        lines = [_f for _f in out.split ("\n") if _f]
 
         if lines[0] != "OK" :
             raise saga.NoSuccess ("failed to get valid job stdout for '%s' (%s)" % (self._id, lines))
@@ -1514,7 +1516,7 @@ class ShellJob (saga.adaptors.cpi.job.Job) :
             raise saga.NoSuccess ("failed to get job stderr for '%s': (%s)(%s)" \
                                % (self._id, ret, out))
 
-        lines = filter (None, out.split ("\n"))
+        lines = [_f for _f in out.split ("\n") if _f]
 
         if lines[0] != "OK" :
             raise saga.NoSuccess ("failed to get valid job stderr for '%s' (%s)" % (self._id, lines))
@@ -1543,7 +1545,7 @@ class ShellJob (saga.adaptors.cpi.job.Job) :
             raise saga.NoSuccess ("failed to get job log for '%s': (%s)(%s)" \
                                % (self._id, ret, out))
 
-        lines = filter (None, out.split ("\n"))
+        lines = [_f for _f in out.split ("\n") if _f]
 
         if lines[0] != "OK" :
             raise saga.NoSuccess ("failed to get valid job stderr for '%s' (%s)" % (self._id, lines))

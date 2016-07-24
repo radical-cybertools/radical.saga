@@ -1,9 +1,12 @@
 
+from __future__ import absolute_import
+from __future__ import print_function
 import os
 import sys
 import saga
 
 import pudb; pudb.set_interrupt_handler()
+from six.moves import range
 
 USER_ID     = "merzky"
 REMOTE_HOST = "ssh://gw68.quarry.iu.teragrid.org"
@@ -13,7 +16,7 @@ def main () :
     try:
 
         for i in range(0, 1000):
-            print "**************************** Job: %d *****************************" % i
+            print("**************************** Job: %d *****************************" % i)
             ctx = saga.Context("ssh")
             ctx.user_id = USER_ID
 
@@ -52,13 +55,13 @@ def main () :
                 j.run()
                 jobs.append (j)
 
-                print "Job %3d   : %s [%s]" % (i, j.id, j.state)
+                print("Job %3d   : %s [%s]" % (i, j.id, j.state))
 
 
             for j in jobs :
 
                 j.cancel ()
-                print "Job       : %s [%s]" % (j.id, j.state)
+                print("Job       : %s [%s]" % (j.id, j.state))
 
 
           # js.close ()
@@ -66,11 +69,11 @@ def main () :
     
         return 0
 
-    except saga.SagaException, ex:
+    except saga.SagaException as ex:
         # Catch all saga exceptions
-        print "An exception occured: (%s) %s " % (ex.type, (str(ex)))
+        print("An exception occured: (%s) %s " % (ex.type, (str(ex))))
         # Trace back the exception. That can be helpful for debugging.
-        print " \n*** Backtrace:\n %s" % ex.traceback
+        print(" \n*** Backtrace:\n %s" % ex.traceback)
         return -1
 
 

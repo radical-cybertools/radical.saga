@@ -1,4 +1,6 @@
 
+from __future__ import absolute_import
+from __future__ import print_function
 __author__    = "Andre Merzky, Matteo Turilli, Ole Weidner"
 __copyright__ = "Copyright 2013, The SAGA Project"
 __license__   = "MIT"
@@ -113,9 +115,9 @@ This program has different modes of operation:
 def usage (msg = None) :
 
     if  msg :
-        print "\n    Error: %s\n"  %  msg
+        print("\n    Error: %s\n"  %  msg)
 
-    print """
+    print("""
     Usage:
 
         %s -l             :  list    VMs
@@ -133,7 +135,7 @@ def usage (msg = None) :
        EC2_KEYPAIR    : public ssh key for VM access
 
 
-    """
+    """)
 
     if msg : sys.exit (-1)
     else   : sys.exit ( 0)
@@ -210,14 +212,14 @@ if  '-l' in args :
         usage ("no additional args allowed on '-l'")
 
     # list known VMs (compute resources)
-    print "\ncompute resources"
+    print("\ncompute resources")
     for cr_id in rm.list () :
-        print "  %s" % cr_id
+        print("  %s" % cr_id)
 
     # list the available VM templates
-    print "\ncompute templates"
+    print("\ncompute templates")
     for tmp in rm.list_templates () :
-        print "  %s" % tmp
+        print("  %s" % tmp)
 
     # we can also list the available OS images, as per below -- but since
     # the list of OS images avaialble on EC2 is *huge*, this operation is
@@ -225,7 +227,7 @@ if  '-l' in args :
     # inspection)
 
     # {'name': 'None (cube-1-0-5-2012-09-07)', 'ispublic': 'true', 'state': 'available', 'rootdevicetype': 'instance-store', 'imagetype': 'machine'}
-    print "\nOS images"
+    print("\nOS images")
     
     descr = None
     ispublic = None
@@ -238,10 +240,10 @@ if  '-l' in args :
         else:
             ispublic = 'private'
 
-        print "  %s - %s, %s, %s" % (osi, descr['name'], ispublic,
-                                     descr['state'])
+        print("  %s - %s, %s, %s" % (osi, descr['name'], ispublic,
+                                     descr['state']))
 
-    print
+    print()
     sys.exit (0)
 
 
@@ -254,7 +256,7 @@ elif  '-c' in args :
 
     for image in args :
 
-        print"\ncreating an instance from image %s" % image
+        print("\ncreating an instance from image %s" % image)
 
         # create a resource description with an image and an OS template, out of
         # the ones listed above.  We pick a small VM and a plain Ubuntu image...
@@ -265,10 +267,10 @@ elif  '-c' in args :
         # create a VM instance with that description, and inspect it for some
         # detailes
         cr = rm.acquire (cd)
-        print "\nCreated VM"
-        print "  id           : %s"       %  cr.id
-        print "  state        : %s (%s)"  %  (state2str(cr.state), cr.state_detail)
-        print "  access       : %s"       %  cr.access
+        print("\nCreated VM")
+        print("  id           : %s"       %  cr.id)
+        print("  state        : %s (%s)"  %  (state2str(cr.state), cr.state_detail))
+        print("  access       : %s"       %  cr.access)
 
     sys.exit (0)
 
@@ -282,19 +284,19 @@ elif  '-u' in args :
     # we want to reconnect to running VMs, specified by their IDs
     for vm_id in args :
 
-        print "\nconnecting to %s" % vm_id
+        print("\nconnecting to %s" % vm_id)
 
         # get a handle on that VM, and print some information
         cr = rm.acquire (vm_id)
 
-        print "  id           : %s"       %  cr.id
-        print "  state        : %s (%s)"  %  (state2str(cr.state), cr.state_detail)
+        print("  id           : %s"       %  cr.id)
+        print("  state        : %s (%s)"  %  (state2str(cr.state), cr.state_detail))
 
         # make sure the machine is not in final state already
         if  cr.state in [saga.resource.EXPIRED,
                          saga.resource.DONE,
                          saga.resource.FAILED] :
-            print "  VM %s is alrady in final state"  %  vm_id
+            print("  VM %s is alrady in final state"  %  vm_id)
             continue
 
         # we only can run jobs on ACTIVE machines -- so lets wait until the VM
@@ -302,15 +304,15 @@ elif  '-u' in args :
         # Note: the careful coder will spot the subtle race condition between the 
         # check above and the check on this line... ;-)
         if cr.state != saga.resource.ACTIVE :
-          print "  wait for ACTIVE state"
+          print("  wait for ACTIVE state")
           cr.wait (saga.resource.ACTIVE)
 
           # Once a VM comes active, it still needs to boot and setup the ssh
           # daemon to be usable -- we thus wait for a while
           time.sleep (60)
 
-        print "  state        : %s (%s)"  %  (state2str(cr.state), cr.state_detail)
-        print "  access       : %s"       %   cr.access
+        print("  state        : %s (%s)"  %  (state2str(cr.state), cr.state_detail))
+        print("  access       : %s"       %   cr.access)
 
 
         # The session created above contains the ssh context to access the VM
@@ -319,14 +321,14 @@ elif  '-u' in args :
         # session to create a job service instance for that VM:
         js = saga.job.Service (cr.access, session=s)
 
-        print "running job"
+        print("running job")
         # all ready: do the deed!
         j = js.run_job ('sleep 10')
-        print "  job state    : %s"  %  j.state
+        print("  job state    : %s"  %  j.state)
         j.wait ()
-        print "  job state    : %s"  %  j.state
+        print("  job state    : %s"  %  j.state)
 
-    print
+    print()
     sys.exit (0)
 
 
@@ -341,26 +343,26 @@ elif  '-d' in args :
     # we want to reconnect to running VMs, specified by their IDs
     for vm_id in args :
 
-        print "\nreconnecting to id %s" % vm_id
+        print("\nreconnecting to id %s" % vm_id)
 
         # get a handle on that VM, and print some information
         cr = rm.acquire (vm_id)
 
-        print "  id           : %s"       %  cr.id
-        print "  state        : %s (%s)"  %  (state2str(cr.state), cr.state_detail)
-        print "  access       : %s"       %  cr.access
+        print("  id           : %s"       %  cr.id)
+        print("  state        : %s (%s)"  %  (state2str(cr.state), cr.state_detail))
+        print("  access       : %s"       %  cr.access)
 
         if cr.state in [saga.resource.EXPIRED,
                         saga.resource.DONE,
                         saga.resource.FAILED] :
-            print "  VM %s is alrady in final state"  %  vm_id
+            print("  VM %s is alrady in final state"  %  vm_id)
             continue
 
-        print "\nshutting down  %s "      %  cr.id
+        print("\nshutting down  %s "      %  cr.id)
         cr.destroy ()
-        print "  state        : %s (%s)"  %  (state2str(cr.state), cr.state_detail)
+        print("  state        : %s (%s)"  %  (state2str(cr.state), cr.state_detail))
     
-    print 
+    print() 
     sys.exit (0)
 
 

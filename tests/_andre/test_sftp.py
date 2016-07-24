@@ -1,4 +1,6 @@
 
+from __future__ import absolute_import
+from __future__ import print_function
 __author__    = "Andre Merzky"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
@@ -58,15 +60,15 @@ try :
         # we should have found progress info on both ETA and '\n' matches...
         # oh well...
         if not progress :
-            print "parse error -- ignore"
+            print("parse error -- ignore")
             error += out
 
         # ----------------------------------------------------------------------
         # had a match, either on 'ETA' or on '\n' -- both give progress info
-        print "%6s%%  %6s  %10s  %6s" % (progress.group ('perc'), 
+        print("%6s%%  %6s  %10s  %6s" % (progress.group ('perc'), 
                                          progress.group ('size'),
                                          progress.group ('perf'),
-                                         progress.group ('time'))
+                                         progress.group ('time')))
         # ----------------------------------------------------------------------
         # we had a match on '\n' -- this is the end of transfer
         if  ret == 2 :
@@ -74,13 +76,13 @@ try :
 
     ret, out = shell.find_prompt ()
     if ret != 0 :
-        print "file copy failed:\n'%s'" % error
+        print("file copy failed:\n'%s'" % error)
     else :
-        print "file copy done"
+        print("file copy done")
 
 
 except saga.SagaException as e :
-    print "exception: %s" % e
+    print("exception: %s" % e)
 
 
 

@@ -1,4 +1,7 @@
 
+from __future__ import absolute_import
+from __future__ import print_function
+from six.moves import range
 __author__    = "Andre Merzky"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
@@ -14,7 +17,7 @@ from   saga.engine.engine import Engine
 
 try :
 
-  print " ----------------------------------------------------------- "
+  print(" ----------------------------------------------------------- ")
   t1 = time.time ()
   js = saga.job.Service ("fork://localhost")
   # tc = saga.task.Container ()
@@ -33,9 +36,9 @@ try :
   #   print "%s : %-6s [%s]"  %  (t, t.state, t.exception)
   t2 = time.time ()
 
-  print " ----------------------------------------------------------- "
-  print (t2-t1)
-  print " =========================================================== "
+  print(" ----------------------------------------------------------- ")
+  print((t2-t1))
+  print(" =========================================================== ")
 
   sys.exit (0)
 
@@ -47,36 +50,36 @@ try :
   
   d_1 = saga.filesystem.Directory ('file://localhost/tmp/test1/test1/',
                                    saga.filesystem.CREATE | saga.filesystem.CREATE_PARENTS)
-  print d_1
-  print d_1.get_url ()
+  print(d_1)
+  print(d_1.get_url ())
   
   
   t_0 = saga.filesystem.Directory.create ('file://localhost/tmp/test1/test1/',
                                           saga.filesystem.CREATE | saga.filesystem.CREATE_PARENTS, 
                                           ttype=saga.task.TASK)
-  print t_0
-  print t_0.state
+  print(t_0)
+  print(t_0.state)
   t_0.run ()
-  print t_0.state
+  print(t_0.state)
   t_0.wait ()
-  print t_0.state
+  print(t_0.state)
   d_2 = t_0.result
-  print d_2
-  print d_2.get_url()
+  print(d_2)
+  print(d_2.get_url())
   
   
   
   t_1 = d_1.open ('group', ttype=saga.task.TASK)
-  print "New     : %s" % t_1.state
+  print("New     : %s" % t_1.state)
   t_1.run ()
-  print "Running : %s" % t_1.state
+  print("Running : %s" % t_1.state)
   t_1.wait ()
-  print "Done    : %s" % t_1.state
+  print("Done    : %s" % t_1.state)
   f_1 = t_1.result
-  print f_1.url
-  print f_1.size
+  print(f_1.url)
+  print(f_1.size)
   
-  print d_1.get_url ()
+  print(d_1.get_url ())
   f_2 = d_1.open ('passwd')
   
   f_2._adaptor._dump()
@@ -99,13 +102,13 @@ try :
   tc.wait (saga.task.ALL)
   
   for t in tc.tasks :
-    print "%s : %-6s [%s]"  %  (t, t.state, t.exception)
+    print("%s : %-6s [%s]"  %  (t, t.state, t.exception))
   
   
-  print f_2.get_size ()
+  print(f_2.get_size ())
   t_2 = f_2.get_size (saga.task.ASYNC)
-  print t_2.state
-  print t_2.result
+  print(t_2.state)
+  print(t_2.result)
   
   # f_2.copy ('passwd.bak') 
   # f_2.copy ('dummy://boskop/tmp/') 
@@ -113,10 +116,10 @@ try :
   
   t_3 = saga.filesystem.Directory.create ('file://localhost/tmp/test1/test1/',
                                  saga.filesystem.CREATE | saga.filesystem.CREATE_PARENTS, saga.task.ASYNC)
-  print t_3
-  print t_3.state
+  print(t_3)
+  print(t_3.state)
   d2 = t_3.get_result ()
-  print d2
+  print(d2)
   
   
   jd     = saga.job.Description ()
@@ -126,11 +129,11 @@ try :
   # print str(t_4)
   
   js_1   = saga.job.Service ("fork://localhost")
-  print js_1.get_url ()
+  print(js_1.get_url ())
   
   j_1    = js_1.create_job (jd) 
-  print str(j_1)
-  print j_1.get_id ()
+  print(str(j_1))
+  print(j_1.get_id ())
   
   # t_5    = j_1.get_id (ttype=saga.task.TASK)
   # print str(t_5)
@@ -153,6 +156,6 @@ try :
   
   
 except saga.exceptions.SagaException as e :
-  print "Exception: ==========\n%s"  %  e.get_message ()
-  print "%s====================="    %  e.get_traceback ()
+  print("Exception: ==========\n%s"  %  e.get_message ())
+  print("%s====================="    %  e.get_traceback ())
   

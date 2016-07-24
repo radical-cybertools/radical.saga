@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+import six
 __author__    = "Andre Merzky, Ole Weidner, Mark Santcroos"
 __copyright__ = "Copyright 2012-2015, The SAGA Project"
 __license__   = "MIT"
@@ -175,7 +177,7 @@ def _pbscript_generator(url, logger, jd, ppn, gres, pbs_version, is_cray=False, 
     if jd.environment:
         pbs_params += "#PBS -v %s\n" % \
                 ','.join (["%s=%s" % (k,v) 
-                           for k,v in jd.environment.iteritems()])
+                           for k,v in six.iteritems(jd.environment)])
 
 # apparently this doesn't work with older PBS installations
 #    if jd.working_directory:
@@ -518,7 +520,7 @@ class PBSProJobService (saga.adaptors.cpi.job.Service):
         # this adaptor supports options that can be passed via the
         # 'query' component of the job service URL.
         if rm_url.query:
-            for key, val in parse_qs(rm_url.query).iteritems():
+            for key, val in six.iteritems(parse_qs(rm_url.query)):
                 if key == 'queue':
                     self.queue = val[0]
                 elif key == 'craytype':
@@ -673,7 +675,7 @@ class PBSProJobService (saga.adaptors.cpi.job.Service):
                                          )
 
             self._logger.info("Generated PBS script: %s" % script)
-        except Exception, ex:
+        except Exception as ex:
             log_error_and_raise(str(ex), saga.BadParameter, self._logger)
 
         # try to create the working directory (if defined)
@@ -704,7 +706,7 @@ class PBSProJobService (saga.adaptors.cpi.job.Service):
             # sometimes there are a couple of lines of warnings before.
             # if that's the case, we log those as 'warnings'
             lines = out.split('\n')
-            lines = filter(lambda lines: lines != '', lines)  # remove empty
+            lines = [lines for lines in lines if lines != '']  # remove empty
 
             if len(lines) > 1:
                 self._logger.warning('qsub: %s' % ''.join(lines[:-2]))
@@ -731,7 +733,7 @@ class PBSProJobService (saga.adaptors.cpi.job.Service):
                                  }
 
             self._logger.info ("assign job id  %s / %s / %s to watch list (%s)" \
-                            % (None, job_id, job_obj, self.jobs.keys()))
+                            % (None, job_id, job_obj, list(self.jobs.keys())))
 
             # set status to 'pending' and manually trigger callback
             job_obj._attributes_i_set('state', state, job_obj._UP, True)

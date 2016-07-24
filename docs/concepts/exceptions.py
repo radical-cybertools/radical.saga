@@ -1,4 +1,6 @@
 
+from __future__ import absolute_import
+from __future__ import print_function
 import sys
 import traceback
 
@@ -162,11 +164,11 @@ def call_1 () : call_2 ()
 try :
     call_1 ()
 except MyEx as e :
-    print "=================================="
-    print e
-    print "=================================="
-    print e.traceback
-    print "=================================="
+    print("==================================")
+    print(e)
+    print("==================================")
+    print(e.traceback)
+    print("==================================")
     pass
 
 

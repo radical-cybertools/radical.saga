@@ -1,7 +1,10 @@
+from __future__ import absolute_import
+from __future__ import print_function
 import os,sys, time
 import redis
 import saga
 import datetime
+from six.moves import range
 
 coordination_time = datetime.timedelta(0)
 communication_time = datetime.timedelta(0)
@@ -31,8 +34,8 @@ def initiate_workers(machine_parameters, number_of_workers, number_of_machines):
 			job.run()
 			jobs.append(job)
 
-	except saga.SagaException, ex:
-		print "An error occured during job execution: %s" % (str(ex))
+	except saga.SagaException as ex:
+		print("An error occured during job execution: %s" % (str(ex)))
 		sys.exit(-1)
 
 def read_machine_information(filename):
@@ -85,7 +88,7 @@ def process_dependencies(dependencies, machine_parameters):
 				#print("file://"+service+machine_parameters[i][2])
 				f = saga.filesystem.File("file://localhost" + os.getcwd() + "/" + files, session=session)
 				f.copy("sftp://"+service+machine_parameters[i][2] + files)
-				print "Successful copy"
+				print("Successful copy")
 
 		i += 1
 
@@ -129,7 +132,7 @@ def main(number_of_tasks, number_of_workers, number_of_machines):
 	while (len(jobs) > 0):
 		for job in jobs:
 			jobstate = job.get_state()
-			print ' * Job %s status: %s' % (job.id, jobstate)
+			print(' * Job %s status: %s' % (job.id, jobstate))
 			if str(jobstate) is "Done":
 				jobs.remove(job)
 	

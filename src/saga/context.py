@@ -1,4 +1,6 @@
 
+from __future__ import absolute_import
+import six
 __author__    = "Andre Merzky, Ole Weidner"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
@@ -65,7 +67,7 @@ class Context (sb.Base, sa.Attributes) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Context', 
-                  basestring, 
+                  six.string_types, 
                   rus.optional (sab.Base),
                   rus.optional (dict))
     @rus.returns (rus.nothing)
@@ -106,7 +108,7 @@ class Context (sb.Base, sa.Attributes) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Context')
-    @rus.returns (basestring)
+    @rus.returns (six.string_types)
     def __str__  (self) :
 
         d = self.as_dict ()
@@ -125,7 +127,7 @@ class Context (sb.Base, sa.Attributes) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Context')
-    @rus.returns (basestring)
+    @rus.returns (six.string_types)
     def __repr__ (self) :
 
         return str(self)

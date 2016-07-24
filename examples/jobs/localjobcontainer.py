@@ -1,4 +1,7 @@
 
+from __future__ import absolute_import
+from __future__ import print_function
+from six.moves import range
 __author__    = "Andre Merzky, Ole Weidner"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
@@ -38,7 +41,7 @@ def main():
         # all jobs in this example are running on the same job service
         # this is not a requirement though. s
         service = saga.job.Service("fork://localhost/")
-        print service.url
+        print(service.url)
 
         t1 = time.time()
         # create and populate our containers
@@ -59,16 +62,16 @@ def main():
 
         # execute the containers sequentially
         for c in range(0, num_job_groups):
-            print 'Starting container %s ... ' % c
+            print('Starting container %s ... ' % c)
             containers[c].run()
 
             for j in containers[c].get_tasks():
-                print '%s: %s: %s (%s)' % (j.name, j.id, j.state, type(j))
+                print('%s: %s: %s (%s)' % (j.name, j.id, j.state, type(j)))
 
-            print containers[c].get_states ()
+            print(containers[c].get_states ())
             containers[c].cancel()
             containers[c].wait()
-            print containers[c].get_states ()
+            print(containers[c].get_states ())
 
             # # at this point, all jobs in the container
             # # have finished running. we can now print some statistics
@@ -77,16 +80,16 @@ def main():
             #       % (job.id, job.state, job.exit_code, job.execution_hosts,
             #          job.started, job.finished)
         t2 = time.time()
-        print t2-t1
+        print(t2-t1)
 
         service.close()
         return 0
 
-    except saga.SagaException, ex:
-        print "An exception occured: %s " % ((str(ex)))
+    except saga.SagaException as ex:
+        print("An exception occured: %s " % ((str(ex))))
         # get the whole traceback in case of an exception -
         # this can be helpful for debugging the problem
-        print " *** %s" % ex.traceback
+        print(" *** %s" % ex.traceback)
         return -1
 
 if __name__ == "__main__":

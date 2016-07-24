@@ -1,17 +1,19 @@
 
+from __future__ import absolute_import
+import six
 __author__    = "Andre Merzky, Ole Weidner, Alexander Grill"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
 
-import radical.utils.signatures  as rus
+from radical.utils import signatures as rus
 
-import saga.adaptors.base        as sab
-import saga.session              as ss
-import saga.task                 as st
-import saga.url                  as surl
+from saga.adaptors import base    as sab
+from saga import session          as ss
+from saga import task             as st
+from saga import url              as surl
 
-import entry
+from . import entry
 
 from   saga.namespace.constants  import *
 from   saga.constants            import SYNC, ASYNC, TASK
@@ -55,7 +57,7 @@ class Directory (entry.Entry) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Directory', 
-                  rus.optional ((surl.Url, basestring)), 
+                  rus.optional ((surl.Url, six.string_types)), 
                   rus.optional (int, rus.nothing), 
                   rus.optional (ss.Session),
                   rus.optional (sab.Base), 
@@ -99,7 +101,7 @@ class Directory (entry.Entry) :
     #
     @classmethod
     @rus.takes   ('Directory', 
-                  rus.optional ((surl.Url, basestring)), 
+                  rus.optional ((surl.Url, six.string_types)), 
                   rus.optional (int, rus.nothing), 
                   rus.optional (ss.Session),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
@@ -121,7 +123,7 @@ class Directory (entry.Entry) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Directory', 
-                  (surl.Url, basestring), 
+                  (surl.Url, six.string_types), 
                   rus.optional (int, rus.nothing),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((entry.Entry, st.Task))
@@ -140,7 +142,7 @@ class Directory (entry.Entry) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Directory', 
-                  (surl.Url, basestring), 
+                  (surl.Url, six.string_types), 
                   rus.optional (int, rus.nothing),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns (('Directory', st.Task))
@@ -171,7 +173,7 @@ class Directory (entry.Entry) :
     # namespace directory methods
     #
     @rus.takes   ('Directory', 
-                  (surl.Url, basestring), 
+                  (surl.Url, six.string_types), 
                   rus.optional (int, rus.nothing),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((rus.nothing, st.Task))
@@ -200,7 +202,7 @@ class Directory (entry.Entry) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Directory', 
-                  (surl.Url, basestring), 
+                  (surl.Url, six.string_types), 
                   rus.optional (int, rus.nothing),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((rus.nothing, st.Task))
@@ -218,7 +220,7 @@ class Directory (entry.Entry) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Directory', 
-                  rus.optional (basestring),
+                  rus.optional (six.string_types),
                   rus.optional (int, rus.nothing),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((rus.list_of (surl.Url), st.Task))
@@ -246,7 +248,7 @@ class Directory (entry.Entry) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Directory', 
-                  (surl.Url, basestring),
+                  (surl.Url, six.string_types),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((bool, st.Task))
     def exists (self, path, ttype=None) :
@@ -273,7 +275,7 @@ class Directory (entry.Entry) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Directory', 
-                  rus.optional (basestring),
+                  rus.optional (six.string_types),
                   rus.optional (int, rus.nothing),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((rus.list_of (surl.Url), st.Task))
@@ -321,8 +323,8 @@ class Directory (entry.Entry) :
     # methods overloaded from namespace.Entry
     #
     @rus.takes   ('Directory', 
-                  (surl.Url, basestring), 
-                  rus.optional ((surl.Url, basestring)), 
+                  (surl.Url, six.string_types), 
+                  rus.optional ((surl.Url, six.string_types)), 
                   rus.optional (int, rus.nothing),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((rus.nothing, st.Task))
@@ -357,8 +359,8 @@ class Directory (entry.Entry) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Directory', 
-                  (surl.Url, basestring), 
-                  rus.optional ((surl.Url, basestring)), 
+                  (surl.Url, six.string_types), 
+                  rus.optional ((surl.Url, six.string_types)), 
                   rus.optional (int, rus.nothing),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((rus.nothing, st.Task))
@@ -378,8 +380,8 @@ class Directory (entry.Entry) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Directory', 
-                  (surl.Url, basestring), 
-                  rus.optional ((surl.Url, basestring)), 
+                  (surl.Url, six.string_types), 
+                  rus.optional ((surl.Url, six.string_types)), 
                   rus.optional (int, rus.nothing),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((rus.nothing, st.Task))
@@ -410,7 +412,7 @@ class Directory (entry.Entry) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Directory', 
-                  (surl.Url, basestring), 
+                  (surl.Url, six.string_types), 
                   rus.optional (int, rus.nothing),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((rus.nothing, st.Task))
@@ -429,7 +431,7 @@ class Directory (entry.Entry) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Directory', 
-                  rus.optional ((surl.Url, basestring)),
+                  rus.optional ((surl.Url, six.string_types)),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((bool, st.Task))
     def is_dir (self, tgt=None, ttype=None) :
@@ -454,7 +456,7 @@ class Directory (entry.Entry) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Directory', 
-                  rus.optional ((surl.Url, basestring)),
+                  rus.optional ((surl.Url, six.string_types)),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((bool, st.Task))
     def is_entry (self, tgt=None, ttype=None) :
@@ -470,7 +472,7 @@ class Directory (entry.Entry) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Directory', 
-                  rus.optional ((surl.Url, basestring)),
+                  rus.optional ((surl.Url, six.string_types)),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((bool, st.Task))
     def is_link (self, tgt=None, ttype=None) :
@@ -486,7 +488,7 @@ class Directory (entry.Entry) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Directory', 
-                  rus.optional ((surl.Url, basestring)),
+                  rus.optional ((surl.Url, six.string_types)),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((surl.Url, st.Task))
     def read_link (self, tgt=None, ttype=None) :

@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+from __future__ import print_function
 __author__    = "Andre Merzky, Mark Santcroos"
 __copyright__ = "Copyright 2015, The SAGA Project"
 __license__   = "MIT"
@@ -33,21 +35,21 @@ def main():
 
         for entry in remote_dir.list():
             if remote_dir.is_dir(entry):
-                print "d %12s %s" % (remote_dir.get_size(entry), entry)
+                print("d %12s %s" % (remote_dir.get_size(entry), entry))
             elif remote_dir.is_link(entry):
-                print "l %12s %s" % (remote_dir.get_size(entry), entry)
+                print("l %12s %s" % (remote_dir.get_size(entry), entry))
             elif remote_dir.is_file(entry):
-                print "- %12s %s" % (remote_dir.get_size(entry), entry)
+                print("- %12s %s" % (remote_dir.get_size(entry), entry))
             else:
-                print 'Other taste ....: %s' % entry
+                print('Other taste ....: %s' % entry)
 
         return 0
 
     except saga.SagaException as ex:
         # Catch all saga exceptions
-        print "An exception occured: (%s) %s " % (ex.type, (str(ex)))
+        print("An exception occured: (%s) %s " % (ex.type, (str(ex))))
         # Trace back the exception. That can be helpful for debugging.
-        print " \n*** Backtrace:\n %s" % ex.traceback
+        print(" \n*** Backtrace:\n %s" % ex.traceback)
         return -1
 
 if __name__ == "__main__":

@@ -1,4 +1,6 @@
 
+from __future__ import absolute_import
+import six
 __author__    = "Andre Merzky, Ole Weidner"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
@@ -24,7 +26,7 @@ class LogicalFile (nsentry.Entry, sa.Attributes) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('LogicalFile', 
-                  rus.optional ((surl.Url, basestring)), 
+                  rus.optional ((surl.Url, six.string_types)), 
                   rus.optional (int, rus.nothing), 
                   rus.optional (ss.Session),
                   rus.optional (sab.Base), 
@@ -55,7 +57,7 @@ class LogicalFile (nsentry.Entry, sa.Attributes) :
     #
     @classmethod
     @rus.takes   ('LogicalFile', 
-                  rus.optional ((surl.Url, basestring)), 
+                  rus.optional ((surl.Url, six.string_types)), 
                   rus.optional (int, rus.nothing), 
                   rus.optional (ss.Session),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
@@ -123,7 +125,7 @@ class LogicalFile (nsentry.Entry, sa.Attributes) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('LogicalFile', 
-                  rus.optional ((surl.Url, basestring)), 
+                  rus.optional ((surl.Url, six.string_types)), 
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((rus.nothing, st.Task))
     def add_location (self, name, ttype=None) :
@@ -142,7 +144,7 @@ class LogicalFile (nsentry.Entry, sa.Attributes) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('LogicalFile', 
-                  rus.optional ((surl.Url, basestring)), 
+                  rus.optional ((surl.Url, six.string_types)), 
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((rus.nothing, st.Task))
     def remove_location (self, name, ttype=None) :
@@ -161,8 +163,8 @@ class LogicalFile (nsentry.Entry, sa.Attributes) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('LogicalFile', 
-                  rus.optional ((surl.Url, basestring)), 
-                  rus.optional ((surl.Url, basestring)), 
+                  rus.optional ((surl.Url, six.string_types)), 
+                  rus.optional ((surl.Url, six.string_types)), 
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((rus.nothing, st.Task))
     def update_location (self, old, new, ttype=None) :
@@ -199,7 +201,7 @@ class LogicalFile (nsentry.Entry, sa.Attributes) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('LogicalFile', 
-                  (surl.Url, basestring), 
+                  (surl.Url, six.string_types), 
                   rus.optional (int, rus.nothing),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((rus.nothing, st.Task))
@@ -222,8 +224,8 @@ class LogicalFile (nsentry.Entry, sa.Attributes) :
     # non-GFD.90
     #
     @rus.takes   ('LogicalFile', 
-                  (surl.Url, basestring), 
-                  rus.optional ((surl.Url, basestring)),
+                  (surl.Url, six.string_types), 
+                  rus.optional ((surl.Url, six.string_types)),
                   rus.optional (int, rus.nothing),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((rus.nothing, st.Task))
@@ -247,8 +249,8 @@ class LogicalFile (nsentry.Entry, sa.Attributes) :
     # non-GFD.90
     #
     @rus.takes   ('LogicalFile', 
-                  (surl.Url, basestring), 
-                  rus.optional ((surl.Url, basestring)),
+                  (surl.Url, six.string_types), 
+                  rus.optional ((surl.Url, six.string_types)),
                   rus.optional (int, rus.nothing),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((rus.nothing, st.Task))

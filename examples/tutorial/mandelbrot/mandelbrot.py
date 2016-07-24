@@ -1,4 +1,7 @@
 
+from __future__ import absolute_import
+from __future__ import print_function
+from six.moves import range
 __author__    = "Ole Weidner"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
@@ -79,7 +82,7 @@ if __name__ == "__main__":
 
     args = sys.argv[1:]
     if len(args) < 6:
-        print "Usage: python %s imgX imgY xBeg xEnd yBeg yEnd filename" % __file__
+        print("Usage: python %s imgX imgY xBeg xEnd yBeg yEnd filename" % __file__)
         sys.exit(-1)
 
     imgX = int(sys.argv[1])

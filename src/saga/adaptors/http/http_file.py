@@ -1,4 +1,5 @@
 
+from __future__ import absolute_import
 __author__    = "Andre Merzky, Ole Weidner"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
@@ -212,7 +213,7 @@ class HTTPFile (saga.adaptors.cpi.filesystem.File):
 
         try:
             urllib.urlretrieve(str(src), target)
-        except Exception, e:
+        except Exception as e:
             raise saga.BadParameter("Couldn't copy %s to %s: %s" %
                                     (str(src), target, str(e)))
 

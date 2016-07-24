@@ -1,4 +1,6 @@
 
+from __future__ import absolute_import
+from __future__ import print_function
 import saga
 
 class MyContextA (saga.Context) :
@@ -17,7 +19,7 @@ class MyContextB (saga.Context) :
         saga.Context.__init__ (self, ctype)
 
 
-cs = saga.Context ('ssh') ; print "saga: %s" % cs
-ca = MyContextA   ('ssh') ; print "mc a: %s" % ca
-cb = MyContextB   ('ssh') ; print "mc b: %s" % cb
+cs = saga.Context ('ssh') ; print("saga: %s" % cs)
+ca = MyContextA   ('ssh') ; print("mc a: %s" % ca)
+cb = MyContextB   ('ssh') ; print("mc b: %s" % cb)
 

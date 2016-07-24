@@ -1,4 +1,5 @@
 
+from __future__ import absolute_import
 __author__    = "Andre Merzky, Ole Weidner"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
@@ -99,7 +100,8 @@ class SagaException (Exception) :
                 self._traceback = parent.traceback
 
                 frame           = traceback.extract_stack ()[- ignore_stack]
-                line            = "%s +%s (%s)  :  %s" % frame 
+                # line            = "%s +%s (%s)  :  %s" % frame 
+                line            = frame
                 self._message   = "  %-20s: %s (%s)\n%s" \
                                 % (self._stype, msg, line, parent.msg)
 
@@ -117,7 +119,8 @@ class SagaException (Exception) :
                     # parent exception type inconspicuously somewhere (above that
                     # was part of 'parent.message' already).
                     frame           = traceback.extract_stack ()[- ignore_stack]
-                    line            = "%s +%s (%s)  :  %s" % frame 
+                    # line            = "%s +%s (%s)  :  %s" % frame 
+                    line            = frame
                     self._message   = "  %-20s: %s (%s)\n  %-20s: %s" \
                                     % (self._stype, msg, line, self._ptype, parent)
 
@@ -132,8 +135,9 @@ class SagaException (Exception) :
             traceback_list  = traceback.format_list (stack)
             self._traceback = "".join (traceback_list[:-1])
             frame           = traceback.extract_stack ()[- ignore_stack -1]
-            line            = "%s +%s (%s)  :  %s" % frame 
-            self._message   = "%s (%s)" % (msg, line)
+            # line            = "%s +%s (%s)  :  %s" % frame 
+            # self._message   = "%s (%s)" % (msg, line)
+            self._message   = "{} ({})".format(msg, frame)
 
         # we can't do that earlier as _msg was not set up before
         self._messages = [self._message]

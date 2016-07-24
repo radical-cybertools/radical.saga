@@ -1,4 +1,6 @@
 
+from __future__ import absolute_import
+from __future__ import print_function
 import saga
 
 
@@ -16,7 +18,7 @@ cr = None
 
 if  not rid :
 
-    print rm.list_templates ()
+    print(rm.list_templates ())
     # print rm.list_images ()
     
     cd = saga.resource.ComputeDescription ()
@@ -24,21 +26,21 @@ if  not rid :
     cd.template = 'Small Instance' 
     
     cr = rm.acquire (cd)
-    print cr.id
-    print cr.state
-    print cr.state_detail
-    print cr.access
-    print cr.description
+    print(cr.id)
+    print(cr.state)
+    print(cr.state_detail)
+    print(cr.access)
+    print(cr.description)
 
 else :
 
     cr = rm.acquire (rid)
 
-    print cr.id
-    print cr.state
-    print cr.state_detail
-    print cr.access
-    print cr.description
+    print(cr.id)
+    print(cr.state)
+    print(cr.state_detail)
+    print(cr.access)
+    print(cr.description)
 
 
 if cr and cr.state == saga.resource.ACTIVE :

@@ -1,4 +1,5 @@
 
+from __future__ import absolute_import
 __author__    = "Andre Merzky, Ole Weidner"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
@@ -20,7 +21,7 @@ import saga.exceptions              as se
 import saga.session                 as ss
 import saga.filesystem              as sfs
 
-import pty_exceptions               as ptye
+from . import pty_exceptions               as ptye
 
 
 # ------------------------------------------------------------------------------
@@ -821,7 +822,7 @@ class PTYShell (object) :
 
             # first, write data into a tmp file
             fhandle, fname = tempfile.mkstemp(suffix='.tmp', prefix='rs_pty_staging_')
-            os.write(fhandle, src)
+            os.write(fhandle, src.encode('utf-8'))
             os.fsync(fhandle)
             os.close(fhandle)
 
@@ -943,10 +944,10 @@ class PTYShell (object) :
             self.pty_shell.flush ()
 
             info = self.pty_info
-            repl = dict ({'src'      : src, 
+            repl = dict (list({'src'      : src, 
                           'tgt'      : tgt,
                           'cp_flags' : '' # cp_flags # TODO: needs to be "translated" for specific backend
-                          }.items () + info.items ())
+                          }.items ()) + list(info.items ()))
 
             # at this point, we do have a valid, living master
             s_cmd = info['scripts'][info['copy_mode']]['copy_to']    % repl
@@ -1068,9 +1069,9 @@ class PTYShell (object) :
             self.pty_shell.flush ()
 
             info = self.pty_info
-            repl = dict ({'src'      : src, 
+            repl = dict (list({'src'      : src, 
                           'tgt'      : tgt, 
-                          'cp_flags' : cp_flags}.items ()+ info.items ())
+                          'cp_flags' : cp_flags}.items ())+ list(info.items ()))
 
             # at this point, we do have a valid, living master
             s_cmd = info['scripts'][info['copy_mode']]['copy_from']    % repl

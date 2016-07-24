@@ -1,4 +1,6 @@
 
+from __future__ import absolute_import
+from __future__ import print_function
 import saga
 
 jd             = saga.job.Description()
@@ -7,8 +9,8 @@ jd.arguments   = ['1']
 
 js = saga.job.Service ('ssh://localhost/')
 j  = js.create_job    (jd)
-print j.exit_code
+print(j.exit_code)
 j.run ()
 j.wait ()
-print j.exit_code
+print(j.exit_code)
 

@@ -1,4 +1,6 @@
 
+from __future__ import absolute_import
+import six
 __author__    = "Andre Merzky, Ole Weidner"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
@@ -7,18 +9,18 @@ __license__   = "MIT"
 """ SAGA job service interface """
 
 
-import radical.utils.signatures as rus
+from radical.utils import signatures as rus
 
-import saga.adaptors.base    as sab
-import saga.url              as surl
-import saga.task             as st
-import saga.base             as sb
-import saga.async            as sasync
-import saga.exceptions       as se
-import saga.session          as ss
+from saga.adaptors import base    as sab
+from saga import url              as surl
+from saga import task             as st
+from saga import base             as sb
+from saga import async            as sasync
+from saga import exceptions       as se
+from saga import session          as ss
 
-import job                   as j
-import description           as descr
+from . import job                   as j
+from . import description           as descr
 
 from   saga.constants        import SYNC, ASYNC, TASK
 
@@ -61,7 +63,7 @@ class Service (sb.Base, sasync.Async) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Service', 
-                  rus.optional ((basestring, surl.Url)), 
+                  rus.optional ((six.string_types, surl.Url)), 
                   rus.optional (ss.Session), 
                   rus.optional (sab.Base),
                   rus.optional (dict),
@@ -120,7 +122,7 @@ class Service (sb.Base, sasync.Async) :
     #
     @classmethod
     @rus.takes   ('Service', 
-                  rus.optional ((surl.Url, basestring)), 
+                  rus.optional ((surl.Url, six.string_types)), 
                   rus.optional (ss.Session), 
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns (st.Task)
@@ -149,7 +151,7 @@ class Service (sb.Base, sasync.Async) :
     # --------------------------------------------------------------------------
     #
     @rus.takes     ('Service')
-    @rus.returns   (basestring)
+    @rus.returns   (six.string_types)
     def __str__ (self):
         """
         __str__()
@@ -281,13 +283,13 @@ class Service (sb.Base, sasync.Async) :
                 default = jd_default.get_attribute (key)
 
                 # we count empty strings as none, for string type parameters.
-                if  isinstance (val, basestring) :
+                if  isinstance (val, six.string_types) :
                     if  not val :
                         val = None
 
                 # Also, we make string compares case insensitive
-                if isinstance (val,     basestring) : val     = val    .lower ()
-                if isinstance (default, basestring) : default = default.lower ()
+                if isinstance (val,     six.string_types) : val     = val    .lower ()
+                if isinstance (default, six.string_types) : default = default.lower ()
 
                 # supported keys are also valid, as are keys with default or
                 # None values
@@ -306,7 +308,7 @@ class Service (sb.Base, sasync.Async) :
 
         # convert environment to string
         if jd_copy.attribute_exists ('Environment') :
-            for (key, value) in jd_copy.environment.iteritems():
+            for (key, value) in six.iteritems(jd_copy.environment):
                 jd_copy.environment[key] = str(value)
 
         return self._adaptor.create_job (jd_copy, ttype=ttype)
@@ -315,8 +317,8 @@ class Service (sb.Base, sasync.Async) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Service', 
-                  basestring,
-                  rus.optional (basestring),
+                  six.string_types,
+                  rus.optional (six.string_types),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((j.Job, st.Task))
     def run_job  (self, cmd, host=None, ttype=None) :
@@ -339,7 +341,7 @@ class Service (sb.Base, sasync.Async) :
     #
     @rus.takes   ('Service',
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
-    @rus.returns ((rus.list_of (basestring), st.Task))
+    @rus.returns ((rus.list_of (six.string_types), st.Task))
     def list     (self, ttype=None) :
         """ 
         list()
@@ -408,7 +410,7 @@ class Service (sb.Base, sasync.Async) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Service',
-                  basestring,
+                  six.string_types,
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((j.Job, st.Task))
     def get_job  (self, job_id, ttype=None) :

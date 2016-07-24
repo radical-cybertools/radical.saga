@@ -1,4 +1,6 @@
 
+from __future__ import absolute_import
+import six
 __author__    = "Andre Merzky, Ole Weidner"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
@@ -8,15 +10,15 @@ __license__   = "MIT"
 """
 
 import inspect
-import Queue
+import six.moves.queue
 
 import radical.utils.signatures as rus
 import radical.utils            as ru
 
-import base                     as sbase
-import exceptions               as se
-import attributes               as satt
-import adaptors.cpi.base        as sacb
+from . import base                     as sbase
+from . import exceptions               as se
+from . import attributes               as satt
+from .adaptors.cpi import base         as sacb
 
 from   saga.constants       import *
 
@@ -29,7 +31,7 @@ class Task (sbase.SimpleBase, satt.Attributes) :
     #
     @rus.takes   ('Task', 
                   sacb.CPIBase, 
-                  basestring,
+                  six.string_types,
                   dict, 
                   rus.one_of (SYNC, ASYNC, TASK))
     @rus.returns (rus.nothing)
@@ -245,7 +247,7 @@ class Task (sbase.SimpleBase, satt.Attributes) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Task', 
-                  basestring, 
+                  six.string_types, 
                   rus.anything)
     @rus.returns (rus.nothing)
     def _set_metric (self, metric, value) :
@@ -432,7 +434,7 @@ class Container (sbase.SimpleBase, satt.Attributes) :
         if not mode in [ANY, ALL] :
             raise se.BadParameter ("wait mode must be saga.task.ANY or saga.task.ALL")
 
-        if type (timeout) not in [int, long, float] : 
+        if type (timeout) not in [int, int, float] : 
             raise se.BadParameter ("wait timeout must be a floating point number (or integer)")
 
         if not len (self.tasks) :

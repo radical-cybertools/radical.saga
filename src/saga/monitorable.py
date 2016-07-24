@@ -1,4 +1,6 @@
 
+from __future__ import absolute_import
+import six
 __author__    = "Andre Merzky"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
@@ -43,7 +45,7 @@ class Monitorable (sa.Attributes) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Monitorable')
-    @rus.returns (rus.list_of (basestring))
+    @rus.returns (rus.list_of (six.string_types))
     def list_metrics (self) :
 
         self._check ()
@@ -65,7 +67,7 @@ class Monitorable (sa.Attributes) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Monitorable',
-                  basestring,
+                  six.string_types,
                   rus.one_of ('saga.Callback', callable))
     @rus.returns (int)
     def add_callback (self, name, cb) :

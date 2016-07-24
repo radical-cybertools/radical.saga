@@ -1,4 +1,6 @@
 
+from __future__ import absolute_import
+from __future__ import print_function
 __author__    = "Andre Merzky"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
@@ -15,8 +17,8 @@ def test () :
     lf_1.upload ("file://localhost/tmp/test1")
     
   except saga.exceptions.SagaException as e :
-    print "Exception: ==========\n%s"  %  e.get_message ()
-    print "%s====================="    %  e.get_traceback ()
+    print("Exception: ==========\n%s"  %  e.get_message ())
+    print("%s====================="    %  e.get_traceback ())
     
 
 test ()

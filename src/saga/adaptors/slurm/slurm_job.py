@@ -1,4 +1,6 @@
 
+from __future__ import absolute_import
+import six
 __author__    = "Andre Merzky, Ashley Z, Ole Weidner"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
@@ -567,7 +569,7 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         # add on our environment variables
         if jd.attribute_exists ("environment") :
             slurm_script += "\n## ENVIRONMENT\n"
-            for key,val in jd.environment.iteritems() :
+            for key,val in six.iteritems(jd.environment) :
                 slurm_script += "export %s=%s\n"  %  (key, val)
 
         if pre :
@@ -1037,7 +1039,7 @@ class SLURMJob (saga.adaptors.cpi.job.Job):
 
             return self.js._slurm_to_saga_jobstate(slurm_state)
 
-        except Exception, ex:
+        except Exception as ex:
             raise saga.NoSuccess("Error getting the job state for "
                                  "job %s:\n%s"%(pid,ex))
         

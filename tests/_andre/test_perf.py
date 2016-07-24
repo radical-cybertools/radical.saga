@@ -1,4 +1,7 @@
 
+from __future__ import absolute_import
+from __future__ import print_function
+from six.moves import range
 __author__    = "Andre Merzky"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
@@ -83,16 +86,16 @@ def perf (n_jobs, tuples) :
         stop    = time.time ()
         seconds = stop - start
         rate    = n_jobs / (seconds)
-        print "%10s  %5s  %5.2f  %7.2f  %s" % (n_services, n_jobs, seconds, rate, targets)
+        print("%10s  %5s  %5.2f  %7.2f  %s" % (n_services, n_jobs, seconds, rate, targets))
             
     except saga.exceptions.SagaException as e :
-        print "Exception: ==========\n%s"  %  e.get_message ()
-        print "%s====================="    %  e.get_traceback ()
+        print("Exception: ==========\n%s"  %  e.get_message ())
+        print("%s====================="    %  e.get_traceback ())
 
 
 
 #     "xxxxxxxxxx xxxxxx xxxxxx xxxxxxxx xxxxxx  xxxxxxx..."
-print "n_services n_jobs   time jobs/sec memory  targets"
+print("n_services n_jobs   time jobs/sec memory  targets")
 
 def main () :
     perf (100, [(1, 'fork://localhost/')])

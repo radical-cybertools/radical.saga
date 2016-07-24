@@ -24,7 +24,8 @@ def benchmark_pre (tid, test_cfg, bench_cfg, session) :
 
     ssh   = subprocess ("ssh %s" % host, stdin  = subprocess.PIPE, 
                                          stdout = subprocess.PIPE,
-                                         stderr = subprocess.STDOUT)
+                                         stderr = subprocess.STDOUT,
+                                         universal_newlines=True)
 
     # find the ssh prompt
     stdin  = ssh.communicate[0]

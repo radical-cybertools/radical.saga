@@ -1,4 +1,6 @@
 
+from __future__ import absolute_import
+from __future__ import print_function
 import saga
 import saga.utils.test_config as sutc
 
@@ -44,7 +46,7 @@ def test_advert_callback () :
     except saga.NotImplemented as ni:
             assert tc.notimpl_warn_only, "%s " % ni
             if tc.notimpl_warn_only:
-                print "%s " % ni
+                print("%s " % ni)
     except saga.SagaException as se:
         assert False, "Unexpected exception: %s" % se
     

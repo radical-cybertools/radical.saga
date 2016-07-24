@@ -1,4 +1,5 @@
 
+from __future__ import absolute_import
 import radical.utils.benchmark as rb
 
 import os

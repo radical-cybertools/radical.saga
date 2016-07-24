@@ -1,4 +1,5 @@
 
+from __future__ import absolute_import
 import sys
 import saga
 import saga.utils.test_config as sutc

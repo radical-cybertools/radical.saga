@@ -1,4 +1,5 @@
 
+from __future__ import absolute_import
 __author__    = "Andre Merzky, Ole Weidner"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
@@ -14,7 +15,7 @@ import saga.adaptors.cpi.advert
 import saga.exceptions as se
 import saga.utils.misc as sumisc
 
-import redis_namespace as rns
+from . import redis_namespace as rns
 
 SYNC_CALL  = saga.adaptors.cpi.decorators.SYNC_CALL
 ASYNC_CALL = saga.adaptors.cpi.decorators.ASYNC_CALL

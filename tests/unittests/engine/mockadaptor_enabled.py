@@ -1,4 +1,6 @@
 
+from __future__ import absolute_import
+import six
 __author__    = "Andre Merzky, Ole Weidner"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
@@ -40,9 +42,7 @@ _ADAPTOR_INFO        = {
 }
 
 
-class Adaptor (saga.adaptors.base.Base):
-
-    __metaclass__ = Singleton
+class Adaptor (six.with_metaclass(Singleton, saga.adaptors.base.Base)):
 
     def __init__ (self) :
 

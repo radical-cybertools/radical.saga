@@ -1,4 +1,5 @@
 
+from __future__ import absolute_import
 __author__    = "Andre Merzky, Ole Weidner, Alexander Grill"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
@@ -20,7 +21,7 @@ import re
 import os
 import errno
 
-import shell_wrapper
+from . import shell_wrapper
 
 SYNC_CALL  = saga.adaptors.cpi.decorators.SYNC_CALL
 ASYNC_CALL = saga.adaptors.cpi.decorators.ASYNC_CALL
@@ -472,7 +473,7 @@ class ShellDirectory (saga.adaptors.cpi.filesystem.Directory) :
             raise saga.NoSuccess ("failed to list(): (%s)(%s)" \
                                % (ret, out))
 
-        lines = filter (None, out.split ("\n"))
+        lines = [_f for _f in out.split ("\n") if _f]
         self._logger.debug (lines)
 
         self.entries = []

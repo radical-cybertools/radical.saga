@@ -1,4 +1,6 @@
 
+from __future__ import absolute_import
+from __future__ import print_function
 __author__    = "Andre Merzky"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
@@ -7,7 +9,7 @@ __license__   = "MIT"
 import time
 
 import threading
-import redis_ordered_dict    as rod
+from . import redis_ordered_dict    as rod
 
 CACHE_DEFAULT_SIZE = 10000
 CACHE_DEFAULT_TTL  = 1.0    # 1 second
@@ -44,13 +46,13 @@ class Cache :
     # ----------------------------------------------------------------
     #
     def _dump (self) :
-        print " ---------------------------------------------- "
-        print " CACHE STATISTICS : "
-        print " size: %5d" % len(self.dict)
-        print " hit : %5d" % self.hit 
-        print " miss: %5d" % self.miss
-        print self.dict.keys()
-        print " ---------------------------------------------- "
+        print(" ---------------------------------------------- ")
+        print(" CACHE STATISTICS : ")
+        print(" size: %5d" % len(self.dict))
+        print(" hit : %5d" % self.hit) 
+        print(" miss: %5d" % self.miss)
+        print(list(self.dict.keys()))
+        print(" ---------------------------------------------- ")
 
 
     # ----------------------------------------------------------------

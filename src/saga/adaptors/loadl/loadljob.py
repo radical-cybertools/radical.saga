@@ -1,4 +1,6 @@
 
+from __future__ import absolute_import
+import six
 __author__    = "Hangi,Kim"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
@@ -288,7 +290,7 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
         # this adaptor supports options that can be passed via the
         # 'query' component of the job service URL.
         if rm_url.query is not None:
-            for key, val in parse_qs(rm_url.query).iteritems():
+            for key, val in six.iteritems(parse_qs(rm_url.query)):
                 if key == 'cluster':
                     self.cluster_option = " -X %s" % val[0]
                 elif key == 'energy_policy_tag':
@@ -635,7 +637,7 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
             script = self.__generate_llsubmit_script(jd)
 
             self._logger.debug("Generated LoadLeveler script: %s" % script)
-        except Exception, ex:
+        except Exception as ex:
             log_error_and_raise(str(ex), saga.BadParameter, self._logger)
 
         # try to create the working/output/error directories (if defined)

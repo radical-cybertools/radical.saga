@@ -1,4 +1,7 @@
 
+from __future__ import absolute_import
+from __future__ import print_function
+from six.moves import range
 __author__    = "Andre Merzky, Ashley Z, Ole Weidner"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
@@ -195,7 +198,7 @@ class Adaptor (saga.adaptors.base.Base):
             if rc != 0:
                 raise Exception("sanity check error")
 
-        except Exception, ex:
+        except Exception as ex:
             raise saga.NoSuccess ("Could not run iRODS/ils.  Check iRODS"
                                   "environment and certificates (%s)" % ex)
         finally :
@@ -285,7 +288,7 @@ class Adaptor (saga.adaptors.base.Base):
                     final_list.append(item)
             return final_list
     
-        except Exception, e:
+        except Exception as e:
             raise saga.NoSuccess ("Couldn't get directory listing: %s %s " % e)
     
         return result
@@ -380,7 +383,7 @@ class Adaptor (saga.adaptors.base.Base):
                     
             return result
     
-        except Exception, e:
+        except Exception as e:
             raise saga.NoSuccess ("Couldn't get resource listing: %s " % (str(e)))
 
 ###############################################################################
@@ -498,7 +501,7 @@ class IRODSDirectory (saga.adaptors.cpi.replica.LogicalDirectory) :
                                     % (complete_path, str(returncode),
                                        out))
 
-        except Exception, ex:
+        except Exception as ex:
             # did the directory already exist?
             if "CATALOG_ALREADY_HAS_ITEM_BY_THAT_NAME" in str(ex):
                 raise saga.AlreadyExists ("Directory already exists.")
@@ -528,7 +531,7 @@ class IRODSDirectory (saga.adaptors.cpi.replica.LogicalDirectory) :
                                     % (complete_path, str(returncode),
                                        out))
 
-        except Exception, ex:
+        except Exception as ex:
             # was there no directory to delete?
             if "does not exist" in str(ex):
                 raise saga.DoesNotExist ("Directory %s does not exist." % (complete_path) )
@@ -569,7 +572,7 @@ class IRODSDirectory (saga.adaptors.cpi.replica.LogicalDirectory) :
                     #result.append("file " +item)
                     result.append(item)
 
-        except Exception, ex:
+        except Exception as ex:
             raise saga.NoSuccess ("Couldn't list directory: %s " % (str(ex)))
 
         return result
@@ -698,7 +701,7 @@ class IRODSFile (saga.adaptors.cpi.replica.LogicalFile) :
         if tgt[0] != '/' :
             tgt = "%s/%s"   % (os.path.dirname (src), tgt)
 
-        print " copy %s %s" % (self._url, tgt)
+        print(" copy %s %s" % (self._url, tgt))
         shutil.copy2 (src, tgt)
 
 
@@ -765,7 +768,7 @@ class IRODSFile (saga.adaptors.cpi.replica.LogicalFile) :
                                     % (complete_path, resource, str(cw_result.returncode),
                                        out))
 
-        except Exception, ex:
+        except Exception as ex:
             raise saga.NoSuccess._log (self._logger, "Couldn't replicate file. %s" % ex)
         return
 
@@ -792,7 +795,7 @@ class IRODSFile (saga.adaptors.cpi.replica.LogicalFile) :
                                     % (source_path, dest_path, str(errorcode),
                                        out))
 
-        except Exception, ex:
+        except Exception as ex:
             raise saga.NoSuccess ("Couldn't move file. %s" % ex)
 
         return
@@ -824,7 +827,7 @@ class IRODSFile (saga.adaptors.cpi.replica.LogicalFile) :
                                     % (complete_path, str(returncode),
                                        out))
 
-        except Exception, ex:
+        except Exception as ex:
             # couldn't delete for unspecificed reason
             raise saga.NoSuccess ("Couldn't delete file %s %s"
                                   % (complete_path, ex))
@@ -904,7 +907,7 @@ class IRODSFile (saga.adaptors.cpi.replica.LogicalFile) :
                                     % (complete_path, str(returncode),
                                        out))
 
-        except Exception, ex:
+        except Exception as ex:
             # couldn't upload for unspecificed reason
             raise saga.NoSuccess._log (self._logger, "Couldn't upload file: %s" % ex)
 
@@ -962,7 +965,7 @@ class IRODSFile (saga.adaptors.cpi.replica.LogicalFile) :
                                     % (logical_path, str(returncode),
                                        out))
 
-        except Exception, ex:
+        except Exception as ex:
             # couldn't download for unspecificed reason
             raise saga.NoSuccess ("Couldn't download file. %s" % ex)
 

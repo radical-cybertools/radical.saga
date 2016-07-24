@@ -1,7 +1,9 @@
+from __future__ import absolute_import
 import sys
 import saga
 import traceback
 import radical.utils.signatures as rus
+import six
 
 class AttribTest (saga.Attributes) :
 
@@ -10,7 +12,7 @@ class AttribTest (saga.Attributes) :
         self._attributes_extensible (False)
 
     @rus.takes   ('AttribTest', int)
-    @rus.returns (basestring)
+    @rus.returns (six.string_types)
     def test (self, my_int) :
         self.test_attrib()
         return 1

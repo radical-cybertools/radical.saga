@@ -1,4 +1,5 @@
 
+from __future__ import absolute_import
 __author__    = "Andre Merzky, Mark Santcroos"
 __copyright__ = "Copyright 2014-2015, The SAGA Project"
 __license__   = "MIT"
@@ -545,7 +546,7 @@ class Adaptor(saga.adaptors.base.Base):
             cur_path = '.'
 
         error = {}
-        path_elems = filter(None, path_ps.split('/'))
+        path_elems = [_f for _f in path_ps.split('/') if _f]
 
         for path_elem in path_elems :
 
@@ -852,7 +853,7 @@ class GODirectory(saga.adaptors.cpi.filesystem.Directory):
         npat_ps  = self.get_path_spec(url=npat)
         # TODO: catch errors?
         out, err = self._adaptor.run_go_cmd(self.shell, "ls '%s'" % (npat_ps))
-        lines = filter(None, out.split("\n"))
+        lines = [_f for _f in out.split("\n") if _f]
         self._logger.debug(lines)
 
         self.entries = []

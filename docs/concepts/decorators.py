@@ -1,4 +1,5 @@
 
+from __future__ import print_function
 __author__    = "Andre Merzky"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
@@ -34,7 +35,7 @@ def async (sync_function) :
           async_function_name = "%s_async"  %  sync_function.__name__
           async_function      = getattr (self, async_function_name)
         except AttributeError :
-          print " %s: async %s() not implemented"  %  (self.__class__.__name__, sync_function.__name__)
+          print(" %s: async %s() not implemented"  %  (self.__class__.__name__, sync_function.__name__))
           return None
           # raise NotImplemented
         else :
@@ -59,7 +60,7 @@ class sync_printer (object) :
 
   @sync
   def print_message (self, msg) :
-    print " sync printer: %s"  %   msg
+    print(" sync printer: %s"  %   msg)
 
 
 # ------------------------------------
@@ -68,10 +69,10 @@ class async_printer (object) :
 
   @async
   def print_message (self, msg) :
-    print "async printer: %s"  %   msg
+    print("async printer: %s"  %   msg)
   
   def print_message_async (self, msg, ttype) :
-    print "async printer: %s (%s)"  %   (msg, ttype)
+    print("async printer: %s (%s)"  %   (msg, ttype))
 
 
 # ------------------------------------

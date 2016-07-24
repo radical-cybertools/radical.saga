@@ -1,4 +1,6 @@
 
+from __future__ import absolute_import
+from __future__ import print_function
 __author__    = "Ole Weidner"
 __copyright__ = "Copyright 2013, The SAGA Project"
 __license__   = "MIT"
@@ -17,19 +19,19 @@ try:
 
     dh = ru.DebugHelper()
 
-    print "______________________________________________________________________"
-    print "Using saga-python from: %s" % str(saga)
-    print "______________________________________________________________________"
+    print("______________________________________________________________________")
+    print("Using saga-python from: %s" % str(saga))
+    print("______________________________________________________________________")
 
-except Exception, e:
+except Exception as e:
     srcdir = "%s/../" % os.path.dirname(os.path.realpath(__file__))
     sys.path.insert(0, os.path.abspath(srcdir))
     import saga
     import saga.utils.test_config as sutc
     import radical.utils.testing as rut
-    print "______________________________________________________________________"
-    print "Using saga-python from: %s" % str(saga)
-    print "______________________________________________________________________"
+    print("______________________________________________________________________")
+    print("Using saga-python from: %s" % str(saga))
+    print("______________________________________________________________________")
 
 
 #-----------------------------------------------------------------------------
@@ -56,7 +58,7 @@ if __name__ == "__main__":
 
     if  options.config == None :
         if  not args :
-            print "ERROR: You need to provide test config files as arguments"
+            print("ERROR: You need to provide test config files as arguments")
             sys.exit (-1)
         options.config = ",".join (args)
 
@@ -66,7 +68,7 @@ if __name__ == "__main__":
         if  os.path.exists (config) :
             test_cfgs.append (config)
         else:
-            print "ERROR: Directory/file '%s' doesn't exist." % config
+            print("ERROR: Directory/file '%s' doesn't exist." % config)
             sys.exit (-1)
 
 

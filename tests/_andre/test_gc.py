@@ -1,4 +1,6 @@
 
+from __future__ import absolute_import
+from __future__ import print_function
 __author__    = "Andre Merzky"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
@@ -23,9 +25,9 @@ def func () :
 ##  js0 = t0.get_result ()
 ##  print js0.url 
 
-print "--------------------------"
+print("--------------------------")
 func ()
-print "--------------------------"
+print("--------------------------")
 gc.collect ()
 
 # print "=============================="
@@ -37,7 +39,7 @@ gc.collect ()
 # print "=============================="
 
 # checks.show_backrefs (js1._adaptor)
-print checks.count('ShellJobService')
+print(checks.count('ShellJobService'))
 checks.show_backrefs(checks.by_type('ShellJobService')[-1])
 
 

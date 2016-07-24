@@ -1,4 +1,7 @@
 
+from __future__ import absolute_import
+from __future__ import print_function
+from six.moves import range
 __author__    = "Andre Merzky, Ole Weidner"
 __copyright__ = "Copyright 2013, The SAGA Project"
 __license__   = "MIT"
@@ -101,7 +104,7 @@ def test_job_service_create():
     except saga.NotImplemented as ni:
         assert tc.notimpl_warn_only, "%s " % ni
         if tc.notimpl_warn_only:
-            print "%s " % ni
+            print("%s " % ni)
     except saga.SagaException as se:
         assert False, "Unexpected exception: %s" % se
     finally:
@@ -157,7 +160,7 @@ def test_job_run():
     except saga.NotImplemented as ni:
         assert tc.notimpl_warn_only, "%s " % ni
         if tc.notimpl_warn_only:
-            print "%s " % ni
+            print("%s " % ni)
     except saga.SagaException as se:
         assert False, "Unexpected exception: %s" % se
     finally:
@@ -191,7 +194,7 @@ def test_job_wait():
     except saga.NotImplemented as ni:
         assert tc.notimpl_warn_only, "%s " % ni
         if tc.notimpl_warn_only:
-            print "%s " % ni
+            print("%s " % ni)
     except saga.SagaException as se:
         assert False, "Unexpected exception: %s" % se
     finally:
@@ -232,7 +235,7 @@ if True :
     except saga.NotImplemented as ni:
         assert tc.notimpl_warn_only, "%s " % ni
         if tc.notimpl_warn_only:
-            print "%s " % ni
+            print("%s " % ni)
     except saga.SagaException as se:
         assert False, "Unexpected exception: %s" % se
     finally:
@@ -271,7 +274,7 @@ def test_job_suspend_resume():
     except saga.NotImplemented as ni:
         assert tc.notimpl_warn_only, "%s " % ni
         if tc.notimpl_warn_only:
-            print "%s " % ni
+            print("%s " % ni)
     except saga.SagaException as se:
         assert False, "Unexpected exception: %s" % se
     finally:
@@ -305,7 +308,7 @@ def test_job_cancel():
     except saga.NotImplemented as ni:
             assert tc.notimpl_warn_only, "%s " % ni
             if tc.notimpl_warn_only:
-                print "%s " % ni
+                print("%s " % ni)
     except saga.SagaException as se:
         assert False, "Unexpected exception: %s" % se
     finally:
@@ -350,7 +353,7 @@ def test_job_run_many():
     except saga.NotImplemented as ni:
             assert tc.notimpl_warn_only, "%s " % ni
             if tc.notimpl_warn_only:
-                print "%s " % ni
+                print("%s " % ni)
     except saga.SagaException as se:
         assert False, "Unexpected exception: %s" % se
     finally:
@@ -385,7 +388,7 @@ def test_get_exit_code():
     except saga.NotImplemented as ni:
         assert tc.notimpl_warn_only, "%s " % ni
         if tc.notimpl_warn_only:
-            print "%s " % ni
+            print("%s " % ni)
     except saga.SagaException as se:
         assert False, "Unexpected exception: %s" % se
     finally:
@@ -431,7 +434,7 @@ def test_get_stdio():
     except saga.NotImplemented as ni:
         assert tc.notimpl_warn_only, "%s " % ni
         if tc.notimpl_warn_only:
-            print "%s " % ni
+            print("%s " % ni)
     except saga.SagaException as se:
         assert False, "Unexpected exception: %s" % se
     finally:
@@ -462,7 +465,7 @@ def test_get_service_url():
     except saga.NotImplemented as ni:
             assert tc.notimpl_warn_only, "%s " % ni
             if tc.notimpl_warn_only:
-                print "%s " % ni
+                print("%s " % ni)
     except saga.SagaException as se:
         assert False, "Unexpected exception: %s" % se
     finally:
@@ -495,7 +498,7 @@ def test_get_id():
     except saga.NotImplemented as ni:
         assert tc.notimpl_warn_only, "%s " % ni
         if tc.notimpl_warn_only:
-            print "%s " % ni
+            print("%s " % ni)
     except saga.SagaException as se:
         assert False, "Unexpected exception: %s" % se
     finally:

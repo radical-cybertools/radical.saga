@@ -1,4 +1,6 @@
 
+from __future__ import absolute_import
+import six
 __author__    = "Andre Merzky, Ole Weidner"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
@@ -64,7 +66,7 @@ class _ContextList (list) :
     # list. 
     def _initialise_context(self, ctx, session=None):
         if  not isinstance (ctx, saga.Context) :
-            raise TypeError, "item to add is not a saga.Context instance"
+            raise TypeError("item to add is not a saga.Context instance")
 
         # create a deep copy of the context (this keeps _adaptor etc)
         ctx_clone = saga.Context  (ctx.type)
@@ -95,12 +97,8 @@ class _ContextList (list) :
 
 # ------------------------------------------------------------------------------
 #
-class _DefaultSession (object) :
+class _DefaultSession (six.with_metaclass(ru.Singleton, object)) :
 
-    __metaclass__ = ru.Singleton
-
-    # --------------------------------------------------------------------------
-    #
     @rus.takes   ('_DefaultSession')
     @rus.returns (rus.nothing)
     def __init__ (self) :
@@ -250,7 +248,7 @@ class Session (saga.base.SimpleBase) :
     # ----------------------------------------------------------------
     #
     @rus.takes   ('Session')
-    @rus.returns (basestring)
+    @rus.returns (six.string_types)
     def __str__  (self):
         """String represenation."""
 

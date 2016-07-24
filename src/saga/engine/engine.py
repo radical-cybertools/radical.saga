@@ -1,4 +1,6 @@
 
+from __future__ import absolute_import
+import six
 __author__    = "Andre Merzky, Ole Weidner"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
@@ -127,7 +129,7 @@ _config_options = [
 
 ################################################################################
 ##
-class Engine(ruc.Configurable):
+class Engine(six.with_metaclass(ru.Singleton, ruc.Configurable)):
     """ Represents the SAGA engine runtime system.
 
         The Engine is a singleton class that takes care of adaptor
@@ -206,8 +208,6 @@ class Engine(ruc.Configurable):
                       # successfully bound to adaptor
                       return
     """
-
-    __metaclass__ = ru.Singleton
 
 
 

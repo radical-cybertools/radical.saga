@@ -1,19 +1,22 @@
 
+from __future__ import absolute_import
+import six
 __author__    = "Andre Merzky, Ole Weidner, Alexander Grill"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
 
-import radical.utils.signatures  as rus
+from radical.utils import signatures as rus
 
-import saga.adaptors.base        as sab
-import saga.session              as ss
-import saga.task                 as st
-import saga.url                  as surl
-import saga.namespace.entry      as nsentry
+from saga.adaptors import base    as sab
+from saga import session          as ss
+from saga import task             as st
+from saga import url              as surl
+from saga.namespace import entry  as nsentry
 
-from   saga.filesystem.constants import *
+from   saga.filesystem.constants  import *
 from   saga.constants            import SYNC, ASYNC, TASK
+
 
 # ------------------------------------------------------------------------------
 #
@@ -38,7 +41,7 @@ class File (nsentry.Entry) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('File', 
-                  rus.optional ((surl.Url, basestring)), 
+                  rus.optional ((surl.Url, six.string_types)), 
                   rus.optional (int, rus.nothing), 
                   rus.optional (ss.Session),
                   rus.optional (sab.Base), 
@@ -89,7 +92,7 @@ class File (nsentry.Entry) :
     #
     @classmethod
     @rus.takes   ('File', 
-                  rus.optional ((surl.Url, basestring)), 
+                  rus.optional ((surl.Url, six.string_types)), 
                   rus.optional (int, rus.nothing), 
                   rus.optional (ss.Session),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
@@ -155,7 +158,7 @@ class File (nsentry.Entry) :
     @rus.takes   ('File', 
                   rus.optional (int),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
-    @rus.returns ((basestring, st.Task))
+    @rus.returns ((six.string_types, st.Task))
     def read     (self, size=None, ttype=None) :
         '''
         size :    int
@@ -180,7 +183,7 @@ class File (nsentry.Entry) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('File', 
-                  basestring,
+                  six.string_types,
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((int, st.Task))
     def write    (self, data, ttype=None) :
@@ -214,7 +217,7 @@ class File (nsentry.Entry) :
     @rus.takes   ('File', 
                   rus.list_of  (rus.tuple_of (int)),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
-    @rus.returns ((basestring, st.Task))
+    @rus.returns ((six.string_types, st.Task))
     def read_v   (self, iovecs, ttype=None) :
         '''
         iovecs:   list [tuple (int, int)]
@@ -227,7 +230,7 @@ class File (nsentry.Entry) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('File', 
-                  rus.list_of  (rus.tuple_of ((int, basestring))),
+                  rus.list_of  (rus.tuple_of ((int, six.string_types))),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((rus.list_of (int), st.Task))
     def write_v (self, data, ttype=None) :
@@ -242,7 +245,7 @@ class File (nsentry.Entry) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('File', 
-                  basestring,
+                  six.string_types,
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((int, st.Task))
     def size_p (self, pattern, ttype=None) :
@@ -257,9 +260,9 @@ class File (nsentry.Entry) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('File', 
-                  basestring,
+                  six.string_types,
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
-    @rus.returns ((basestring, st.Task))
+    @rus.returns ((six.string_types, st.Task))
     def read_p (self, pattern, ttype=None) :
         '''
         pattern:  string
@@ -272,8 +275,8 @@ class File (nsentry.Entry) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('File', 
-                  basestring,
-                  basestring,
+                  six.string_types,
+                  six.string_types,
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((int, st.Task))
     def write_p (self, pattern, data, ttype=None) :
@@ -290,7 +293,7 @@ class File (nsentry.Entry) :
     #
     @rus.takes   ('File', 
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
-    @rus.returns ((rus.list_of (basestring), st.Task))
+    @rus.returns ((rus.list_of (six.string_types), st.Task))
     def modes_e (self, ttype=None) :
         '''
         ttype:    saga.task.type enum
@@ -302,8 +305,8 @@ class File (nsentry.Entry) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('File', 
-                  basestring,
-                  basestring,
+                  six.string_types,
+                  six.string_types,
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((int, st.Task))
     def size_e (self, emode, spec, ttype=None) :
@@ -319,10 +322,10 @@ class File (nsentry.Entry) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('File', 
-                  basestring,
-                  basestring,
+                  six.string_types,
+                  six.string_types,
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
-    @rus.returns ((basestring, st.Task))
+    @rus.returns ((six.string_types, st.Task))
     def read_e (self, emode, spec, ttype=None) :
         '''
         emode:    string
@@ -336,9 +339,9 @@ class File (nsentry.Entry) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('File', 
-                  basestring,
-                  basestring,
-                  basestring,
+                  six.string_types,
+                  six.string_types,
+                  six.string_types,
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((int, st.Task))
     def write_e (self, emode, spec, data, ttype=None) :

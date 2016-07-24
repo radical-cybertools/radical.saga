@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+from __future__ import absolute_import
+from __future__ import print_function
 __author__    = 'RADICAL Team'
 __email__     = 'radical@rutgers.edu'
 __copyright__ = 'Copyright 2013/14, RADICAL Research, Rutgers University'
@@ -65,7 +67,7 @@ def get_version (mod_root):
                         'tag=`git describe --tags --always` 2>/dev/null ; '\
                         'branch=`git branch | grep -e "^*" | cut -f 2- -d " "` 2>/dev/null ; '\
                         'echo $tag@$branch'  % src_root,
-                        stdout=sp.PIPE, stderr=sp.STDOUT, shell=True)
+                        stdout=sp.PIPE, stderr=sp.STDOUT, shell=True, universal_newlines=True)
         version_detail = p.communicate()[0].strip()
         version_detail = version_detail.replace('detached from ', 'detached-')
 
@@ -81,12 +83,12 @@ def get_version (mod_root):
             'fatal'          in version_detail :
             version_detail =  version
 
-        print 'version: %s (%s)' % (version, version_detail)
+        print('version: %s (%s)' % (version, version_detail))
 
 
         # make sure the version files exist for the runtime version inspection
         path = '%s/%s' % (src_root, mod_root)
-        print 'creating %s/VERSION' % path
+        print('creating %s/VERSION' % path)
         with open (path + "/VERSION", "w") as f : f.write (version_detail + "\n")
 
         sdist_name = "%s-%s.tar.gz" % (name, version_detail)
@@ -106,7 +108,7 @@ def get_version (mod_root):
                     (sdist_name, mod_root, sdist_name)) # copy into tree
             os.system ("mv VERSION.bak VERSION")        # restore version
 
-        print 'creating %s/SDIST' % path
+        print('creating %s/SDIST' % path)
         with open (path + "/SDIST", "w") as f : f.write (sdist_name + "\n")
 
         return version, version_detail, sdist_name
@@ -122,8 +124,8 @@ version, version_detail, sdist_name = get_version (mod_root)
 
 # ------------------------------------------------------------------------------
 # check python version. we need > 2.5, <3.x
-if  sys.hexversion < 0x02050000 or sys.hexversion >= 0x03000000:
-    raise RuntimeError("%s requires Python 2.x (2.5 or higher)" % name)
+# if  sys.hexversion < 0x02050000 or sys.hexversion >= 0x03000000:
+#     raise RuntimeError("%s requires Python 2.x (2.5 or higher)" % name)
 
 
 # ------------------------------------------------------------------------------

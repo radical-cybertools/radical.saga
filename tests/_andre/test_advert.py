@@ -1,4 +1,6 @@
 
+from __future__ import absolute_import
+from __future__ import print_function
 import sys
 import time
 import saga
@@ -33,7 +35,7 @@ class my_cb (saga.Callback) :
         # and print the difference when done
         if val == 'stop' :
             diff = self.t2-self.t1
-            print '%6d events / %.1f seconds = %.1f events/second' % (self.cnt, diff, self.cnt/diff)
+            print('%6d events / %.1f seconds = %.1f events/second' % (self.cnt, diff, self.cnt/diff))
             self.cnt = 0 # reset
 
         # an callback returning True remains registered for the same event
@@ -61,8 +63,8 @@ def test () :
         
 
     except saga.exceptions.SagaException as e :
-        print "Exception: ==========\n%s"  %  e.get_message ()
-        print "%s====================="    %  e.get_traceback ()
+        print("Exception: ==========\n%s"  %  e.get_message ())
+        print("%s====================="    %  e.get_traceback ())
     
 
 test ()

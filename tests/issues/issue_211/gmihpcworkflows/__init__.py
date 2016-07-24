@@ -1,4 +1,6 @@
 
+from __future__ import absolute_import
+from __future__ import print_function
 import saga
  
 session = None
@@ -58,7 +60,7 @@ def run_gwa(id):
         gwas_job_id = gwas_job_id_match.group(1)
         return {'saga_job_id':gwas_job.id,'sge_job_id':gwas_job_id}
     except Exception as err:
-        print str(err)
+        print(str(err))
         raise err
     finally:
         if phenotype_file_path is not None:

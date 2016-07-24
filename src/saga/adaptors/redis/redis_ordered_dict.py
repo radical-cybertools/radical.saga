@@ -1,4 +1,6 @@
 
+from __future__ import absolute_import
+import six
 __author__    = "Andre Merzky"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
@@ -13,9 +15,9 @@ __license__   = "MIT"
 # License: MIT
 
 try:
-    from thread       import get_ident as _get_ident
+    from six.moves._thread       import get_ident as _get_ident
 except ImportError:
-    from dummy_thread import get_ident as _get_ident
+    from six.moves._dummy_thread import get_ident as _get_ident
 
 try:
     from _abcoll      import KeysView, ValuesView, ItemsView
@@ -89,7 +91,7 @@ class OrderedDict (dict):
     def clear(self):
         'od.clear() -> None.  Remove all items from od.'
         try:
-            for node in self.__map.itervalues():
+            for node in six.itervalues(self.__map):
                 del node[:]
             root = self.__root
             root[:] = [root, root, None]
@@ -211,7 +213,7 @@ class OrderedDict (dict):
         try:
             if not self:
                 return '%s()' % (self.__class__.__name__,)
-            return '%s(%r)' % (self.__class__.__name__, self.items())
+            return '%s(%r)' % (self.__class__.__name__, list(self.items()))
         finally:
             del _repr_running[call_key]
 
@@ -246,7 +248,7 @@ class OrderedDict (dict):
 
         '''
         if isinstance(other, OrderedDict):
-            return len(self)==len(other) and self.items() == other.items()
+            return len(self)==len(other) and list(self.items()) == list(other.items())
         return dict.__eq__(self, other)
 
     def __ne__(self, other):

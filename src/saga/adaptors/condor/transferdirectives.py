@@ -1,4 +1,6 @@
 
+from __future__ import absolute_import
+import six
 __author__    = "Andre Merzky, Ole Weidner"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
@@ -63,13 +65,13 @@ class TransferDirectives(object):
 
     def _dicts_to_string_list(self):
         slist = list()
-        for (local, remote) in self._in_overwrite.iteritems():
+        for (local, remote) in six.iteritems(self._in_overwrite):
             slist.append('%s > %s' % (local, remote))
-        for (local, remote) in self._in_append.iteritems():
+        for (local, remote) in six.iteritems(self._in_append):
             slist.append('%s >> %s' % (local, remote))
-        for (remote, local) in self._out_overwrite.iteritems():
+        for (remote, local) in six.iteritems(self._out_overwrite):
             slist.append('%s < %s' % (local, remote))
-        for (remote, local) in self._out_append.iteritems():
+        for (remote, local) in six.iteritems(self._out_append):
             slist.append('%s << %s' % (local, remote))
         return slist
 

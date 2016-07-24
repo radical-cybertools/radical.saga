@@ -1,5 +1,7 @@
 
 
+from __future__ import absolute_import
+from __future__ import print_function
 import os
 import sys
 from   pprint import pprint
@@ -24,7 +26,7 @@ pprint (nodes)
 
 for node in nodes :
     pprint (node.__dict__)
-    print node.destroy ()
+    print(node.destroy ())
 
 
 # images = conn.list_images()

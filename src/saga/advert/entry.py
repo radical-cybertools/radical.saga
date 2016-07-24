@@ -1,4 +1,6 @@
 
+from __future__ import absolute_import
+import six
 __author__    = "Andre Merzky"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
@@ -25,7 +27,7 @@ class Entry (nsentry.Entry, sa.Attributes) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Entry', 
-                  rus.optional ((surl.Url, basestring)), 
+                  rus.optional ((surl.Url, six.string_types)), 
                   rus.optional (int, rus.nothing),
                   rus.optional (ss.Session), 
                   rus.optional (sab.Base),
@@ -74,7 +76,7 @@ class Entry (nsentry.Entry, sa.Attributes) :
     #
     @classmethod
     @rus.takes   ('Entry', 
-                  rus.optional ((surl.Url, basestring)), 
+                  rus.optional ((surl.Url, six.string_types)), 
                   rus.optional (int, rus.nothing), 
                   rus.optional (ss.Session), 
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
@@ -102,7 +104,7 @@ class Entry (nsentry.Entry, sa.Attributes) :
     # the attribute interface
     #
     @rus.takes   ('Entry', 
-                  basestring,
+                  six.string_types,
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((rus.anything, st.Task))
     def _attribute_getter (self, key, ttype=None) :
@@ -113,7 +115,7 @@ class Entry (nsentry.Entry, sa.Attributes) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Entry', 
-                  basestring,
+                  six.string_types,
                   rus.anything,
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((rus.nothing, st.Task))
@@ -135,7 +137,7 @@ class Entry (nsentry.Entry, sa.Attributes) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Entry', 
-                  basestring, 
+                  six.string_types, 
                   int, 
                   callable, 
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))

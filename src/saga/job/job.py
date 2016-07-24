@@ -1,4 +1,7 @@
 
+from __future__ import absolute_import
+import six
+import io
 __author__    = "Andre Merzky, Ole Weidner"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
@@ -10,16 +13,16 @@ import radical.utils.signatures as rus
 
 from   saga.constants        import SYNC, ASYNC, TASK
 from   saga.job.constants    import *
+from   saga.adaptors         import base    as sab
 
-import saga.adaptors.base    as sab
-import saga.attributes       as sa
-import saga.exceptions       as se
-import saga.async            as sasync
-import saga.task             as st
-import saga.base             as sb
-import saga.url              as surl
+from saga import attributes       as sa
+from saga import exceptions       as se
+from saga import async            as sasync
+from saga import task             as st
+from saga import base             as sb
+from saga import url              as surl
 
-import description           as descr
+from . import description           as descr
 
 # ------------------------------------------------------------------------------
 #
@@ -54,7 +57,7 @@ class Job (sb.Base, st.Task, sasync.Async) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Job',
-                  rus.optional (basestring),
+                  rus.optional (six.string_types),
                   rus.optional (sab.Base),
                   rus.optional (dict),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
@@ -128,7 +131,7 @@ class Job (sb.Base, st.Task, sasync.Async) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Job')
-    @rus.returns (basestring)
+    @rus.returns (six.string_types)
     def __str__  (self) :
         """
         __str__()
@@ -146,7 +149,7 @@ class Job (sb.Base, st.Task, sasync.Async) :
     #
     @rus.takes   ('Job',
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
-    @rus.returns ((rus.nothing, basestring, st.Task))
+    @rus.returns ((rus.nothing, six.string_types, st.Task))
     def get_id   (self, ttype=None) :
         """
         get_id()
@@ -161,7 +164,7 @@ class Job (sb.Base, st.Task, sasync.Async) :
     #
     @rus.takes   ('Job',
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
-    @rus.returns ((rus.nothing, basestring, st.Task))
+    @rus.returns ((rus.nothing, six.string_types, st.Task))
     def get_name (self, ttype=None) :
         """
         get_name()
@@ -175,7 +178,7 @@ class Job (sb.Base, st.Task, sasync.Async) :
     #
     @rus.takes          ('Job',
                          rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
-    @rus.returns        ((basestring, st.Task))
+    @rus.returns        ((six.string_types, st.Task))
     def get_description (self, ttype=None) :
         """
         get_description()
@@ -215,7 +218,7 @@ class Job (sb.Base, st.Task, sasync.Async) :
     #
     @rus.takes    ('Job',
                    rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
-    @rus.returns  ((file, st.Task))
+    @rus.returns  ((io.IOBase, st.Task))
     def get_stdin (self, ttype=None) :
         """
         get_stdin()
@@ -234,7 +237,7 @@ class Job (sb.Base, st.Task, sasync.Async) :
     #
     @rus.takes     ('Job',
                     rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
-    @rus.returns   ((file, st.Task))
+    @rus.returns   ((io.IOBase, st.Task))
     def get_stdout (self, ttype=None) :
         """
         get_stdout()
@@ -271,7 +274,7 @@ class Job (sb.Base, st.Task, sasync.Async) :
     #
     @rus.takes     ('Job',
                     rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
-    @rus.returns   ((file, st.Task))
+    @rus.returns   ((io.IOBase, st.Task))
     def get_stderr (self, ttype=None) :
         """
         get_stderr()
@@ -725,7 +728,7 @@ class Job (sb.Base, st.Task, sasync.Async) :
     #
     @rus.takes       ('Job',
                       rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
-    @rus.returns     ((rus.nothing, rus.list_of (basestring), st.Task))
+    @rus.returns     ((rus.nothing, rus.list_of (six.string_types), st.Task))
     def _get_execution_hosts (self, ttype=None) :
         return self._adaptor.get_execution_hosts (ttype=ttype)
 
@@ -815,7 +818,7 @@ class Self (Job) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Self',
-                  rus.optional (basestring),
+                  rus.optional (six.string_types),
                   rus.optional (sab.Base),
                   rus.optional (dict),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))

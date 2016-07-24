@@ -1,8 +1,11 @@
 
+from __future__ import absolute_import
+from __future__ import print_function
 import sys
 import saga
 import time
 import multiprocessing as mp
+from six.moves import range
 
 target  = "ssh://india.futuregrid.org/"
 threads = 4
@@ -52,17 +55,17 @@ for x in range (threads) :
     p = mp.Process (target=worker_jobs)
     p.start()
     procs.append (p)
-    print 'started job  worker %s' % p
+    print('started job  worker %s' % p)
 
     p = mp.Process (target=worker_files)
     p.start()
     procs.append (p)
-    print 'started file worker %s' % p
+    print('started file worker %s' % p)
 
 
 for p in procs :
     p.join ()
-    print 'joined worker %s' % p
+    print('joined worker %s' % p)
 
 
 

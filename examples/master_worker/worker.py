@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import os, sys, time
 import redis
 import saga
@@ -24,7 +25,7 @@ def check_jobs(redis_host, redis_password, redis_list):
 			communication_time += datetime.datetime.now()-now
 			if (task is not None):
 				now = datetime.datetime.now()
-				p = subprocess.Popen([task], shell = True)
+				p = subprocess.Popen([task], shell = True, universal_newlines=True)
 				p.wait()
 				execution_time += datetime.datetime.now()-now
 			else:

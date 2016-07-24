@@ -1,4 +1,6 @@
 
+from __future__ import absolute_import
+from __future__ import print_function
 __author__    = "Andre Merzky"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
@@ -57,7 +59,7 @@ import radical.utils         as ru
 import radical.utils.logger  as rul
 import radical.utils.threads as rut
 
-import redis_cache
+from . import redis_cache
 
 from   saga.exceptions       import *
 from   saga.advert.constants import *
@@ -123,7 +125,7 @@ class redis_ns_monitor (ru.Thread) :
 
             while sub :
 
-                info = sub.next ()
+                info = next(sub)
                 data = info['data']
 
                 if not type (data) == type ("") :
@@ -263,15 +265,15 @@ class redis_ns_entry :
     #
     def _dump (self) :
 
-        print "self.r         : %s" % str(self.r        )
-        print "self.path      : %s" % str(self.path     )
-        print "self.node      : %s" % str(self.node     )
-        print "self.data      : %s" % str(self.data     )
-        print "self.kids      : %s" % str(self.kids     )
-        print "self.valid     : %s" % str(self.valid    )
-        print "self.logger    : %s" % str(self.logger   )
-        print "self.cache     : %s" % str(self.cache    )
-        print "self.callbacks : %s" % str(self.callbacks)
+        print("self.r         : %s" % str(self.r        ))
+        print("self.path      : %s" % str(self.path     ))
+        print("self.node      : %s" % str(self.node     ))
+        print("self.data      : %s" % str(self.data     ))
+        print("self.kids      : %s" % str(self.kids     ))
+        print("self.valid     : %s" % str(self.valid    ))
+        print("self.logger    : %s" % str(self.logger   ))
+        print("self.cache     : %s" % str(self.cache    ))
+        print("self.callbacks : %s" % str(self.callbacks))
 
 
     # ----------------------------------------------------------------

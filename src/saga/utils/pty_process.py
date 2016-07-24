@@ -1,4 +1,8 @@
 
+from __future__ import absolute_import
+from __future__ import print_function
+import six
+from six.moves import range
 __author__    = "Andre Merzky"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
@@ -21,7 +25,7 @@ import radical.utils.logger  as rul
 
 import saga.exceptions       as se
 
-import pty_exceptions        as ptye
+from . import pty_exceptions        as ptye
 
 # --------------------------------------------------------------------
 #
@@ -104,7 +108,7 @@ class PTYProcess (object) :
         self.logger.debug ("PTYProcess init %s" % self)
 
 
-        if isinstance (command, basestring) :
+        if isinstance (command, six.string_types) :
             command = shlex.split (command)
 
         if not isinstance (command, list) :
@@ -447,7 +451,7 @@ class PTYProcess (object) :
                             # child disappeared, go to zombie cleanup routine
                             break
 
-                        raise ("waitpid failed on wait (%s)" % e)
+                        raise "waitpid failed on wait (%s)"
 
                     # did we get a note about child termination?
                     if 0 == wpid :
@@ -597,7 +601,7 @@ class PTYProcess (object) :
                         if  size:
                             readsize = size-len(ret)
 
-                        buf  = os.read (f, _CHUNKSIZE)
+                        buf  = os.read (f, _CHUNKSIZE).decode()
 
                         if  len(buf) == 0 and sys.platform == 'darwin' :
                             self.logger.debug ("read : MacOS EOF")
@@ -740,11 +744,11 @@ class PTYProcess (object) :
                     if  not data :
                         data += self.read (timeout=_POLLDELAY)
 
-                    if  _debug : print ">>%s<<" % data
+                    if  _debug : print(">>%s<<" % data)
 
                     escaped = escape (data)
-                    if _debug : print 'data    ==%s==' % data
-                    if _debug : print 'escaped ==%s==' % escaped
+                    if _debug : print('data    ==%s==' % data)
+                    if _debug : print('escaped ==%s==' % escaped)
 
                     # check current data for any matching pattern
                     for n in range (0, len(patts)) :
@@ -755,8 +759,8 @@ class PTYProcess (object) :
                       # print '-- 2 --%s--' % escaped
 
                         match = patts[n].search (escaped)
-                        if _debug : print "==%s==" % patterns[n]
-                        if _debug : print match
+                        if _debug : print("==%s==" % patterns[n])
+                        if _debug : print(match)
 
                         if match :
                             # a pattern matched the current data: return a tuple of
@@ -765,10 +769,10 @@ class PTYProcess (object) :
                             ret  = escaped[0:match.end()]
                             self.cache = escaped[match.end():]
 
-                            if _debug : print "~~match!~~ %s" % escaped[match.start():match.end()]
-                            if _debug : print "~~match!~~ %s" % (len(escaped))
-                            if _debug : print "~~match!~~ %s" % (str(match.span()))
-                            if _debug : print "~~match!~~ %s" % (ret)
+                            if _debug : print("~~match!~~ %s" % escaped[match.start():match.end()])
+                            if _debug : print("~~match!~~ %s" % (len(escaped)))
+                            if _debug : print("~~match!~~ %s" % (str(match.span())))
+                            if _debug : print("~~match!~~ %s" % (ret))
 
                             return (n, ret.replace('\r', ''))
 
@@ -825,7 +829,7 @@ class PTYProcess (object) :
                     for f in wlist :
 
                         # write will report the number of written bytes
-                        size = os.write (f, data)
+                        size = os.write (f, data.encode('utf-8'))
 
                         # otherwise, truncate by written data, and try again
                         data = data[size:]

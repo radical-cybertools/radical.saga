@@ -1,18 +1,20 @@
 
+from __future__ import absolute_import
+import six
 __author__    = "Andre Merzky"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
 
-import radical.utils.signatures as rus
+from radical.utils import signatures as rus
 
-import saga.adaptors.base    as sab
-import saga.exceptions       as se
-import saga.session          as ss
-import saga.task             as st
-import saga.url              as surl
-import saga.base             as sb
-import saga.async            as sasync
+from saga.adaptors import base    as sab
+from saga import exceptions       as se
+from saga import session          as ss
+from saga import task             as st
+from saga import url              as surl
+from saga import base             as sb
+from saga import async            as sasync
 
 from   saga.namespace.constants  import *
 from   saga.constants            import SYNC, ASYNC, TASK
@@ -41,7 +43,7 @@ class Entry (sb.Base, sasync.Async) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Entry', 
-                  rus.optional ((surl.Url, basestring)), 
+                  rus.optional ((surl.Url, six.string_types)), 
                   rus.optional (int, rus.nothing), 
                   rus.optional (ss.Session),
                   rus.optional (sab.Base), 
@@ -93,7 +95,7 @@ class Entry (sb.Base, sasync.Async) :
     #
     @classmethod
     @rus.takes   ('Entry', 
-                  rus.optional ((surl.Url, basestring)), 
+                  rus.optional ((surl.Url, six.string_types)), 
                   rus.optional (int, rus.nothing), 
                   rus.optional (ss.Session),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
@@ -144,7 +146,7 @@ class Entry (sb.Base, sasync.Async) :
     #
     @rus.takes   ('Entry',
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
-    @rus.returns ((basestring, st.Task))
+    @rus.returns ((six.string_types, st.Task))
     def get_cwd  (self, ttype=None) :
         '''
         ttype:         saga.task.type enum
@@ -157,7 +159,7 @@ class Entry (sb.Base, sasync.Async) :
     #
     @rus.takes   ('Entry',
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
-    @rus.returns ((basestring, st.Task))
+    @rus.returns ((six.string_types, st.Task))
     def get_name (self, ttype=None) :
         '''
         ttype:         saga.task.type enum
@@ -236,7 +238,7 @@ class Entry (sb.Base, sasync.Async) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Entry',
-                  (surl.Url, basestring),
+                  (surl.Url, six.string_types),
                   rus.optional (int, rus.nothing),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((rus.nothing, st.Task))
@@ -269,7 +271,7 @@ class Entry (sb.Base, sasync.Async) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Entry',
-                  (surl.Url, basestring),
+                  (surl.Url, six.string_types),
                   rus.optional (int, rus.nothing),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((rus.nothing, st.Task))
@@ -288,7 +290,7 @@ class Entry (sb.Base, sasync.Async) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Entry',
-                  (surl.Url, basestring),
+                  (surl.Url, six.string_types),
                   rus.optional (int, rus.nothing),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((rus.nothing, st.Task))

@@ -1,4 +1,5 @@
 
+from __future__ import absolute_import
 __author__    = "Andre Merzky, Ole Weidner"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
@@ -135,10 +136,10 @@ def test_valid_config_file():
     """
     # Generate a configuration file
     import tempfile
-    import ConfigParser
+    import six.moves.configparser
 
     tmpfile = open('/tmp/saga.conf', 'w+')
-    config = ConfigParser.RawConfigParser()
+    config = six.moves.configparser.RawConfigParser()
 
     config.add_section('saga.test')
     config.set('saga.test', 'ttycolor', False)
@@ -158,7 +159,7 @@ def test_valid_config_file():
     # make sure a signgle-element list works as well
 
     tmpfile = open('/tmp/saga.conf', 'w+')
-    config = ConfigParser.RawConfigParser()
+    config = six.moves.configparser.RawConfigParser()
 
     config.add_section('saga.test')
     config.set('saga.test', 'ttycolor', False)
@@ -178,7 +179,7 @@ def test_valid_config_file():
     # make sure a zero-elemnt list works as well
     tmpfile = open('/tmp/saga.conf', 'w+')
     
-    config = ConfigParser.RawConfigParser()
+    config = six.moves.configparser.RawConfigParser()
 
     config.add_section('saga.test')
     config.set('saga.test', 'ttycolor', False)
@@ -201,10 +202,10 @@ def test_invalid_config_file():
     """ Test if an invalid config file is handled properly
     """
     import tempfile
-    import ConfigParser
+    import six.moves.configparser
 
     tmpfile = open('/tmp/saga.conf', 'w+')
-    config = ConfigParser.RawConfigParser()
+    config = six.moves.configparser.RawConfigParser()
 
     config.add_section('saga.test')
     config.set('saga.test', 'ttycolor', 'invalid')

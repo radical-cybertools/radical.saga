@@ -1,4 +1,5 @@
 
+from __future__ import absolute_import
 __author__    = "SAGA Development Team"
 __copyright__ = "Copyright 2013, RADICAL"
 __license__   = "MIT"
@@ -32,6 +33,7 @@ from   saga.exceptions     import AuthenticationFailed
 from   saga.exceptions     import Timeout
 from   saga.exceptions     import NoSuccess
 
+import saga.adaptors
 import saga.job
 import saga.filesystem
 import saga.replica

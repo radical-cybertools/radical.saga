@@ -1,4 +1,6 @@
 
+from __future__ import absolute_import
+from __future__ import print_function
 __author__    = "Andre Merzky, Ole Weidner"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
@@ -53,41 +55,41 @@ def main():
         sleepjob = js.create_job(jd)
 
         # check our job's id and state
-        print "Job ID    : %s" % (sleepjob.id)
-        print "Job State : %s" % (sleepjob.state)
+        print("Job ID    : %s" % (sleepjob.id))
+        print("Job State : %s" % (sleepjob.state))
 
-        print "\n...starting job...\n"
+        print("\n...starting job...\n")
         sleepjob.run()
 
-        print "Job ID    : %s" % (sleepjob.id)
-        print "Job State : %s" % (sleepjob.state)
+        print("Job ID    : %s" % (sleepjob.id))
+        print("Job State : %s" % (sleepjob.state))
 
-        print "\nListing active jobs: "
+        print("\nListing active jobs: ")
         for job in js.list():
-            print " * %s" % job
+            print(" * %s" % job)
 
         # disconnect / reconnect
         sleebjob_clone = js.get_job(sleepjob.id)
 
         # wait for our job to complete
-        print "\n...waiting for job...\n"
+        print("\n...waiting for job...\n")
         sleebjob_clone.wait()
 
-        print "Job State   : %s" % (sleebjob_clone.state)
-        print "Exitcode    : %s" % (sleebjob_clone.exit_code)
-        print "Exec. hosts : %s" % (sleebjob_clone.execution_hosts)
-        print "Create time : %s" % (sleebjob_clone.created)
-        print "Start time  : %s" % (sleebjob_clone.started)
-        print "End time    : %s" % (sleebjob_clone.finished)
+        print("Job State   : %s" % (sleebjob_clone.state))
+        print("Exitcode    : %s" % (sleebjob_clone.exit_code))
+        print("Exec. hosts : %s" % (sleebjob_clone.execution_hosts))
+        print("Create time : %s" % (sleebjob_clone.created))
+        print("Start time  : %s" % (sleebjob_clone.started))
+        print("End time    : %s" % (sleebjob_clone.finished))
 
         js.close()
         return 0
 
-    except saga.SagaException, ex:
-        print "An exception occured: %s " % ((str(ex)))
+    except saga.SagaException as ex:
+        print("An exception occured: %s " % ((str(ex))))
         # get the whole traceback in case of an exception -
         # this can be helpful for debugging the problem
-        print " *** %s" % ex.traceback
+        print(" *** %s" % ex.traceback)
         return -1
 
 if __name__ == "__main__":

@@ -1,4 +1,6 @@
 
+from __future__ import absolute_import
+import six
 __author__    = "Andre Merzky"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
@@ -24,7 +26,7 @@ class Directory (nsdir.Directory, sa.Attributes) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Directory', 
-                  rus.optional ((surl.Url, basestring)), 
+                  rus.optional ((surl.Url, six.string_types)), 
                   rus.optional (int, rus.nothing),
                   rus.optional (ss.Session), 
                   rus.optional (sab.Base),
@@ -72,7 +74,7 @@ class Directory (nsdir.Directory, sa.Attributes) :
     #
     @classmethod
     @rus.takes   ('Directory', 
-                  rus.optional ((surl.Url, basestring)), 
+                  rus.optional ((surl.Url, six.string_types)), 
                   rus.optional (int, rus.nothing), 
                   rus.optional (ss.Session), 
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
@@ -99,7 +101,7 @@ class Directory (nsdir.Directory, sa.Attributes) :
     # the attribute interface
     #
     @rus.takes   ('Directory', 
-                  basestring,
+                  six.string_types,
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((rus.anything, st.Task))
     def _attribute_getter (self, key, ttype=None) :
@@ -110,7 +112,7 @@ class Directory (nsdir.Directory, sa.Attributes) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Directory', 
-                  basestring,
+                  six.string_types,
                   rus.anything,
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((rus.nothing, st.Task))
@@ -132,7 +134,7 @@ class Directory (nsdir.Directory, sa.Attributes) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Directory', 
-                  basestring, 
+                  six.string_types, 
                   int, 
                   callable, 
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
@@ -148,7 +150,7 @@ class Directory (nsdir.Directory, sa.Attributes) :
     # advert methods
     #
     @rus.takes   ('Directory', 
-                  (surl.Url, basestring), 
+                  (surl.Url, six.string_types), 
                   float, 
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((rus.nothing, st.Task))
@@ -167,7 +169,7 @@ class Directory (nsdir.Directory, sa.Attributes) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Directory', 
-                  rus.optional ((surl.Url, basestring)), 
+                  rus.optional ((surl.Url, six.string_types)), 
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((float, st.Task))
     def get_ttl  (self, tgt=None, ttype=None) : 
@@ -184,9 +186,9 @@ class Directory (nsdir.Directory, sa.Attributes) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Directory', 
-                  rus.optional (basestring),
-                  rus.optional (basestring),
-                  rus.optional ((basestring, object)),
+                  rus.optional (six.string_types),
+                  rus.optional (six.string_types),
+                  rus.optional ((six.string_types, object)),
                   rus.optional (int, rus.nothing),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((rus.list_of (surl.Url), st.Task))

@@ -1,4 +1,6 @@
 
+from __future__ import absolute_import
+from __future__ import print_function
 __author__    = "Andre Merzky, Ole Weidner"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
@@ -112,12 +114,12 @@ def make_adaptor_docs():
         try :
             m  = __import__ (a, fromlist=['Adaptor'])
         except Exception as e:
-            print "import from %s failed: %s" % (a, e)
+            print("import from %s failed: %s" % (a, e))
             continue
 
         n  = m._ADAPTOR_NAME
         fn = "%s/%s.rst" % (DOCROOT, n)
-        print "create %s" % fn
+        print("create %s" % fn)
         i.write ("   %s\n" % n)
 
         description = "NO DESCRIPTION AVAILABLE"
@@ -143,8 +145,8 @@ def make_adaptor_docs():
             description  =  m._ADAPTOR_DOC['description']
             description  =  cleanup(description)
 
-        print m._ADAPTOR_INFO['name']
-        print m._ADAPTOR_DOC.keys ()
+        print(m._ADAPTOR_INFO['name'])
+        print(list(m._ADAPTOR_DOC.keys ()))
 
         if 'example' in m._ADAPTOR_DOC :
             example = m._ADAPTOR_DOC['example']
@@ -170,12 +172,12 @@ def make_adaptor_docs():
             cfgopts += m._ADAPTOR_DOC['cfg_options']
             options  = ""
 
-            print cfgopts
+            print(cfgopts)
 
             for o in cfgopts :
 
                 # ignore empty dicts
-                if  not o.keys() :
+                if  not list(o.keys()) :
                     continue
 
                 oname = o['name']
@@ -255,7 +257,7 @@ def make_adaptor_docs():
 
                 if is_context :
                     # do not auto-document context adaptors -- those are done manually
-                    print "skip   %s (context)" % fn
+                    print("skip   %s (context)" % fn)
                     continue
                 else:
                     classes      += "  - :class:`%s`\n" % cpi['type']

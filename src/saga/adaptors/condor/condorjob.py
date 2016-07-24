@@ -1,4 +1,9 @@
 
+from __future__ import absolute_import
+import six
+from six.moves import map
+from six.moves import range
+from six.moves import zip
 __author__    = "Andre Merzky, Mark Santcroos, Ole Weidner"
 __copyright__ = "Copyright 2012-2015, The SAGA Project"
 __license__   = "MIT"
@@ -14,7 +19,7 @@ import saga.adaptors.base
 import saga.adaptors.cpi.job
 
 from saga.job.constants import *
-from transferdirectives import TransferDirectives
+from .transferdirectives import TransferDirectives
 
 import re
 import os
@@ -88,7 +93,7 @@ def _condorscript_generator(url, logger, jds, option_dict=None):
     if option_dict is not None:
         condor_file += "\n##### OPTIONS PASSED VIA JOB SERVICE URL #####\n##"
 
-        for (key, value) in option_dict.iteritems():
+        for (key, value) in six.iteritems(option_dict):
             condor_file += "\n%s = %s" % (key, value)
 
     ##### OPTIONS PASSED VIA JOB DESCRIPTION #####
@@ -398,7 +403,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
         # this adaptor supports options that can be passed via the
         # 'query' component of the job service URL.
         if rm_url.query is not None:
-            for key, val in parse_qs(rm_url.query).iteritems():
+            for key, val in six.iteritems(parse_qs(rm_url.query)):
                 self.query_options[key] = val[0]
 
         # we need to extract the scheme for PTYShell. That's basically the
@@ -644,7 +649,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
 
         if td.in_overwrite_dict:
             td.transfer_input_files = []
-            for (source, target) in td.in_overwrite_dict.iteritems():
+            for (source, target) in six.iteritems(td.in_overwrite_dict):
                 # make sure source is file an not dir
                 (s_path, s_entry) = os.path.split(source)
                 if len(s_entry) < 1:
@@ -669,7 +674,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
 
         if td.out_overwrite_dict:
             td.transfer_output_files = []
-            for (source, target) in td.out_overwrite_dict.iteritems():
+            for (source, target) in six.iteritems(td.out_overwrite_dict):
                 # make sure source is file and not dir
                 (s_path, s_entry) = os.path.split(source)
                 if len(s_entry) < 1:
@@ -854,7 +859,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
         prev_info = {}
         curr_info = {}
 
-        proc_ids = map(str, range(cluster_size))
+        proc_ids = list(map(str, list(range(cluster_size))))
 
         for job_id in ['[%s]-[%s.%s]' % (rm, cluster_id, proc_id) for proc_id in proc_ids]:
 
@@ -899,7 +904,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
         if ret != 0:
             raise Exception("condor_q failed")
 
-        results = filter(None, out.split('\n'))
+        results = [_f for _f in out.split('\n') if _f]
         procs_condor_q_found = set()
 
         for row in results:
@@ -935,7 +940,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
 
             procs_condor_history_found = set()
 
-            results = filter(None, out.split('\n'))
+            results = [_f for _f in out.split('\n') if _f]
             for row in results:
 
                 procid, exitcode, transferoutput, completiondate, jobcurrentstartdate, qdate, stderr, stdout = \

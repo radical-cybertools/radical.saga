@@ -1,4 +1,6 @@
 
+from __future__ import absolute_import
+from __future__ import print_function
 __author__    = "Andre Merzky, Ashley Z, Ole Weidner"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
@@ -123,7 +125,7 @@ class Adaptor (saga.adaptors.base.Base):
     def parse_id (self, id) :
         # split the id '[manager-url]-[resource-url]' in its parts, and return them.
 
-        print id
+        print(id)
         match = self.id_re.match (id)
 
         if  not match or len (match.groups()) != 2 :

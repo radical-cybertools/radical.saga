@@ -1,4 +1,6 @@
 
+from __future__ import absolute_import
+from __future__ import print_function
 __author__    = "Andre Merzky"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
@@ -39,13 +41,13 @@ try :
 except SagaException as E :
 
   for e in E.exceptions :
-    print str(e)
-    print str(e.traceback)
-    print " ================================== "
+    print(str(e))
+    print(str(e.traceback))
+    print(" ================================== ")
 
-  print str(E)
-  print str(E.traceback)
-  print " ---------------------------------- "
+  print(str(E))
+  print(str(E.traceback))
+  print(" ---------------------------------- ")
   
 
 

@@ -1,4 +1,6 @@
 
+from __future__ import absolute_import
+from __future__ import print_function
 __author__    = "Andre Merzky"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
@@ -8,7 +10,7 @@ import time
 import saga
 
 def my_cb (a, b, c) :
-    print " ----- callback: [%s, %s, %s]" % (a, b, c)
+    print(" ----- callback: [%s, %s, %s]" % (a, b, c))
     return True
 
 try :
@@ -32,24 +34,24 @@ try :
   
     j = js.create_job (jd)
  #  j.add_callback ('State', my_cb)
-    print j.created
+    print(j.created)
     j.run ()
 
-    print j.started
-    print "state: %s" % j.state
+    print(j.started)
+    print("state: %s" % j.state)
     time.sleep (1)
-    print "state: %s" % j.state
+    print("state: %s" % j.state)
 
     while not j.wait (1.0) :
-        print "..."
+        print("...")
 
-    print "state: %s" % j.state
-    print j.finished
+    print("state: %s" % j.state)
+    print(j.finished)
 
-    print "stdout: %s" % j.get_stdout_string ()
-    print "stderr: %s" % j.get_stderr_string ()
+    print("stdout: %s" % j.get_stdout_string ())
+    print("stderr: %s" % j.get_stderr_string ())
 
-    print 'exc: %s' % j.get_exception()
+    print('exc: %s' % j.get_exception())
     j.re_raise ()
 
     # print "list : %s" % js.list ()
@@ -57,7 +59,7 @@ try :
     #     print "--%s--" % id
 
 except saga.SagaException as e :
-    print "Error: %s" % str(e)
+    print("Error: %s" % str(e))
 
 
 

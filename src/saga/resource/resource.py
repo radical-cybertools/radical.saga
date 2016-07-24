@@ -1,4 +1,6 @@
 
+from __future__ import absolute_import
+import six
 __author__    = "Andre Merzky, Ole Weidner"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
@@ -14,9 +16,9 @@ import saga.exceptions          as se
 import saga.attributes          as sa
 import saga.constants           as sc
 import saga.url                 as surl
-import constants                as const
-import description              as descr
-import resource                 as resrc
+from . import constants                as const
+from . import description              as descr
+from . import resource                 as resrc
                                
 from   saga.resource.constants  import *
 from   saga.constants           import SYNC, ASYNC, TASK
@@ -79,7 +81,7 @@ class Resource (sb.Base, sa.Attributes, async.Async) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Resource', 
-                  rus.optional (basestring), 
+                  rus.optional (six.string_types), 
                   rus.optional (ss.Session),
                   rus.optional (sab.Base), 
                   rus.optional (dict), 
@@ -183,7 +185,7 @@ class Resource (sb.Base, sa.Attributes, async.Async) :
     #
     @classmethod
     @rus.takes   ('resource', 
-                  rus.optional (basestring), 
+                  rus.optional (six.string_types), 
                   rus.optional (ss.Session),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns (st.Task)
@@ -227,7 +229,7 @@ class Resource (sb.Base, sa.Attributes, async.Async) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Resource', 
-                  basestring,
+                  six.string_types,
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((rus.nothing, st.Task))
     def destroy  (self, ttype=None) :
@@ -282,7 +284,7 @@ class Resource (sb.Base, sa.Attributes, async.Async) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Resource', rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
-    @rus.returns ((rus.nothing, basestring, st.Task))
+    @rus.returns ((rus.nothing, six.string_types, st.Task))
     def get_id   (self, ttype=None) : 
         """
         get_id()
@@ -331,7 +333,7 @@ class Resource (sb.Base, sa.Attributes, async.Async) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Resource', rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
-    @rus.returns ((rus.nothing, basestring, st.Task))
+    @rus.returns ((rus.nothing, six.string_types, st.Task))
     def get_state_detail (self, ttype=None) : 
         """
         get_state_detail()
@@ -344,7 +346,7 @@ class Resource (sb.Base, sa.Attributes, async.Async) :
     # --------------------------------------------------------------------------
     #
     @rus.takes     ('Resource', rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
-    @rus.returns   ((rus.nothing, basestring, st.Task))
+    @rus.returns   ((rus.nothing, six.string_types, st.Task))
     def get_access (self, ttype=None) : 
         """
         get_access()
@@ -357,7 +359,7 @@ class Resource (sb.Base, sa.Attributes, async.Async) :
     # --------------------------------------------------------------------------
     #
     @rus.takes      ('Resource', rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
-    @rus.returns    ((basestring, st.Task))
+    @rus.returns    ((six.string_types, st.Task))
     def get_manager (self, ttype=None) :
         """
         get_manager()
@@ -429,7 +431,7 @@ class Storage (Resource) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('StorageResource', 
-                  rus.optional (basestring), 
+                  rus.optional (six.string_types), 
                   rus.optional (ss.Session),
                   rus.optional (sab.Base), 
                   rus.optional (dict), 
@@ -456,7 +458,7 @@ class Network (Resource) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('NetworkResource', 
-                  rus.optional (basestring), 
+                  rus.optional (six.string_types), 
                   rus.optional (ss.Session),
                   rus.optional (sab.Base), 
                   rus.optional (dict), 

@@ -1,4 +1,5 @@
 
+from __future__ import absolute_import
 __author__    = "Andre Merzky, Ole Weidner"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
@@ -8,7 +9,7 @@ import radical.utils.signatures as rus
 
 import saga.attributes       as sa
 import saga.exceptions       as se
-import constants             as const
+from . import constants             as const
 
 #-------------------------------------------------------------------------------
 #

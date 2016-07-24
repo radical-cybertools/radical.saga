@@ -1,4 +1,6 @@
 
+from __future__ import absolute_import
+import six
 __author__    = "Andre Merzky, Ole Weidner"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
@@ -17,19 +19,12 @@ from   saga.exceptions import *
 # ------------------------------------------------------------------------------
 # adaptor base class
 #
-class Base (ruc.Configurable) :
+class Base (six.with_metaclass(ru.Singleton, ruc.Configurable)) :
 
     # We only need one instance of this adaptor per process (actually per
     # engine, but engine is a singleton, too...) -- the engine will though
     # create new CPI implementation instances as needed (one per SAGA API
     # object).
-    __metaclass__ = ru.Singleton
-
-    
-    # --------------------------------------------------------------------------
-    #
-    # FIXME: adaptor_options type...
-    #
     def __init__ (self, adaptor_info, adaptor_options=[]) :
 
         self._info    = adaptor_info

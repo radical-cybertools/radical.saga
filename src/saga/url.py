@@ -1,4 +1,6 @@
 
+from __future__ import absolute_import
+import six
 __author__    = "Andre Merzky, Ole Weidner"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
@@ -44,7 +46,7 @@ class Url (ru.Url) :
     """
 
     @rus.takes   ('Url', 
-                  rus.optional (basestring, 'Url'))
+                  rus.optional (six.string_types, 'Url'))
     @rus.returns (rus.nothing)
     def __init__ (self, url_in=''):
         """ 

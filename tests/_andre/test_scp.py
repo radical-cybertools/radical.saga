@@ -1,4 +1,6 @@
 
+from __future__ import absolute_import
+from __future__ import print_function
 __author__    = "Andre Merzky"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
@@ -41,22 +43,22 @@ try :
             error += out
             break
 
-        print "%6s%%  %6s  %10s  %6s" % (match.group ('perc'), 
+        print("%6s%%  %6s  %10s  %6s" % (match.group ('perc'), 
                                          match.group ('size'),
                                          match.group ('perf'),
-                                         match.group ('time'))
+                                         match.group ('time')))
         if  ret == 1 :
             break
 
     ret, out = shell.find_prompt ()
     if ret != 0 :
-        print "file copy failed:\n'%s'" % error
+        print("file copy failed:\n'%s'" % error)
     else :
-        print "file copy done"
+        print("file copy done")
 
 
 except saga.SagaException as e :
-    print "exception: %s" % e
+    print("exception: %s" % e)
 
 
 
