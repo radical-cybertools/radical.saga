@@ -322,7 +322,7 @@ class Service (sb.Base, sasync.Async) :
         if not self.valid :
             raise se.IncorrectState ("This instance was already closed.")
 
-        if not args:
+        if not cmd:
             raise se.BadParameter('run_job needs a command to run.  Duh!')
 
         try:
