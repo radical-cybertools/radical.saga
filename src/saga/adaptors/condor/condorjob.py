@@ -845,38 +845,40 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
 
                 # run the Condor 'condor_history' command to get info about 
                 # finished jobs
-                ret, out, _ = self.shell.run_sync("unset GREP_OPTIONS; %s -long -match 1 %s | \
+                ret, out, err = self.shell.run_sync("unset GREP_OPTIONS; %s -long -match 1 %s | \
                     grep -E '(ExitCode)|(TransferOutput)|(CompletionDate)|(JobCurrentStartDate)|(QDate)|(Err)|(Out)'" \
                     % (self._commands['condor_history'], pid))
                 
                 if ret != 0:
-                    message = "Error getting job history via 'condor_history': %s" % out
-                    log_error_and_raise(message, saga.NoSuccess, self._logger)
+                    # no job hist either - declar job as MIA
+                    self._logger.error("Error using 'condor_history': %s : %s", out, err)
+                    info['returncode'] = 1
 
-                # parse the egrep result. this should look something like this:
-                # ExitCode = 0
-                # TransferOutput = "radical.txt"
-                results = out.split('\n')
-                for result in results:
-                    if len(result.split('=')) == 2:
-                        key, val = result.split('=')
-                        key = key.strip()  # strip() removes whitespaces at the
-                        val = val.strip()  # beginning and the end of the string
+                else:
+                    # parse the egrep result. this should look something like this:
+                    # ExitCode = 0
+                    # TransferOutput = "radical.txt"
+                    results = out.split('\n')
+                    for result in results:
+                        if len(result.split('=')) == 2:
+                            key, val = result.split('=')
+                            key = key.strip()  # strip() removes whitespaces at the
+                            val = val.strip()  # beginning and the end of the string
 
-                        if key == 'ExitCode':
-                            info['returncode'] = int(val)
-                        elif key == 'TransferOutput':
-                            info['transfers'] = val.strip('"').split(',')
-                        elif key == 'QDate':
-                            info['create_time'] = val
-                        elif key == 'JobCurrentStartDate':
-                            info['start_time'] = val
-                        elif key == 'CompletionDate':
-                            info['end_time'] = val
-                        elif key == 'Out':
-                            info['stdout'] = val.strip('"')
-                        elif key == 'Err':
-                            info['stderr'] = val.strip('"')
+                            if key == 'ExitCode':
+                                info['returncode'] = int(val)
+                            elif key == 'TransferOutput':
+                                info['transfers'] = val.strip('"').split(',')
+                            elif key == 'QDate':
+                                info['create_time'] = val
+                            elif key == 'JobCurrentStartDate':
+                                info['start_time'] = val
+                            elif key == 'CompletionDate':
+                                info['end_time'] = val
+                            elif key == 'Out':
+                                info['stdout'] = val.strip('"')
+                            elif key == 'Err':
+                                info['stderr'] = val.strip('"')
 
                 if info['returncode'] == 0:
                     info['state'] = saga.job.DONE
