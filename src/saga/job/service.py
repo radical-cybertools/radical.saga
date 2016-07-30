@@ -317,17 +317,33 @@ class Service (sb.Base, sasync.Async) :
     def run_job  (self, cmd, host=None, ttype=None) :
         """ 
         run_job(cmd, host=None)
-        
-        .. warning:: |not_implemented|
         """
 
         if not self.valid :
             raise se.IncorrectState ("This instance was already closed.")
 
-        if  None == host :
-            host = "" # FIXME
+        if not cmd:
+            raise se.BadParameter('run_job needs a command to run.  Duh!')
 
-        return self._adaptor.run_job (cmd, host, ttype=ttype)
+        try:
+            # lets see if the adaptor implements run_job
+            return self._adaptor.run_job (cmd, host, ttype=ttype)
+        except:
+            # fall back to the default implementation below
+            pass
+
+        # The adaptor has no run_job -- we here provide a generic implementation
+        # FIXME: split should be more clever and respect POSIX shell syntax. 
+        args = cmd.split()
+
+        jd = desc.Description()
+        jd.executable = args[0]
+        js.arguments  = args[1:]
+
+        job = self.create_job(jd)
+        job.run()
+
+        return job
 
 
     # --------------------------------------------------------------------------
