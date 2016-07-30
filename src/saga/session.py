@@ -3,6 +3,7 @@ __author__    = "Andre Merzky, Ole Weidner"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
+import copy
 
 import radical.utils            as ru
 import radical.utils.signatures as rus
@@ -51,7 +52,10 @@ class _ContextList (list) :
 
         # context initialized ok, add it to the list of known contexts
         super (_ContextList, self).append (ctx_clone)
-        
+    
+
+    # --------------------------------------------------------------------------
+    #
     def insert(self, index, ctx, session=None) :
 
         ctx_clone = self._initialise_context(ctx, session)
@@ -59,10 +63,13 @@ class _ContextList (list) :
         # context initialized ok, add it to the list of known contexts
         super (_ContextList, self).insert (0, ctx_clone)
     
+
+    # --------------------------------------------------------------------------
     # Initialise a context to be added to the list of known contexts
     # Returns a cloned, initialised context that can be added to the context
     # list. 
     def _initialise_context(self, ctx, session=None):
+
         if  not isinstance (ctx, saga.Context) :
             raise TypeError, "item to add is not a saga.Context instance"
 
@@ -93,69 +100,17 @@ class _ContextList (list) :
 
         return ctx_clone
 
-# ------------------------------------------------------------------------------
-#
-class _DefaultSession (object) :
-
-    __metaclass__ = ru.Singleton
 
     # --------------------------------------------------------------------------
     #
-    @rus.takes   ('_DefaultSession')
-    @rus.returns (rus.nothing)
-    def __init__ (self) :
+    def __deepcopy__(self, memo):
 
-        # the default session picks up default contexts, from all context
-        # adaptors.  To implemented, we have to do some legwork: get the engine,
-        # dig through the registered context adaptors, and ask each of them for
-        # default contexts.
+        ret = _ContextList()
 
-        self.contexts       = _ContextList ()
-        self._logger        = ru.get_logger ('radical.saga')
+        for c in self:
+            ret.append(c)
 
-        # FIXME: at the moment, the lease manager is owned by the session.  
-        # Howevwer, the pty layer is the main user of the lease manager,
-        # and we thus keep the lease manager options in the pty subsection.  
-        # So here we are, in the session, evaluating the pty config options...
-        config = saga.engine.engine.Engine ().get_config ('saga.utils.pty')
-        self._lease_manager = ru.LeaseManager (
-                max_pool_size = config['connection_pool_size'].get_value (),
-                max_pool_wait = config['connection_pool_wait'].get_value (),
-                max_obj_age   = config['connection_pool_ttl'].get_value ()
-                )
-
-        _engine = saga.engine.engine.Engine ()
-
-        if not 'saga.Context' in _engine._adaptor_registry :
-            self._logger.warn ("no context adaptors found")
-            return
-
-        for schema   in _engine._adaptor_registry['saga.Context'] :
-            for info in _engine._adaptor_registry['saga.Context'][schema] :
-
-                default_ctxs = []
-
-                try : 
-                    default_ctxs = info['adaptor_instance']._get_default_contexts ()
-
-                except se.SagaException as e :
-                    self._logger.debug   ("adaptor %s failed to provide default" \
-                                          "contexts: %s" % (info['adaptor_name'], e))
-                    continue
-                    
-
-                for default_ctx in default_ctxs :
-
-                    try :
-                        self.contexts.append (ctx=default_ctx, session=self)
-                        self._logger.debug   ("default context [%-20s] : %s" \
-                                         %   (info['adaptor_name'], default_ctx))
-
-                    except se.SagaException as e :
-                        self._logger.debug   ("skip default context [%-20s] : %s : %s" \
-                                         %   (info['adaptor_name'], default_ctx, e))
-                        continue
-
+        return ret
 
 
 # ------------------------------------------------------------------------------
@@ -211,7 +166,7 @@ class Session (saga.base.SimpleBase) :
     @rus.takes   ('Session', 
                   rus.optional(bool))
     @rus.returns (rus.nothing)
-    def __init__ (self, default=True) :
+    def __init__ (self, default=True):
         """
         default: bool
         ret:     None
@@ -220,6 +175,8 @@ class Session (saga.base.SimpleBase) :
         simple_base = super  (Session, self)
         simple_base.__init__ ()
 
+        self._logger = ru.get_logger ('radical.saga')
+
         # if the default session is expected, we point our context list to the
         # shared list of the default session singleton.  Otherwise, we create
         # a private list which is not populated.
@@ -227,8 +184,8 @@ class Session (saga.base.SimpleBase) :
         # a session also has a lease manager, for adaptors in this session to use.
 
         if  default :
-            default_session     = _DefaultSession ()
-            self.contexts       = default_session.contexts 
+            default_session     = DefaultSession ()
+            self.contexts       = copy.deepcopy(default_session.contexts)
             self._lease_manager = default_session._lease_manager
         else :
             self.contexts       = _ContextList (session=self)
@@ -243,8 +200,6 @@ class Session (saga.base.SimpleBase) :
                     max_pool_wait = config['connection_pool_wait'].get_value (),
                     max_obj_age   = config['connection_pool_ttl'].get_value ()
                     )
-
-
 
 
     # ----------------------------------------------------------------
@@ -320,4 +275,60 @@ class Session (saga.base.SimpleBase) :
 
         return saga.engine.engine.Engine ().get_config (section)
 
+
+
+# ------------------------------------------------------------------------------
+#
+class DefaultSession(Session):
+
+    __metaclass__ = ru.Singleton
+
+
+    # --------------------------------------------------------------------------
+    #
+    @rus.takes   ('DefaultSession')
+    @rus.returns (rus.nothing)
+    def __init__ (self):
+
+        # the default session picks up default contexts, from all context
+        # adaptors.  To implemented, we have to do some legwork: get the engine,
+        # dig through the registered context adaptors, and ask each of them for
+        # default contexts.
+        
+        super(DefaultSession, self).__init__(default=False)
+
+        _engine = saga.engine.engine.Engine()
+
+        if not 'saga.Context' in _engine._adaptor_registry :
+            self._logger.warn ("no context adaptors found")
+            return
+
+        for schema   in _engine._adaptor_registry['saga.Context'] :
+            for info in _engine._adaptor_registry['saga.Context'][schema] :
+
+                default_ctxs = []
+
+                try : 
+                    default_ctxs = info['adaptor_instance']._get_default_contexts ()
+
+                except se.SagaException as e :
+                    self._logger.debug   ("adaptor %s failed to provide default" \
+                                          "contexts: %s" % (info['adaptor_name'], e))
+                    continue
+                    
+
+                for default_ctx in default_ctxs :
+
+                    try :
+                        self.contexts.append (ctx=default_ctx, session=self)
+                        self._logger.debug   ("default context [%-20s] : %s" \
+                                         %   (info['adaptor_name'], default_ctx))
+
+                    except se.SagaException as e :
+                        self._logger.debug   ("skip default context [%-20s] : %s : %s" \
+                                         %   (info['adaptor_name'], default_ctx, e))
+                        continue
+
+
+# ------------------------------------------------------------------------------
 

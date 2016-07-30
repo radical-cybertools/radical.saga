@@ -15,7 +15,7 @@ from   saga.constants      import *
 
 from   saga.task           import Task, Container
 from   saga.attributes     import Attributes, Callback
-from   saga.session        import Session
+from   saga.session        import Session, DefaultSession
 from   saga.context        import Context
 from   saga.url            import Url
 
