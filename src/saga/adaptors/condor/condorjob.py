@@ -42,12 +42,12 @@ def _condor_to_saga_jobstate(condorjs):
     #
     # JobStatus in job ClassAds
     #
-    # 0   Unexpanded  U
-    # 1   Idle    I
-    # 2   Running R
-    # 3   Removed X
-    # 4   Completed   C
-    # 5   Held    H
+    # 0   Unexpanded      U
+    # 1   Idle            I
+    # 2   Running         R
+    # 3   Removed         X
+    # 4   Completed       C
+    # 5   Held            H
     # 6   Submission_err  E
 
     if int(condorjs) == 0:
@@ -499,7 +499,6 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
                 'start_time':   None,
                 'end_time':     None,
                 'gone':         False,
-                'transfers':    None,
                 'td':           None,
                 'stdout':       None,
                 'stderr':       None,
@@ -632,7 +631,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
 
         # run the Condor 'condor_q' command to get some infos about our job
         ret, out, _ = self.shell.run_sync("unset GREP_OPTIONS; %s -long %s | \
-            grep -E '(^JobStatus)|(ExitStatus)|(CompletionDate)'" \
+            grep -E '(^JobStatus)|(ExitCode)|(CompletionDate)'" \
             % (self._commands['condor_q'], pid))
         if ret != 0:
             message = "Couldn't reconnect to job '%s': %s" % (job_id, out)
@@ -651,7 +650,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
 
                     if key == 'JobStatus':
                         job_info['state'] = _condor_to_saga_jobstate(val)
-                    elif key == 'ExitStatus':
+                    elif key == 'ExitCode':
                         job_info['returncode'] = val
                     elif key == 'CompletionDate':
                         job_info['end_time'] = val
@@ -814,14 +813,14 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
 
         # run the Condor 'condor_q' command to get some infos about our job
         ret, out, _ = self.shell.run_sync("unset GREP_OPTIONS; %s -long %s | \
-            grep -E '(^JobStatus)|(ExitStatus)|(CompletionDate)'" \
+            grep -E '(^JobStatus)|(ExitCode)|(CompletionDate)'" \
             % (self._commands['condor_q'], pid))
 
         if ret == 0:
 
             # parse the egrep result. this should look something like this:
             # JobStatus = 5
-            # ExitStatus = 0
+            # ExitCode = 0
             # CompletionDate = 0
             results = filter(bool, out.split('\n'))
             for result in results:
@@ -831,7 +830,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
 
                 if key == 'JobStatus':
                     info['state'] = _condor_to_saga_jobstate(val)
-                elif key == 'ExitStatus':
+                elif key == 'ExitCode':
                     info['returncode'] = val
                 elif key == 'CompletionDate':
                     info['end_time'] = val
@@ -846,7 +845,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
                 # run the Condor 'condor_history' command to get info about 
                 # finished jobs
                 ret, out, err = self.shell.run_sync("unset GREP_OPTIONS; %s -long -match 1 %s | \
-                    grep -E '(ExitCode)|(TransferOutput)|(CompletionDate)|(JobCurrentStartDate)|(QDate)|(Err)|(Out)'" \
+                    grep -E '(ExitCode)|(CompletionDate)|(JobCurrentStartDate)|(QDate)|(Err)|(Out)'" \
                     % (self._commands['condor_history'], pid))
                 
                 if ret != 0:
@@ -857,7 +856,6 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
                 else:
                     # parse the egrep result. this should look something like this:
                     # ExitCode = 0
-                    # TransferOutput = "radical.txt"
                     results = out.split('\n')
                     for result in results:
                         if len(result.split('=')) == 2:
@@ -867,8 +865,6 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
 
                             if key == 'ExitCode':
                                 info['returncode'] = int(val)
-                            elif key == 'TransferOutput':
-                                info['transfers'] = val.strip('"').split(',')
                             elif key == 'QDate':
                                 info['create_time'] = val
                             elif key == 'JobCurrentStartDate':
@@ -923,7 +919,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
 
         # run the Condor 'condor_q' command to get some infos about our job
         ret, out, err = self.shell.run_sync(
-            "%s %s -autoformat:,v ProcId JobStatus ExitStatus CompletionDate" %
+            "%s %s -autoformat:,v ProcId JobStatus ExitCode ExitBySignal CompletionDate" %
             (self._commands['condor_q'], cluster_id))
 
         if ret != 0:
@@ -934,7 +930,12 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
         for row in results:
 
             # Some processes in cluster found with condor_q!
-            procid, jobstatus, exitstatus, completiondate = tuple([col.strip() for col in row.split(',')])
+            procid, jobstatus, exit_code, exit_by_signal, completiondate \
+                    = [col.strip() for col in row.split(',')]
+
+            # we always set exit_code to '1' if exited_by_signal
+            if not exit_code and exit_by_signal == 'true':
+                exit_code = 1
 
             matched = False
             for job_id in to_check:
@@ -945,7 +946,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
                     info = self.jobs[job_id]
                     info['state']      = _condor_to_saga_jobstate(jobstatus)
                     info['end_time']   = completiondate
-                    info['returncode'] = exitstatus
+                    info['returncode'] = exit_code
                     info['timestamp']  = ts
                     matched = True
                     break
@@ -957,7 +958,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
         if len(found) < len(job_ids):
 
             ret, out, err = self.shell.run_sync(
-                "%s %s -autoformat:, ProcId ExitCode TransferOutput CompletionDate JobCurrentStartDate QDate Err Out" %
+                "%s %s -autoformat:, ProcId ExitCode ExitBySignal CompletionDate JobCurrentStartDate QDate Err Out" %
                 (self._commands['condor_history'], cluster_id))
 
             if ret != 0:
@@ -972,16 +973,13 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
                 ts      = time.time()
                 for row in results:
 
-                    elems = row.split()
-                    if len(elems) != 8:
-                        self._logger.error('cannot parse condor_hist' \
-                                'output [%d != 8]\n%s\n%s', len(elems), row, elems)
-                        continue
-
-                    procid, exitcode = elems[0:2]
-                    transferoutput   = elems[2].split(',')
+                    procid, exit_code, exit_by_signal,  \
                     cdate, sdate, qdate, stderr, stdout \
-                                     = elems[3:8]
+                            = [col.strip() for col in row.split(',')]
+
+                    # we always set exit_code to '1' if exited_by_signal
+                    if not exit_code and exit_by_signal == 'true':
+                        exit_code = 1
 
                     matched = False
                     for job_id in to_check:
@@ -989,15 +987,14 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
                         if job_id.endswith('.%s]' % procid):
                             found.append(job_id)
                             info = self.jobs[job_id]
-                            info['returncode']  = int(exitcode)
-                            info['transfers']   = transferoutput
+                            info['returncode']  = int(exit_code)
                             info['create_time'] = qdate
                             info['start_time']  = sdate
                             info['end_time']    = cdate
                             info['stdout']      = stdout
                             info['stderr']      = stderr
 
-                            if int(exitcode) == 0:
+                            if int(exit_code) == 0:
                                 info['state'] = saga.job.DONE
                             else:
                                 info['state'] = saga.job.FAILED
