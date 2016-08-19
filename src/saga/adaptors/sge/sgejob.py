@@ -139,7 +139,7 @@ _ADAPTOR_OPTIONS       = [
     'category'         : 'saga.adaptor.sgejob',
     'name'             : 'base_workdir',
     'type'             : str,
-    'default'          : "$HOME/.saga/adaptors/shell_job/",
+    'default'          : "$HOME/.saga/adaptors/sge_job/",
     'documentation'    : '''The adaptor stores job state information on the
                           filesystem on the target resource.  This parameter
                           specified what location should be used.''',
@@ -234,7 +234,7 @@ class Adaptor (saga.adaptors.base.Base):
 
         self.purge_on_start = self.opts['purge_on_start'].get_value()
         self.purge_older_than = self.opts['purge_older_than'].get_value()
-        self.base_work_dir = self.opts['base_work_dir'].get_value()
+        self.base_work_dir = self.opts['base_workdir'].get_value()
 
     # ----------------------------------------------------------------
     #
