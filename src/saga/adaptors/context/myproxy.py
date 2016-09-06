@@ -27,7 +27,7 @@ _ADAPTOR_OPTIONS       = [
     'name'             : 'base_workdir',
     'type'             : str,
     'default'          : "$HOME/.saga/adaptors/proxies/",
-    'documentation'    : '''The adaptor stores job state information on the
+    'documentation'    : '''The adaptor stores proxies information on the
                           filesystem on the target resource.  This parameter
                           specified what location should be used.''',
     'env_variable'     : None
@@ -79,7 +79,7 @@ class Adaptor (saga.adaptors.base.Base):
 
         # there are no default myproxy contexts
         self._default_contexts = []
-        self.base_work_dir = self.opts['base_work_dir'].get_value()
+        self.base_workdir = self.opts['base_workdir'].get_value()
 
 
     def sanity_check (self) :
@@ -102,7 +102,7 @@ class ContextMyProxy (saga.adaptors.cpi.context.Context) :
 
         _cpi_base = super  (ContextMyProxy, self)
         _cpi_base.__init__ (api, adaptor)
-        self.base_work_dir = adaptor.base_work_dir
+        self.base_workdir = adaptor.base_workdir
 
 
     @SYNC_CALL
@@ -148,7 +148,7 @@ class ContextMyProxy (saga.adaptors.cpi.context.Context) :
             cmd += " --proxy_lifetime %s"  %  api.life_time
 
         # store the proxy in a private location
-        proxy_store    = "%s"   %  self.base_work_dir
+        proxy_store    = "%s" % self.base_workdir
         proxy_location = "%s/myproxy_%d.x509"  %  (proxy_store, id(self))
 
         if not os.path.exists (proxy_store) :

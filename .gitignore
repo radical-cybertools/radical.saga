@@ -49,5 +49,3 @@ docs/source/adaptors/saga.adaptor*
 
 # PyCharm
 .idea
-/.pycharmrc
-Supprimerait .pycharmrc

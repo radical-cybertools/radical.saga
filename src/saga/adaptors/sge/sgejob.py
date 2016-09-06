@@ -234,7 +234,7 @@ class Adaptor (saga.adaptors.base.Base):
 
         self.purge_on_start = self.opts['purge_on_start'].get_value()
         self.purge_older_than = self.opts['purge_older_than'].get_value()
-        self.base_work_dir = self.opts['base_workdir'].get_value()
+        self.base_workdir = self.opts['base_workdir'].get_value()
 
     # ----------------------------------------------------------------
     #
@@ -292,7 +292,7 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
         self.shell   = None
         self.mandatory_memreqs = list()
         self.accounting = False
-        self.temp_path = self._adaptor.base_work_dir
+        self.temp_path = self._adaptor.base_workdir
 
 
         rm_scheme = rm_url.scheme
