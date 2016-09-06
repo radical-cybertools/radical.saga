@@ -773,13 +773,13 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
                     source = remote
                     target = local
 
+                    hop_1 = True
+                    if target.startswith('site:'):
+                        target = target[5:]
+                        hop_1  = False
+
                     (s_path, s_entry) = os.path.split(source)
                     (t_path, t_entry) = os.path.split(target)
-
-                    hop_1 = True
-                    if t_entry.startswith('site:'):
-                        t_entry = t_entry[5:]
-                        hop_1   = False
 
                     if hop_1 and self.shell.url.scheme in ["ssh", "gsissh"]:
                         self._logger.info("Transferring out %s to %s", source, target)
