@@ -981,6 +981,15 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
                     if not exit_code and exit_by_signal == 'true':
                         exit_code = 1
 
+                    # make sure exit code is an int:
+                    try:
+                        exit_code = int(exit_code)
+                    except:
+                        # no exit code looks wrong, we assume that condor
+                        # failed, and thus also fail the job
+                        self._logger.warn("condor_history w/o exit code - assume error")
+                        exit_code = -1
+
                     matched = False
                     for job_id in to_check:
 
