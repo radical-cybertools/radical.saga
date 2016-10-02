@@ -412,7 +412,9 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         arg = ""
         env = ""
         cwd = ""
-        job_name = jd.get (saga.job.NAME, "SAGAPythonSLURMJob")
+        job_name = jd.name
+        if not job_name:
+            job_name = "SAGAPythonSLURMJob"
         spmd_variation = None
         total_cpu_count = None
         number_of_processes = None
@@ -772,7 +774,7 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
     #
     @SYNC_CALL
     def create_job (self, jd) :
-        """ Implements saga.adaptors.cpi.job.Service.get_url()
+        """ Implements saga.adaptors.cpi.job.Service.create_job()
         """
         # this dict is passed on to the job adaptor class -- use it to pass any
         # state information you need there.
@@ -849,30 +851,31 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
   #                 return job_obj.get_api ()
   #
   #
-  # # ----------------------------------------------------------------
-  # #
-  # def container_run (self, jobs) :
-  #     self._logger.debug("container run: %s"  %  str(jobs))
-  #     # TODO: this is not optimized yet
-  #     for job in jobs:
-  #         job.run()
-  #
-  #
-  # # ----------------------------------------------------------------
-  # #
-  # def container_wait (self, jobs, mode, timeout) :
-  #     self._logger.debug("container wait: %s"  %  str(jobs))
-  #     # TODO: this is not optimized yet
-  #     for job in jobs:
-  #         job.wait()
-  #
-  #
-  # # ----------------------------------------------------------------
-  # #
-  # def container_cancel (self, jobs) :
-  #     self._logger.debug("container cancel: %s"  %  str(jobs))
-  #     raise saga.NoSuccess("Not Implemented");
-
+    # ----------------------------------------------------------------
+    #
+    def container_run (self, jobs) :
+        self._logger.debug("container run: %s"  %  str(jobs))
+        # TODO: this is not optimized yet
+        for job in jobs:
+            job.run()
+    
+    
+    # ----------------------------------------------------------------
+    #
+    def container_wait (self, jobs, mode, timeout) :
+        self._logger.debug("container wait: %s"  %  str(jobs))
+        # TODO: this is not optimized yet
+        for job in jobs:
+            job.wait()
+    
+    
+    # ----------------------------------------------------------------
+    #
+    def container_cancel (self, jobs) :
+        self._logger.debug("container cancel: %s"  %  str(jobs))
+        for job in jobs:
+            job.cancel()
+    
 
 ###############################################################################
 #
@@ -903,7 +906,7 @@ class SLURMJob (saga.adaptors.cpi.job.Job):
 
         # initialize job attribute values
         self._id              = None
-        self._name            = self.jd.get(saga.job.NAME)
+        self._name            = self.jd.name
         self._state           = saga.job.NEW
         self._exit_code       = None
         self._exception       = None
