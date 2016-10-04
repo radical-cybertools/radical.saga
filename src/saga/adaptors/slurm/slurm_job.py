@@ -877,6 +877,18 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
             job.cancel()
     
 
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def container_get_states(self, jobs):
+
+        states = list()
+        for job in jobs:
+            job.get_state()
+
+        return states
+
+
 ###############################################################################
 #
 class SLURMJob (saga.adaptors.cpi.job.Job):
