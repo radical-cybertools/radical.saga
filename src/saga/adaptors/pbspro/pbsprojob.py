@@ -619,7 +619,7 @@ class PBSProJobService (saga.adaptors.cpi.job.Service):
             ret, out, _ = self.shell.run_sync('unset GREP_OPTIONS; %s -a | grep -E "resources_available.ncpus"' % \
                                                self._commands['pbsnodes']['path'])
         else:
-            ret, out, _ = self.shell.run_sync('unset GREP_OPTIONS; %s -a | grep -E "(np|pcpu)[[:blank:]]*=" ' % \
+            ret, out, _ = self.shell.run_sync('unset GREP_OPTIONS; %s -a | grep -E "(np|pcpu|pcpus)[[:blank:]]*=" ' % \
                                                self._commands['pbsnodes']['path'])
         if ret != 0:
             message = "Error running pbsnodes: %s" % out
