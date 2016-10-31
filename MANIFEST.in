@@ -1,8 +1,3 @@
-
-
-include MANIFEST.in README.md LICENSE.md CHANGES.md VERSION
-include bin/sagapython-version
-
-recursive-include src   *
-recursive-include tests *
-
+include *.py *.json *.sh MANIFEST.in README.md CHANGES.md LICENSE.md VERSION
+recursive-include src      *.sh
+recursive-include examples *.py *.json
