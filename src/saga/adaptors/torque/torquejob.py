@@ -289,6 +289,9 @@ def _torquescript_generator(url, logger, jd, ppn, gres, torque_version, is_cray=
     elif 'hopper' in url.host:
         logger.info("Using Hopper@NERSC (Cray XE6) specific '#PBS -l mppwidth=xx' parameter.")
         pbs_params += "#PBS -l mppwidth=%s \n" % jd.total_cpu_count
+    elif 'rhea.ccs.ornl.gov' in url.host or 'rhea-login' in os.uname()[1]:
+        # Not allowed to specify ppn on Rhea
+        pbs_params += "#PBS -l nodes=%d\n" % (nnodes)
     else:
         # Default case, i.e, standard HPC cluster (non-Cray)
 
