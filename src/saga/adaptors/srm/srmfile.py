@@ -36,13 +36,13 @@ _ADAPTOR_CAPABILITIES  = {}
 
 _ADAPTOR_DOC           = {
     'name'             : _ADAPTOR_NAME,
-    'cfg_options'      : _ADAPTOR_OPTIONS, 
+    'cfg_options'      : _ADAPTOR_OPTIONS,
     'capabilities'     : _ADAPTOR_CAPABILITIES,
     'description'      : 'The SRM filesystem adaptor.',
     'details'          : """This adaptor interacts with SRM Storage Elements
                          """,
     'schemas'          : {'srm': 'srm filesystem.'}
-    
+
 }
 
 _ADAPTOR_INFO          = {
@@ -61,7 +61,7 @@ _ADAPTOR_INFO          = {
         {
         'type'         : 'saga.filesystem.Directory',
         'class'        : 'SRMDirectory'
-        }, 
+        },
         {
         'type'         : 'saga.filesystem.File',
         'class'        : 'SRMFile'
@@ -149,7 +149,7 @@ class Adaptor(saga.adaptors.base.Base):
                 raise saga.exceptions.NoSuccess("Connection failed")
             else:
                 raise saga.exceptions.NoSuccess("Couldn't list file")
-        
+
         # Sometimes we get cksum too, which we ignore
         fields = out.split()[:7]
         stat_str, _, _, _, size_str, _, _ = fields
@@ -314,7 +314,7 @@ class Adaptor(saga.adaptors.base.Base):
     def surl2query(self, url, surl, tgt_in):
         url = saga.Url(url)
         if tgt_in:
-            surl = os.path.join(surl, str(tgt_in)) 
+            surl = os.path.join(surl, str(tgt_in))
         url.query = 'SFN=%s' % surl
         return url
 
@@ -391,7 +391,7 @@ class SRMDirectory (saga.adaptors.cpi.filesystem.Directory):
     def _init_check(self):
 
         url   = self._url
-        flags = self._flags 
+        flags = self._flags
 
         if url.fragment :
             raise saga.exceptions.BadParameter ("Cannot handle url %s (has fragment)"  %  url)
@@ -447,7 +447,7 @@ class SRMDirectory (saga.adaptors.cpi.filesystem.Directory):
                     raise saga.exceptions.AlreadyExists(url)
             else:
                 raise Exception("Couldn't create directory.")
-        
+
 
     # ----------------------------------------------------------------
     #
