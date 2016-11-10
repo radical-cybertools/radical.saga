@@ -187,7 +187,7 @@ setup_args = {
         'test'           : our_test,
     },
     'install_requires'   : ['apache-libcloud', 
-                            'radical.utils',
+                            'radical.utils>=0.44',
                             'parse'],
     'tests_require'      : [],
     'test_suite'         : 'saga.tests',

@@ -135,6 +135,16 @@ _ADAPTOR_OPTIONS       = [
                             of days to consider a temporary file older enough to be deleted.''',
     'env_variable'     : None
     },
+    {
+    'category'         : 'saga.adaptor.sgejob',
+    'name'             : 'base_workdir',
+    'type'             : str,
+    'default'          : "$HOME/.saga/adaptors/sge_job/",
+    'documentation'    : '''The adaptor stores job state information on the
+                          filesystem on the target resource.  This parameter
+                          specified what location should be used.''',
+    'env_variable'     : None
+    }
 ]
 # --------------------------------------------------------------------
 # the adaptor capabilities & supported attributes
@@ -224,6 +234,7 @@ class Adaptor (saga.adaptors.base.Base):
 
         self.purge_on_start = self.opts['purge_on_start'].get_value()
         self.purge_older_than = self.opts['purge_older_than'].get_value()
+        self.base_workdir = self.opts['base_workdir'].get_value()
 
     # ----------------------------------------------------------------
     #
@@ -281,7 +292,7 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
         self.shell   = None
         self.mandatory_memreqs = list()
         self.accounting = False
-        self.temp_path = "$HOME/.saga/adaptors/sge_job"
+        self.temp_path = self._adaptor.base_workdir
 
 
         rm_scheme = rm_url.scheme
@@ -428,7 +439,7 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
 
         # purge temporary files
         if self._adaptor.purge_on_start:
-            cmd = "find $HOME/.saga/adaptors/sge_job" \
+            cmd = "find " + self.temp_path + \
                   " -type f -mtime +%d -print -delete | wc -l" % self._adaptor.purge_older_than
             ret, out, _ = self.shell.run_sync(cmd)
             if ret == 0 and out != "0":
