@@ -45,13 +45,13 @@ class TransferDirectives(object):
                 msg = "'%s' is not a valid transfer directive string."
                 raise se.BadParameter(msg)
             elif '<<' in directive:
-                (remote, local) = directive.split('<<')
+                (local, remote) = directive.split('<<')
                 self._out_append[local.strip()] = remote.strip()
             elif '>>' in directive:
                 (local, remote) = directive.split('>>')
                 self._in_append[local.strip()] = remote.strip()
             elif '<' in directive:
-                (remote, local) = directive.split('<')
+                (local, remote) = directive.split('<')
                 self._out_overwrite[local.strip()] = remote.strip()
             elif '>' in directive:
                 (local, remote) = directive.split('>')
