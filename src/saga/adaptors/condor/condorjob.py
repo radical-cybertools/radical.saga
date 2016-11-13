@@ -123,7 +123,8 @@ def _condorscript_generator(url, logger, jds, option_dict=None):
 
 
         # handle site inclusion/exclusion
-        requirements = "(NumJobStarts =?= 0 || NumJobStarts =?= Undefined)"
+      # requirements = "(NumJobStarts =?= 0 || NumJobStarts =?= Undefined)"
+        requirements = "(Target.MAX.PREEMPT >= 24*60*60) || (Target.MAX.PREEMPT == false) && "
         if jd.candidate_hosts:
 
             # special characters / strings
@@ -155,7 +156,7 @@ def _condorscript_generator(url, logger, jds, option_dict=None):
                 requirements += ' && '.join(req_sites)
 
         condor_file += "\nrequirements    = %s" % requirements
-        condor_file += "\nperiodic_remove = NumJobStarts > 0 && JobStatus == 1\n"
+      # condor_file += "\nperiodic_remove = NumJobStarts > 0 && JobStatus == 1\n"
 
 
         # special treatment for universe - defaults to 'vanilla'
