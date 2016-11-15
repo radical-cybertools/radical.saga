@@ -60,7 +60,7 @@ class TransferDirectives(object):
 
             elif '<' in d:
                 (loc, rem) = d.split('<')
-                self._out_overwrite.append([loc.strip(), loc.strip()])
+                self._out_overwrite.append([loc.strip(), rem.strip()])
 
             elif '<<' in d:
                 (loc, rem) = d.split('<<')

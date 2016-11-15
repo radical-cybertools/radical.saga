@@ -773,13 +773,13 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
                     source = remote
                     target = local
 
+                    hop_1 = True
+                    if target.startswith('site:'):
+                        target = target[5:]
+                        hop_1  = False
+
                     (s_path, s_entry) = os.path.split(source)
                     (t_path, t_entry) = os.path.split(target)
-
-                    hop_1 = True
-                    if t_entry.startswith('site:'):
-                        t_entry = t_entry[5:]
-                        hop_1   = False
 
                     if hop_1 and self.shell.url.scheme in ["ssh", "gsissh"]:
                         self._logger.info("Transferring out %s to %s", source, target)
@@ -980,6 +980,15 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
                     # we always set exit_code to '1' if exited_by_signal
                     if not exit_code and exit_by_signal == 'true':
                         exit_code = 1
+
+                    # make sure exit code is an int:
+                    try:
+                        exit_code = int(exit_code)
+                    except:
+                        # no exit code looks wrong, we assume that condor
+                        # failed, and thus also fail the job
+                        self._logger.warn("condor_history w/o exit code - assume error")
+                        exit_code = -1
 
                     matched = False
                     for job_id in to_check:

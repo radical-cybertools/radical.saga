@@ -1103,7 +1103,7 @@ class PTYShell (object) :
                 self.cp_slave.write (" ls %s\n" % src)
                 _, out = self.cp_slave.find (["^sftp> "], -1)
 
-                src_list = out[1].split ('/n')
+                src_list = out[1].split('\n')
 
                 for s in src_list :
                     if  os.path.isdir (s) :
