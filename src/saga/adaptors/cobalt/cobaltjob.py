@@ -1,3 +1,4 @@
+
 __author__    = "Andre Merzky, Ole Weidner, Mark Santcroos, Manuel Maldonado"
 __copyright__ = "Copyright 2012-2016, The SAGA Project"
 __license__   = "MIT"
@@ -434,7 +435,7 @@ class Adaptor (saga.adaptors.base.Base):
 
 
 ###############################################################################
-#
+# CobaltJobService
 class CobaltJobService (saga.adaptors.cpi.job.Service):
     """ implements saga.adaptors.cpi.job.Service
     """
@@ -486,7 +487,7 @@ class CobaltJobService (saga.adaptors.cpi.job.Service):
         """
         self.rm      = rm_url
         self.session = session
-        self.ppn     = 16       # DEFAULT BLUE GENE / Q IS 16 
+        self.ppn     = 16       # DEFAULT MIRA -- BLUE GENE / Q IS 16 
         self.is_cray = ""
         self.queue   = None
         self.shell   = None
