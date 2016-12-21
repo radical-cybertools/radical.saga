@@ -69,7 +69,7 @@ class _job_state_monitor(threading.Thread):
                     # we only need to monitor jobs that are not in a
                     # terminal state, so we can skip the ones that are 
                     # either done, failed or canceled
-                    if  job_info['state'] not in [saga.job.DONE, saga.job.FAILED, saga.job.CANCELED] :
+                    if  job_info['state'] not in [saga.job.DONE, saga.job.FAILED, saga.job.CANCELED]:
 
                         # Store the current state since the current state 
                         # variable is updated when _job_get_info is called
@@ -149,7 +149,7 @@ def _cobalt_to_saga_jobstate(cobaltjs):
 
 # --------------------------------------------------------------------
 #
-def _cobaltscript_generator(url, logger, jd, ppn, gres, cobalt_version, is_cray=False, queue=None, ):
+def _cobaltscript_generator(url, logger, jd, ppn, is_cray=False, queue=None, ):
     """ Generates Cobalt-style 'qsub' command arguments from a SAGA job description
     """
     cobalt_params  = str()
@@ -161,7 +161,7 @@ def _cobaltscript_generator(url, logger, jd, ppn, gres, cobalt_version, is_cray=
     ppn = 16 # for now, defaulting to number of cores per node in Blue Gene/Q
 
     # Why dp I need this?
-    exec_n_args += 'export SAGA_PPN=%d \\\n' % ppn
+    # exec_n_args += 'export SAGA_PPN=%d \\\n' % ppn
     if jd.executable:
         exec_n_args += "%s " % (jd.executable)
     if jd.arguments:
@@ -174,7 +174,7 @@ def _cobaltscript_generator(url, logger, jd, ppn, gres, cobalt_version, is_cray=
 
     if jd.environment:
         cobalt_params += '--env "%s" \\\n' % \
-                ':'.join (["%s=%s" % (k,v) 
+                ':'.join (["%s=%s" % (k,v.replace('"', '\\"')) # escape double quotes
                            for k,v in jd.environment.iteritems()])
 
     if jd.working_directory:
@@ -254,7 +254,7 @@ def _cobaltscript_generator(url, logger, jd, ppn, gres, cobalt_version, is_cray=
     if jd.attribute_exists ("total_cpu_count"):
         total_cpu_count = jd.total_cpu_count
     else:
-        self._logger.warning("total_cpu_count not specified in submitted Cobalt job description -- defaulting to (1)!")
+        logger.warning("total_cpu_count not specified in submitted Cobalt job description -- defaulting to (1)!")
         total_cpu_count = 1
 
     # Request enough nodes to cater for the number of cores requested
@@ -267,7 +267,7 @@ def _cobaltscript_generator(url, logger, jd, ppn, gres, cobalt_version, is_cray=
     if jd.attribute_exists ("number_of_processes"):
         number_of_processes = jd.number_of_processes
     else:
-        self._logger.debug("number_of_processes not specified in submitted Cobalt job description -- defaulting to (1) per number_of_nodes! (%d)" % number_of_nodes)
+        logger.debug("number_of_processes not specified in submitted Cobalt job description -- defaulting to (1) per number_of_nodes! (%d)" % number_of_nodes)
         number_of_processes = number_of_nodes
 
     # Get number of processes per host/node
@@ -275,7 +275,7 @@ def _cobaltscript_generator(url, logger, jd, ppn, gres, cobalt_version, is_cray=
     if jd.attribute_exists("processes_per_host"):
         processes_per_host = jd.processes_per_host
     else:
-        self._logger.debug("processes_per_host not specified in submitted Cobalt job description -- defaulting to 1!")
+        logger.debug("processes_per_host not specified in submitted Cobalt job description -- defaulting to 1!")
         processes_per_host = 1
 
     # Need to make sure that the 'processes_per_host' is a valid one
@@ -285,7 +285,7 @@ def _cobaltscript_generator(url, logger, jd, ppn, gres, cobalt_version, is_cray=
     #   http://www.alcf.anl.gov/user-guides/cobalt-job-control
     #   https://www.alcf.anl.gov/user-guides/blue-geneq-versus-blue-genep
     if processes_per_host not in blue_gene_q_modes:
-        log_error_and_raise("Number of processes per host (%d) requested is not compatible with available modes! (%d)" % (processes_per_host, blue_gene_q_modes), saga.BadParameter, self._logger)
+        log_error_and_raise("Number of processes per host (%d) requested is not compatible with available modes! (%d)" % (processes_per_host, blue_gene_q_modes), saga.BadParameter, logger)
 
     # Make sure we aren't doing funky math
     # References:
@@ -294,7 +294,7 @@ def _cobaltscript_generator(url, logger, jd, ppn, gres, cobalt_version, is_cray=
     if  number_of_processes > (number_of_nodes * processes_per_host):
         log_error_and_raise ("number_of_processes (%d) must be less than or equal to (number_of_nodes * processes_per_host) (%d * %d = %d)" 
             % (number_of_processes, number_of_nodes, processes_per_host, (number_of_nodes * processes_per_host)), 
-            saga.NoSuccess, self._logger)
+            saga.NoSuccess, logger)
     ## Other funky math checks should go here ~
 
     # Set the MPI rank per node (mode).
@@ -307,12 +307,12 @@ def _cobaltscript_generator(url, logger, jd, ppn, gres, cobalt_version, is_cray=
     # Set the total number of processes
     cobalt_params += '--proccount %d \\\n' % number_of_processes
 
-    # escape all double quotes and dollarsigns, otherwise 'echo |'
-    # further down won't work
+    # may not need to escape all double quotes and dollarsigns, 
+    # since we don't do 'echo |' further down (like torque/pbspro)
     # only escape '$' in args and exe. not in the params
-    exec_n_args = exec_n_args.replace('$', '\\$')
-    cobaltscrpit = "%s%s" % (cobalt_params, exec_n_args)
-    exec_n_args = exec_n_args.replace('"', '\\"')
+    # exec_n_args = exec_n_args.replace('$', '\\$')
+    
+    cobaltscrpit = "%s %s" % (cobalt_params, exec_n_args)
     return cobaltscrpit
 
 
@@ -587,8 +587,8 @@ class CobaltJobService (saga.adaptors.cpi.job.Service):
 
         try:
             # create a Cobalt job script from SAGA job description
-            qsub_arguments = _cobaltscript_generator(url=self.rm, logger=self._logger, jd=jd, ppn=self.ppn, 
-                cobalt_version=self._commands['qstat']['version'], queue=self.queue, )
+            qsub_arguments = _cobaltscript_generator(url=self.rm, logger=self._logger, jd=jd, 
+                ppn=self.ppn, queue=self.queue, )
             self._logger.info("Generated Cobalt qsub arguments: %s" % qsub_arguments)
         except Exception, ex:
             log_error_and_raise(str(ex), saga.BadParameter, self._logger)
@@ -732,7 +732,7 @@ class CobaltJobService (saga.adaptors.cpi.job.Service):
                 
                 cqhist_flag ='--alldetails --rows=1000' # return the last 1k lines
                 ret, out, _ = self.shell.run_sync("unset GREP_OPTIONS; %s %s | "
-                    "grep -E -i '^ *\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} +%s +'"
+                    "grep -P -i '^ *\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} +%s +'"
                     % (self._commands['cqhist']['path'], cqhist_flag, pid))
 
                 if ret != 0:
@@ -761,7 +761,7 @@ class CobaltJobService (saga.adaptors.cpi.job.Service):
                     # DDD mmm dd HH:MM:SS YYYY +0000 (UTC)
                     # Wed Dec 21 15:51:34 2016 +0000 (UTC)
                     end_time = datetime.datetime.strptime( "%s %s" % 
-                        (results[0].srtip(), results[1].srtip()), 
+                        (results[0].strip(), results[1].strip()), 
                         "%Y-%m-%d %H:%M:%S" )
                     job_info['end_time'] = end_time.strftime("%a %b %d %H:%M:%S %Y +0000 (UTC)")
 
@@ -769,7 +769,7 @@ class CobaltJobService (saga.adaptors.cpi.job.Service):
                     job_info['end_time'] = results[6].strip()
 
                     # Return code is on position '13'
-                    job_info['returncode'] = int(results['13'].strip())
+                    job_info['returncode'] = int(results[13].strip())
                     
                     # Final Job State given the exit code
                     if job_info['returncode'] != 0:
@@ -827,9 +827,7 @@ class CobaltJobService (saga.adaptors.cpi.job.Service):
                     # Cobalt doesn't have an "end time" field in qstat.
                     # It has an "RunTime" though,
                     # which could be added up to the start time.
-                    if (key in ['RunTime']) and 
-                        (val not in ['N/A', 'n/a', None]) and
-                        (job_info['start_time'] not in ['N/A', 'n/a', None]):
+                    if key in ['RunTime'] and val not in ['N/A', 'n/a', None] and job_info['start_time'] not in ['N/A', 'n/a', None]:
                         start_time = datetime.datetime.strptime(job_info['start_time'],
                             "%a %b %d %H:%M:%S %Y +0000 (UTC)")
                         duration = val.split(':')
