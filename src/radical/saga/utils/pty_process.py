@@ -16,12 +16,13 @@ import select
 import signal
 import termios
 
-import radical.utils         as ru
-import radical.utils.logger  as rul
+import radical.utils           as ru
+import radical.utils.logger    as rul
 
-import saga.exceptions       as se
+from   . import pty_exceptions as ptye
 
-import pty_exceptions        as ptye
+from   ..exceptions import *
+
 
 # --------------------------------------------------------------------
 #
@@ -108,10 +109,10 @@ class PTYProcess (object) :
             command = shlex.split (command)
 
         if not isinstance (command, list) :
-            raise se.BadParameter ("PTYProcess expects string or list command")
+            raise BadParameter ("PTYProcess expects string or list command")
 
         if len(command) < 1 :
-            raise se.BadParameter ("PTYProcess expects non-empty command")
+            raise BadParameter ("PTYProcess expects non-empty command")
 
         self.rlock   = ru.RLock ("pty process %s" % command)
 
@@ -221,7 +222,7 @@ class PTYProcess (object) :
             try :
                 self.child, self.child_fd = pty.fork ()
             except Exception as e:
-                raise se.NoSuccess ("Could not run (%s): %s" \
+                raise NoSuccess ("Could not run (%s): %s" \
                                  % (' '.join (self.command), e))
 
             if  not self.child :
@@ -378,7 +379,7 @@ class PTYProcess (object) :
 
                     # no idea what happened -- it is likely bad
                   # print "waitpid failed"
-                    raise se.NoSuccess ("waitpid failed on wait")
+                    raise NoSuccess ("waitpid failed on wait")
 
 
                 # did we get a note about child termination?
@@ -603,7 +604,7 @@ class PTYProcess (object) :
                             self.logger.debug ("read : MacOS EOF")
                             self.finalize ()
                             found_eof = True
-                            raise se.NoSuccess ("unexpected EOF (%s)" % self.tail)
+                            raise NoSuccess ("unexpected EOF (%s)" % self.tail)
 
 
                         self.cache += buf.replace ('\r', '')
@@ -675,7 +676,7 @@ class PTYProcess (object) :
                 if  found_eof :
                     raise e
 
-                raise se.NoSuccess ("read from process failed '%s' : (%s)" \
+                raise NoSuccess ("read from process failed '%s' : (%s)" \
                                  % (e, self.tail))
 
 
@@ -786,7 +787,7 @@ class PTYProcess (object) :
                     # no match yet, still time -- read more data
                     data += self.read (timeout=_POLLDELAY)
 
-            except se.NoSuccess as e :
+            except NoSuccess as e :
                 raise ptye.translate_exception (e, "(%s)" % data)
 
 
@@ -801,7 +802,7 @@ class PTYProcess (object) :
         with self.rlock :
 
             if not self.alive (recover=False) :
-                raise ptye.translate_exception (se.NoSuccess ("cannot write to dead process (%s) [%5d]" \
+                raise ptye.translate_exception (NoSuccess ("cannot write to dead process (%s) [%5d]" \
                                                 % (self.cache[-256:], self.parent_in)))
 
             try :

@@ -17,7 +17,6 @@ from . import base              as sbase
 from . import exceptions        as se
 from . import attributes        as satt
 
-from .adaptors.cpi import base  as sacb
 from .constants    import *
 
 
@@ -28,7 +27,7 @@ class Task (sbase.SimpleBase, satt.Attributes) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Task', 
-                  sacb.CPIBase, 
+                  'CPIBase', 
                   basestring,
                   dict, 
                   rus.one_of (SYNC, ASYNC, TASK))

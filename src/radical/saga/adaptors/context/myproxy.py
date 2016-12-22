@@ -7,44 +7,30 @@ __license__   = "MIT"
 import os
 import subprocess
 
-import saga.context
-import saga.adaptors.base
-import saga.adaptors.cpi.decorators
-import saga.adaptors.cpi.context
+from ..            import base
+from ..cpi         import SYNC_CALL, ASYNC_CALL
+from ..cpi         import context as cpi
+from ...           import context as api
+from ...exceptions import *
 
-SYNC_CALL  = saga.adaptors.cpi.decorators.SYNC_CALL
-ASYNC_CALL = saga.adaptors.cpi.decorators.ASYNC_CALL
 
 ######################################################################
 #
 # adaptor meta data
 #
-_ADAPTOR_NAME          = 'saga.adaptor.myproxy'
+_ADAPTOR_NAME          = 'adaptor_myproxy'
 _ADAPTOR_SCHEMAS       = ['MyProxy']
-_ADAPTOR_OPTIONS       = [
-    {
-    'category'         : 'saga.adaptor.myproxy',
-    'name'             : 'base_workdir',
-    'type'             : str,
-    'default'          : "$HOME/.saga/adaptors/proxies/",
-    'documentation'    : '''The adaptor stores proxies information on the
-                          filesystem on the target resource.  This parameter
-                          specified what location should be used.''',
-    'env_variable'     : None
-    }
-]
 
 _ADAPTOR_CAPABILITIES  = {
-    'attributes'       : [saga.context.TYPE,
-                          saga.context.SERVER,
-                          saga.context.USER_ID,
-                          saga.context.USER_PASS,
-                          saga.context.LIFE_TIME]
+    'attributes'       : [api.TYPE,
+                          api.SERVER,
+                          api.USER_ID,
+                          api.USER_PASS,
+                          api.LIFE_TIME]
 }
 
 _ADAPTOR_DOC           = {
     'name'             : _ADAPTOR_NAME,
-    'cfg_options'      : _ADAPTOR_OPTIONS, 
     'capabilities'     : _ADAPTOR_CAPABILITIES,
     'description'      : """This adaptor fetches an X509 proxy from
                             MyProxy when it is added to a saga.Session.""",
@@ -56,7 +42,7 @@ _ADAPTOR_INFO          = {
     'version'          : 'v0.1',
     'schemas'          : _ADAPTOR_SCHEMAS,
     'cpis'             : [{ 
-        'type'         : 'saga.Context',
+        'type'         : 'radical.saga.Context',
         'class'        : 'ContextMyProxy'
         }
     ]
@@ -66,7 +52,7 @@ _ADAPTOR_INFO          = {
 ###############################################################################
 # The adaptor class
 
-class Adaptor (saga.adaptors.base.Base):
+class Adaptor (base.Base):
     """ 
     This is the actual adaptor class, which gets loaded by SAGA (i.e. by the
     SAGA engine), and which registers the CPI implementation classes which
@@ -75,11 +61,12 @@ class Adaptor (saga.adaptors.base.Base):
 
     def __init__ (self) :
 
-        saga.adaptors.base.Base.__init__ (self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
+        base.Base.__init__ (self, _ADAPTOR_INFO)
+        print 'loaded!'
 
         # there are no default myproxy contexts
         self._default_contexts = []
-        self.base_workdir = self.opts['base_workdir'].get_value()
+        self.base_workdir = self._cfg['base_workdir']
 
 
     def sanity_check (self) :
@@ -96,7 +83,7 @@ class Adaptor (saga.adaptors.base.Base):
 #
 # job adaptor class
 #
-class ContextMyProxy (saga.adaptors.cpi.context.Context) :
+class ContextMyProxy (cpi.Context) :
 
     def __init__ (self, api, adaptor) :
 
@@ -109,7 +96,7 @@ class ContextMyProxy (saga.adaptors.cpi.context.Context) :
     def init_instance (self, adaptor_state, type) :
 
         if not type.lower () in (schema.lower() for schema in _ADAPTOR_SCHEMAS) :
-            raise saga.exceptions.BadParameter \
+            raise BadParameter \
                     ("the MyProxy context adaptor only handles MyProxy contexts - duh!")
 
         self.get_api ().type = type
@@ -155,7 +142,7 @@ class ContextMyProxy (saga.adaptors.cpi.context.Context) :
             try :
                 os.makedirs (proxy_store)
             except OSError as e :
-                raise saga.exceptions.NoSuccess ("could not create myproxy store: %s"  %  str(e))
+                raise NoSuccess ("could not create myproxy store: %s"  %  str(e))
 
         cmd += " --out %s"  %  proxy_location
 
@@ -171,9 +158,9 @@ class ContextMyProxy (saga.adaptors.cpi.context.Context) :
             self._logger.info (stdout)
         else :
             self._logger.info (stderr)
-            raise saga.exceptions.BadParameter ("could not evaluate myproxy context: %s"  %  stderr)
+            raise BadParameter ("could not evaluate myproxy context: %s"  %  stderr)
 
-        new_ctx = saga.Context ('X509')
+        new_ctx = api.Context ('X509')
 
         new_ctx.user_proxy = proxy_location
         new_ctx.life_time  = api.life_time

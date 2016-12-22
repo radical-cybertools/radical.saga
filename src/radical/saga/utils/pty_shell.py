@@ -10,18 +10,18 @@ import sys
 import errno
 import tempfile
 
-import saga.utils.misc              as sumisc
 import radical.utils                as ru
 
-import saga.utils.pty_shell_factory as supsf
-import saga.utils.pty_process       as supp
-import saga.url                     as surl
-import saga.exceptions              as se
-import saga.session                 as ss
-import saga.filesystem              as sfs
+from  .  import misc                       as sumisc
+from  .  import pty_shell_factory          as supsf
+from  .  import pty_process                as supp
+from  .. import url                        as surl
+from  .. import session                    as ss
+from  .. import filesystem                 as sfs
 
-import pty_exceptions               as ptye
+from  .  import pty_exceptions              as ptye
 
+from  ..exceptions import *
 
 # ------------------------------------------------------------------------------
 #
@@ -237,7 +237,7 @@ class PTYShell (object) :
             if e.errno == errno.EEXIST and os.path.isdir (self.base):
                 pass
             else: 
-                raise se.NoSuccess ("could not create staging dir: %s" % e)
+                raise NoSuccess ("could not create staging dir: %s" % e)
 
         
         self.factory    = supsf.PTYShellFactory   ()
@@ -313,7 +313,7 @@ class PTYShell (object) :
                     self.logger.debug ("got new shell prompt")
 
                 except Exception as e :
-                    raise se.NoSuccess ("Shell startup on target host failed: %s" % e)
+                    raise NoSuccess ("Shell startup on target host failed: %s" % e)
 
             # got a command shell, finally!
             self.pty_shell.flush ()
@@ -479,7 +479,7 @@ class PTYShell (object) :
                         retries += 1
                         if  retries > 10 :
                             self.prompt = old_prompt
-                            raise se.BadParameter ("Cannot use new prompt, parsing failed (10 retries)")
+                            raise BadParameter ("Cannot use new prompt, parsing failed (10 retries)")
 
                         self.pty_shell.write ("\n")
                         self.logger.debug  ("sent prompt trigger again (%d)" % retries)
@@ -492,7 +492,7 @@ class PTYShell (object) :
 
                     if  ret != 0 :
                         self.prompt = old_prompt
-                        raise se.BadParameter ("could not parse exit value (%s)" \
+                        raise BadParameter ("could not parse exit value (%s)" \
                                             % match)
 
                     # prompt looks valid...
@@ -515,7 +515,7 @@ class PTYShell (object) :
                 if  fret == None :
                     # not find prompt after blocking?  BAD!  Restart the shell
                     self.finalize (kill_pty=True)
-                    raise se.NoSuccess ("Could not synchronize prompt detection")
+                    raise NoSuccess ("Could not synchronize prompt detection")
 
                 self.find_prompt ()
 
@@ -544,14 +544,14 @@ class PTYShell (object) :
 
                 result = None
                 if  not data :
-                    raise se.NoSuccess ("cannot not parse prompt (%s), invalid data (%s)" \
+                    raise NoSuccess ("cannot not parse prompt (%s), invalid data (%s)" \
                                      % (prompt, data))
 
                 result = prompt_re.match (data)
 
                 if  not result :
                     self.logger.debug  ("could not parse prompt (%s) (%s)" % (prompt, data))
-                    raise se.NoSuccess ("could not parse prompt (%s) (%s)" % (prompt, data))
+                    raise NoSuccess ("could not parse prompt (%s) (%s)" % (prompt, data))
 
                 txt = result.group (1)
                 ret = 0
@@ -559,7 +559,7 @@ class PTYShell (object) :
                 if  len (result.groups ()) != 2 :
                     if  new_prompt :
                         self.logger.warn   ("prompt does not capture exit value (%s)" % prompt)
-                      # raise se.NoSuccess ("prompt does not capture exit value (%s)" % prompt)
+                      # raise NoSuccess ("prompt does not capture exit value (%s)" % prompt)
 
                 else :
                     try :
@@ -643,14 +643,14 @@ class PTYShell (object) :
             # command -- thus we can check if the shell is alive before doing so,
             # and restart if needed
             if not self.pty_shell.alive (recover=True) :
-                raise se.IncorrectState ("Can't run command -- shell died:\n%s" \
+                raise IncorrectState ("Can't run command -- shell died:\n%s" \
                                       % self.pty_shell.autopsy ())
 
             try :
 
                 command = command.strip ()
                 if command.endswith ('&') :
-                    raise se.BadParameter ("run_sync can only run foreground jobs ('%s')" \
+                    raise BadParameter ("run_sync can only run foreground jobs ('%s')" \
                                         % command)
 
                 redir = ""
@@ -689,7 +689,7 @@ class PTYShell (object) :
                 if  fret == None :
                     # not find prompt after blocking?  BAD!  Restart the shell
                     self.finalize (kill_pty=True)
-                    raise se.IncorrectState ("run_sync failed, no prompt (%s)" % command)
+                    raise IncorrectState ("run_sync failed, no prompt (%s)" % command)
 
 
                 ret, txt = self._eval_prompt (match, new_prompt)
@@ -719,13 +719,13 @@ class PTYShell (object) :
                     if  fret == None :
                         # not find prompt after blocking?  BAD!  Restart the shell
                         self.finalize (kill_pty=True)
-                        raise se.IncorrectState ("run_sync failed, no prompt (%s)" \
+                        raise IncorrectState ("run_sync failed, no prompt (%s)" \
                                               % command)
 
                     _ret, _stderr = self._eval_prompt (match)
 
                     if  _ret :
-                        raise se.IncorrectState ("run_sync failed, no stderr (%s: %s)" \
+                        raise IncorrectState ("run_sync failed, no stderr (%s: %s)" \
                                               % (_ret, _stderr))
 
                     stderr =  _stderr
@@ -764,7 +764,7 @@ class PTYShell (object) :
             # command -- thus we can check if the shell is alive before doing so,
             # and restart if needed
             if not self.pty_shell.alive (recover=True) :
-                raise se.IncorrectState ("Cannot run command:\n%s" \
+                raise IncorrectState ("Cannot run command:\n%s" \
                                       % self.pty_shell.autopsy ())
 
             try :
@@ -785,7 +785,7 @@ class PTYShell (object) :
         with self.pty_shell.rlock :
 
             if not self.pty_shell.alive (recover=False) :
-                raise se.IncorrectState ("Cannot send data:\n%s" \
+                raise IncorrectState ("Cannot send data:\n%s" \
                                       % self.pty_shell.autopsy ())
 
             try :
@@ -963,7 +963,7 @@ class PTYShell (object) :
                 cp_proc = supp.PTYProcess (s_cmd)
                 out = cp_proc.wait ()
                 if  cp_proc.exit_code :
-                    raise ptye.translate_exception (se.NoSuccess ("file copy failed: %s" % out))
+                    raise ptye.translate_exception (NoSuccess ("file copy failed: %s" % out))
 
                 return list()
 
@@ -1006,20 +1006,20 @@ class PTYShell (object) :
 
             # FIXME: we don't really get exit codes from copy
             # if  self.cp_slave.exit_code != 0 :
-            #     raise se.NoSuccess._log (info['logger'], "file copy failed: %s" % str(out))
+            #     raise NoSuccess._log (info['logger'], "file copy failed: %s" % str(out))
 
             if 'Invalid flag' in out :
-                raise se.NoSuccess._log (info['logger'], "sftp version not supported (%s)" % str(out))
+                raise NoSuccess._log (info['logger'], "sftp version not supported (%s)" % str(out))
 
             if 'No such file or directory' in out :
-                raise se.DoesNotExist._log (info['logger'], "file copy failed: %s" % str(out))
+                raise DoesNotExist._log (info['logger'], "file copy failed: %s" % str(out))
 
             if 'is not a directory' in out :
-                raise se.BadParameter._log (info['logger'], "File copy failed: %s" % str(out))
+                raise BadParameter._log (info['logger'], "File copy failed: %s" % str(out))
 
             if  'sftp' in s_cmd :
                 if 'not found' in out :
-                    raise se.BadParameter._log (info['logger'], "file copy failed: %s" % out)
+                    raise BadParameter._log (info['logger'], "file copy failed: %s" % out)
 
 
             # we interpret the first word on the line as name of src file -- we
@@ -1086,7 +1086,7 @@ class PTYShell (object) :
                 cp_proc = supp.PTYProcess (s_cmd)
                 cp_proc.wait ()
                 if  cp_proc.exit_code :
-                    raise ptye.translate_exception (se.NoSuccess ("file copy failed: exit code %s" % cp_proc.exit_code))
+                    raise ptye.translate_exception (NoSuccess ("file copy failed: exit code %s" % cp_proc.exit_code))
 
                 return list()
 
@@ -1115,20 +1115,20 @@ class PTYShell (object) :
 
             # FIXME: we don't really get exit codes from copy
           # if  self.cp_slave.exit_code != 0 :
-          #     raise se.NoSuccess._log (info['logger'], "file copy failed: %s" % out)
+          #     raise NoSuccess._log (info['logger'], "file copy failed: %s" % out)
 
             if 'Invalid flag' in out :
-                raise se.NoSuccess._log (info['logger'], "sftp version not supported (%s)" % out)
+                raise NoSuccess._log (info['logger'], "sftp version not supported (%s)" % out)
 
             if 'No such file or directory' in out :
-                raise se.DoesNotExist._log (info['logger'], "file copy failed: %s" % out)
+                raise DoesNotExist._log (info['logger'], "file copy failed: %s" % out)
 
             if 'is not a directory' in out :
-                raise se.BadParameter._log (info['logger'], "file copy failed: %s" % out)
+                raise BadParameter._log (info['logger'], "file copy failed: %s" % out)
 
             if  'sftp' in s_cmd :
                 if 'not found' in out :
-                    raise se.BadParameter._log (info['logger'], "file copy failed: %s" % out)
+                    raise BadParameter._log (info['logger'], "file copy failed: %s" % out)
 
 
             # we run copy with -v, so get a list of files which have been copied

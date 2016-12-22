@@ -4,12 +4,12 @@ __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
 
-import saga.context
-import saga.adaptors.base
-import saga.adaptors.cpi.context
+from ..            import base
+from ..cpi         import SYNC_CALL, ASYNC_CALL
+from ..cpi         import context as cpi
+from ...           import context as api
+from ...exceptions import *
 
-SYNC_CALL  = saga.adaptors.cpi.decorators.SYNC_CALL
-ASYNC_CALL = saga.adaptors.cpi.decorators.ASYNC_CALL
 
 ######################################################################
 #
@@ -20,9 +20,9 @@ _ADAPTOR_SCHEMAS       = ['UserPass']
 _ADAPTOR_OPTIONS       = []
 
 _ADAPTOR_CAPABILITIES  = {
-    'attributes'       : [saga.context.TYPE,
-                          saga.context.USER_ID,
-                          saga.context.USER_PASS]
+    'attributes'       : [api.TYPE,
+                          api.USER_ID,
+                          api.USER_PASS]
 }
 
 _ADAPTOR_DOC           = {
@@ -49,7 +49,7 @@ _ADAPTOR_INFO          = {
 ###############################################################################
 # The adaptor class
 
-class Adaptor (saga.adaptors.base.Base):
+class Adaptor (base.Base):
     """ 
     This is the actual adaptor class, which gets loaded by SAGA (i.e. by the
     SAGA engine), and which registers the CPI implementation classes which
@@ -58,7 +58,7 @@ class Adaptor (saga.adaptors.base.Base):
 
     def __init__ (self) :
 
-        saga.adaptors.base.Base.__init__ (self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
+        base.Base.__init__ (self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
 
         # there are no default myproxy contexts
         self._default_contexts = []
@@ -78,7 +78,7 @@ class Adaptor (saga.adaptors.base.Base):
 #
 # job adaptor class
 #
-class ContextUserPass (saga.adaptors.cpi.context.Context) :
+class ContextUserPass (cpi.Context) :
 
     def __init__ (self, api, adaptor) :
 
@@ -90,7 +90,7 @@ class ContextUserPass (saga.adaptors.cpi.context.Context) :
     def init_instance (self, adaptor_state, type) :
         
         if not type.lower () in (schema.lower() for schema in _ADAPTOR_SCHEMAS) :
-            raise saga.exceptions.BadParameter \
+            raise BadParameter \
                     ("the UserPass context adaptor only handles UserPass contexts - duh!")
 
         self._type = type

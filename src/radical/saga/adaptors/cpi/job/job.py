@@ -6,15 +6,13 @@ __license__   = "MIT"
 
 """ Provides the SAGA Job CPI """
 
-import saga.adaptors.cpi.decorators as cpi_dec
-import saga.adaptors.cpi.base       as cpi_base
-import saga.adaptors.cpi.async      as cpi_async
-
-SYNC  = cpi_dec.CPI_SYNC_CALL
-ASYNC = cpi_dec.CPI_ASYNC_CALL
+from ..decorators import CPI_SYNC_CALL  as SYNC
+from ..decorators import CPI_ASYNC_CALL as ASYNC
+from ..base       import CPIBase
+from ..async      import Async
 
 
-class Job (cpi_base.CPIBase, cpi_async.Async) :
+class Job (CPIBase, Async) :
 
     # ----------------------------------------------------------------
     #

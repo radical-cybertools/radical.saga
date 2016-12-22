@@ -4,11 +4,10 @@ __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
 
-import saga.exceptions              as se
-import saga.adaptors.cpi.decorators as cpi_dec
+from ...exceptions import *
 
-SYNC  = cpi_dec.CPI_SYNC_CALL
-ASYNC = cpi_dec.CPI_ASYNC_CALL
+from .decorators   import CPI_SYNC_CALL  as SYNC
+from .decorators   import CPI_ASYNC_CALL as ASYNC
 
 
 class Attributes (object) :
@@ -27,7 +26,7 @@ class Attributes (object) :
 
     @SYNC
     def add_callback        (self, key, cb)     :
-        raise se.NotImplemented ("Callbacks are not supported for this backend")
+        raise NotImplemented ("Callbacks are not supported for this backend")
 
 
 

@@ -1,26 +1,26 @@
 
 {
     "adaptor_registry" : [
-        "saga.adaptors.context.myproxy",
-        "saga.adaptors.context.x509",
-        "saga.adaptors.context.ssh",
-        "saga.adaptors.context.userpass",
-        "saga.adaptors.shell.shell_job",
-        "saga.adaptors.shell.shell_file",
-        "saga.adaptors.shell.shell_resource",
-        "saga.adaptors.redis.redis_advert",
-        "saga.adaptors.sge.sgejob",
-        "saga.adaptors.pbs.pbsjob",
-        "saga.adaptors.lsf.lsfjob",
-      # "saga.adaptors.irods.irods_replica",
-        "saga.adaptors.condor.condorjob",
-        "saga.adaptors.slurm.slurm_job",
-        "saga.adaptors.http.http_file",
-        "saga.adaptors.aws.ec2_resource",
-        "saga.adaptors.loadl.loadljob",
-        "saga.adaptors.globus_online.go_file",
-        "saga.adaptors.torque.torquejob",
-        "saga.adaptors.pbspro.pbsprojob"
+        "radical.saga.adaptors.context.myproxy",
+        "radical.saga.adaptors.context.x509",
+        "radical.saga.adaptors.context.ssh",
+        "radical.saga.adaptors.context.userpass",
+        "radical.saga.adaptors.shell.shell_job",
+        "radical.saga.adaptors.shell.shell_file",
+        "radical.saga.adaptors.shell.shell_resource",
+        "radical.saga.adaptors.redis.redis_advert",
+        "radical.saga.adaptors.sge.sgejob",
+        "radical.saga.adaptors.pbs.pbsjob",
+        "radical.saga.adaptors.lsf.lsfjob",
+      # "radical.saga.adaptors.irods.irods_replica",
+        "radical.saga.adaptors.condor.condorjob",
+        "radical.saga.adaptors.slurm.slurm_job",
+        "radical.saga.adaptors.http.http_file",
+        "radical.saga.adaptors.aws.ec2_resource",
+        "radical.saga.adaptors.loadl.loadljob",
+        "radical.saga.adaptors.globus_online.go_file",
+        "radical.saga.adaptors.torque.torquejob",
+        "radical.saga.adaptors.pbspro.pbsprojob"
        ]
 }
 

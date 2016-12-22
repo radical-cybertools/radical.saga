@@ -11,7 +11,8 @@ import time
 import socket
 import traceback
 
-import saga
+from ..url        import Url
+from ..exceptions import *
 
 
 """ Provides an assortment of utilities """
@@ -95,7 +96,7 @@ def get_host_latency (host_url) :
         if  host_url in _latencies :
             return _latencies[host_url]
 
-        u = saga.Url (host_url)
+        u = Url (host_url)
 
         if u.host : host = u.host
         else      : host = 'localhost'
@@ -147,7 +148,7 @@ def url_is_local (arg) :
     (altough I can't think of any right now).
     """
     
-    u = saga.Url (arg)
+    u = Url (arg)
 
     if  not host_is_local (u.host) :
         return False
@@ -175,7 +176,7 @@ def url_is_relative (url_1) :
     that path element does not start with '/'.
     """
 
-    u1 = saga.Url (url_1)
+    u1 = Url (url_1)
 
     if  str (u1) == str(u1.path) :
         if  not u1.path :
@@ -195,7 +196,7 @@ def url_get_dirname (url_1) :
     paths.
     """
 
-    u1 = saga.Url (url_1)
+    u1 = Url (url_1)
     p1 = u1.path
 
     return re.sub (r"[^/]*$", "", p1)
@@ -210,7 +211,7 @@ def url_get_filename (url_1) :
     paths.
     """
 
-    u1 = saga.Url (url_1)
+    u1 = Url (url_1)
     p1 = u1.path
 
     if '/' in p1 :
@@ -226,7 +227,7 @@ def url_normalize (url_1) :
     The path element of the URL is normalized
     """
 
-    ret      = saga.Url (url_1)
+    ret      = Url (url_1)
     ret.path = os.path.normpath (ret.path)
 
     return ret
@@ -243,18 +244,18 @@ def url_make_absolute (url_1, url_2) :
     protocol/port/user etc.
     """
 
-    if  not isinstance(url_1, saga.Url):
-        url_1 = saga.Url(url_1)
+    if  not isinstance(url_1, Url):
+        url_1 = Url(url_1)
 
-    if  not isinstance(url_2, saga.Url):
-        url_2 = saga.Url(url_2)
+    if  not isinstance(url_2, Url):
+        url_2 = Url(url_2)
 
     if  not url_is_compatible (url_1, url_2) :
-        raise saga.BadParameter ("Cannot interpret url %s in the context of url %s" \
+        raise BadParameter ("Cannot interpret url %s in the context of url %s" \
                               % (url_2, url_1))
 
     # re-interpret path of url_2, using url_1 as base directory
-    ret = saga.Url (url_1)
+    ret = Url (url_1)
 
     if  url_is_relative (url_2) :
         # note that we have no means if 'file://localhost/tmp/test.txt' refers
@@ -278,8 +279,8 @@ def url_is_compatible (url_1, url_2) :
     considered compatible with any other URL.
     """
     
-    u1 = saga.Url (url_1)
-    u2 = saga.Url (url_2)
+    u1 = Url (url_1)
+    u2 = Url (url_2)
 
     # if either one url only contains a path, it is compatible to anything.
     if os.path.normpath(u1.path) == os.path.normpath (str(u1)) : return True

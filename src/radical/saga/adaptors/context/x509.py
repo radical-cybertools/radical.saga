@@ -6,12 +6,12 @@ __license__   = "MIT"
 
 import os
 
-import saga.context
-import saga.adaptors.base
-import saga.adaptors.cpi.context
+from ..            import base
+from ..cpi         import SYNC_CALL, ASYNC_CALL
+from ..cpi         import context as cpi
+from ...           import context as api
+from ...exceptions import *
 
-SYNC_CALL  = saga.adaptors.cpi.decorators.SYNC_CALL
-ASYNC_CALL = saga.adaptors.cpi.decorators.ASYNC_CALL
 
 ######################################################################
 #
@@ -23,9 +23,9 @@ _ADAPTOR_OPTIONS       = []
 
 # FIXME: complete attribute list
 _ADAPTOR_CAPABILITIES  = {
-    'attributes'       : [saga.context.TYPE,
-                          saga.context.USER_PROXY,
-                          saga.context.LIFE_TIME]
+    'attributes'       : [api.TYPE,
+                          api.USER_PROXY,
+                          api.LIFE_TIME]
 }
 
 _ADAPTOR_DOC           = {
@@ -53,7 +53,7 @@ _ADAPTOR_INFO          = {
 ###############################################################################
 # The adaptor class
 
-class Adaptor (saga.adaptors.base.Base):
+class Adaptor (base.Base):
     """ 
     This is the actual adaptor class, which gets loaded by SAGA (i.e. by the
     SAGA engine), and which registers the CPI implementation classes which
@@ -62,7 +62,7 @@ class Adaptor (saga.adaptors.base.Base):
 
     def __init__ (self) :
 
-        saga.adaptors.base.Base.__init__ (self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
+        base.Base.__init__ (self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
 
         # there are no default myproxy contexts
         self._default_contexts = []
@@ -92,7 +92,7 @@ class Adaptor (saga.adaptors.base.Base):
                 else :
                     fh.close ()
 
-                    c = saga.Context ('X509')
+                    c = api.Context ('X509')
                     c.user_proxy = p
 
                     self._logger.info ("default X509 context for proxy at %s"  %  p)
@@ -113,7 +113,7 @@ class Adaptor (saga.adaptors.base.Base):
 #
 # job adaptor class
 #
-class ContextX509 (saga.adaptors.cpi.context.Context) :
+class ContextX509 (cpi.Context) :
 
     def __init__ (self, api, adaptor) :
 
@@ -125,8 +125,7 @@ class ContextX509 (saga.adaptors.cpi.context.Context) :
     def init_instance (self, adaptor_state, type) :
 
         if  not type.lower () in (schema.lower() for schema in _ADAPTOR_SCHEMAS) :
-            raise saga.exceptions.BadParameter \
-                    ("the x509 context adaptor only handles x509 contexts - duh!")
+            raise BadParameter("the x509 context only handles x509 contexts!")
 
         self.get_api ().type = type
 
@@ -144,14 +143,13 @@ class ContextX509 (saga.adaptors.cpi.context.Context) :
 
         if  not os.path.exists (api.user_proxy) or \
             not os.path.isfile (api.user_proxy)    :
-            raise saga.exceptions.BadParameter ("X509 proxy does not exist: %s"
-                                                 % api.user_proxy)
+            raise BadParameter ("X509 proxy does not exist: %s" % api.user_proxy)
 
         try :
             fh = open (api.user_proxy)
         except Exception as e:
-            raise saga.exceptions.PermissionDenied ("X509 proxy '%s' not readable: %s"
-                                                 % (api.user_proxy, str(e)))
+            raise PermissionDenied ("X509 proxy '%s' not readable: %s" \
+                                 % (api.user_proxy, str(e)))
         else :
             fh.close ()
 

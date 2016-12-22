@@ -26,9 +26,9 @@ class Base(object):
     
     # --------------------------------------------------------------------------
     #
-    # FIXME: adaptor_options type...
+    # FIXME: phase out adaptor_options
     #
-    def __init__ (self, adaptor_info, adaptor_options=[]) :
+    def __init__ (self, adaptor_info, adaptor_options=None) :
 
         # FIXME: engine is loading cfg already, here we load again...
 
@@ -38,7 +38,7 @@ class Base(object):
 
         self._lock    = ru.RLock      (self._name)
         self._logger  = ru.get_logger('radical.saga.api')
-        self._cfg     = ru.get_config('radical.saga.adaptor_%s' % self._name)
+        self._cfg     = ru.get_config('radical.%s' % self._name)
 
         if 'enabled' not in self._cfg:
             self._cfg['enabled'] = True

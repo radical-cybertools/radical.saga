@@ -4,7 +4,7 @@ __copyright__ = "Copyright 2013, The SAGA Project"
 __license__   = "MIT"
 
 
-import saga.exceptions as se
+from ..exceptions import *
 
 # ----------------------------------------------------------------
 #
@@ -16,11 +16,11 @@ def translate_exception (e, msg=None) :
     message and appropriate exception type.
     """
 
-    if  not issubclass (e.__class__, se.SagaException) :
+    if  not issubclass (e.__class__, SagaException) :
         # we do not touch non-saga exceptions
         return e
 
-    if  not issubclass (e.__class__, se.NoSuccess) :
+    if  not issubclass (e.__class__, NoSuccess) :
         # this seems to have a specific cause already, leave it alone
         return e
 
@@ -37,37 +37,37 @@ def translate_exception (e, msg=None) :
     lmsg = cmsg.lower ()
 
     if  'could not resolve hostname' in lmsg :
-        e = se.BadParameter (cmsg)
+        e = BadParameter (cmsg)
 
     elif  'connection timed out' in lmsg :
-        e = se.BadParameter (cmsg)
+        e = BadParameter (cmsg)
 
     elif  'connection refused' in lmsg :
-        e = se.BadParameter (cmsg)
+        e = BadParameter (cmsg)
 
     elif 'auth' in lmsg :
-        e = se.AuthorizationFailed (cmsg)
+        e = AuthorizationFailed (cmsg)
 
     elif 'man-in-the-middle' in lmsg :
-        e = se.AuthenticationFailed ("ssh key mismatch detected: %s" % cmsg)
+        e = AuthenticationFailed ("ssh key mismatch detected: %s" % cmsg)
 
     elif 'pass' in lmsg :
-        e = se.AuthenticationFailed (cmsg)
+        e = AuthenticationFailed (cmsg)
 
     elif 'ssh_exchange_identification' in lmsg :
-        e = se.AuthenticationFailed ("too frequent login attempts, or sshd misconfiguration: %s" % cmsg)
+        e = AuthenticationFailed ("too frequent login attempts, or sshd misconfiguration: %s" % cmsg)
 
     elif 'denied' in lmsg :
-        e = se.PermissionDenied (cmsg)
+        e = PermissionDenied (cmsg)
 
     elif 'shared connection' in lmsg :
-        e = se.NoSuccess ("Insufficient system resources: %s" % cmsg)
+        e = NoSuccess ("Insufficient system resources: %s" % cmsg)
 
     elif 'pty allocation' in lmsg :
-        e = se.NoSuccess ("Insufficient system resources: %s" % cmsg)
+        e = NoSuccess ("Insufficient system resources: %s" % cmsg)
 
     elif 'Connection to master closed' in lmsg :
-        e = se.NoSuccess ("Connection failed (insufficient system resources?): %s" % cmsg)
+        e = NoSuccess ("Connection failed (insufficient system resources?): %s" % cmsg)
 
     return e
 

@@ -8,7 +8,7 @@ __license__   = "MIT"
     defined in GFD.90, sction 4.1.3.
 '''
 
-import saga.exceptions as se
+from ...exceptions import *
 
 # 4.1.3 File Transfer Specifications (GFD90 p 176-177)
 #
@@ -43,7 +43,7 @@ class TransferDirectives(object):
         for directive in directives_list:
             if (directive.count('>') > 2) or (directive.count('<') > 2):
                 msg = "'%s' is not a valid transfer directive string."
-                raise se.BadParameter(msg)
+                raise BadParameter(msg)
             elif '<<' in directive:
                 (local, remote) = directive.split('<<')
                 self._out_append[local.strip()] = remote.strip()
@@ -58,7 +58,7 @@ class TransferDirectives(object):
                 self._in_overwrite[local.strip()] = remote.strip()
             else:
                 msg = "'%s' is not a valid transfer directive string."
-                raise se.BadParameter(msg)
+                raise BadParameter(msg)
 
     def _dicts_to_string_list(self):
         slist = list()

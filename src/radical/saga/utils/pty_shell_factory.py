@@ -14,12 +14,14 @@ import getpass
 import radical.utils           as ru
 import radical.utils.logger    as rul
 
-import saga
-import saga.exceptions         as se
-import saga.utils.misc         as sumisc
-import saga.utils.pty_process  as supp
+from   . import misc           as sumisc
+from   . import pty_process    as supp
+from   . import pty_exceptions as ptye
 
-import pty_exceptions               as ptye
+from   ..session    import Session
+from   ..url        import Url
+from   ..exceptions import *
+
 
 
 # ------------------------------------------------------------------------------
@@ -159,7 +161,7 @@ class PTYShellFactory (object) :
         with self.rlock :
 
             # make sure we have a valid url type
-            url = saga.Url (url)
+            url = Url (url)
 
             if  not prompt :
                 prompt = "^(.*[\$#%>\]])\s*$"
@@ -190,7 +192,7 @@ class PTYShellFactory (object) :
 
                 info['pty'] = supp.PTYProcess (m_cmd, logger=logger)
                 if not info['pty'].alive () :
-                    raise se.NoSuccess._log (logger, \
+                    raise NoSuccess._log (logger, \
                           "Shell not connected to %s" % info['host_str'])
 
                 # authorization, prompt setup, etc.  Initialize as shell if not
@@ -207,7 +209,7 @@ class PTYShellFactory (object) :
                 info = self.registry[host_s][user_s][type_s]
 
                 if  not info['pty'].alive (recover=True) :
-                    raise se.IncorrectState._log (logger, \
+                    raise IncorrectState._log (logger, \
                           "Lost shell connection to %s" % info['host_str'])
 
             return info
@@ -287,7 +289,7 @@ class PTYShellFactory (object) :
                         # command...
 
                         if time.time() - time_start > timeout:
-                            raise se.NoSuccess ("Could not detect shell prompt (timeout)")
+                            raise NoSuccess ("Could not detect shell prompt (timeout)")
 
                         # make sure we retry a finite time...
                         retries += 1
@@ -311,7 +313,7 @@ class PTYShellFactory (object) :
                     elif n == 0 :
                         logger.info ("got password prompt")
                         if  not shell_pass :
-                            raise se.AuthenticationFailed ("prompted for unknown password (%s)" \
+                            raise AuthenticationFailed ("prompted for unknown password (%s)" \
                                                           % match)
 
                         pty_shell.write ("%s\n" % shell_pass, nolog=True)
@@ -326,12 +328,12 @@ class PTYShellFactory (object) :
                         end   = string.find (match, "'", start+1)
 
                         if start == -1 or end == -1 :
-                            raise se.AuthenticationFailed ("could not extract key name (%s)" % match)
+                            raise AuthenticationFailed ("could not extract key name (%s)" % match)
 
                         key = match[start+1:end]
 
                         if  not key in key_pass    :
-                            raise se.AuthenticationFailed ("prompted for unknown key password (%s)" \
+                            raise AuthenticationFailed ("prompted for unknown key password (%s)" \
                                                           % key)
 
                         pty_shell.write ("%s\n" % key_pass[key], nolog=True)
@@ -399,7 +401,7 @@ class PTYShellFactory (object) :
                                                     pty_shell.write (" printf 'HELLO_%%d_SAGA\\n' %d\n" % retries)
 
                                             if  attempts > 100 :
-                                                raise se.NoSuccess ("Could not detect shell prompt (timeout)")
+                                                raise NoSuccess ("Could not detect shell prompt (timeout)")
 
                                     continue
 
@@ -476,7 +478,7 @@ class PTYShellFactory (object) :
 
             # get and evaluate session config
             if  not session :
-                session = saga.Session (default=True)
+                session = Session (default=True)
 
             session_cfg = session.get_config ('saga.utils.pty')
             info['ssh_copy_mode']  = session_cfg['ssh_copy_mode'].get_value ()
@@ -539,7 +541,7 @@ class PTYShellFactory (object) :
                     info['cp_exe'] =  self._which ("cp")
 
             else :
-                raise se.BadParameter._log (self.logger, \
+                raise BadParameter._log (self.logger, \
                           "cannot handle schema '%s://'" % url.schema)
 
 
@@ -573,7 +575,7 @@ class PTYShellFactory (object) :
                 info['sh_env'] = "/usr/bin/env TERM=vt100 "  # avoid ansi escapes
 
                 if not sumisc.host_is_local (url.host) :
-                    raise se.BadParameter._log (self.logger, \
+                    raise BadParameter._log (self.logger, \
                             "expect local host for '%s://', not '%s'" % (url.schema, url.host))
 
                 if  'user' in info and info['user'] :

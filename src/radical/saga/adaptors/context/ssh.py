@@ -6,13 +6,12 @@ __license__   = "MIT"
 
 import os
 
-import saga.context
-import saga.exceptions as se
-import saga.adaptors.base
-import saga.adaptors.cpi.context
+from ..            import base
+from ..cpi         import SYNC_CALL, ASYNC_CALL
+from ..cpi         import context as cpi
+from ...           import context as api
+from ...exceptions import *
 
-SYNC_CALL  = saga.adaptors.cpi.decorators.SYNC_CALL
-ASYNC_CALL = saga.adaptors.cpi.decorators.ASYNC_CALL
 
 ######################################################################
 #
@@ -24,11 +23,11 @@ _ADAPTOR_OPTIONS       = []
 
 # FIXME: complete attribute list
 _ADAPTOR_CAPABILITIES  = {
-     'ctx_attributes'   : {saga.context.TYPE      : "This MUST be set to ssh",
-                           saga.context.USER_ID   : "user name on target machine",
-                           saga.context.USER_KEY  : "maps to public ssh key",
-                           saga.context.USER_CERT : "maps to private ssh key",
-                           saga.context.USER_PASS : "passphrase for encrypted keys"}
+     'ctx_attributes'   : {api.TYPE      : "This MUST be set to ssh",
+                           api.USER_ID   : "user name on target machine",
+                           api.USER_KEY  : "maps to public ssh key",
+                           api.USER_CERT : "maps to private ssh key",
+                           api.USER_PASS : "passphrase for encrypted keys"}
 }
 
 _ADAPTOR_DOC           = {
@@ -72,7 +71,7 @@ _ADAPTOR_INFO          = {
 
 # ------------------------------------------------------------------------------
 # 
-class Adaptor (saga.adaptors.base.Base):
+class Adaptor (base.Base):
     """ 
     This is the actual adaptor class, which gets loaded by SAGA (i.e. by the
     SAGA engine), and which registers the CPI implementation classes which
@@ -83,7 +82,7 @@ class Adaptor (saga.adaptors.base.Base):
     #
     def __init__ (self) :
 
-        saga.adaptors.base.Base.__init__ (self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
+        base.Base.__init__ (self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
 
         # there are no default myproxy contexts
         self._default_contexts = []
@@ -161,7 +160,7 @@ class Adaptor (saga.adaptors.base.Base):
                     self._logger.warn ("ignore  ssh key at %s (requires passphrase)" %  key)
                     continue
 
-                c = saga.Context ('ssh')
+                c = api.Context ('ssh')
                 c.user_key  = key
                 c.user_cert = pub
 
@@ -179,7 +178,7 @@ class Adaptor (saga.adaptors.base.Base):
 
 # ------------------------------------------------------------------------------
 #
-class ContextSSH (saga.adaptors.cpi.context.Context) :
+class ContextSSH (cpi.Context) :
 
     # --------------------------------------------------------------------------
     #
@@ -195,7 +194,7 @@ class ContextSSH (saga.adaptors.cpi.context.Context) :
     def init_instance (self, adaptor_state, type) :
 
         if not type.lower () in (schema.lower() for schema in _ADAPTOR_SCHEMAS) :
-            raise se.BadParameter \
+            raise BadParameter \
                     ("the ssh context adaptor only handles ssh contexts - duh!")
 
         self.get_api ().type = type
@@ -216,12 +215,12 @@ class ContextSSH (saga.adaptors.cpi.context.Context) :
         pwd = None
 
         
-        if api.attribute_exists (saga.context.USER_KEY ) :
-            unexpanded_key  = api.get_attribute    (saga.context.USER_KEY )
-        if api.attribute_exists (saga.context.USER_CERT) :
-            unexpanded_pub  = api.get_attribute    (saga.context.USER_CERT)
-        if api.attribute_exists (saga.context.USER_PASS) :
-            pwd  = api.get_attribute    (saga.context.USER_PASS)
+        if api.attribute_exists(api.USER_KEY ) :
+            unexpanded_key = api.get_attribute(api.USER_KEY )
+        if api.attribute_exists(api.USER_CERT) :
+            unexpanded_pub = api.get_attribute(api.USER_CERT)
+        if api.attribute_exists(api.USER_PASS) :
+            pwd  = api.get_attribute(api.USER_PASS)
 
         # Expand any environment variables in the key/pub paths
         if unexpanded_key:
@@ -257,24 +256,24 @@ class ContextSSH (saga.adaptors.cpi.context.Context) :
                 pub = key+'.pub'
 
         # update the context with these setting
-        api.set_attribute (saga.context.USER_KEY , key)
-        api.set_attribute (saga.context.USER_CERT, pub)
+        api.set_attribute (api.USER_KEY , key)
+        api.set_attribute (api.USER_CERT, pub)
 
 
         # the private and public keys must exist
         if  not os.path.exists (key) or \
             not os.path.isfile (key)    :
-            raise se.BadParameter ("ssh key inaccessible: %s" % (key))
+            raise BadParameter ("ssh key inaccessible: %s" % (key))
 
         if  not os.path.exists (pub) or \
             not os.path.isfile (pub)    :
-            raise se.BadParameter ("ssh public key inaccessible: %s" % (pub))
+            raise BadParameter ("ssh public key inaccessible: %s" % (pub))
 
 
         try :
             fh_key = open (key)
         except Exception as e:
-            raise se.PermissionDenied ("ssh key '%s' not readable: %s" % (key, e))
+            raise PermissionDenied ("ssh key '%s' not readable: %s" % (key, e))
         else :
             fh_key.close ()
 
@@ -282,7 +281,7 @@ class ContextSSH (saga.adaptors.cpi.context.Context) :
         try :
             fh_pub = open (pub)
         except Exception as e:
-            raise se.PermissionDenied ("ssh public key '%s' not readable: %s" % (pub, e))
+            raise PermissionDenied ("ssh public key '%s' not readable: %s" % (pub, e))
         else :
             fh_pub.close ()
 
@@ -291,7 +290,7 @@ class ContextSSH (saga.adaptors.cpi.context.Context) :
         if  not subprocess.call (["sh", "-c", "grep ENCRYPTED %s > /dev/null" % key]) :
             if  pwd  :
                 if  subprocess.call (["sh", "-c", "ssh-keygen -y -f %s -P '%s' > /dev/null" % (key, pwd)]) :
-                    raise se.PermissionDenied ("ssh key '%s' is encrypted, incorrect password" % (key))
+                    raise PermissionDenied ("ssh key '%s' is encrypted, incorrect password" % (key))
             else :
                 self._logger.error ("ssh key '%s' is encrypted, unknown password" % (key))
 
