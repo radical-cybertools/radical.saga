@@ -958,9 +958,11 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
 
         if len(found) < len(job_ids):
 
-            ret, out, err = self.shell.run_sync(
-                "%s %s -autoformat:, ProcId ExitCode ExitBySignal CompletionDate JobCurrentStartDate QDate Err Out" %
-                (self._commands['condor_history'], cluster_id))
+            cmd = "%s %s -autoformat:," \
+                  "ProcId ExitCode ExitBySignal CompletionDate " \
+                  "JobCurrentStartDate QDate Err Out" \
+                  % (self._commands['condor_history'], cluster_id)
+            ret, out, err = self.shell.run_sync(cmd)
 
             if ret != 0:
                 # we consider this non-fatal, as that sometimes failes on the
@@ -974,9 +976,13 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
                 ts      = time.time()
                 for row in results:
 
+                    elems = [col.strip() for col in row.split(',')]
+                    if len(elems) != 8:
+                        self._logger.error('condor_history noise [%s]' % row)
+                        continue
+
                     procid, exit_code, exit_by_signal,  \
-                    cdate, sdate, qdate, stderr, stdout \
-                            = [col.strip() for col in row.split(',')]
+                    cdate, sdate, qdate, stderr, stdout = elems
 
                     # we always set exit_code to '1' if exited_by_signal
                     if not exit_code and exit_by_signal == 'true':
