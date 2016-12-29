@@ -37,12 +37,15 @@ class TransferDirectives(object):
 
     # --------------------------------------------------------------------------
     #
-    def __init__(self, directives):
+    def __init__(self, directives=None):
 
         self._in_overwrite  = list()
         self._in_append     = list()
         self._out_overwrite = list()
         self._out_append    = list()
+
+        if not directives:
+            directives = {}
 
         for d in directives:
             

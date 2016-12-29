@@ -499,7 +499,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
                 'start_time':   None,
                 'end_time':     None,
                 'gone':         False,
-                'td':           None,
+                'td':           TransferDirectives(),
                 'stdout':       None,
                 'stderr':       None,
                 'name':         None,
@@ -605,7 +605,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
             self._logger.info("Submitted Condor job with id: %s", job_id)
 
             # add job to internal list of known jobs.
-            self.jobs[job_id]         = self._new_job_info()
+            self.jobs[job_id]          = self._new_job_info()
             self.jobs[job_id]['state'] = saga.job.PENDING
             self.jobs[job_id]['td']    = jd.transfer_directives
 
@@ -764,6 +764,12 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
         elif mode == 'out':
 
             # make sure mode=='in' has been used before
+            if not hasattr(td, 'prepared'):
+                # we don't have that attribute, its likely a cloned job
+                # description or something.  Warn and bail out
+                self._logger.warn('unprepared for output staging')
+                return
+
             assert(td.prepared)
 
             if td.out_overwrite:
