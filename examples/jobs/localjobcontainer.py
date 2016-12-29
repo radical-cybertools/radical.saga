@@ -27,18 +27,20 @@ import random
 import time
 import saga
 
+URL = "condor+gsissh://xd-login.opensciencegrid.org"
+URL = "fork://locahost/'
 
 def main():
 
     # number of job 'groups' / containers
-    num_job_groups = 10
+    num_job_groups = 2
     # number of jobs per container
-    jobs_per_group = 40
+    jobs_per_group = 10
 
     try:
         # all jobs in this example are running on the same job service
         # this is not a requirement though. s
-        service = saga.job.Service("fork://localhost/")
+        service = saga.job.Service(URL)
         print service.url
 
         t1 = time.time()
@@ -54,7 +56,8 @@ def main():
                 jd.environment = {'RUNTIME': random.randrange(10, 60)}
                 jd.executable  = '/bin/sleep'
                 jd.arguments   = ['$RUNTIME']
-                jd.name        = ['job.%03d' % j]
+                jd.name        = ['job.%02d.%03d' % (c, j)]
+                jd.project         = 'TG-CCR140028'
                 j = service.create_job(jd)
                 containers[c].add(j)
 
