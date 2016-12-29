@@ -124,7 +124,8 @@ def _condorscript_generator(url, logger, jds, option_dict=None):
 
         # handle site inclusion/exclusion
       # requirements = "(NumJobStarts =?= 0 || NumJobStarts =?= Undefined)"
-        requirements = "(Target.MAX.PREEMPT >= 24*60*60) || (Target.MAX.PREEMPT == false) && "
+        requirements = "(Target.MAX.PREEMPT >= 24*60*60) || (Target.MAX.PREEMPT == false)"
+
         if jd.candidate_hosts:
 
             # special characters / strings
