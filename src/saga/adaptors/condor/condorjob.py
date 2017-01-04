@@ -157,7 +157,7 @@ def _condorscript_generator(url, logger, jds, option_dict=None):
                 requirements += ' && '.join(req_sites)
 
         condor_file += "\nrequirements    = %s" % requirements
-      # condor_file += "\nperiodic_remove = NumJobStarts > 0 && JobStatus == 1\n"
+        condor_file += "\nperiodic_remove = NumJobStarts > 0 && JobStatus == 1\n"
 
 
         # special treatment for universe - defaults to 'vanilla'
@@ -921,7 +921,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
 
         # run the Condor 'condor_q' command to get some infos about our job
         ret, out, err = self.shell.run_sync(
-            "%s %s -autoformat:,v ProcId JobStatus ExitCode ExitBySignal CompletionDate" %
+            "%s %s -autoformat:, ProcId JobStatus ExitCode ExitBySignal CompletionDate" %
             (self._commands['condor_q'], cluster_id))
 
         if ret != 0:
@@ -959,7 +959,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
 
         if len(found) < len(job_ids):
 
-            cmd = "%s %s -autoformat:," \
+            cmd = "%s %s -autoformat:, " \
                   "ProcId ExitCode ExitBySignal CompletionDate " \
                   "JobCurrentStartDate QDate Err Out" \
                   % (self._commands['condor_history'], cluster_id)
