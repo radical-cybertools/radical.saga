@@ -5,6 +5,24 @@
   - For a list of open issues and known problems, see
     https://github.com/radical-cybertools/saga-python/issues?q=is%3Aissue+is%3Aopen+
 
+Version 0.44                                                          2016-11-01
+--------------------------------------------------------------------------------
+
+  - added basework_dir parameter to sge and proxy adaptors
+  - added new PBS versions to pbsnodes CPU count check
+  - changed the regular expression to find the job-id on LSF adaptor. Fixes #568 
+  - re-enable fallback methods for slurm job containers, jd.name support for slurm 
+  - fix for issue #586, removing invalid dirs from shell wrapper script file path
+  - fix parsing of file staging directives 
+  - make shell job adaptor workdir configurable 
+  - avoid double close for shell job service 
+  - raise error on missing tools 
+  - removed duplicate get_name function in job class 
+  - add missing container method to get job states 
+  - merged pull request #583 
+  - enforce version in radical stack 
+  - fix #555 
+
 
 Version 0.41.3                                                        2016-07-07
 --------------------------------------------------------------------------------
