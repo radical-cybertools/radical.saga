@@ -124,6 +124,8 @@ def _condorscript_generator(url, logger, jds, option_dict=None):
 
         # handle site inclusion/exclusion
         requirements = "(NumJobStarts =?= 0 || NumJobStarts =?= Undefined)"
+      # requirements = "(Target.MAX.PREEMPT >= 24*60*60) || (Target.MAX.PREEMPT == false)"
+
         if jd.candidate_hosts:
 
             # special characters / strings
@@ -925,7 +927,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
 
         # run the Condor 'condor_q' command to get some infos about our job
         ret, out, err = self.shell.run_sync(
-            "%s %s -autoformat:,v ProcId JobStatus ExitCode ExitBySignal CompletionDate" %
+            "%s %s -autoformat:, ProcId JobStatus ExitCode ExitBySignal CompletionDate" %
             (self._commands['condor_q'], cluster_id))
 
         if ret != 0:
@@ -963,7 +965,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
 
         if len(found) < len(job_ids):
 
-            cmd = "%s %s -autoformat:," \
+            cmd = "%s %s -autoformat:, " \
                   "ProcId ExitCode ExitBySignal CompletionDate " \
                   "JobCurrentStartDate QDate Err Out" \
                   % (self._commands['condor_history'], cluster_id)
