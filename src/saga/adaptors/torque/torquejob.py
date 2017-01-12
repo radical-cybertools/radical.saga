@@ -231,15 +231,7 @@ def _torquescript_generator(url, logger, jd, ppn, gres, torque_version, is_cray=
         pbs_params += "#PBS -q %s \n" % queue
 
     if jd.project:
-        if 'PBSPro_1' in torque_version:
-            # On PBS Pro we set both -P(roject) and -A(accounting),
-            # as we don't know what the admins decided, and just
-            # pray that this doesn't create problems.
-            pbs_params += "#PBS -P %s \n" % str(jd.project)
-            pbs_params += "#PBS -A %s \n" % str(jd.project)
-        else:
-            # Torque
-            pbs_params += "#PBS -A %s \n" % str(jd.project)
+        pbs_params += "#PBS -A %s \n" % str(jd.project)
 
     if jd.job_contact:
         pbs_params += "#PBS -m abe \n"
@@ -273,13 +265,7 @@ def _torquescript_generator(url, logger, jd, ppn, gres, torque_version, is_cray=
     if is_cray is not "":
         # Special cases for PBS/TORQUE on Cray. Different PBSes,
         # different flags. A complete nightmare...
-        if 'PBSPro_10' in torque_version:
-            logger.info("Using Cray XT (e.g. Hopper) specific '#PBS -l mppwidth=xx' flags (PBSPro_10).")
-            pbs_params += "#PBS -l mppwidth=%s \n" % jd.total_cpu_count
-        elif 'PBSPro_12' in torque_version:
-            logger.info("Using Cray XT (e.g. Archer) specific '#PBS -l select=xx' flags (PBSPro_12).")
-            pbs_params += "#PBS -l select=%d\n" % nnodes
-        elif '5.1.0.h1' in torque_version:
+        if '5.1.0.h1' in torque_version:
             # Can't really use hostname as we run also from the headnode
             logger.info("Using Titan (Cray XP) specific '#PBS -l nodes=xx'")
             pbs_params += "#PBS -l nodes=%d\n" % nnodes
@@ -303,9 +289,9 @@ def _torquescript_generator(url, logger, jd, ppn, gres, torque_version, is_cray=
     elif 'hopper' in url.host:
         logger.info("Using Hopper@NERSC (Cray XE6) specific '#PBS -l mppwidth=xx' parameter.")
         pbs_params += "#PBS -l mppwidth=%s \n" % jd.total_cpu_count
-    elif 'PBSPro_12' in torque_version:
-        logger.info("Using PBSPro 12 notation '#PBS -l select=XX' ")
-        pbs_params += "#PBS -l select=%d\n" % (nnodes)
+    elif 'rhea.ccs.ornl.gov' in url.host or 'rhea-login' in os.uname()[1]:
+        # Not allowed to specify ppn on Rhea
+        pbs_params += "#PBS -l nodes=%d\n" % (nnodes)
     else:
         # Default case, i.e, standard HPC cluster (non-Cray)
 
@@ -607,14 +593,8 @@ class TORQUEJobService (saga.adaptors.cpi.job.Service):
         else: 
             self._logger.info("Assuming host is a Cray since 'craytype' is set to: %s" % self.is_cray)
 
-        # TODO: this is quite a hack. however, it *seems* to work quite
-        #       well in practice.
-        if 'PBSPro_12' in self._commands['qstat']['version']:
-            ret, out, _ = self.shell.run_sync('unset GREP_OPTIONS; %s -a | grep -E "resources_available.ncpus"' % \
-                                               self._commands['pbsnodes']['path'])
-        else:
-            ret, out, _ = self.shell.run_sync('unset GREP_OPTIONS; %s -a | grep -E "(np|pcpu)[[:blank:]]*=" ' % \
-                                               self._commands['pbsnodes']['path'])
+        ret, out, _ = self.shell.run_sync('unset GREP_OPTIONS; %s -a | grep -E "(np|pcpu)[[:blank:]]*=" ' % \
+                self._commands['pbsnodes']['path'])
         if ret != 0:
             message = "Error running pbsnodes: %s" % out
             log_error_and_raise(message, saga.NoSuccess, self._logger)
@@ -770,12 +750,7 @@ class TORQUEJobService (saga.adaptors.cpi.job.Service):
 
         rm, pid = self._adaptor.parse_id(job_id)
 
-        # run the PBS 'qstat' command to get some infos about our job
-        # TODO: create a PBSPRO/TORQUE flag once
-        if 'PBSPro_1' in self._commands['qstat']['version']:
-            qstat_flag = '-fx'
-        else:
-            qstat_flag ='-f1'
+        qstat_flag ='-f1'
             
         ret, out, _ = self.shell.run_sync("unset GREP_OPTIONS; %s %s %s | "
                 "grep -E -i '(job_state)|(exec_host)|(exit_status)|"

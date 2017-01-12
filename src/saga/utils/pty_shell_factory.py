@@ -454,6 +454,16 @@ class PTYShellFactory (object) :
 
     # --------------------------------------------------------------------------
     #
+    def _which(self, cmd):
+
+        ret = ru.which(cmd)
+        if not ret:
+            raise RuntimeError('cmd %s not found' % cmd)
+        return ret
+
+
+    # --------------------------------------------------------------------------
+    #
     def _create_master_entry (self, url, session, prompt, logger, posix,
             interactive) :
         # FIXME: cache 'which' results, etc
@@ -498,17 +508,17 @@ class PTYShellFactory (object) :
                 info['shell_type'] = "ssh"
                 info['copy_mode']  = info['ssh_copy_mode']
                 info['share_mode'] = info['ssh_share_mode']
-                info['ssh_exe']    = ru.which ("ssh")
-                info['scp_exe']    = ru.which ("scp")
-                info['sftp_exe']   = ru.which ("sftp")
+                info['ssh_exe']    = self._which ("ssh")
+                info['scp_exe']    = self._which ("scp")
+                info['sftp_exe']   = self._which ("sftp")
 
             elif info['schema'] in _SCHEMAS_GSI :
                 info['shell_type'] = "ssh"
                 info['copy_mode']  = info['ssh_copy_mode']
                 info['share_mode'] = info['ssh_share_mode']
-                info['ssh_exe']    = ru.which ("gsissh")
-                info['scp_exe']    = ru.which ("gsiscp")
-                info['sftp_exe']   = ru.which ("gsisftp")
+                info['ssh_exe']    = self._which ("gsissh")
+                info['scp_exe']    = self._which ("gsiscp")
+                info['sftp_exe']   = self._which ("gsisftp")
 
             elif info['schema'] in _SCHEMAS_SH :
                 info['shell_type'] = "sh"
@@ -522,11 +532,11 @@ class PTYShellFactory (object) :
                 else          : info['sh_args'] = ""
 
                 if  "SHELL" in os.environ :
-                    info['sh_exe'] =  ru.which (os.environ["SHELL"])
-                    info['cp_exe'] =  ru.which ("cp")
+                    info['sh_exe'] =  self._which (os.environ["SHELL"])
+                    info['cp_exe'] =  self._which ("cp")
                 else :
-                    info['sh_exe'] =  ru.which ("sh")
-                    info['cp_exe'] =  ru.which ("cp")
+                    info['sh_exe'] =  self._which ("sh")
+                    info['cp_exe'] =  self._which ("cp")
 
             else :
                 raise se.BadParameter._log (self.logger, \
