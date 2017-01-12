@@ -167,13 +167,12 @@ class Job (sb.Base, st.Task, sasync.Async) :
     @rus.returns ((rus.nothing, basestring, st.Task))
     def get_name (self, ttype=None) :
         """
-        get_id()
+        get_name()
 
         Return the job name. 
         """
         name = self._adaptor.get_name(ttype=ttype)
         return name
-
 
     # --------------------------------------------------------------------------
     #
@@ -653,19 +652,6 @@ class Job (sb.Base, st.Task, sasync.Async) :
         get_result()
         """
         return self._adaptor.get_result (ttype=ttype)
-
-
-    # --------------------------------------------------------------------------
-    #
-    @rus.takes     ('Job',
-                    rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
-    @rus.returns   ((basestring, st.Task))
-    def get_name   (self, ttype=None) :
-        """
-        get_name()
-        """
-        return self._adaptor.get_name (ttype=ttype)
-
 
     # --------------------------------------------------------------------------
     #
