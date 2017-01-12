@@ -138,7 +138,7 @@ def _condorscript_generator(url, logger, jds, option_dict=None):
         HOST_EXCLUSION_SYMBOL = '!'
         SPECIAL_REQ_SYMBOL = '~'
 
-        requirements = ""
+        requirements = "(NumJobStarts =?= 0 || NumJobStarts =?= Undefined)"
 
         # TODO: This is bound to GLIDEIN which it shouldnt be.
         resource_key = 'GLIDEIN_ResourceName'
@@ -146,27 +146,21 @@ def _condorscript_generator(url, logger, jds, option_dict=None):
         # Whitelist sites, filter out "special" entries from the candidate host lists
         incl_sites = [host for host in common_jd.candidate_hosts if not host.startswith((SPECIAL_REQ_SYMBOL, HOST_EXCLUSION_SYMBOL))]
         if incl_sites:
-            requirements += '(' +  ' || '.join(['%s =?= "%s"' % (resource_key, site) for site in incl_sites]) + ')'
+            requirements += ' && (' +  ' || '.join(['%s =?= "%s"' % (resource_key, site) for site in incl_sites]) + ')'
 
         # Blacklist sites
         excl_sites = [host for host in common_jd.candidate_hosts if host.startswith(HOST_EXCLUSION_SYMBOL)]
         if excl_sites:
-            if incl_sites:
-                # If there were sites, start with an AND operator again
-                requirements += ' && '
-            requirements += '(' +  ' && '.join(['%s =!= "%s"' % (resource_key, site.lstrip(' ' + HOST_EXCLUSION_SYMBOL)) for site in excl_sites]) + ')'
+            requirements += ' && (' +  ' && '.join(['%s =!= "%s"' % (resource_key, site.lstrip(' ' + HOST_EXCLUSION_SYMBOL)) for site in excl_sites]) + ')'
 
         # Generic requirements handling
         # Get the '~special_requirements' and strip leading ~ and possible spaces.
         special = ' && '.join([host.lstrip(' ' + SPECIAL_REQ_SYMBOL) for host in common_jd.candidate_hosts if host.startswith(SPECIAL_REQ_SYMBOL)])
         if special:
-            if incl_sites or excl_sites:
-                # If there were white and/or black sites, start with an AND operator again
-                requirements += ' && '
-            requirements += special
+            requirements += ' && %s' % special
 
-        if requirements:
-            condor_file += "\nrequirements = %s\n" % requirements
+        condor_file += "\nrequirements = %s\n" % requirements
+        condor_file += "periodic_remove = NumJobStarts > 0 && JobStatus == 1\n"
 
     # Transfer Directives
     if common_jd.attribute_exists('transfer_directives'):
@@ -218,6 +212,8 @@ def _condorscript_generator(url, logger, jds, option_dict=None):
         # close the quote opened earlier
         arguments += '\'\"'
         condor_file += "\n%s" % arguments
+
+        condor_file += "\ninitialdir = %s " % jd.working_directory
 
         # TODO: what to do when working directory is not set?
         logname = "saga-condor-job-$(cluster)_$(process).log"

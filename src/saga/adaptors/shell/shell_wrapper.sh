@@ -65,7 +65,7 @@ GID="$$"
 export GID
 
 # this is where this 'daemon' keeps state for all started jobs
-BASE="$*"
+BASE="$1"; shift
 if test -z "$BASE"
 then
   BASE=$HOME/.saga/adaptors/shell_job/
@@ -709,8 +709,6 @@ cmd_cancel () {
   mpid=`\cat "$DIR/mpid"`
 
   # first kill monitor, so that it does not interfer with state management
-  echo "/bin/kill -TERM $mpid " >> /tmp/t
-  echo "/bin/kill -KILL $mpid " >> /tmp/t
   /bin/kill -TERM $mpid 2>/dev/null
   /bin/kill -KILL $mpid 2>/dev/null
 
@@ -723,8 +721,6 @@ cmd_cancel () {
   fi
 
   # now kill the job process group, and to be sure also the job shell
-  echo "/bin/kill -TERM $KILL_DASHES -$rpid " >> /tmp/t
-  echo "/bin/kill -KILL $KILL_DASHES -$rpid " >> /tmp/t
   /bin/kill -TERM $KILL_DASHES -$rpid 2>/dev/null
   /bin/kill -KILL $KILL_DASHES -$rpid 2>/dev/null
 
@@ -933,8 +929,6 @@ listen() {
     IFS=$OLDIFS
     while \read -r CMD ARGS
     do
-      echo "$CMD $1" >> /tmp/t
-
       # reset error state for each command
       ERROR="OK"
       RETVAL=""

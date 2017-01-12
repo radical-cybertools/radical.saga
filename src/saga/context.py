@@ -3,6 +3,7 @@ __author__    = "Andre Merzky, Ole Weidner"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
+import copy
 
 import radical.utils.signatures as rus
 
@@ -143,5 +144,19 @@ class Context (sb.Base, sa.Attributes) :
         self._adaptor._initialize (session)
 
 
+    # --------------------------------------------------------------------------
+    #
+    def __deepcopy__(self, memo):
 
+        print self
+        
+        ret = Context(self.type)
+
+        for a in self.list_attributes():
+            ret.set_attribute(a, self.get_attribute(a))
+
+        return ret
+
+
+# ------------------------------------------------------------------------------
 
