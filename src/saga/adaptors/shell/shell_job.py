@@ -575,6 +575,13 @@ class ShellJobService (saga.adaptors.cpi.job.Service) :
               # src = shell_wrapper._WRAPPER_SCRIPT % ({ 'PURGE_ON_START' : str(self._adaptor.purge_on_start) })
                 src = shell_wrapper._WRAPPER_SCRIPT
                 src = src.replace('%(PURGE_ON_START)s', str(self._adaptor.purge_on_start))
+                
+                # If the target directory begins with $HOME or ${HOME} then we
+                # need to remove this since scp won't expand the variable and
+                # the copy will end up attempting to copy the file to 
+                # /<path_to_home_dir>/$HOME/.....
+                if tgt.startswith("$HOME") or tgt.startswith("${HOME}"):
+                    tgt = tgt[tgt.find('/')+1:]
                 self.shell.write_to_remote (src, tgt)
 
         # ----------------------------------------------------------------------
