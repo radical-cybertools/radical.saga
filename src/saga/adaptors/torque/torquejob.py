@@ -469,7 +469,6 @@ class TORQUEJobService (saga.adaptors.cpi.job.Service):
             self.mt.join(10)  # don't block forever on join()
 
         self._logger.info("Job monitoring thread stopped.")
-
         self.finalize(True)
 
 
@@ -628,12 +627,6 @@ class TORQUEJobService (saga.adaptors.cpi.job.Service):
         # get the job description
         jd       = job_obj.get_description()
         job_name = jd.name
-
-        import pprint
-        self._logger.info('jd: %s', job_name)
-        self._logger.info('jd: %s', jd.get('Name'))
-        self._logger.info('jd: %s', jd.name)
-        self._logger.info('jd: %s', pprint.pformat(jd.as_dict()))
 
         # normalize working directory path
         if  jd.working_directory :
@@ -804,7 +797,7 @@ class TORQUEJobService (saga.adaptors.cpi.job.Service):
             #     exit_status = 0
             results = out.split('\n')
             for line in results:
-                self._logger.info('qstat line: %s', line)
+
                 if len(line.split('=')) == 2:
                     key, val = line.split('=')
                     key = key.strip()
@@ -1104,8 +1097,6 @@ class TORQUEJob (saga.adaptors.cpi.job.Job):
         self.jd = job_info["job_description"]
         self.js = job_info["job_service"]
 
-        self._logger.info('set job name 1: %s', self.jd.name)
-
         if job_info['reconnect'] is True:
             self._id      = job_info['reconnect_jobid']
             self._name    = self.jd.name
@@ -1114,8 +1105,6 @@ class TORQUEJob (saga.adaptors.cpi.job.Job):
             self._id      = None
             self._name    = self.jd.name
             self._started = False
-
-        self._logger.info('set job name 2: %s', self._name)
 
         return self.get_api()
 
@@ -1184,7 +1173,6 @@ class TORQUEJob (saga.adaptors.cpi.job.Job):
     @SYNC_CALL
     def get_name (self):
         """ Implements saga.adaptors.cpi.job.Job.get_name() """        
-        self._logger.info('get job name 1: %s', self._name)
         return self._name
 
     # ----------------------------------------------------------------
