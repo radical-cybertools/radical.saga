@@ -478,7 +478,6 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
             minutes = wall_time_limit % 60
             slurm_script += "#SBATCH --time %02d:%02d:00\n" % (hours, minutes)
 
-        print 'queue: %s' % queue
         if queue:
             slurm_script += "#SBATCH --partition %s\n" % queue
 
