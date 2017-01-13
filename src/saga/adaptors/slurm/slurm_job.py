@@ -632,7 +632,7 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         scancel.  Raises exception when unsuccessful.
         """
 
-        if job.state in [saga.job.DONE, saga.job.FAILED, saga.job.CANCELED]:
+        if job._state in [saga.job.DONE, saga.job.FAILED, saga.job.CANCELED]:
             # job is already final - nothing to do
             return
 
@@ -640,20 +640,19 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
             # job is not yet submitted - nothing to do
             job._state = saga.job.CANCELED
 
-        if not job.id:
+        if not job._id:
             # uh oh - what to do?
             raise saga.NoSuccess._log(self._logger,
                     "Could not cancel job: no job ID")
 
-        rm,  pid    = self._adaptor.parse_id(job.id)
+        rm,  pid    = self._adaptor.parse_id(job._id)
         ret, out, _ = self.shell.run_sync("scancel %s" % pid)
 
-        if ret == 0:
-            return True
-            job._state = saga.job.CANCELED
-        else:
+        if ret != 0:
             raise saga.NoSuccess._log(self._logger,
-                                      "Could not cancel job %s because: %s" % (pid,out))
+                    "Could not cancel job %s because: %s" % (pid, out))
+
+        job._state = saga.job.CANCELED
 
 
     # --------------------------------------------------------------------------
@@ -664,14 +663,14 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         exception when unsuccessful.
         """
 
-        if job.state in [saga.job.DONE,     saga.job.FAILED,
-                         saga.job.CANCELED, saga.job.NEW,
-                         saga.job.SUSPENDED]:
+        if job._state in [saga.job.DONE,     saga.job.FAILED,
+                          saga.job.CANCELED, saga.job.NEW,
+                          saga.job.SUSPENDED]:
             raise saga.IncorrectState._log(self._logger,
-                    "Could not suspend job %s in state %s" % (job.id, job._state))
+                    "Could not suspend job %s in state %s" % (job._id, job._state))
 
 
-        rm,  pid    = self._adaptor.parse_id (job.id)
+        rm,  pid    = self._adaptor.parse_id (job._id)
         ret, out, _ = self.shell.run_sync("scontrol suspend %s" % pid)
 
         if ret == 0:
@@ -695,14 +694,14 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         exception when unsuccessful.
         """
 
-        if job.state in [saga.job.DONE,     saga.job.FAILED,
-                         saga.job.CANCELED, saga.job.NEW,
-                         saga.job.RUNNING]:
+        if job._state in [saga.job.DONE,     saga.job.FAILED,
+                          saga.job.CANCELED, saga.job.NEW,
+                          saga.job.RUNNING]:
             raise saga.IncorrectState._log(self._logger,
-                    "Could not resume job %s in state %s" % (job.id, job._state))
+                    "Could not resume job %s in state %s" % (job._id, job._state))
 
 
-        rm,  pid    = self._adaptor.parse_id (job.id)
+        rm,  pid    = self._adaptor.parse_id (job._id)
         ret, out, _ = self.shell.run_sync("scontrol resume %s" % pid)
 
         if ret == 0:
