@@ -469,7 +469,6 @@ class TORQUEJobService (saga.adaptors.cpi.job.Service):
             self.mt.join(10)  # don't block forever on join()
 
         self._logger.info("Job monitoring thread stopped.")
-
         self.finalize(True)
 
 
@@ -626,7 +625,8 @@ class TORQUEJobService (saga.adaptors.cpi.job.Service):
         """
 
         # get the job description
-        jd = job_obj.get_description()
+        jd       = job_obj.get_description()
+        job_name = jd.name
 
         # normalize working directory path
         if  jd.working_directory :
@@ -695,6 +695,7 @@ class TORQUEJobService (saga.adaptors.cpi.job.Service):
             # populate job info dict
             self.jobs[job_id] = {'obj'         : job_obj,
                                  'job_id'      : job_id,
+                                 'name'        : job_name,
                                  'state'       : state,
                                  'exec_hosts'  : None,
                                  'returncode'  : None,
@@ -704,8 +705,8 @@ class TORQUEJobService (saga.adaptors.cpi.job.Service):
                                  'gone'        : False
                                  }
 
-            self._logger.info ("assign job id  %s / %s / %s to watch list (%s)" \
-                            % (None, job_id, job_obj, self.jobs.keys()))
+            self._logger.info ("Assign job id  %s / %s / %s to watch list (%s)" \
+                            % (job_name, job_id, job_obj, self.jobs.keys()))
 
             # set status to 'pending' and manually trigger callback
             job_obj._attributes_i_set('state', state, job_obj._UP, True)
@@ -740,6 +741,7 @@ class TORQUEJobService (saga.adaptors.cpi.job.Service):
             job_info = {
                 'job_id':       job_id,
                 'state':        saga.job.UNKNOWN,
+                'name':         None,
                 'exec_hosts':   None,
                 'returncode':   None,
                 'create_time':  None,
@@ -753,7 +755,7 @@ class TORQUEJobService (saga.adaptors.cpi.job.Service):
         qstat_flag ='-f1'
             
         ret, out, _ = self.shell.run_sync("unset GREP_OPTIONS; %s %s %s | "
-                "grep -E -i '(job_state)|(exec_host)|(exit_status)|"
+                "grep -E -i '(job_state)|(Job_Name)|(exec_host)|(exit_status)|"
                  "(ctime)|(start_time)|(stime)|(mtime)'"
                 % (self._commands['qstat']['path'], qstat_flag, pid))
 
@@ -795,6 +797,7 @@ class TORQUEJobService (saga.adaptors.cpi.job.Service):
             #     exit_status = 0
             results = out.split('\n')
             for line in results:
+
                 if len(line.split('=')) == 2:
                     key, val = line.split('=')
                     key = key.strip()
@@ -803,6 +806,10 @@ class TORQUEJobService (saga.adaptors.cpi.job.Service):
                     # The ubiquitous job state
                     if key in ['job_state']:
                         job_state = val
+
+                    # The job name
+                    if key in ['job_name']:
+                        job_info['name'] = val
 
                     # Hosts where the job ran
                     elif key in ['exec_host']: # PBS Pro and TORQUE
@@ -1092,11 +1099,11 @@ class TORQUEJob (saga.adaptors.cpi.job.Job):
 
         if job_info['reconnect'] is True:
             self._id      = job_info['reconnect_jobid']
-            self._name    = self.jd.get(saga.job.NAME)
+            self._name    = self.jd.name
             self._started = True
         else:
             self._id      = None
-            self._name    = self.jd.get(saga.job.NAME)
+            self._name    = self.jd.name
             self._started = False
 
         return self.get_api()
