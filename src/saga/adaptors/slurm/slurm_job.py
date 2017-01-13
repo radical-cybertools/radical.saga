@@ -1141,6 +1141,7 @@ class SLURMJob(saga.adaptors.cpi.job.Job):
         """
         Implements saga.adaptors.cpi.job.Job.get_exit_code()
         """
+        # FIXME: use cache
         return self._job_get_info()['exit_code']
 
 
