@@ -53,21 +53,21 @@ class TransferDirectives(object):
                 msg = "'%s' is not a valid transfer d string."
                 raise se.BadParameter(msg)
 
-            elif '>' in d:
-                (loc, rem) = d.split('>')
-                self._in_overwrite.append([loc.strip(), rem.strip()])
-
             elif '>>' in d:
                 (loc, rem) = d.split('>>')
                 self._in_append.append([loc.strip(), rem.strip()])
 
-            elif '<' in d:
-                (loc, rem) = d.split('<')
-                self._out_overwrite.append([loc.strip(), rem.strip()])
+            elif '>' in d:
+                (loc, rem) = d.split('>')
+                self._in_overwrite.append([loc.strip(), rem.strip()])
 
             elif '<<' in d:
                 (loc, rem) = d.split('<<')
                 self._out_append.append([loc.strip(), rem.strip()])
+
+            elif '<' in d:
+                (loc, rem) = d.split('<')
+                self._out_overwrite.append([loc.strip(), rem.strip()])
 
             else:
                 msg = "'%s' is not a valid transfer directive string." % d
