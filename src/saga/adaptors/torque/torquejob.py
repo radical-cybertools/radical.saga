@@ -469,7 +469,6 @@ class TORQUEJobService (saga.adaptors.cpi.job.Service):
             self.mt.join(10)  # don't block forever on join()
 
         self._logger.info("Job monitoring thread stopped.")
-
         self.finalize(True)
 
 
@@ -628,12 +627,6 @@ class TORQUEJobService (saga.adaptors.cpi.job.Service):
         # get the job description
         jd       = job_obj.get_description()
         job_name = jd.name
-
-        import pprint
-        self._logger.info('jd: %s', job_name)
-        self._logger.info('jd: %s', jd.get('Name'))
-        self._logger.info('jd: %s', jd.name)
-        self._logger.info('jd: %s', pprint.pformat(jd.as_dict()))
 
         # normalize working directory path
         if  jd.working_directory :
@@ -804,7 +797,7 @@ class TORQUEJobService (saga.adaptors.cpi.job.Service):
             #     exit_status = 0
             results = out.split('\n')
             for line in results:
-                self._logger.info('qstat line: %s', line)
+
                 if len(line.split('=')) == 2:
                     key, val = line.split('=')
                     key = key.strip()
