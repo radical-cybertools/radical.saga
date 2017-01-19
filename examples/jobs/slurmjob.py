@@ -19,20 +19,10 @@ import saga
 def main():
 
     try:
-        # Your ssh identity on the remote machine.
-        ctx = saga.Context("ssh")
-
-        # Change e.g., if you have a differnent username on the remote machine
-        #ctx.user_id = "your_ssh_username"
-
-        session = saga.Session()
-        session.add_context(ctx)
-
         # Create a job service object that represent a remote pbs cluster.
         # The keyword 'pbs' in the url scheme triggers the SGE adaptors
         # and '+ssh' enables SGE remote access via SSH.
-        js = saga.job.Service("slurm+ssh://stampede.tacc.xsede.org",
-                              session=session)
+        js = saga.job.Service("slurm+gsissh://stampede.tacc.xsede.org:2222/")
 
         # Next, we describe the job we want to run. A complete set of job
         # description attributes can be found in the API documentation.
@@ -43,10 +33,11 @@ def main():
         jd.executable        = '/bin/touch'
         jd.arguments         = ['$FILENAME']
 
+        jd.name              = "examplejob"
         jd.queue             = "development"
         jd.project           = "TG-MCB090174"
 
-        jd.working_directory = "$SCRATCH/A/B/C"
+        jd.working_directory = "A/B/C"
         jd.output            = "examplejob.out"
         jd.error             = "examplejob.err"
 

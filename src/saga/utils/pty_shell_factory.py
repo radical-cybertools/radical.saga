@@ -641,9 +641,9 @@ class PTYShellFactory (object) :
                                     info['sftp_env']  += "X509_CERT_DIR='%s' "  % context.cert_repository
 
                 if url.port and url.port != -1 :
-                    info['ssh_args']  += "-p %d " % int(url.port)
-                    info['scp_args']  += "-p %d " % int(url.port)
-                    info['sftp_args'] += "-P %d " % int(url.port)
+                    info['ssh_args']  += "-o Port=%d " % int(url.port)
+                    info['scp_args']  += "-o Port=%d " % int(url.port)
+                    info['sftp_args'] += "-o Port=%d " % int(url.port)
 
 
                 # all ssh based shells allow for user_id and user_pass from contexts
