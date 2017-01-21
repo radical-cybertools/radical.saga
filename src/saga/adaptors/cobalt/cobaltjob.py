@@ -174,7 +174,7 @@ def _cobaltscript_generator(url, logger, jd, ppn, is_cray=False, queue=None, ):
 
     if jd.environment:
         cobalt_params += '--env "%s" \\\n' % \
-                ':'.join (["%s=%s" % (k,v.replace('"', '\\"')) # escape double quotes
+                ':'.join (["%s=%s" % (k,v.replace('"', '\\"').replace(':', '\\:').replace('=', '\\=')) # escape chars
                            for k,v in jd.environment.iteritems()])
 
     if jd.working_directory:
@@ -711,6 +711,23 @@ class CobaltJobService (saga.adaptors.cpi.job.Service):
                 log_error_and_raise(message, saga.NoSuccess, self._logger)
 
             if out.strip() == '':
+
+
+                # Let's see if the last known job state was running or pending. in
+                # that case, the job is gone now, which can either mean DONE,
+                # or FAILED. the only thing we can do is set it to 'DONE'
+                job_info['gone'] = True
+                # TODO: we can also set the end time?
+                self._logger.warning("Previously running job has disappeared. "
+                        "This probably means that Cobalt doesn't store "
+                        "information about finished jobs. Setting state to 'DONE'.")
+                if job_info['state'] in [saga.job.RUNNING, saga.job.PENDING]:
+                    job_info['state'] = saga.job.DONE
+                else:
+                    # TODO: This is an uneducated guess?
+                    job_info['state'] = saga.job.FAILED
+
+
                 # Cobalt's 'qstat' command return's nothing
                 # When a job is finished but it exists with code '1' 
                 # Let's see if the job state is in 'cqhist'
@@ -730,52 +747,52 @@ class CobaltJobService (saga.adaptors.cpi.job.Service):
                 # 2016-12-01 15:50:07      26 vagrant  default        3   c2 0:00:43     0
                 # 2016-12-01 15:50:17      23 vagrant  default        3   c2 0:00:43     0
                 
-                cqhist_flag ='--alldetails --rows=1000' # return the last 1k lines
-                ret, out, _ = self.shell.run_sync("unset GREP_OPTIONS; %s %s | "
-                    "grep -P -i '^ *\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} +%s +'"
-                    % (self._commands['cqhist']['path'], cqhist_flag, pid))
-
-                if ret != 0:
-                    if reconnect:
-                        message = "Couldn't reconnect to job '%s': %s" % (job_id, out)
-                        log_error_and_raise(message, saga.NoSuccess, self._logger)
-                elif out.strip() == '':
-                    # job_info['gone'] = True
-                    # TODO: we can also set the end time?
-                    self._logger.warning("Previously running job has disappeared. "
-                            "This probably means that the backend doesn't store "
-                            "information about finished jobs. Setting state to 'DONE'.")
-                    if job_info['state'] in [saga.job.RUNNING, saga.job.PENDING]:
-                        job_info['state'] = saga.job.DONE
-                    else:
-                        # TODO: This is an uneducated guess?
-                        job_info['state'] = saga.job.FAILED
-                else:
-                    # Found the job in the history, let's grab the result...
-                    results = out.split()
-                    
-                    # Date and time are on position '0' and '1' respectively
-                    # Current format: 2016-12-21 16:09:05
-                    # ASSUMPTION: Date is in UTC (as seen on the servers)
-                    # Will be parsed as UTC and output format: 
-                    # DDD mmm dd HH:MM:SS YYYY +0000 (UTC)
-                    # Wed Dec 21 15:51:34 2016 +0000 (UTC)
-                    end_time = datetime.datetime.strptime( "%s %s" % 
-                        (results[0].strip(), results[1].strip()), 
-                        "%Y-%m-%d %H:%M:%S" )
-                    job_info['end_time'] = end_time.strftime("%a %b %d %H:%M:%S %Y +0000 (UTC)")
-
-                    # Run time is on position '6'
-                    job_info['end_time'] = results[6].strip()
-
-                    # Return code is on position '13'
-                    job_info['returncode'] = int(results[13].strip())
-                    
-                    # Final Job State given the exit code
-                    if job_info['returncode'] != 0:
-                        job_info['state'] = saga.job.FAILED
-                    else:
-                        job_info['state'] = saga.job.DONE
+                # cqhist_flag ='--alldetails --rows=1000' # return the last 1k lines
+                # ret, out, _ = self.shell.run_sync("unset GREP_OPTIONS; %s %s | "
+                #     "grep -P -i '^ *\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} +%s +'"
+                #     % (self._commands['cqhist']['path'], cqhist_flag, pid))
+# 
+                # if ret != 0:
+                #     if reconnect:
+                #         message = "Couldn't reconnect to job '%s': %s" % (job_id, out)
+                #         log_error_and_raise(message, saga.NoSuccess, self._logger)
+                # elif out.strip() == '':
+                #     # job_info['gone'] = True
+                #     # TODO: we can also set the end time?
+                #     self._logger.warning("Previously running job has disappeared. "
+                #             "This probably means that the backend doesn't store "
+                #             "information about finished jobs. Setting state to 'DONE'.")
+                #     if job_info['state'] in [saga.job.RUNNING, saga.job.PENDING]:
+                #         job_info['state'] = saga.job.DONE
+                #     else:
+                #         # TODO: This is an uneducated guess?
+                #         job_info['state'] = saga.job.FAILED
+                # else:
+                #     # Found the job in the history, let's grab the result...
+                #     results = out.split()
+                #     
+                #     # Date and time are on position '0' and '1' respectively
+                #     # Current format: 2016-12-21 16:09:05
+                #     # ASSUMPTION: Date is in UTC (as seen on the servers)
+                #     # Will be parsed as UTC and output format: 
+                #     # DDD mmm dd HH:MM:SS YYYY +0000 (UTC)
+                #     # Wed Dec 21 15:51:34 2016 +0000 (UTC)
+                #     end_time = datetime.datetime.strptime( "%s %s" % 
+                #         (results[0].strip(), results[1].strip()), 
+                #         "%Y-%m-%d %H:%M:%S" )
+                #     job_info['end_time'] = end_time.strftime("%a %b %d %H:%M:%S %Y +0000 (UTC)")
+# 
+                #     # Run time is on position '6'
+                #     job_info['end_time'] = results[6].strip()
+# 
+                #     # Return code is on position '13'
+                #     job_info['returncode'] = int(results[13].strip())
+                #     
+                #     # Final Job State given the exit code
+                #     if job_info['returncode'] != 0:
+                #         job_info['state'] = saga.job.FAILED
+                #     else:
+                #         job_info['state'] = saga.job.DONE
 
 
             else:
