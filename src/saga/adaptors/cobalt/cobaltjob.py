@@ -591,11 +591,13 @@ class CobaltJobService (saga.adaptors.cpi.job.Service):
         try:
             # create a Cobalt job script from SAGA job description
             script = _cobaltscript_generator(url=self.rm, 
-                                                    logger=self._logger, jd=jd, 
-                                                    ppn=self.ppn, queue=self.queue, 
-                                                    run_job=self._commands['runjob']['path']
-                                                    )
-            self._logger.info("Generated Cobalt script: %s" % script)
+                                            logger=self._logger, 
+                                            jd=jd, 
+                                            ppn=self.ppn, 
+                                            queue=self.queue, 
+                                            run_job=self._commands['runjob']['path']
+                                            )
+            self._logger.info("Generated Cobalt script: %s" % str(script))
         except Exception, ex:
             log_error_and_raise(str(ex), saga.BadParameter, self._logger)
 
