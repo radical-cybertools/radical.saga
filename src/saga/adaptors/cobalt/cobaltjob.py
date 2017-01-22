@@ -160,7 +160,7 @@ def _cobaltscript_generator(url, logger, jd, ppn, is_cray=False, queue=None, rub
     blue_gene_q_modes = [1, 2, 4, 8, 16, 32, 64]
     ppn = 16 # for now, defaulting to number of cores per node in Blue Gene/Q
 
-    # Why dp I need this?
+    # Why do I need this?
     # exec_n_args += 'export SAGA_PPN=%d \\\n' % ppn
     if jd.executable:
         exec_n_args += "%s " % (jd.executable)
@@ -301,9 +301,9 @@ def _cobaltscript_generator(url, logger, jd, ppn, is_cray=False, queue=None, rub
     # Cobalt isn't supporting spaces in the env variables...
     # Which mess up the whole script if they are at the begining of the list...
     if jd.environment:
-    cobalt_params += '#COBALT --env %s\n' % \
-            ':'.join (["%s=%s" % (k,v.replace(':', '\\:').replace('=', '\\=')) # escape chars
-                       for k,v in jd.environment.iteritems()])
+        cobalt_params += '#COBALT --env %s\n' % \
+                ':'.join (["%s=%s" % (k,v.replace(':', '\\:').replace('=', '\\=')) # escape chars
+                           for k,v in jd.environment.iteritems()])
 
     # may not need to escape all double quotes and dollarsigns, 
     # since we don't do 'echo |' further down (like torque/pbspro)
