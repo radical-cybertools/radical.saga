@@ -173,7 +173,7 @@ def _cobaltscript_generator(url, logger, jd, ppn, is_cray=False, queue=None, run
         cobalt_params += '#COBALT --jobname %s\n' % jd.name
 
     if jd.working_directory:
-        cobalt_params += '#COBALT --cwd "%s"\n' % jd.working_directory
+        cobalt_params += '#COBALT --cwd %s\n' % jd.working_directory
 
     # a workaround is to do an explicit 'cd'
     # if jd.working_directory:
