@@ -149,7 +149,7 @@ def _cobalt_to_saga_jobstate(cobaltjs):
 
 # --------------------------------------------------------------------
 #
-def _cobaltscript_generator(url, logger, jd, ppn, is_cray=False, queue=None, ):
+def _cobaltscript_generator(url, logger, jd, ppn, is_cray=False, queue=None, rub_job='/usr/bin/runjob'):
     """ Generates Cobalt-style 'qsub' command arguments from a SAGA job description
     """
     cobalt_params  = str()
@@ -169,16 +169,10 @@ def _cobaltscript_generator(url, logger, jd, ppn, is_cray=False, queue=None, ):
             exec_n_args += "%s " % (arg)
 
     if jd.name:
-        cobalt_params += '--jobname %s \\\n' % jd.name
-
-
-    if jd.environment:
-        cobalt_params += '--env "%s" \\\n' % \
-                ':'.join (["%s=%s" % (k,v.replace('"', '\\"').replace(':', '\\:').replace('=', '\\=')) # escape chars
-                           for k,v in jd.environment.iteritems()])
+        cobalt_params += '#COBALT --jobname %s\n' % jd.name
 
     if jd.working_directory:
-        cobalt_params += '--cwd "%s" \\\n' % jd.working_directory
+        cobalt_params += '#COBALT --cwd "%s"\n' % jd.working_directory
 
     # a workaround is to do an explicit 'cd'
     # if jd.working_directory:
@@ -194,14 +188,14 @@ def _cobaltscript_generator(url, logger, jd, ppn, is_cray=False, queue=None, ):
         # path name.
         if jd.working_directory:
             if os.path.isabs(jd.output):
-                cobalt_params += '--output "%s" \\\n' % jd.output
+                cobalt_params += '#COBALT --output %s\n' % jd.output
             else:
                 # user provided a relative path for STDOUT. in this case 
                 # we prepend the workind directory path before passing
                 # it on to Cobalt
-                cobalt_params += '--output "%s/%s" \\\n' % (jd.working_directory, jd.output)
+                cobalt_params += '#COBALT --output %s/%s\n' % (jd.working_directory, jd.output)
         else:
-            cobalt_params += '--output "%s" \\\n' % jd.output
+            cobalt_params += '#COBALT --output %s\n' % jd.output
 
     if jd.error:
         # if working directory is set, we want stderr to end up in 
@@ -209,33 +203,33 @@ def _cobaltscript_generator(url, logger, jd, ppn, is_cray=False, queue=None, ):
         # path name. 
         if jd.working_directory:
             if os.path.isabs(jd.error):
-                cobalt_params += '--error "%s" \\\n' % jd.error
+                cobalt_params += '#COBALT --error %s\n' % jd.error
             else:
                 # user provided a realtive path for STDERR. in this case 
                 # we prepend the workind directory path before passing
                 # it on to Cobalt
-                cobalt_params += '--error "%s/%s" \\\n' % (jd.working_directory, jd.error)
+                cobalt_params += '#COBALT --error %s/%s\n' % (jd.working_directory, jd.error)
         else:
-            cobalt_params += '--error "%s" \\\n' % jd.error
+            cobalt_params += '#COBALT --error %s\n' % jd.error
 
     if jd.wall_time_limit:
         hours = jd.wall_time_limit / 60
         minutes = jd.wall_time_limit % 60
-        cobalt_params += '--time "%s:%s:00" \\\n' \
-            % (str(hours), str(minutes))
+        cobalt_params += '#COBALT --time %s:%s:00\n' \
+            % (str(hours).zfill(2), str(minutes).zfill(2))
 
     if jd.queue and queue:
-        cobalt_params += '--queue "%s" \\\n' % queue
+        cobalt_params += '#COBALT --queue %s\n' % queue
     elif jd.queue and not queue:
-        cobalt_params += '--queue "%s" \\\n' % jd.queue
+        cobalt_params += '#COBALT --queue %s\n' % jd.queue
     elif queue and not jd.queue:
-        cobalt_params += '--queue "%s" \\\n' % queue
+        cobalt_params += '#COBALT --queue %s\n' % queue
     
     if jd.project:
-        cobalt_params += '--project "%s" \\\n' % str(jd.project)
+        cobalt_params += '#COBALT --project %s\n' % str(jd.project)
     
     if jd.job_contact:
-        cobalt_params += '--notify "%s" \\\n' % str(jd.job_contact)
+        cobalt_params += '#COBALT --notify %s\n' % str(jd.job_contact)
 
     #
     # Parse candidate_hosts
@@ -297,22 +291,31 @@ def _cobaltscript_generator(url, logger, jd, ppn, is_cray=False, queue=None, ):
             saga.NoSuccess, logger)
     ## Other funky math checks should go here ~
 
-    # Set the MPI rank per node (mode).
-    #   mode --> c1, c2, c4, c8, c16, c32, c64
-    cobalt_params += '--mode c%s \\\n' % processes_per_host
-
     # Set number of nodes
-    cobalt_params += '--nodecount %d \\\n' % number_of_nodes
+    cobalt_params += '#COBALT --nodecount %d\n' % number_of_nodes
 
     # Set the total number of processes
-    cobalt_params += '--proccount %d \\\n' % number_of_processes
+    cobalt_params += '#COBALT --proccount %d\n' % number_of_processes
+
+    # The Environments are added at the end because for now
+    # Cobalt isn't supporting spaces in the env variables...
+    # Which mess up the whole script if they are at the begining of the list...
+    if jd.environment:
+    cobalt_params += '#COBALT --env %s\n' % \
+            ':'.join (["%s=%s" % (k,v.replace(':', '\\:').replace('=', '\\=')) # escape chars
+                       for k,v in jd.environment.iteritems()])
 
     # may not need to escape all double quotes and dollarsigns, 
     # since we don't do 'echo |' further down (like torque/pbspro)
     # only escape '$' in args and exe. not in the params
     # exec_n_args = exec_n_args.replace('$', '\\$')
-    
-    cobaltscrpit = "%s %s" % (cobalt_params, exec_n_args)
+
+    # Set the MPI rank per node (mode).
+    #   mode --> c1, c2, c4, c8, c16, c32, c64
+    #   Mode is represented by the runjob's '--ranks-per-node' flag
+    exec_n_args = "%s --ranks-per-node %s --np %s --block $COBALT_PARTNAME --verbose=INFO : %s\n" % (run_job, processes_per_host, number_of_processes, exec_n_args)
+    exec_n_args = exec_n_args.replace('$', '\\$')
+    cobaltscrpit = "%s\n%s" % (cobalt_params, run_job, exec_n_args)
     return cobaltscrpit
 
 
@@ -529,7 +532,7 @@ class CobaltJobService (saga.adaptors.cpi.job.Service):
                           'qstat':    None,
                           'qsub':     None,
                           'qdel':     None,
-                          'cqhist':   None # For historical searches
+                          'runjob':   None # For running scripts
                           }
 
         self.shell = sups.PTYShell(pty_url, self.session)
@@ -587,9 +590,12 @@ class CobaltJobService (saga.adaptors.cpi.job.Service):
 
         try:
             # create a Cobalt job script from SAGA job description
-            qsub_arguments = _cobaltscript_generator(url=self.rm, logger=self._logger, jd=jd, 
-                ppn=self.ppn, queue=self.queue, )
-            self._logger.info("Generated Cobalt qsub arguments: %s" % qsub_arguments)
+            script = _cobaltscript_generator(url=self.rm, 
+                                                    logger=self._logger, jd=jd, 
+                                                    ppn=self.ppn, queue=self.queue, 
+                                                    run_job=self._commands['runjob']['path']
+                                                    )
+            self._logger.info("Generated Cobalt script: %s" % script)
         except Exception, ex:
             log_error_and_raise(str(ex), saga.BadParameter, self._logger)
 
@@ -604,9 +610,11 @@ class CobaltJobService (saga.adaptors.cpi.job.Service):
                 message = "Couldn't create working directory - %s" % (out)
                 log_error_and_raise(message, saga.NoSuccess, self._logger)
 
-        # Now we want to execute qsub + qsub_arguments. This process consists of one step:
-        # (1) we call 'qsub qsub_arguments' to submit the script to the queueing system
-        cmdline = """%s %s""" %  (self._commands['qsub']['path'], qsub_arguments)
+        # Now we want to execute the script. This process consists of two steps:
+        # (1) we create a temporary file with 'mktemp', write the contents of 
+        #     the generated Cobalt script into it and make sure it is executable
+        # (2) we call 'qsub --mode script <tmpfile>' to submit the script to the queueing system
+        cmdline = """SCRIPTFILE=`mktemp -t SAGA-Python-PBSProJobScript.XXXXXX` &&  echo "%s" > $SCRIPTFILE && chmod +x $SCRIPTFILE && %s --mode script $SCRIPTFILE && rm -f $SCRIPTFILE""" %  (script, self._commands['qsub']['path'])
         ret, out, _ = self.shell.run_sync(cmdline)
 
         if ret != 0:
