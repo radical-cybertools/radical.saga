@@ -313,7 +313,7 @@ def _cobaltscript_generator(url, logger, jd, ppn, is_cray=False, queue=None, run
     # Set the MPI rank per node (mode).
     #   mode --> c1, c2, c4, c8, c16, c32, c64
     #   Mode is represented by the runjob's '--ranks-per-node' flag
-    exec_n_args = "%s --ranks-per-node %s --np %s --block $COBALT_PARTNAME --verbose=INFO : %s\n" % (run_job, processes_per_host, number_of_processes, exec_n_args)
+    exec_n_args = "%s --ranks-per-node %d --np %d --block $COBALT_PARTNAME --verbose=INFO : %s\n" % (run_job, processes_per_host, number_of_processes, exec_n_args)
     exec_n_args = exec_n_args.replace('$', '\\$')
     cobaltscrpit = "%s\n%s" % (cobalt_params, run_job, exec_n_args)
     return cobaltscrpit
