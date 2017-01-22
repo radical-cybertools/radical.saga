@@ -154,6 +154,7 @@ def _cobaltscript_generator(url, logger, jd, ppn, is_cray=False, queue=None, run
     """
     cobalt_params  = str()
     exec_n_args = str()
+    cobaltscript = str()
     total_cpu_count = None
     number_of_processes = None
     processes_per_host = None
@@ -315,8 +316,12 @@ def _cobaltscript_generator(url, logger, jd, ppn, is_cray=False, queue=None, run
     #   Mode is represented by the runjob's '--ranks-per-node' flag
     exec_n_args = "%s --ranks-per-node %d --np %d --block $COBALT_PARTNAME --verbose=INFO : %s\n" % (run_job, processes_per_host, number_of_processes, exec_n_args)
     exec_n_args = exec_n_args.replace('$', '\\$')
-    cobaltscrpit = "%s\n%s" % (cobalt_params, run_job, exec_n_args)
-    return cobaltscrpit
+
+    # Need a new line before the shebang because linux is a bit of a pain when echoing it
+    # It will be removed later though...
+    cobaltscript = "\n#!/bin/bash \n%s\n%s" % (cobalt_params, exec_n_args)
+    cobaltscript = cobaltscript.replace('"', '\\"')
+    return cobaltscript
 
 
 # --------------------------------------------------------------------
@@ -614,9 +619,10 @@ class CobaltJobService (saga.adaptors.cpi.job.Service):
 
         # Now we want to execute the script. This process consists of two steps:
         # (1) we create a temporary file with 'mktemp', write the contents of 
-        #     the generated Cobalt script into it and make sure it is executable
+        #     the generated Cobalt script into it, remove the first empty line
+        #     and make sure it is executable
         # (2) we call 'qsub --mode script <tmpfile>' to submit the script to the queueing system
-        cmdline = """SCRIPTFILE=`mktemp -t SAGA-Python-PBSProJobScript.XXXXXX` &&  echo "%s" > $SCRIPTFILE && chmod +x $SCRIPTFILE && %s --mode script $SCRIPTFILE && rm -f $SCRIPTFILE""" %  (script, self._commands['qsub']['path'])
+        cmdline = """SCRIPTFILE=`mktemp -t SAGA-Python-PBSProJobScript.XXXXXX` &&  echo "%s" > $SCRIPTFILE && echo "$(tail -n +2 $SCRIPTFILE)" > $SCRIPTFILE && chmod +x $SCRIPTFILE && %s --mode script $SCRIPTFILE && rm -f $SCRIPTFILE""" %  (script, self._commands['qsub']['path'])
         ret, out, _ = self.shell.run_sync(cmdline)
 
         if ret != 0:
