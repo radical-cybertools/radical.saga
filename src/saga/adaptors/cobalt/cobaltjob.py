@@ -90,7 +90,7 @@ class _job_state_monitor(threading.Thread):
 
             except Exception as e:
                 import traceback
-                traceback.print_exc ()
+                traceback.print_exc()
                 self.logger.warning("Exception caught in job monitoring thread: %s" % e)
 
                 # check if we see the same error again and again
@@ -460,8 +460,8 @@ class CobaltJobService (saga.adaptors.cpi.job.Service):
         self._adaptor = adaptor
 
         # Specific for Cobalt
-        self._script_file = None    # keep track of the cobalt script file
-        self._cwd = '$HOME'         # keep track of the current working directory, for status checking...
+        self._script_file = dict()    # keep track of the cobalt script file
+        self._cwd = dict()         # keep track of the current working directory, for status checking...
 
     # ----------------------------------------------------------------
     #
@@ -585,6 +585,9 @@ class CobaltJobService (saga.adaptors.cpi.job.Service):
         """ runs a job via qsub
         """
 
+        script_file = None
+        cwd = '$HOME'
+
         # get the job description
         jd = job_obj.get_description()
 
@@ -617,7 +620,7 @@ class CobaltJobService (saga.adaptors.cpi.job.Service):
         if jd.working_directory:
             self._logger.info("Creating working directory %s" % jd.working_directory)
             ret, out, _ = self.shell.run_sync("mkdir -p %s" % (jd.working_directory))
-            self._cwd = jd.working_directory # set the new self._cwd
+            cwd = jd.working_directory # set the new self._cwd
             if ret != 0:
                 # something went wrong
                 message = "Couldn't create working directory - %s" % (out)
@@ -625,13 +628,14 @@ class CobaltJobService (saga.adaptors.cpi.job.Service):
 
 
         # Now we want to execute the script. This process consists of two steps:
-        # (1) we create a temporary file with 'mktemp', write the contents of 
+        # (1) we create a temporary file with 'mktemp', 
+
+        # (2) write the contents of 
         #     the generated Cobalt script into it, remove the first empty line
         #     and make sure it is executable
-        # (2) we call 'qsub --mode script <tmpfile>' to submit the script to the queueing system
+        # (3) we call 'qsub --mode script <tmpfile>' to submit the script to the queueing system
         self._logger.info("Creating Cobalt script file at %s" % jd.working_directory)
-        ret, out, _ = self.shell.run_sync("""SCRIPTFILE=`mktemp -p %s -t SAGA-Python-PBSProJobScript.XXXXXX` &&  echo "%s" > $SCRIPTFILE && echo "$(tail -n +2 $SCRIPTFILE)" > $SCRIPTFILE && chmod +x $SCRIPTFILE && echo $SCRIPTFILE""" % (self._cwd, script))
-        cwd = jd.working_directory
+        ret, out, _ = self.shell.run_sync("""SCRIPTFILE=`mktemp -p %s -t SAGA-Python-PBSProJobScript.XXXXXX` && echo $SCRIPTFILE""" % (cwd))
         if ret != 0:
             message = "Couldn't create Cobalt script file - %s" % (out)
             log_error_and_raise(message, saga.NoSuccess, self._logger)
@@ -639,14 +643,23 @@ class CobaltJobService (saga.adaptors.cpi.job.Service):
         # Cobalt *needs* the file to stick around, even after submission
         # so, we will keep the file around and delete it *only* when
         # the job is done.
-        self._script_file = out.strip()
-        cmdline = """%s --mode script %s""" %  (self._commands['qsub']['path'], self._script_file)
+        script_file = out.strip()
+
+        self._logger.info("Populating Cobalt script file at %s" % jd.working_directory)
+        ret, out, _ = self.shell.run_sync("""SCRIPTFILE="%s" && echo "%s" > $SCRIPTFILE && echo "$(tail -n +2 $SCRIPTFILE)" > $SCRIPTFILE && chmod +x $SCRIPTFILE && echo $SCRIPTFILE""" % (script_file, script))
+        if ret != 0:
+            message = "Couldn't create Cobalt script file - %s" % (out)
+            self._cleanup_cobalt_job_script(script_file)
+            log_error_and_raise(message, saga.NoSuccess, self._logger)
+
+        cmdline = """%s --mode script %s""" %  (self._commands['qsub']['path'], script_file)
         ret, out, _ = self.shell.run_sync(cmdline)
 
         if ret != 0:
             # something went wrong
             message = "Error running job via 'qsub': %s. Commandline was: %s" \
                 % (out, cmdline)
+            self._cleanup_cobalt_job_script(script_file)
             log_error_and_raise(message, saga.NoSuccess, self._logger)
         else:
             # parse the job id. qsub usually returns just the job id, but
@@ -682,6 +695,10 @@ class CobaltJobService (saga.adaptors.cpi.job.Service):
             # set status to 'pending' and manually trigger callback
             job_obj._attributes_i_set('state', state, job_obj._UP, True)
 
+            # Since we now have the job_id, lets track the cwd and script_file
+            self._cwd[job_id] = cwd
+            self._script_file[job_id] = script_file
+
             # return the job id
             return job_id
 
@@ -693,6 +710,15 @@ class CobaltJobService (saga.adaptors.cpi.job.Service):
             know anything about
         """
         pass
+
+    # ----------------------------------------------------------------
+    #
+    def _cleanup_cobalt_job_script(self, script_file):
+        """ clean up the cobalt job script
+        """
+        if script_file:
+            self._logger.info("Cleaning Cobalt script file: %s" % script_file)
+            ret, out, _ = self.shell.run_sync('rm -f %s' % (script_file))
 
     # ----------------------------------------------------------------
     #
@@ -759,7 +785,7 @@ class CobaltJobService (saga.adaptors.cpi.job.Service):
                 
                 ret, out, _ = self.shell.run_sync("unset GREP_OPTIONS; cat %s/%s.cobaltlog | "
                     "grep -P -i '^[A-Z][a-z]{2} [A-Z][a-z]{2} \d{2} \d{2}:\d{2}:\d{2} \d{4} \+\d{4} \([A-Za-z]+\) *Info: task completed'"
-                    % (self._cwd, pid))
+                    % (self._cwd[job_id], pid))
                 
                 if ret != 0:
                     if reconnect:
@@ -848,12 +874,17 @@ class CobaltJobService (saga.adaptors.cpi.job.Service):
                     elif key in ['StartTime']:
                         job_info['start_time'] = val
 
+        # Cleanup the script *ONLY* if we *KNOW* it is done
+        # If we clean-up the script when there is a 'saga-python' error
+        # we may end-up also forcing an error on the job itself since we
+        # may inadvertently remove the cobalt-script before the job starts 
+        if  job_info['state'] in [saga.job.DONE, saga.job.FAILED, saga.job.CANCELED]:
+            self._cleanup_cobalt_job_script(self._script_file[job_id])
+
         # return the updated job info
         return job_info
 
     def _parse_qstat(self, haystack, job_info):
-
-
         # return the new job info dict
         return job_info
 
