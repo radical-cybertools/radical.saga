@@ -458,6 +458,7 @@ class CobaltJobService (saga.adaptors.cpi.job.Service):
         _cpi_base.__init__(api, adaptor)
 
         self._adaptor = adaptor
+        self._script_file = None
 
     # ----------------------------------------------------------------
     #
@@ -610,20 +611,34 @@ class CobaltJobService (saga.adaptors.cpi.job.Service):
         # try to create the working directory (if defined)
         # WARNING: this assumes a shared filesystem between login node and
         #          compute nodes.
+        cwd = '$HOME'
         if jd.working_directory:
             self._logger.info("Creating working directory %s" % jd.working_directory)
             ret, out, _ = self.shell.run_sync("mkdir -p %s" % (jd.working_directory))
+            cwd = jd.working_directory
             if ret != 0:
                 # something went wrong
                 message = "Couldn't create working directory - %s" % (out)
                 log_error_and_raise(message, saga.NoSuccess, self._logger)
+
 
         # Now we want to execute the script. This process consists of two steps:
         # (1) we create a temporary file with 'mktemp', write the contents of 
         #     the generated Cobalt script into it, remove the first empty line
         #     and make sure it is executable
         # (2) we call 'qsub --mode script <tmpfile>' to submit the script to the queueing system
-        cmdline = """SCRIPTFILE=`mktemp -t SAGA-Python-PBSProJobScript.XXXXXX` &&  echo "%s" > $SCRIPTFILE && echo "$(tail -n +2 $SCRIPTFILE)" > $SCRIPTFILE && chmod +x $SCRIPTFILE && %s --mode script $SCRIPTFILE && rm -f $SCRIPTFILE""" %  (script, self._commands['qsub']['path'])
+        self._logger.info("Creating Cobalt script file at %s" % jd.working_directory)
+        ret, out, _ = self.shell.run_sync("""SCRIPTFILE=`mktemp -p %s -t SAGA-Python-PBSProJobScript.XXXXXX` &&  echo "%s" > $SCRIPTFILE && echo "$(tail -n +2 $SCRIPTFILE)" > $SCRIPTFILE && chmod +x $SCRIPTFILE && echo $SCRIPTFILE""" % (cwd, script))
+        cwd = jd.working_directory
+        if ret != 0:
+            message = "Couldn't create Cobalt script file - %s" % (out)
+            log_error_and_raise(message, saga.NoSuccess, self._logger)
+        # Save Script file for later...
+        # Cobalt *needs* the file to stick around, even after submission
+        # so, we will keep the file around and delete it *only* when
+        # the job is done.
+        self._script_file = out.strip()
+        cmdline = """%s --mode script %s""" %  (self._commands['qsub']['path'], self._script_file)
         ret, out, _ = self.shell.run_sync(cmdline)
 
         if ret != 0:
