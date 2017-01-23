@@ -458,7 +458,10 @@ class CobaltJobService (saga.adaptors.cpi.job.Service):
         _cpi_base.__init__(api, adaptor)
 
         self._adaptor = adaptor
-        self._script_file = None
+
+        # Specific for Cobalt
+        self._script_file = None    # keep track of the cobalt script file
+        self._cwd = '$HOME'         # keep track of the current working directory, for status checking...
 
     # ----------------------------------------------------------------
     #
@@ -611,11 +614,10 @@ class CobaltJobService (saga.adaptors.cpi.job.Service):
         # try to create the working directory (if defined)
         # WARNING: this assumes a shared filesystem between login node and
         #          compute nodes.
-        cwd = '$HOME'
         if jd.working_directory:
             self._logger.info("Creating working directory %s" % jd.working_directory)
             ret, out, _ = self.shell.run_sync("mkdir -p %s" % (jd.working_directory))
-            cwd = jd.working_directory
+            self._cwd = jd.working_directory # set the new self._cwd
             if ret != 0:
                 # something went wrong
                 message = "Couldn't create working directory - %s" % (out)
@@ -628,7 +630,7 @@ class CobaltJobService (saga.adaptors.cpi.job.Service):
         #     and make sure it is executable
         # (2) we call 'qsub --mode script <tmpfile>' to submit the script to the queueing system
         self._logger.info("Creating Cobalt script file at %s" % jd.working_directory)
-        ret, out, _ = self.shell.run_sync("""SCRIPTFILE=`mktemp -p %s -t SAGA-Python-PBSProJobScript.XXXXXX` &&  echo "%s" > $SCRIPTFILE && echo "$(tail -n +2 $SCRIPTFILE)" > $SCRIPTFILE && chmod +x $SCRIPTFILE && echo $SCRIPTFILE""" % (cwd, script))
+        ret, out, _ = self.shell.run_sync("""SCRIPTFILE=`mktemp -p %s -t SAGA-Python-PBSProJobScript.XXXXXX` &&  echo "%s" > $SCRIPTFILE && echo "$(tail -n +2 $SCRIPTFILE)" > $SCRIPTFILE && chmod +x $SCRIPTFILE && echo $SCRIPTFILE""" % (self._cwd, script))
         cwd = jd.working_directory
         if ret != 0:
             message = "Couldn't create Cobalt script file - %s" % (out)
@@ -743,90 +745,65 @@ class CobaltJobService (saga.adaptors.cpi.job.Service):
                 log_error_and_raise(message, saga.NoSuccess, self._logger)
 
             if out.strip() == '':
-
-
-                # Let's see if the last known job state was running or pending. in
-                # that case, the job is gone now, which can either mean DONE,
-                # or FAILED. the only thing we can do is set it to 'DONE'
-                job_info['gone'] = True
-                # TODO: we can also set the end time?
-                self._logger.warning("Previously running job has disappeared. "
-                        "This probably means that Cobalt doesn't store "
-                        "information about finished jobs. Setting state to 'DONE'.")
-                if job_info['state'] in [saga.job.RUNNING, saga.job.PENDING]:
-                    job_info['state'] = saga.job.DONE
-                else:
-                    # TODO: This is an uneducated guess?
-                    job_info['state'] = saga.job.FAILED
-
-
                 # Cobalt's 'qstat' command return's nothing
                 # When a job is finished but it exists with code '1' 
-                # Let's see if the job state is in 'cqhist'
-                # If yes: get the final status of the job
-                # If no: let's assume it FAILED. 
+                # Let's see the job's final state in the job's 'cobaltlog' file
+                # which can be found at: 'self._cwd/pid.cobaltlog' 
+                # If file is found: get the final status of the job
+                # If file not found: let's assume it FAILED. 
                 
-                # run the Cobalt 'qstat' command to get some info about our job
+                # Run a 'cat' command to the final info about our job
                 # Sample OUTPUT:
-                #
-                # Cobalt queue history (40 jobs):
-                # ------------------------------------------------------------------------------
-                # EndTime               JobID User     Queue      Procs Mode RunTime  Exit
-                # 2016-12-01 15:46:50      21 vagrant  default        3   c2 0:00:45     0
-                # 2016-12-01 15:46:50      22 vagrant  default        3   c2 0:00:35     0
-                # 2016-12-01 15:49:45      24 vagrant  default        3   c2 0:00:43     0
-                # 2016-12-01 15:49:45      25 vagrant  default        3   c2 0:00:32     0
-                # 2016-12-01 15:50:07      26 vagrant  default        3   c2 0:00:43     0
-                # 2016-12-01 15:50:17      23 vagrant  default        3   c2 0:00:43     0
+                # ...
+                # Mon Jan 23 02:44:05 2017 +0000 (UTC) Info: task completed normally with an exit code of 126; initiating job cleanup and removal
                 
-                # cqhist_flag ='--alldetails --rows=1000' # return the last 1k lines
-                # ret, out, _ = self.shell.run_sync("unset GREP_OPTIONS; %s %s | "
-                #     "grep -P -i '^ *\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} +%s +'"
-                #     % (self._commands['cqhist']['path'], cqhist_flag, pid))
-# 
-                # if ret != 0:
-                #     if reconnect:
-                #         message = "Couldn't reconnect to job '%s': %s" % (job_id, out)
-                #         log_error_and_raise(message, saga.NoSuccess, self._logger)
-                # elif out.strip() == '':
-                #     # job_info['gone'] = True
-                #     # TODO: we can also set the end time?
-                #     self._logger.warning("Previously running job has disappeared. "
-                #             "This probably means that the backend doesn't store "
-                #             "information about finished jobs. Setting state to 'DONE'.")
-                #     if job_info['state'] in [saga.job.RUNNING, saga.job.PENDING]:
-                #         job_info['state'] = saga.job.DONE
-                #     else:
-                #         # TODO: This is an uneducated guess?
-                #         job_info['state'] = saga.job.FAILED
-                # else:
-                #     # Found the job in the history, let's grab the result...
-                #     results = out.split()
-                #     
-                #     # Date and time are on position '0' and '1' respectively
-                #     # Current format: 2016-12-21 16:09:05
-                #     # ASSUMPTION: Date is in UTC (as seen on the servers)
-                #     # Will be parsed as UTC and output format: 
-                #     # DDD mmm dd HH:MM:SS YYYY +0000 (UTC)
-                #     # Wed Dec 21 15:51:34 2016 +0000 (UTC)
-                #     end_time = datetime.datetime.strptime( "%s %s" % 
-                #         (results[0].strip(), results[1].strip()), 
-                #         "%Y-%m-%d %H:%M:%S" )
-                #     job_info['end_time'] = end_time.strftime("%a %b %d %H:%M:%S %Y +0000 (UTC)")
-# 
-                #     # Run time is on position '6'
-                #     job_info['end_time'] = results[6].strip()
-# 
-                #     # Return code is on position '13'
-                #     job_info['returncode'] = int(results[13].strip())
-                #     
-                #     # Final Job State given the exit code
-                #     if job_info['returncode'] != 0:
-                #         job_info['state'] = saga.job.FAILED
-                #     else:
-                #         job_info['state'] = saga.job.DONE
-
-
+                ret, out, _ = self.shell.run_sync("unset GREP_OPTIONS; cat %s/%s.cobaltlog | "
+                    "grep -P -i '^[A-Z][a-z]{2} [A-Z][a-z]{2} \d{2} \d{2}:\d{2}:\d{2} \d{4} \+\d{4} \([A-Za-z]+\) *Info: task completed'"
+                    % (self._cwd, pid))
+                
+                if ret != 0:
+                    if reconnect:
+                        message = "Couldn't reconnect to job '%s': %s" % (job_id, out)
+                        log_error_and_raise(message, saga.NoSuccess, self._logger)
+                elif out.strip() == '':
+                    # Let's see if the last known job state was running or pending. in
+                    # that case, the job is gone now, which can either mean DONE,
+                    # or FAILED. the only thing we can do is set it to 'DONE'
+                    job_info['gone'] = True
+                    # TODO: we can also set the end time?
+                    self._logger.warning("Previously running job has disappeared. "
+                            "This probably means that the backend doesn't store "
+                            "information about finished jobs. Setting state to 'DONE'.")
+                    if job_info['state'] in [saga.job.RUNNING, saga.job.PENDING]:
+                        job_info['state'] = saga.job.DONE
+                    else:
+                        # TODO: This is an uneducated guess?
+                        job_info['state'] = saga.job.FAILED
+                else:
+                    try:
+                        # Found the cobaltlot file, let's grab the result...
+                        matches = re.search('^([A-Z][a-z]{2} [A-Z][a-z]{2} \d{2} \d{2}:\d{2}:\d{2} \d{4} \+\d{4} \([A-Za-z]+\)) *Info: task completed .+ an exit code of (\d+);', out)
+                        timestamp = matches.group(1).strip()
+                        exit_code = matches.group(2).strip()
+                    except Exception, ex:
+                        log_error_and_raise('Could not parse cobaltlog\'s job status' % (str(ex)), saga.NoSuccess, self._logger)
+                    
+                    # Current format: Mon Jan 23 02:44:05 2017 +0000 (UTC)
+                    # ASSUMPTION: Date is in UTC (as seen on the servers)
+                    # Will be parsed as UTC and output format: 
+                    # DDD mmm dd HH:MM:SS YYYY +0000 (UTC)
+                    # Wed Dec 21 15:51:34 2016 +0000 (UTC)
+                    end_time = datetime.datetime.strptime(timestamp, "%a %b %d %H:%M:%S %Y +0000 (UTC)")
+                    job_info['end_time'] = end_time.strftime("%a %b %d %H:%M:%S %Y +0000 (UTC)")
+                
+                    # Return code is on position '13'
+                    job_info['returncode'] = int(exit_code)
+                    
+                    # Final Job State given the exit code
+                    if job_info['returncode'] != 0:
+                        job_info['state'] = saga.job.FAILED
+                    else:
+                        job_info['state'] = saga.job.DONE
             else:
                 # something went wrong
                 message = "Error retrieving job info via 'qstat': %s" % out
@@ -870,20 +847,6 @@ class CobaltJobService (saga.adaptors.cpi.job.Service):
                     # Time job started to run
                     elif key in ['StartTime']:
                         job_info['start_time'] = val
-
-                    # Time job ended.
-                    #
-                    # Cobalt doesn't have an "end time" field in qstat.
-                    # It has an "RunTime" though,
-                    # which could be added up to the start time.
-                    if key in ['RunTime'] and val not in ['N/A', 'n/a', None] and job_info['start_time'] not in ['N/A', 'n/a', None]:
-                        start_time = datetime.datetime.strptime(job_info['start_time'],
-                            "%a %b %d %H:%M:%S %Y +0000 (UTC)")
-                        duration = val.split(':')
-                        start_time = start_time.timedelta(hours=int(duration[0].strip()), 
-                            minutes=int(duration[1].strip()), 
-                            seconds=int(duration[2].strip()))
-                        job_info['end_time'] = start_time.strftime("%a %b %d %H:%M:%S %Y +0000 (UTC)")
 
         # return the updated job info
         return job_info
