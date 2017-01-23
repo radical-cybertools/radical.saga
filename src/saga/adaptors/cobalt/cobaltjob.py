@@ -233,15 +233,6 @@ def _cobaltscript_generator(url, logger, jd, ppn, is_cray=False, queue=None, run
         cobalt_params += '#COBALT --notify %s\n' % str(jd.job_contact)
 
     #
-    # Parse candidate_hosts
-    #
-    # Currently only implemented for "bigflash" on Gordon@SDSC
-    # https://github.com/radical-cybertools/saga-python/issues/406
-    #
-    if jd.candidate_hosts:
-        raise saga.NotImplemented("This type of 'candidate_hosts' not implemented: (%s)" % jd.candidate_hosts)
-
-    #
     # This section takes care of CPU/Process/Node calculation
     #
     # Handle number of cores
@@ -343,7 +334,6 @@ _ADAPTOR_CAPABILITIES = {
     "jdes_attributes":   [saga.job.NAME,
                           saga.job.EXECUTABLE,
                           saga.job.ARGUMENTS,
-                          saga.job.CANDIDATE_HOSTS,
                           saga.job.ENVIRONMENT,
                           saga.job.INPUT,
                           saga.job.OUTPUT,
@@ -356,6 +346,7 @@ _ADAPTOR_CAPABILITIES = {
                           saga.job.SPMD_VARIATION, # TODO: 'hot'-fix for BigJob
                           saga.job.PROCESSES_PER_HOST,
                           saga.job.TOTAL_CPU_COUNT,
+                          saga.job.NUMBER_OF_PROCESSES,
                           saga.job.JOB_CONTACT],
     "job_attributes":    [saga.job.EXIT_CODE,
                           saga.job.EXECUTION_HOSTS,
