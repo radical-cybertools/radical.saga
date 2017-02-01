@@ -400,7 +400,7 @@ class Container (sbase.SimpleBase, satt.Attributes) :
             if  future.isAlive () :
                 future.join ()
 
-            if  future.get_state () == FAILED :
+            if  future.state == FAILED :
                 raise se.NoSuccess ("future exception: %s" \
                                  % (future.exception))
 
@@ -473,7 +473,7 @@ class Container (sbase.SimpleBase, satt.Attributes) :
         for future in futures :
             future.join (timeout)
 
-            if future.get_state () == FAILED :
+            if future.state == FAILED :
                 raise future.exception
 
             if not future.isAlive() :
