@@ -161,8 +161,6 @@ def _cobaltscript_generator(url, logger, jd, ppn, is_cray=False, queue=None, run
     blue_gene_q_modes = [1, 2, 4, 8, 16, 32, 64]
     ppn = 16 # for now, defaulting to number of cores per node in Blue Gene/Q
 
-    # Why do I need this?
-    # exec_n_args += 'export SAGA_PPN=%d \\\n' % ppn
     if jd.executable:
         exec_n_args += "%s " % (jd.executable)
     if jd.arguments:
@@ -219,12 +217,10 @@ def _cobaltscript_generator(url, logger, jd, ppn, is_cray=False, queue=None, run
         cobalt_params += '#COBALT --time %s:%s:00\n' \
             % (str(hours).zfill(2), str(minutes).zfill(2))
 
-    if jd.queue and queue:
+    if queue:
         cobalt_params += '#COBALT --queue %s\n' % queue
-    elif jd.queue and not queue:
+    elif jd.queue:
         cobalt_params += '#COBALT --queue %s\n' % jd.queue
-    elif queue and not jd.queue:
-        cobalt_params += '#COBALT --queue %s\n' % queue
     
     if jd.project:
         cobalt_params += '#COBALT --project %s\n' % str(jd.project)
@@ -296,6 +292,13 @@ def _cobaltscript_generator(url, logger, jd, ppn, is_cray=False, queue=None, run
         cobalt_params += '#COBALT --env %s\n' % \
                 ':'.join (["%s=%s" % (k,v.replace(':', '\\:').replace('=', '\\=')) # escape chars
                            for k,v in jd.environment.iteritems()])
+
+    # Why do I need this?
+    # Andre on Dev 16 2016: 
+    # You don't, but it can be useful for some applications, 
+    # so this is supposed to be available in the job environment for inspection.
+    # This makes sense to be exported as an environment Variable
+    cobalt_params += '#COBALT --env SAGA_PPN=%d\n' % ppn
 
     # may not need to escape all double quotes and dollarsigns, 
     # since we don't do 'echo |' further down (like torque/pbspro)
@@ -781,6 +784,7 @@ class CobaltJobService (saga.adaptors.cpi.job.Service):
             job_info = {
                 'job_id':       job_id,
                 'state':        saga.job.UNKNOWN,
+                'job_name':     None,
                 'exec_hosts':   None,
                 'returncode':   None,
                 'create_time':  None,
@@ -794,7 +798,7 @@ class CobaltJobService (saga.adaptors.cpi.job.Service):
         # run the Cobalt 'qstat' command to get some info about our job
         qstat_flag ='--full --long'
         ret, out, _ = self.shell.run_sync("unset GREP_OPTIONS; %s %s %s | "
-                "grep -E -i '(^ *QueuedTime )|(^ *RunTime )|(^ *Nodes )|"
+                "grep -E -i '(^ *JobName )|(^ *QueuedTime )|(^ *RunTime )|(^ *Nodes )|"
                  "(^ *Procs )|(^ *State )|(^ *Location )|(^ *StartTime )|"
                  "(^ *SubmitTime )|(^ *S )'"
                 % (self._commands['qstat']['path'], qstat_flag, pid))
@@ -908,6 +912,11 @@ class CobaltJobService (saga.adaptors.cpi.job.Service):
                     # Time job started to run
                     elif key in ['StartTime']:
                         job_info['start_time'] = val
+
+                    # Job name
+                    elif key in ['JobName']:
+                        job_info['job_name'] = val
+
 
         # return the updated job info
         return job_info
