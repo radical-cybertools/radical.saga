@@ -1114,29 +1114,30 @@ class CobaltJobService (saga.adaptors.cpi.job.Service):
         return ids
 
 
-  # # ----------------------------------------------------------------
-  # #
-  # def container_run (self, jobs) :
-  #     self._logger.debug ("container run: %s"  %  str(jobs))
-  #     # TODO: this is not optimized yet
-  #     for job in jobs:
-  #         job.run ()
-  #
-  #
-  # # ----------------------------------------------------------------
-  # #
-  # def container_wait (self, jobs, mode, timeout) :
-  #     self._logger.debug ("container wait: %s"  %  str(jobs))
-  #     # TODO: this is not optimized yet
-  #     for job in jobs:
-  #         job.wait ()
-  #
-  #
-  # # ----------------------------------------------------------------
-  # #
-  # def container_cancel (self, jobs) :
-  #     self._logger.debug ("container cancel: %s"  %  str(jobs))
-  #     raise saga.NoSuccess ("Not Implemented");
+    # ----------------------------------------------------------------
+    #
+    def container_run (self, jobs) :
+        self._logger.debug ("container run: %s"  %  str(jobs))
+        # TODO: this is not optimized yet
+        for job in jobs:
+            job.run ()
+    
+    
+    # ----------------------------------------------------------------
+    #
+    def container_wait (self, jobs, mode, timeout) :
+        self._logger.debug ("container wait: %s"  %  str(jobs))
+        # TODO: this is not optimized yet
+        for job in jobs:
+            job.wait ()
+    
+    
+    # ----------------------------------------------------------------
+    #
+    def container_cancel (self, jobs) :
+        # TODO: this is not optimized yet
+        for job in jobs:
+            job.cancel()
 
 
 ###############################################################################
