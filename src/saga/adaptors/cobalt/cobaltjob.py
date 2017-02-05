@@ -325,7 +325,38 @@ _PTY_TIMEOUT = 2.0
 #
 _ADAPTOR_NAME          = "saga.adaptor.cobaltjob"
 _ADAPTOR_SCHEMAS       = ["cobalt", "cobalt+ssh", "cobalt+gsissh"]
-_ADAPTOR_OPTIONS       = []
+_ADAPTOR_OPTIONS       = [
+    {
+    'category'         : 'saga.adaptor.cobaltjob',
+    'name'             : 'base_workdir',
+    'type'             : str,
+    'default'          : "$HOME/.saga/adaptors/cobaltjob/",
+    'documentation'    : '''The adaptor stores job state information on the
+                          filesystem on the target resource. This parameter
+                          specified what location should be used.''',
+    'env_variable'     : None
+    },
+    {
+    'category'         : 'saga.adaptor.cobaltjob',
+    'name'             : 'purge_on_start',
+    'type'             : bool,
+    'default'          : True,
+    'valid_options'    : [True, False],
+    'documentation'    : '''Purge temporary job information for all
+                          jobs which are older than a number of days.
+                          The number of days can be configured with <purge_older_than>.''',
+    'env_variable'     : None
+    },
+    {
+    'category'         : 'saga.adaptor.cobaltjob',
+    'name'             : 'purge_older_than',
+    'type'             : int,
+    'default'          : 30,
+    'documentation'    : '''When <purge_on_start> is enabled this specifies the number
+                            of days to consider a temporary file older enough to be deleted.''',
+    'env_variable'     : None
+    },
+]
 
 # --------------------------------------------------------------------
 # the adaptor capabilities & supported attributes
@@ -342,7 +373,6 @@ _ADAPTOR_CAPABILITIES = {
                           saga.job.PROJECT,
                           saga.job.WALL_TIME_LIMIT,
                           saga.job.WORKING_DIRECTORY,
-                          saga.job.WALL_TIME_LIMIT,
                           saga.job.SPMD_VARIATION, # TODO: 'hot'-fix for BigJob
                           saga.job.PROCESSES_PER_HOST,
                           saga.job.TOTAL_CPU_COUNT,
@@ -415,6 +445,15 @@ class Adaptor (saga.adaptors.base.Base):
         self.id_re = re.compile('^\[(.*)\]-\[(.*?)\]$')
         self.opts  = self.get_config (_ADAPTOR_NAME)
 
+        # Adaptor Options
+        self.base_workdir = os.path.normpath(self.opts['base_workdir'].get_value ())
+        self.purge_on_start = self.opts['purge_on_start'].get_value()
+        self.purge_older_than = self.opts['purge_older_than'].get_value()
+
+        # dictionaries to keep track of certain Cobalt jobs data
+        self._script_file           = dict() # keep track of the cobalt script file
+        self._job_current_workdir   = dict() # keep track of the current working directory, for final status checking...
+
     # ----------------------------------------------------------------
     #
     def sanity_check(self):
@@ -449,10 +488,6 @@ class CobaltJobService (saga.adaptors.cpi.job.Service):
         _cpi_base.__init__(api, adaptor)
 
         self._adaptor = adaptor
-
-        # Specific for Cobalt
-        self._script_file = dict()    # keep track of the cobalt script file
-        self._cwd = dict()         # keep track of the current working directory, for status checking...
 
     # ----------------------------------------------------------------
     #
@@ -548,7 +583,23 @@ class CobaltJobService (saga.adaptors.cpi.job.Service):
     # ----------------------------------------------------------------
     #
     def initialize(self):
-        # check if all required cobalt tools are available
+
+        # Create the staging directory
+        ret, out, _ = self.shell.run_sync ("mkdir -p %s" % self._adaptor.base_workdir)
+        if  ret != 0 :
+            raise saga.NoSuccess ("Error creating staging directory. (%s): (%s)" % (ret, out))
+
+        # Purge temporary files
+        if self._adaptor.purge_on_start:
+            cmd = "find %s -type f -mtime +%d -print -delete | wc -l" % (
+                self._adaptor.base_workdir, 
+                self._adaptor.purge_older_than
+            )
+            ret, out, _ = self.shell.run_sync(cmd)
+            if ret == 0 and out != "0":
+                self._logger.info("Purged %s temporary files" % out)
+
+        # Check if all required cobalt tools are available
         for cmd in self._commands.keys():
             ret, out, _ = self.shell.run_sync("which %s " % cmd)
             if ret != 0:
@@ -576,8 +627,9 @@ class CobaltJobService (saga.adaptors.cpi.job.Service):
         """ runs a job via qsub
         """
 
-        script_file = None
-        cwd = '$HOME'
+        # Defaults ...
+        cobalt_script_file      = None
+        job_current_workdir     = '$HOME'
 
         # get the job description
         jd = job_obj.get_description()
@@ -611,7 +663,7 @@ class CobaltJobService (saga.adaptors.cpi.job.Service):
         if jd.working_directory:
             self._logger.info("Creating working directory %s" % jd.working_directory)
             ret, out, _ = self.shell.run_sync("mkdir -p %s" % (jd.working_directory))
-            cwd = jd.working_directory # set the new self._cwd
+            job_current_workdir = jd.working_directory # Keep track of the cwd, 
             if ret != 0:
                 # something went wrong
                 message = "Couldn't create working directory - %s" % (out)
@@ -619,38 +671,38 @@ class CobaltJobService (saga.adaptors.cpi.job.Service):
 
 
         # Now we want to execute the script. This process consists of two steps:
-        # (1) we create a temporary file with 'mktemp', 
-
+        # (1) we create a temporary file with 'mktemp' in the 'self._adaptor.base_workdir' 
+        #
         # (2) write the contents of 
         #     the generated Cobalt script into it, remove the first empty line
         #     and make sure it is executable
+        #
         # (3) we call 'qsub --mode script <tmpfile>' to submit the script to the queueing system
         self._logger.info("Creating Cobalt script file at %s" % jd.working_directory)
-        ret, out, _ = self.shell.run_sync("""SCRIPTFILE=`mktemp -p %s -t SAGA-Python-PBSProJobScript.XXXXXX` && echo $SCRIPTFILE""" % (cwd))
+        ret, out, _ = self.shell.run_sync("""SCRIPTFILE=`mktemp -p %s -t SAGA-Python-PBSProJobScript.XXXXXX` && echo $SCRIPTFILE""" % (self._adaptor.base_workdir))
         if ret != 0:
             message = "Couldn't create Cobalt script file - %s" % (out)
             log_error_and_raise(message, saga.NoSuccess, self._logger)
+        
         # Save Script file for later...
         # Cobalt *needs* the file to stick around, even after submission
         # so, we will keep the file around and delete it *only* when
         # the job is done.
-        script_file = out.strip()
+        cobalt_script_file = out.strip()
 
-        self._logger.info("Populating Cobalt script file at %s" % jd.working_directory)
-        ret, out, _ = self.shell.run_sync("""SCRIPTFILE="%s" && echo "%s" > $SCRIPTFILE && echo "$(tail -n +2 $SCRIPTFILE)" > $SCRIPTFILE && chmod +x $SCRIPTFILE && echo $SCRIPTFILE""" % (script_file, script))
+        self._logger.info("Populating Cobalt script file at %s" % cobalt_script_file)
+        ret, out, _ = self.shell.run_sync("""SCRIPTFILE="%s" && echo "%s" > $SCRIPTFILE && echo "$(tail -n +2 $SCRIPTFILE)" > $SCRIPTFILE && chmod +x $SCRIPTFILE && echo $SCRIPTFILE""" % (cobalt_script_file, script))
         if ret != 0:
             message = "Couldn't create Cobalt script file - %s" % (out)
-            self._cleanup_cobalt_job_script(script_file)
             log_error_and_raise(message, saga.NoSuccess, self._logger)
 
-        cmdline = """%s --mode script %s""" %  (self._commands['qsub']['path'], script_file)
+        cmdline = """%s --mode script %s""" %  (self._commands['qsub']['path'], cobalt_script_file)
         ret, out, _ = self.shell.run_sync(cmdline)
 
         if ret != 0:
             # something went wrong
             message = "Error running job via 'qsub': %s. Commandline was: %s" \
                 % (out, cmdline)
-            self._cleanup_cobalt_job_script(script_file)
             log_error_and_raise(message, saga.NoSuccess, self._logger)
         else:
             # parse the job id. qsub usually returns just the job id, but
@@ -686,9 +738,10 @@ class CobaltJobService (saga.adaptors.cpi.job.Service):
             # set status to 'pending' and manually trigger callback
             job_obj._attributes_i_set('state', state, job_obj._UP, True)
 
-            # Since we now have the job_id, lets track the cwd and script_file
-            self._cwd[job_id] = cwd
-            self._script_file[job_id] = script_file
+            # Since we now have the job_id, lets track the job's current workdir and script file
+            # We do this in the adaptor
+            self._adaptor._job_current_workdir[job_id]  = job_current_workdir
+            self._adaptor._script_file[job_id]          = cobalt_script_file
 
             # return the job id
             return job_id
@@ -701,15 +754,6 @@ class CobaltJobService (saga.adaptors.cpi.job.Service):
             know anything about
         """
         pass
-
-    # ----------------------------------------------------------------
-    #
-    def _cleanup_cobalt_job_script(self, script_file):
-        """ clean up the cobalt job script
-        """
-        if script_file:
-            self._logger.info("Cleaning Cobalt script file: %s" % script_file)
-            ret, out, _ = self.shell.run_sync('rm -f %s' % (script_file))
 
     # ----------------------------------------------------------------
     #
@@ -765,7 +809,7 @@ class CobaltJobService (saga.adaptors.cpi.job.Service):
                 # Cobalt's 'qstat' command return's nothing
                 # When a job is finished but it exists with code '1' 
                 # Let's see the job's final state in the job's 'cobaltlog' file
-                # which can be found at: 'self._cwd/pid.cobaltlog' 
+                # which can be found at: 'self._adaptor._job_current_workdir_cwd/pid.cobaltlog' 
                 # If file is found: get the final status of the job
                 # If file not found: let's assume it FAILED. 
                 
@@ -776,7 +820,7 @@ class CobaltJobService (saga.adaptors.cpi.job.Service):
                 
                 ret, out, _ = self.shell.run_sync("unset GREP_OPTIONS; cat %s/%s.cobaltlog | "
                     "grep -P -i '^[A-Z][a-z]{2} [A-Z][a-z]{2} \d{2} \d{2}:\d{2}:\d{2} \d{4} \+\d{4} \([A-Za-z]+\) *Info: task completed'"
-                    % (self._cwd[job_id], pid))
+                    % (self._adaptor._job_current_workdir[job_id], pid))
                 
                 if ret != 0:
                     if reconnect:
@@ -864,13 +908,6 @@ class CobaltJobService (saga.adaptors.cpi.job.Service):
                     # Time job started to run
                     elif key in ['StartTime']:
                         job_info['start_time'] = val
-
-        # Cleanup the script *ONLY* if we *KNOW* it is done
-        # If we clean-up the script when there is a 'saga-python' error
-        # we may end-up also forcing an error on the job itself since we
-        # may inadvertently remove the cobalt-script before the job starts 
-        if  job_info['state'] in [saga.job.DONE, saga.job.FAILED, saga.job.CANCELED]:
-            self._cleanup_cobalt_job_script(self._script_file[job_id])
 
         # return the updated job info
         return job_info
