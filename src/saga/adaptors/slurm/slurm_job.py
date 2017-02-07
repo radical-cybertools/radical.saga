@@ -890,23 +890,26 @@ class SLURMJob(saga.adaptors.cpi.job.Job):
 
         # if the 'gone' flag is set, there's no need to query the job
         # state again. it's gone forever
-        if prev_info.get('gone', False):
-            self._logger.debug("Job is gone.")
-            return prev_info
+        if prev_info:
+            if prev_info.get('gone', False):
+                self._logger.debug("Job is gone.")
+                return prev_info
 
         # curr. info will contain the new job info collect. it starts off
         # as a copy of prev_info (don't use deepcopy because there is an API
         # object in the dict -> recursion)
         curr_info = dict()
-        curr_info['job_id'     ] = prev_info.get('job_id'     )
-        curr_info['job_name'   ] = prev_info.get('job_name'   )
-        curr_info['state'      ] = prev_info.get('state'      )
-        curr_info['create_time'] = prev_info.get('create_time')
-        curr_info['start_time' ] = prev_info.get('start_time' )
-        curr_info['end_time'   ] = prev_info.get('end_time'   )
-        curr_info['comp_time'  ] = prev_info.get('comp_time'  )
-        curr_info['exec_hosts' ] = prev_info.get('exec_hosts' )
-        curr_info['gone'       ] = prev_info.get('gone'       )
+        
+        if prev_info:
+            curr_info['job_id'     ] = prev_info.get('job_id'     )
+            curr_info['job_name'   ] = prev_info.get('job_name'   )
+            curr_info['state'      ] = prev_info.get('state'      )
+            curr_info['create_time'] = prev_info.get('create_time')
+            curr_info['start_time' ] = prev_info.get('start_time' )
+            curr_info['end_time'   ] = prev_info.get('end_time'   )
+            curr_info['comp_time'  ] = prev_info.get('comp_time'  )
+            curr_info['exec_hosts' ] = prev_info.get('exec_hosts' )
+            curr_info['gone'       ] = prev_info.get('gone'       )
 
         rm, pid = self._adaptor.parse_id(self._id)
 
