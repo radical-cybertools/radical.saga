@@ -149,7 +149,7 @@ def _cobalt_to_saga_jobstate(cobaltjs):
 
 # --------------------------------------------------------------------
 #
-def _cobaltscript_generator(url, logger, jd, ppn, is_cray=False, queue=None, run_job='/usr/bin/runjob', ):
+def _cobaltscript_generator(url, logger, jd, ppn, is_cray=False, queue=None, run_job='/usr/bin/runjob'):
     """ Generates Cobalt-style 'qsub' command arguments from a SAGA job description
     """
     cobalt_params  = str()
