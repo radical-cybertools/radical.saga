@@ -134,7 +134,7 @@ def _pbs_to_saga_jobstate(pbsjs, logger=None):
     ret = None
 
     if   pbsjs == 'C': ret = saga.job.DONE
-    elif pbsjs == 'F': ret = saga.job.FAILED
+    elif pbsjs == 'F': ret = saga.job.DONE
     elif pbsjs == 'H': ret = saga.job.PENDING
     elif pbsjs == 'Q': ret = saga.job.PENDING
     elif pbsjs == 'S': ret = saga.job.PENDING
@@ -918,6 +918,12 @@ class PBSProJobService (saga.adaptors.cpi.job.Service):
                     #
                     if key in ['mtime']: # PBS Pro and TORQUE
                         job_info['end_time'] = val
+
+        # PBSPRO state does not indicate error or success -- we derive that from
+        # the exit code
+        if job_info['returncode'] not in [None, 0]:
+            job_info['state'] = saga.job.FAILED
+
 
         # return the updated job info
         return job_info
