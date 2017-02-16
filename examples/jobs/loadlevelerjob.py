@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 """ This examples shows how to run a job on LoadLeveler cluster.
 
     More information about the saga-python job API can be found at:
