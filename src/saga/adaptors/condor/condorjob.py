@@ -491,6 +491,56 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
     def finalize(self, kill_shell=False):
         pass
 
+
+    # --------------------------------------------------------------------------
+    #
+    # condor_q can fail due to the backend timing out, or other backend errors
+    # in general.  We thus use this wrapper around condor_q to retry a couple of
+    # times in those events.
+    #
+    # TODO: make the decision to retry somewhat more clever, like only on
+    #       timeouts etc.
+    #
+    def _run_condor_q(retries=1, timeout=10, 
+                      pid=None, options=None, egrep=None):
+
+        ret = None
+        out = ""
+        err = ""
+        cmd = 'unset GREP_OPTIONS; %s' % self._commands['condor_q']
+
+        if pid:     cmd += ' -long %s'       % pid
+        if options: cmd += ' %s'             % options
+        if egrep:   cmd += " | grep -e '%s'" % egrep
+
+        # we  try at most 'retries' times - but the loop may exit early
+        for n in range(retries):
+
+            # if we tried before wait for a little
+            if ret and timeout:
+                time.sleep(timeout)
+
+            _ret, _out, _ = self.shell.run_sync(cmd)
+            if _ret == 0:
+                # this one worked - ignore any previous runs (if any)
+                # and record the result
+                ret = _ret
+                out = _out
+                break
+
+            else:
+                # this one failed - record error and retval
+                ret  = _ret
+                out += '\n\nretry %d:\n%d' % (n, _out)
+                err += '\n\nretry %d:\n%d' % (n, _err)
+
+        # we exhausted the number of retries, or we succeeded - either way,
+        # return what we have.  This will return the most recent retval, and
+        # output.  In the case of repeated errors, the output contains
+        # a *concatenation* of error messages from the different tries.
+        return ret, out, err
+
+
     # ----------------------------------------------------------------
     #
     def _new_job_info(self):
@@ -632,9 +682,9 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
         rm, pid = self._adaptor.parse_id(job_id)
 
         # run the Condor 'condor_q' command to get some infos about our job
-        ret, out, _ = self.shell.run_sync("unset GREP_OPTIONS; %s -long %s | \
-            grep -E '(^JobStatus)|(ExitCode)|(CompletionDate)'" \
-            % (self._commands['condor_q'], pid))
+        ret, out = self._run_condor_q(retries=3, timeout=60, pid=pid,
+                egrep='(^JobStatus)|(ExitCode)|(CompletionDate)')
+
         if ret != 0:
             message = "Couldn't reconnect to job '%s': %s" % (job_id, out)
             log_error_and_raise(message, saga.NoSuccess, self._logger)
@@ -820,9 +870,8 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
         rm, pid = self._adaptor.parse_id(job_id)
 
         # run the Condor 'condor_q' command to get some infos about our job
-        ret, out, _ = self.shell.run_sync("unset GREP_OPTIONS; %s -long %s | \
-            grep -E '(^JobStatus)|(ExitCode)|(CompletionDate)'" \
-            % (self._commands['condor_q'], pid))
+        ret, out = self._run_condor_q(retries=3, timeout=60, pid=pid,
+                egrep='(^JobStatus)|(ExitCode)|(CompletionDate)')
 
         if ret == 0:
 
@@ -926,9 +975,9 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
             return
 
         # run the Condor 'condor_q' command to get some infos about our job
-        ret, out, err = self.shell.run_sync(
-            "%s %s -autoformat:, ProcId JobStatus ExitCode ExitBySignal CompletionDate" %
-            (self._commands['condor_q'], cluster_id))
+        ret, out, err = self._run_condor_q(retries=3, timeout=60, pid=pid,
+                options="%s -autoformat:, ProcId JobStatus ExitCode ExitBySignal CompletionDate" %
+                         cluster_id)
 
         if ret != 0:
             raise Exception("condor_q failed (%s) (%s)" % (out, err))
@@ -1314,14 +1363,20 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
         """
         ids = []
 
-        ret, out, _ = self.shell.run_sync("unset GREP_OPTIONS; %s | grep `whoami`"\
-            % self._commands['condor_q'])
+        ret, out, err = self._run_condor_q(retries=3, timeout=60, pid=pid,
+                                           options='-submitter `whoami`')
 
-        if ret != 0 and len(out) > 0:
-            message = "failed to list jobs via 'condor_q': %s" % out
-            log_error_and_raise(message, saga.NoSuccess, self._logger)
-        elif ret != 0 and len(out) == 0:
-            pass
+        # instead of listing all jobs and grep'ing for our user ID, we only list
+        # jobs submitted by us.  The result is the same, but it reduces the load
+        # on the condor backend.  The drawback is that it raises and error if no
+        # jobs are found - we gracefully accept that and then list no jobs,
+        # which is ok, but distinguishing this from other errors is somewhat of
+        # a guess.  Since we *do* see other error modes pop up from time to
+        # time, we at this point ignore them all.
+        if ret != 0:
+            self._logger.warn("failed to list jobs via 'condor_q': [%s] [%s]",
+                    out, err)
+
         else:
             for line in out.split("\n"):
                 # output looks like this:
