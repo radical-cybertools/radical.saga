@@ -501,9 +501,8 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
     # TODO: make the decision to retry somewhat more clever, like only on
     #       timeouts etc.
     #
-    def _run_condor_q(retries=1, timeout=10, 
+    def _run_condor_q(self, retries=1, timeout=10, 
                       pid=None, options=None, egrep=None):
-
         ret = None
         out = ""
         err = ""
@@ -511,28 +510,38 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
 
         if pid:     cmd += ' -long %s'       % pid
         if options: cmd += ' %s'             % options
-        if egrep:   cmd += " | grep -e '%s'" % egrep
+
+        if egrep:   
+            cmd += " | grep"
+            for expr in egrep:
+                cmd += " -e '%s'" % expr
 
         # we  try at most 'retries' times - but the loop may exit early
         for n in range(retries):
 
             # if we tried before wait for a little
-            if ret and timeout:
+            if ret != None and timeout:
                 time.sleep(timeout)
 
-            _ret, _out, _ = self.shell.run_sync(cmd)
+            _ret, _out, _err = self.shell.run_sync(cmd)
             if _ret == 0:
                 # this one worked - ignore any previous runs (if any)
                 # and record the result
                 ret = _ret
                 out = _out
+                err = _err
                 break
 
             else:
                 # this one failed - record error and retval
                 ret  = _ret
-                out += '\n\nretry %d:\n%d' % (n, _out)
-                err += '\n\nretry %d:\n%d' % (n, _err)
+                out += '\n\nretry %d:\n%s' % (n, _out)
+                err += '\n\nretry %d:\n%s' % (n, _err)
+
+                # if pid was given, then failur means job not found.  No point
+                # retrying...
+                if pid:
+                    break
 
         # we exhausted the number of retries, or we succeeded - either way,
         # return what we have.  This will return the most recent retval, and
@@ -682,11 +691,12 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
         rm, pid = self._adaptor.parse_id(job_id)
 
         # run the Condor 'condor_q' command to get some infos about our job
-        ret, out = self._run_condor_q(retries=3, timeout=60, pid=pid,
-                egrep='(^JobStatus)|(ExitCode)|(CompletionDate)')
+        ret, out, err = self._run_condor_q(retries=3, timeout=60, pid=pid,
+                egrep=['^JobStatus', '^ExitStatus', '^CompletionDate'])
 
         if ret != 0:
-            message = "Couldn't reconnect to job '%s': %s" % (job_id, out)
+            message = "Couldn't reconnect to job '%s':\n[%s]\n[%s]" % \
+                    (job_id, out, err)
             log_error_and_raise(message, saga.NoSuccess, self._logger)
 
         else:
@@ -700,12 +710,9 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
                     key = key.strip()  # strip() removes whitespaces at the
                     val = val.strip()  # beginning and the end of the string
 
-                    if key == 'JobStatus':
-                        job_info['state'] = _condor_to_saga_jobstate(val)
-                    elif key == 'ExitCode':
-                        job_info['returncode'] = val
-                    elif key == 'CompletionDate':
-                        job_info['end_time'] = val
+                    if   key == 'JobStatus'     : job_info['state']      = _condor_to_saga_jobstate(val)
+                    elif key == 'ExitStatus'    : job_info['returncode'] = val
+                    elif key == 'CompletionDate': job_info['end_time']   = val
 
             return job_info
 
@@ -870,14 +877,14 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
         rm, pid = self._adaptor.parse_id(job_id)
 
         # run the Condor 'condor_q' command to get some infos about our job
-        ret, out = self._run_condor_q(retries=3, timeout=60, pid=pid,
-                egrep='(^JobStatus)|(ExitCode)|(CompletionDate)')
+        ret, out, err = self._run_condor_q(retries=3, timeout=60, pid=pid,
+                egrep=['^JobStatus', '^ExitStatus', '^CompletionDate'])
 
         if ret == 0:
 
             # parse the egrep result. this should look something like this:
             # JobStatus = 5
-            # ExitCode = 0
+            # ExitStatus = 0
             # CompletionDate = 0
             results = filter(bool, out.split('\n'))
             for result in results:
@@ -885,12 +892,9 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
                 key = key.strip()
                 val = val.strip()
 
-                if key == 'JobStatus':
-                    info['state'] = _condor_to_saga_jobstate(val)
-                elif key == 'ExitCode':
-                    info['returncode'] = val
-                elif key == 'CompletionDate':
-                    info['end_time'] = val
+                if   key == 'JobStatus'     : info['state']      = _condor_to_saga_jobstate(val)
+                elif key == 'ExitStatus'    : info['returncode'] = val
+                elif key == 'CompletionDate': info['end_time']   = val
 
         else:
 
@@ -902,7 +906,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
                 # run the Condor 'condor_history' command to get info about 
                 # finished jobs
                 ret, out, err = self.shell.run_sync("unset GREP_OPTIONS; %s -long -match 1 %s | \
-                    grep -E '(ExitCode)|(CompletionDate)|(JobCurrentStartDate)|(QDate)|(Err)|(Out)'" \
+                    grep -E '(ExitStatus)|(CompletionDate)|(JobCurrentStartDate)|(QDate)|(Err)|(Out)'" \
                     % (self._commands['condor_history'], pid))
                 
                 if ret != 0:
@@ -912,7 +916,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
 
                 else:
                     # parse the egrep result. this should look something like this:
-                    # ExitCode = 0
+                    # ExitStatus = 0
                     results = out.split('\n')
                     for result in results:
                         if len(result.split('=')) == 2:
@@ -920,18 +924,12 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
                             key = key.strip()  # strip() removes whitespaces at the
                             val = val.strip()  # beginning and the end of the string
 
-                            if key == 'ExitCode':
-                                info['returncode'] = int(val)
-                            elif key == 'QDate':
-                                info['create_time'] = val
-                            elif key == 'JobCurrentStartDate':
-                                info['start_time'] = val
-                            elif key == 'CompletionDate':
-                                info['end_time'] = val
-                            elif key == 'Out':
-                                info['stdout'] = val.strip('"')
-                            elif key == 'Err':
-                                info['stderr'] = val.strip('"')
+                            if   key == 'ExitStatus'         : info['returncode']  = int(val)
+                            elif key == 'QDate'              : info['create_time'] = val
+                            elif key == 'JobCurrentStartDate': info['start_time']  = val
+                            elif key == 'CompletionDate'     : info['end_time']    = val
+                            elif key == 'Out'                : info['stdout']      = val.strip('"')
+                            elif key == 'Err'                : info['stderr']      = val.strip('"')
 
                 if info['returncode'] == 0:
                     info['state'] = saga.job.DONE
@@ -975,12 +973,12 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
             return
 
         # run the Condor 'condor_q' command to get some infos about our job
-        ret, out, err = self._run_condor_q(retries=3, timeout=60, pid=pid,
-                options="%s -autoformat:, ProcId JobStatus ExitCode ExitBySignal CompletionDate" %
+        ret, out, err = self._run_condor_q(retries=3, timeout=60,
+                options="%s -autoformat:, ProcId JobStatus ExitStatus ExitBySignal CompletionDate" %
                          cluster_id)
 
         if ret != 0:
-            raise Exception("condor_q failed (%s) (%s)" % (out, err))
+            raise Exception("condor_q failed\n[%s]\n[%s]" % (out, err))
 
         results = filter(bool, out.split('\n'))
         ts      = time.time()
@@ -1015,7 +1013,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
         if len(found) < len(job_ids):
 
             cmd = "%s %s -autoformat:, " \
-                  "ProcId ExitCode ExitBySignal CompletionDate " \
+                  "ProcId ExitStatus ExitBySignal CompletionDate " \
                   "JobCurrentStartDate QDate Err Out" \
                   % (self._commands['condor_history'], cluster_id)
             ret, out, err = self.shell.run_sync(cmd)
@@ -1363,7 +1361,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
         """
         ids = []
 
-        ret, out, err = self._run_condor_q(retries=3, timeout=60, pid=pid,
+        ret, out, err = self._run_condor_q(retries=3, timeout=60,
                                            options='-submitter `whoami`')
 
         # instead of listing all jobs and grep'ing for our user ID, we only list
@@ -1378,17 +1376,38 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
                     out, err)
 
         else:
-            for line in out.split("\n"):
-                # output looks like this:
-                # 112059.svc.uc.futuregrid testjob oweidner 0 Q batch
-                # 112061.svc.uc.futuregrid testjob oweidner 0 Q batch
-                if len(line.split()) > 1:
-                    rm_clone = surl.Url (self.rm)
-                    rm_clone.query = ""
-                    rm_clone.path = ""
 
-                    jobid = "[%s]-[%s]" % (rm_clone, line.split()[0])
-                    ids.append(str(jobid))
+            # --------------------------------------------------------------------------------------
+            #
+            # -- Schedd: xd-login.opensciencegrid.org : <129.79.53.198:9615?...
+            #  ID      OWNER            SUBMITTED     RUN_TIME ST PRI SIZE CMD               
+            #
+            # 36100000.0   mturilli        2/21 20:14   0+01:50:56 R  0   14648.4 env /bin/sh -c /bi
+            # 36100000.8   mturilli        2/21 20:14   0+01:50:55 R  0   14648.4 env /bin/sh -c /bi
+            # 36100000.9   mturilli        2/21 20:14   0+01:50:56 R  0   14648.4 env /bin/sh -c /bi
+            # 
+            # 3 jobs; 0 completed, 0 removed, 0 idle, 3 running, 0 held, 0 suspended
+            # --------------------------------------------------------------------------------------
+
+            for line in out.split("\n"):
+
+                line = line.strip()
+
+                if not line              : continue
+                if line.startswith('-- '): continue
+                if line.startswith('ID '): continue
+                if 'jobs; ' in line      : continue
+
+                elems = line.split()
+
+                if len(elems) > 1:
+
+                    rm_clone = surl.Url(self.rm)  # TODO: this is costly
+                    rm_clone.query = ""
+                    rm_clone.path  = ""
+
+                    jobid = "[%s]-[%s]" % (rm_clone, elems[0])
+                    ids.append(jobid)
 
         return ids
 
@@ -1707,14 +1726,6 @@ class CondorJob (saga.adaptors.cpi.job.Job):
             return None
         else:
             return self.js._job_get_exit_code(self._id)
-
-    # ----------------------------------------------------------------
-    #
-    @SYNC_CALL
-    def get_name(self):
-        """ implements saga.adaptors.cpi.job.Job.get_name()
-        """
-        return self._name
 
     # ----------------------------------------------------------------
     #
