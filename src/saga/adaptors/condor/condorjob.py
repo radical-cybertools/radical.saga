@@ -705,6 +705,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
 
             results = out.split('\n')
             for result in results:
+                print 'ret: %s' % result
                 if len(result.split('=')) == 2:
                     key, val = result.split('=')
                     key = key.strip()  # strip() removes whitespaces at the
@@ -888,6 +889,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
             # CompletionDate = 0
             results = filter(bool, out.split('\n'))
             for result in results:
+                print 'inf: %s' % result
                 key, val = result.split('=', 1)
                 key = key.strip()
                 val = val.strip()
@@ -906,7 +908,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
                 # run the Condor 'condor_history' command to get info about 
                 # finished jobs
                 ret, out, err = self.shell.run_sync("unset GREP_OPTIONS; %s -long -match 1 %s | \
-                    grep -E '(ExitStatus)|(CompletionDate)|(JobCurrentStartDate)|(QDate)|(Err)|(Out)'" \
+                    grep -E '(ExitCode)|(CompletionDate)|(JobCurrentStartDate)|(QDate)|(Err)|(Out)'" \
                     % (self._commands['condor_history'], pid))
                 
                 if ret != 0:
@@ -919,12 +921,13 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
                     # ExitStatus = 0
                     results = out.split('\n')
                     for result in results:
+                        print 'his: %s' % result
                         if len(result.split('=')) == 2:
                             key, val = result.split('=')
                             key = key.strip()  # strip() removes whitespaces at the
                             val = val.strip()  # beginning and the end of the string
 
-                            if   key == 'ExitStatus'         : info['returncode']  = int(val)
+                            if   key == 'ExitCode'           : info['returncode']  = int(val)
                             elif key == 'QDate'              : info['create_time'] = val
                             elif key == 'JobCurrentStartDate': info['start_time']  = val
                             elif key == 'CompletionDate'     : info['end_time']    = val
@@ -987,6 +990,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
             # Some processes in cluster found with condor_q!
             procid, jobstatus, exit_code, exit_by_signal, completiondate \
                     = [col.strip() for col in row.split(',')]
+            print 'bul: %s' % row
 
             # we always set exit_code to '1' if exited_by_signal
             if not exit_code and exit_by_signal == 'true':
@@ -1013,7 +1017,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
         if len(found) < len(job_ids):
 
             cmd = "%s %s -autoformat:, " \
-                  "ProcId ExitStatus ExitBySignal CompletionDate " \
+                  "ProcId ExitCode ExitBySignal CompletionDate " \
                   "JobCurrentStartDate QDate Err Out" \
                   % (self._commands['condor_history'], cluster_id)
             ret, out, err = self.shell.run_sync(cmd)
@@ -1029,6 +1033,8 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
                 results = filter(bool, out.split('\n'))
                 ts      = time.time()
                 for row in results:
+
+                    print 'hul: %s' % row
 
                     elems = [col.strip() for col in row.split(',')]
                     if len(elems) != 8:
