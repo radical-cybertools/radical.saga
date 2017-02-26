@@ -830,7 +830,6 @@ class SLURMJob(saga.adaptors.cpi.job.Job):
             self._id   = job_info['reconnect_jobid']
             other_info = self._job_get_info()
             self._name = other_info.get('job_name')
-            self._logger.error("set name 2: %s" % self._name)
             self._started = True
         else:
             self._started = False
@@ -1092,7 +1091,6 @@ class SLURMJob(saga.adaptors.cpi.job.Job):
         """
         Implements saga.adaptors.cpi.job.Job.get_name()
         """
-        self._logger.error("get_name: %s" % self._name)
         if not self._name:
             self._name = self._job_get_info()['job_name']
         return self._name
