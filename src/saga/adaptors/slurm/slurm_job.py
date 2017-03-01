@@ -868,7 +868,6 @@ class SLURMJob(saga.adaptors.cpi.job.Job):
             self._id   = job_info['reconnect_jobid']
             other_info = self._job_get_info()
             self._name = other_info.get('job_name')
-            self._logger.error("set name 2: %s" % self._name)
             self._started = True
         else:
             self._started = False
@@ -890,23 +889,26 @@ class SLURMJob(saga.adaptors.cpi.job.Job):
 
         # if the 'gone' flag is set, there's no need to query the job
         # state again. it's gone forever
-        if prev_info.get('gone', False):
-            self._logger.debug("Job is gone.")
-            return prev_info
+        if prev_info:
+            if prev_info.get('gone', False):
+                self._logger.debug("Job is gone.")
+                return prev_info
 
         # curr. info will contain the new job info collect. it starts off
         # as a copy of prev_info (don't use deepcopy because there is an API
         # object in the dict -> recursion)
         curr_info = dict()
-        curr_info['job_id'     ] = prev_info.get('job_id'     )
-        curr_info['job_name'   ] = prev_info.get('job_name'   )
-        curr_info['state'      ] = prev_info.get('state'      )
-        curr_info['create_time'] = prev_info.get('create_time')
-        curr_info['start_time' ] = prev_info.get('start_time' )
-        curr_info['end_time'   ] = prev_info.get('end_time'   )
-        curr_info['comp_time'  ] = prev_info.get('comp_time'  )
-        curr_info['exec_hosts' ] = prev_info.get('exec_hosts' )
-        curr_info['gone'       ] = prev_info.get('gone'       )
+        
+        if prev_info:
+            curr_info['job_id'     ] = prev_info.get('job_id'     )
+            curr_info['job_name'   ] = prev_info.get('job_name'   )
+            curr_info['state'      ] = prev_info.get('state'      )
+            curr_info['create_time'] = prev_info.get('create_time')
+            curr_info['start_time' ] = prev_info.get('start_time' )
+            curr_info['end_time'   ] = prev_info.get('end_time'   )
+            curr_info['comp_time'  ] = prev_info.get('comp_time'  )
+            curr_info['exec_hosts' ] = prev_info.get('exec_hosts' )
+            curr_info['gone'       ] = prev_info.get('gone'       )
 
         rm, pid = self._adaptor.parse_id(self._id)
 
@@ -1127,7 +1129,6 @@ class SLURMJob(saga.adaptors.cpi.job.Job):
         """
         Implements saga.adaptors.cpi.job.Job.get_name()
         """
-        self._logger.error("get_name: %s" % self._name)
         if not self._name:
             self._name = self._job_get_info()['job_name']
         return self._name
