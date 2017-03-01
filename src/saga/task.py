@@ -10,15 +10,15 @@ __license__   = "MIT"
 import inspect
 import Queue
 
-import radical.utils.signatures as rus
-import radical.utils            as ru
+import radical.utils.signatures  as rus
+import radical.utils             as ru
 
-import base                     as sbase
-import exceptions               as se
-import attributes               as satt
-import adaptors.cpi.base        as sacb
+from  . import base              as sbase
+from  . import exceptions        as se
+from  . import attributes        as satt
+from  .adaptors.cpi  import base as sacb
 
-from   saga.constants       import *
+from  saga.constants                import *
 
 
 # ------------------------------------------------------------------------------
@@ -61,15 +61,15 @@ class Task (sbase.SimpleBase, satt.Attributes) :
         ``DONE`` for ``ttype=SYNC``, ``RUNNING`` for ``ttype=ASYNC`` and ``NEW``
         for ``ttype=TASK``.
 
-        If the ``_method_context`` has *exactly* two elements, names ``_call``
-        and ``args``, then the created task will wrap
-        a :class:`ru.Thread` with that ``_call (_args)``.
+        If the ``_method_context`` has *exactly* three elements, names
+        ``_call``, ``args`` and ``kwargs``, then the created task will wrap
+        a :class:`ru.Future` with that ``_call (*_args, **kwargs)``.
         """
         
         self._base = super  (Task, self)
         self._base.__init__ ()
 
-        self._thread         = None
+        self._future         = None
         self._ttype          = _ttype
         self._adaptor        = _adaptor
         self._method_type    = _method_type
@@ -96,28 +96,19 @@ class Task (sbase.SimpleBase, satt.Attributes) :
               
         self._set_state (NEW)
 
-        # check if this task is supposed to wrap a callable in a thread
+        # check if this task is supposed to wrap a callable in a future
         if  '_call'   in self._method_context :
 
-            if not '_args'   in self._method_context :
-                self._method_context['_args'] = ()
-
-            if not '_kwargs' in self._method_context :
-                self._method_context['_kwargs'] = {}
-
-            if  3 !=  len (self._method_context) :
-                raise se.BadParameter ("invalid call context for callable task")
-            
-            call   = self._method_context['_call']
-            args   = self._method_context['_args']
-            kwargs = self._method_context['_kwargs']
+            call   = self._method_context['call']
+            args   = self._method_context.get('_args',   list())
+            kwargs = self._method_context.get('_kwargs', dict())
 
             # if the called function expects a task handle, provide it.
             if  '_from_task' in inspect.getargspec (call)[0] :
                 if  not    '_from_task' in kwargs :
                     kwargs['_from_task'] = self
 
-            self._thread = ru.Thread (call, *args, **kwargs)
+            self._future = ru.Future (call=call, args=args, kwargs=kwargs)
 
 
         # ensure task goes into the correct state
@@ -137,8 +128,8 @@ class Task (sbase.SimpleBase, satt.Attributes) :
     @rus.returns (rus.nothing)
     def run      (self) :
 
-        if  self._thread :
-            self._thread.run ()
+        if  self._future :
+            self._future.run ()
 
         else :
             # FIXME: make sure task_run exists.  Should be part of the CPI!
@@ -155,9 +146,9 @@ class Task (sbase.SimpleBase, satt.Attributes) :
         if  None == timeout :
             timeout = -1.0 # FIXME
 
-        if self._thread :
-            self._thread.wait ()  # FIXME: timeout?!
-            self._set_state   (self._thread.state)
+        if self._future :
+            self._future.wait (timeout)  # FIXME: timeout?!
+            self._set_state   (self._future.state)
 
         else :
             # FIXME: make sure task_wait exists.  Should be part of the CPI!
@@ -171,8 +162,8 @@ class Task (sbase.SimpleBase, satt.Attributes) :
     @rus.returns (rus.nothing)
     def cancel (self) :
 
-        if self._thread :
-            self._thread.cancel ()
+        if self._future :
+            self._future.cancel ()
             self._set_state (CANCELED)
 
         else :
@@ -199,8 +190,8 @@ class Task (sbase.SimpleBase, satt.Attributes) :
     @rus.returns (rus.one_of (UNKNOWN, NEW, RUNNING, DONE, FAILED, CANCELED))
     def get_state (self) :
 
-        if self._thread :
-            self._set_state (self._thread.state)
+        if self._future :
+            self._set_state (self._future.state)
 
         return self.state
 
@@ -236,8 +227,8 @@ class Task (sbase.SimpleBase, satt.Attributes) :
 
         if  self.state == DONE :
 
-            if  self._thread :
-                self._set_result (self._thread.result)
+            if  self._future :
+                self._set_result (self._future.result)
 
             return self.result
 
@@ -267,8 +258,8 @@ class Task (sbase.SimpleBase, satt.Attributes) :
     @rus.returns (se.SagaException)
     def get_exception (self) :
 
-        if  self._thread :
-            self._set_exception (self._thread.exception)
+        if  self._future :
+            self._set_exception (self._future.exception)
 
         return self.exception
 
@@ -339,8 +330,6 @@ class Container (sbase.SimpleBase, satt.Attributes) :
     @rus.returns (rus.nothing)
     def add      (self, task) :
 
-        import saga.job as sjob
-
         if  not isinstance (task, Task) :
             
             raise se.BadParameter ("Container handles tasks, not %s" \
@@ -373,7 +362,7 @@ class Container (sbase.SimpleBase, satt.Attributes) :
             return None
 
         buckets = self._get_buckets ()
-        threads = []  # threads running container ops
+        futures = []  # futures running container ops
 
         # handle all container
         for c in buckets['bound'] :
@@ -397,23 +386,23 @@ class Container (sbase.SimpleBase, satt.Attributes) :
 
                 else :
                     # hand off to the container function, in a separate task
-                    threads.append (ru.Thread.Run (m_handle, tasks))
+                    futures.append (ru.Future.Run (m_handle, tasks))
 
 
         # handle tasks not bound to a container
         for task in buckets['unbound'] :
 
-            threads.append (ru.Thread.Run (task.run))
+            futures.append (ru.Future.Run (task.run))
             
 
-        # wait for all threads to finish
-        for thread in threads :
-            if  thread.isAlive () :
-                thread.join ()
+        # wait for all futures to finish
+        for future in futures :
+            if  future.isAlive () :
+                future.join ()
 
-            if  thread.get_state () == FAILED :
-                raise se.NoSuccess ("thread exception: %s" \
-                                 % (thread.get_exception ()))
+            if  future.state == FAILED :
+                raise se.NoSuccess ("future exception: %s" \
+                                 % (future.exception))
 
 
     # --------------------------------------------------------------------------
@@ -454,7 +443,7 @@ class Container (sbase.SimpleBase, satt.Attributes) :
     def _wait_any (self, timeout) :
 
         buckets = self._get_buckets ()
-        threads = []  # threads running container ops
+        futures = []  # futures running container ops
 
         # handle all tasks bound to containers
         for c in buckets['bound'] :
@@ -464,35 +453,35 @@ class Container (sbase.SimpleBase, satt.Attributes) :
             for m in buckets['bound'][c] :
                 tasks += buckets['bound'][c][m]
 
-            threads.append (ru.Thread.Run (c.container_wait, tasks, ANY, timeout))
+            futures.append (ru.Future.Run (c.container_wait, tasks, ANY, timeout))
 
         
         # handle all tasks not bound to containers
         for task in buckets['unbound'] :
 
-            threads.append (ru.Thread.Run (task.wait, timeout))
+            futures.append (ru.Future.Run (task.wait, timeout))
             
 
-        # mode == ANY: we need to watch our threads, and whenever one
+        # mode == ANY: we need to watch our futures, and whenever one
         # returns, and declare success.  Note that we still need to get the
-        # finished task from the 'winner'-thread -- we do that via a Queue
-        # object.  Note also that looser threads are not canceled, but left
+        # finished task from the 'winner'-future -- we do that via a Queue
+        # object.  Note also that looser futures are not canceled, but left
         # running (FIXME: consider sending a signal at least)
 
         timeout = 0.01 # seconds, heuristic :-/
 
-        for thread in threads :
-            thread.join (timeout)
+        for future in futures :
+            future.join (timeout)
 
-            if thread.get_state () == FAILED :
-                raise thread.get_exception ()
+            if future.state == FAILED :
+                raise future.exception
 
-            if not thread.isAlive :
-                # thread indeed finished -- dig return value from this
-                # threads queue
-                result = thread.get_result ()
+            if not future.isAlive() :
+                # future indeed finished -- dig return value from this
+                # futures queue
+                result = future.result
 
-                # ignore other threads, and simply declare success
+                # ignore other futures, and simply declare success
                 return result
 
 
@@ -505,7 +494,7 @@ class Container (sbase.SimpleBase, satt.Attributes) :
     def _wait_all (self, timeout) :
         # this method should actually be symmetric to _wait_any, and could
         # almost be mapped to it, but the code below is a kind of optimization
-        # (does not need threads, thus simpler code).
+        # (does not need futures, thus simpler code).
 
         buckets = self._get_buckets ()
         ret     = None
@@ -545,7 +534,7 @@ class Container (sbase.SimpleBase, satt.Attributes) :
             timeout = -1.0 # FIXME
 
         buckets = self._get_buckets ()
-        threads = []  # threads running container ops
+        futures = []  # futures running container ops
 
         # handle all tasks bound to containers
         for c in buckets['bound'] :
@@ -555,17 +544,17 @@ class Container (sbase.SimpleBase, satt.Attributes) :
             for m in buckets['bound'][c] :
                 tasks += buckets['bound'][c][m]
 
-            threads.append (ru.Thread.Run (c.container_cancel, tasks, timeout))
+            futures.append (ru.Future.Run (c.container_cancel, tasks, timeout))
 
         
         # handle all tasks not bound to containers
         for task in buckets['unbound'] :
 
-            threads.append (ru.Thread.Run (task.cancel, timeout))
+            futures.append (ru.Future.Run (task.cancel, timeout))
             
 
-        for thread in threads :
-            thread.join ()
+        for future in futures :
+            future.join ()
 
 
     # ----------------------------------------------------------------
@@ -611,7 +600,7 @@ class Container (sbase.SimpleBase, satt.Attributes) :
     def get_states (self) :
 
         buckets = self._get_buckets ()
-        threads = []  # threads running container ops
+        futures = []  # futures running container ops
 
         # handle all tasks bound to containers
         for c in buckets['bound'] :
@@ -621,27 +610,27 @@ class Container (sbase.SimpleBase, satt.Attributes) :
             for m in buckets['bound'][c] :
                 tasks += buckets['bound'][c][m]
 
-            threads.append (ru.Thread.Run (c.container_get_states, tasks))
+            futures.append (ru.Future.Run (c.container_get_states, tasks))
 
         
         # handle all tasks not bound to containers
         for task in buckets['unbound'] :
 
-            threads.append (ru.Thread.Run (task.get_state))
+            futures.append (ru.Future.Run (task.get_state))
             
 
-        # We still need to get the states from all threads.
+        # We still need to get the states from all futures.
         # FIXME: order
         states  = []
 
-        for thread in threads :
-            thread.join ()
+        for future in futures :
+            future.join ()
 
-            if thread.get_state () == FAILED :
-                raise thread.get_exception ()
+            if future.state == FAILED :
+                raise future.exception
 
             # FIXME: what about ordering tasks / states?
-            res = thread.get_result ()
+            res = future.result
 
             if res != None :
                 states += res
