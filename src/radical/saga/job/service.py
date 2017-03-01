@@ -282,20 +282,15 @@ class Service (sb.Base, sasync.Async) :
                 val     = jd_copy   .get_attribute (key)
                 default = jd_default.get_attribute (key)
 
-                # we count empty strings as none, for string type parameters.
-                if  isinstance (val, basestring) :
-                    if  not val :
-                        val = None
-
                 # Also, we make string compares case insensitive
                 if isinstance (val,     basestring) : val     = val    .lower ()
                 if isinstance (default, basestring) : default = default.lower ()
 
                 # supported keys are also valid, as are keys with default or
                 # None values
-                if  not (key in supported_keys or \
-                         val == default        or \
-                         val == None           )  :
+                if  key not in supported_keys and \
+                    val != default            and \
+                    val                       :
 
                     msg = "'JobDescription.%s' (%s) is not supported by adaptor %s" \
                         % (key, val, adaptor_info['name'])
@@ -324,17 +319,33 @@ class Service (sb.Base, sasync.Async) :
     def run_job  (self, cmd, host=None, ttype=None) :
         """ 
         run_job(cmd, host=None)
-        
-        .. warning:: |not_implemented|
         """
 
         if not self.valid :
             raise se.IncorrectState ("This instance was already closed.")
 
-        if  None == host :
-            host = "" # FIXME
+        if not cmd:
+            raise se.BadParameter('run_job needs a command to run.  Duh!')
 
-        return self._adaptor.run_job (cmd, host, ttype=ttype)
+        try:
+            # lets see if the adaptor implements run_job
+            return self._adaptor.run_job (cmd, host, ttype=ttype)
+        except:
+            # fall back to the default implementation below
+            pass
+
+        # The adaptor has no run_job -- we here provide a generic implementation
+        # FIXME: split should be more clever and respect POSIX shell syntax. 
+        args = cmd.split()
+
+        jd = desc.Description()
+        jd.executable = args[0]
+        js.arguments  = args[1:]
+
+        job = self.create_job(jd)
+        job.run()
+
+        return job
 
 
     # --------------------------------------------------------------------------

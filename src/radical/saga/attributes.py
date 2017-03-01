@@ -2702,7 +2702,7 @@ class Attributes (_AttributesBase, ru.DictMixin) :
     # --------------------------------------------------------------------------
     #
     def __getitem__ (self, key) :
-        return self.get_attribute (key)
+        return self.get_attribute(key)
 
     # --------------------------------------------------------------------------
     #

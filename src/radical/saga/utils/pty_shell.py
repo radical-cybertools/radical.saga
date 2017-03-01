@@ -257,6 +257,7 @@ class PTYShell (object) :
     def _trace (self, msg) :
 
       # print " === %5d : %s : %s" % (self._pty_id, self.pty_shell, msg)
+        self.logger.debug(" === %5d : %s : %s", self._pty_id, self.pty_shell, msg)
         pass
 
 
@@ -902,12 +903,12 @@ class PTYShell (object) :
     def stage_from_remote (self, src, tgt, cp_flags="") :
         """
         :type  src: string
-        :param tgt: path to source file to stage from.
+        :param src: path to source file to stage from.
                     The tgt path is not an URL, but expected to be a path
                     relative to the shell's URL.
 
         :type  tgt: string
-        :param src: path of local target file to stage to.
+        :param tgt: path of local target file to stage to.
                     The tgt path is not an URL, but expected to be a path
                     relative to the current working directory.
         """
@@ -1070,7 +1071,7 @@ class PTYShell (object) :
             info = self.pty_info
             repl = dict ({'src'      : src, 
                           'tgt'      : tgt, 
-                          'cp_flags' : cp_flags}.items ()+ info.items ())
+                          'cp_flags' : cp_flags}.items() + info.items ())
 
             # at this point, we do have a valid, living master
             s_cmd = info['scripts'][info['copy_mode']]['copy_from']    % repl
@@ -1102,7 +1103,7 @@ class PTYShell (object) :
                 self.cp_slave.write (" ls %s\n" % src)
                 _, out = self.cp_slave.find (["^sftp> "], -1)
 
-                src_list = out[1].split ('/n')
+                src_list = out[1].split('\n')
 
                 for s in src_list :
                     if  os.path.isdir (s) :

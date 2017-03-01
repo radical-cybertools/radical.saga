@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 __author__    = "Andre Merzky, Mark Santcroos"
 __copyright__ = "Copyright 2015, The SAGA Project"
 __license__   = "MIT"
