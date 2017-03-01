@@ -418,10 +418,10 @@ class LSFJobService (saga.adaptors.cpi.job.Service):
         # these are the commands that we need in order to interact with LSF.
         # the adaptor will try to find them during initialize(self) and bail
         # out in case they are note avaialbe.
-        self._commands = {'bqueues':  None,
-                          'bjobs':    None,
-                          'bsub':     None,
-                          'bkill':    None}
+        self._commands = {'bqueues':  dict(),
+                          'bjobs':    dict(),
+                          'bsub':     dict(),
+                          'bkill':    dict()}
 
         self.shell = saga.utils.pty_shell.PTYShell(pty_url, self.session)
 
@@ -452,8 +452,8 @@ class LSFJobService (saga.adaptors.cpi.job.Service):
                     version = out.split("\n")[0]
 
                     # add path and version to the command dictionary
-                    self._commands[cmd] = {"path":    path,
-                                           "version": version}
+                    self._commands[cmd]["path"]    =    path
+                    self._commands[cmd]["version"] = version
 
         self._logger.info("Found LSF tools: %s" % self._commands)
 
@@ -576,7 +576,7 @@ class LSFJobService (saga.adaptors.cpi.job.Service):
         """
         rm, pid = self._adaptor.parse_id(job_id)
 
-        ret, out, _ = self.shell.run_sync("%s -noheader -o 'stat exec_host exit_code submit_time start_time finish_time delimiter=\",\"' %s" % (self._commands['bjobs']['path'], pid))
+        ret, out, _ = self.shell.run_sync("%s -noheader -o 'stat exec_host exit_code submit_time start_time finish_time command job_name delimiter=\",\"' %s" % (self._commands['bjobs']['path'], pid))
 
         if ret != 0:
             message = "Couldn't reconnect to job '%s': %s" % (job_id, out)
@@ -599,11 +599,22 @@ class LSFJobService (saga.adaptors.cpi.job.Service):
             job_info['exec_hosts'] = results[1]
             if results[2] != '-':
                 job_info['returncode'] = int(results[2])
-            job_info['create_time'] = results[3]
-            job_info['start_time'] = results[4]
-            job_info['end_time'] = results[5]
+            job_info['create_time']    =     results[3]
+            job_info['start_time']     =     results[4]
+            job_info['end_time']       =     results[5]
 
-            return job_info
+            jd = saga.job.Description()
+
+            cmd  = results[6]
+            exe  = cmd.split()[0]
+            args = cmd.split()[1:]
+
+            jd.executable = exe
+            jd.arguments  = args
+            jd.name       = results[7]
+
+            return [job_info, jd]
+
 
     # ----------------------------------------------------------------
     #
@@ -722,6 +733,7 @@ class LSFJobService (saga.adaptors.cpi.job.Service):
         """
         return self.jobs[job_obj]['end_time']
 
+
     # ----------------------------------------------------------------
     #
     def _job_cancel(self, job_obj):
@@ -807,13 +819,14 @@ class LSFJobService (saga.adaptors.cpi.job.Service):
         """
 
         # try to get some information about this job
-        job_info = self._retrieve_job(jobid)
+        job_info, job_desc = self._retrieve_job(jobid)
+
 
         # this dict is passed on to the job adaptor class -- use it to pass any
         # state information you need there.
         adaptor_state = {"job_service":     self,
                          # TODO: fill job description
-                         "job_description": saga.job.Description(),
+                         "job_description": job_desc,
                          "job_schema":      self.rm.schema,
                          "reconnect":       True,
                          "reconnect_jobid": jobid
