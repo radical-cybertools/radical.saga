@@ -549,12 +549,6 @@ class Container (sbase.SimpleBase, satt.Attributes) :
         for task in buckets['unbound'] :
             futures.append (ru.Future.Run (task.cancel, timeout))
 
-<<<<<<< HEAD
-=======
-            futures.append (ru.Future.Run (task.cancel, timeout))
-            
-
->>>>>>> devel
         for future in futures :
             future.join ()
 
