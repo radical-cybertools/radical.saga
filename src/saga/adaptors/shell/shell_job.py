@@ -179,7 +179,7 @@ _ADAPTOR_OPTIONS       = [
     'category'         : 'saga.adaptor.shell_job',
     'name'             : 'base_workdir',
     'type'             : str,
-    'default'          : "$HOME/.saga/adaptors/shell_job/",
+    'default'          : ".saga/adaptors/shell_job/",
     'documentation'    : '''The adaptor stores job state information on the
                           filesystem on the target resource.  This parameter
                           specified what location should be used.''',
@@ -425,12 +425,13 @@ class Adaptor (saga.adaptors.base.Base):
         if  jd.file_transfer is not None:
             td = TransferDirectives (jd.file_transfer)
 
-            if  len (td.in_append_dict)  > 0 or \
-                len (td.out_append_dict) > 0 :
+            if  td.in_append or td.out_append:
                 raise saga.BadParameter('FileTransfer append (<</>>) not supported')
 
-            if  td.in_overwrite_dict :
-                for (source, target) in td.in_overwrite_dict.iteritems():
+            if  td.in_overwrite:
+                for (local, remote) in td.in_overwrite:
+                    source = local
+                    target = remote
                     self._logger.info("Transferring file %s to %s" % (source, target))
                     shell.stage_to_remote(source, target)
 
@@ -445,11 +446,13 @@ class Adaptor (saga.adaptors.base.Base):
         if  jd.file_transfer is not None:
             td = TransferDirectives (jd.file_transfer)
 
-            if  len (td.out_append_dict) > 0 :
+            if  td.out_append:
                 raise saga.BadParameter('FileTransfer append (<</>>) not supported')
 
-            if  td.out_overwrite_dict :
-                for (source, target) in td.out_overwrite_dict.iteritems():
+            if  td.out_overwrite:
+                for (local, remote) in td.out_overwrite_dict.iteritems():
+                    source = remote
+                    target = local
                     self._logger.info("Transferring file %s to %s" % (source, target))
                     shell.stage_from_remote(source, target)
 
