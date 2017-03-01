@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-
 __author__    = "Andre Merzky, Matteo Turilli, Ole Weidner"
 __copyright__ = "Copyright 2013, The SAGA Project"
 __license__   = "MIT"

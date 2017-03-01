@@ -1107,6 +1107,8 @@ class TORQUEJob (saga.adaptors.cpi.job.Job):
         self.jd = job_info["job_description"]
         self.js = job_info["job_service"]
 
+        self._logger.info('set job name 1: %s', self.jd.name)
+
         if job_info['reconnect'] is True:
             self._id      = job_info['reconnect_jobid']
             self._name    = self.jd.name
@@ -1115,6 +1117,8 @@ class TORQUEJob (saga.adaptors.cpi.job.Job):
             self._id      = None
             self._name    = self.jd.name
             self._started = False
+
+        self._logger.info('set job name 2: %s', self._name)
 
         return self.get_api()
 
@@ -1183,6 +1187,7 @@ class TORQUEJob (saga.adaptors.cpi.job.Job):
     @SYNC_CALL
     def get_name (self):
         """ Implements saga.adaptors.cpi.job.Job.get_name() """        
+        self._logger.info('get job name 1: %s', self._name)
         return self._name
 
     # ----------------------------------------------------------------

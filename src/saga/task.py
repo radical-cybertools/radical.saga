@@ -471,7 +471,7 @@ class Container (sbase.SimpleBase, satt.Attributes) :
         for future in futures :
             future.join (timeout)
 
-            if future.get_state () == FAILED :
+            if future.state == FAILED :
                 raise future.exception
 
             if not future.isAlive() :
@@ -549,6 +549,12 @@ class Container (sbase.SimpleBase, satt.Attributes) :
         for task in buckets['unbound'] :
             futures.append (ru.Future.Run (task.cancel, timeout))
 
+<<<<<<< HEAD
+=======
+            futures.append (ru.Future.Run (task.cancel, timeout))
+            
+
+>>>>>>> devel
         for future in futures :
             future.join ()
 

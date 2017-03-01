@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-
 import saga
 
 class MyContextA (saga.Context) :
