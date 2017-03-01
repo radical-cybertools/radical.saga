@@ -794,12 +794,14 @@ cmd_list () {
 # purge working directories of given jobs
 # default (no job id given): purge all final jobs older than 1 day
 #
+# NOTE: we need to be able to handle unremovable nsf lockfiles (`|| true`)
+#
 cmd_purge () {
 
   if ! test -z "$1"
   then
     DIR="$BASE/$1"
-    \rm -rf "$DIR"
+    \rm -rf "$DIR" || true
     RETVAL="purged $1"
   else
     for d in `\grep -l -e 'DONE' -e 'FAILED' -e 'CANCELED' "$BASE"/*/state 2>/dev/null`
@@ -819,13 +821,15 @@ cmd_purge () {
 #
 # purge tmp files for bulks etc.
 #
+# NOTE: we need to be able to handle unremovable nsf lockfiles (`|| true`)
+#
 cmd_purge_tmps () {
 
   \rm -f "$BASE"/bulk.*
   \rm -f "$BASE"/idle.*
   \rm -f "$BASE"/quit.*
-  \find  "$BASE" -type d -mtime +30 -print | xargs -n 100 \rm -rf
-  \find  "$BASE" -type f -mtime +30 -print | xargs -n 100 \rm -f
+  \find  "$BASE" -type d -mtime +30 -print | xargs -n 100 \rm -rf || true
+  \find  "$BASE" -type f -mtime +30 -print | xargs -n 100 \rm -f  || true
   RETVAL="purged tmp files"
 }
 
