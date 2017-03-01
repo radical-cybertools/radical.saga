@@ -5,6 +5,29 @@
   - For a list of open issues and known problems, see
     https://github.com/radical-cybertools/saga-python/issues?q=is%3Aissue+is%3Aopen+
 
+Version 0.45                                                          2017-02-28
+--------------------------------------------------------------------------------
+
+  - Add srm adaptor - Thanks Mark!
+  - Add cobalt adaptor (blue gene/q) - Thanks Manuel!
+  - Add special case for Rhea
+  - Deal with timeouts. 
+  - Don't want our jobs to restart after eviction (OSG)
+  - Make pty shell url configurable. 
+  - Remove some more PBSPro remains. 
+  - address #585 
+  - fix #590 
+  - check that prev_info exists before populating curr_info with its info in _job_get_info 
+  - clean up slurm adaptor to get it fit for the split branch in RP
+  - fix state interpretation for pbspro 
+  - make torque fit for rp split branch 
+  - remove some debug logs 
+  - some consistency fixes
+  - update slurm example in context of #611 
+  - use `-o Port=%d` notation for ssh based channels 
+  - backport ft and bulk ops for torque from osg_optimization 
+
+
 Version 0.44                                                          2016-11-01
 --------------------------------------------------------------------------------
 

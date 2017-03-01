@@ -1,10 +1,10 @@
 
-__author__    = "Mark Santcroos, Andre Merzky, Ole Weidner"
-__copyright__ = "Copyright 2015, The RADICAL Project"
+__author__    = "Andre Merzky, Ole Weidner, Mark Santcroos, Manuel Maldonado"
+__copyright__ = "Copyright 2012-2016, The SAGA Project"
 __license__   = "MIT"
 
 
-""" TORQUE job adaptor implementation
+""" Cobalt job adaptor implementation
 """
 
 import threading
@@ -19,6 +19,7 @@ from saga.job.constants import *
 import re
 import os 
 import time
+import datetime
 import threading
 
 from cgi  import parse_qs
@@ -68,8 +69,8 @@ class _job_state_monitor(threading.Thread):
                     # we only need to monitor jobs that are not in a
                     # terminal state, so we can skip the ones that are 
                     # either done, failed or canceled
-                    if  job_info['state'] not in [saga.job.DONE, saga.job.FAILED, saga.job.CANCELED] :
-                        
+                    if  job_info['state'] not in [saga.job.DONE, saga.job.FAILED, saga.job.CANCELED]:
+
                         # Store the current state since the current state 
                         # variable is updated when _job_get_info is called
                         pre_update_state = job_info['state']
@@ -89,7 +90,7 @@ class _job_state_monitor(threading.Thread):
 
             except Exception as e:
                 import traceback
-                traceback.print_exc ()
+                traceback.print_exc()
                 self.logger.warning("Exception caught in job monitoring thread: %s" % e)
 
                 # check if we see the same error again and again
@@ -118,41 +119,48 @@ def log_error_and_raise(message, exception, logger):
 
 # --------------------------------------------------------------------
 #
-def _torque_to_saga_jobstate(torquejs):
-    """ translates a torque one-letter state to saga
+def _cobalt_to_saga_jobstate(cobaltjs):
+    """ translates a cobalt one-letter state to saga
     """
-    if torquejs == 'H': #  "Job is held."
+    if cobaltjs == 'C':
+        return saga.job.DONE
+    elif cobaltjs == 'F': 
+        return saga.job.DONE
+    elif cobaltjs == 'H': # Cobalt "Job is held by user or dependency"
         return saga.job.PENDING
-    elif torquejs == 'Q': # "Job is queued(, eligible to run or routed.)
+    elif cobaltjs == 'Q': # Cobalt "Job is queued(, eligible to run or routed.)
         return saga.job.PENDING
-    elif torquejs == 'S': # "Job is suspended."
+    elif cobaltjs == 'S': # Cobalt "Job is suspended."
         return saga.job.PENDING
-    elif torquejs == 'W': # "Job is waiting for its execution time to be reached."
+    elif cobaltjs == 'W': # Cobalt "Job is waiting for its execution time to be reached."
         return saga.job.PENDING
-    elif torquejs == 'R': # "Job is running."
+    elif cobaltjs == 'R': # Cobalt "Job is starting/running."
         return saga.job.RUNNING
-    elif torquejs == 'E': # "Job is exiting after having run"
+    elif cobaltjs == 'E': # Cobalt "Job is exiting after having run"
         return saga.job.RUNNING
-    elif torquejs == 'T': # "Job is being moved to new location."
+    elif cobaltjs == 'T': # Cobalt "Job is being moved to new location."
         # TODO: PENDING?
         return saga.job.RUNNING
+    elif cobaltjs == 'X': # Cobalt "Subjob has completed execution or has been deleted."
+        return saga.job.CANCELED
     else:
         return saga.job.UNKNOWN
 
 
 # --------------------------------------------------------------------
 #
-def _torquescript_generator(url, logger, jd, ppn, gres, torque_version, is_cray=None, queue=None):
-    """ generates a PBS script from a SAGA job description
+def _cobaltscript_generator(url, logger, jd, ppn, is_cray=False, queue=None, run_job='/usr/bin/runjob'):
+    """ Generates Cobalt-style 'qsub' command arguments from a SAGA job description
     """
-    pbs_params  = str()
+    cobalt_params  = str()
     exec_n_args = str()
+    cobaltscript = str()
+    total_cpu_count = None
+    number_of_processes = None
+    processes_per_host = None
+    blue_gene_q_modes = [1, 2, 4, 8, 16, 32, 64]
+    ppn = 16 # for now, defaulting to number of cores per node in Blue Gene/Q
 
-    if jd.processes_per_host:
-        logger.info("Overriding the detected ppn (%d) with the user specified processes_per_host (%d)" % (ppn, jd.processes_per_host))
-        ppn = jd.processes_per_host
-
-    exec_n_args += 'export SAGA_PPN=%d\n' % ppn
     if jd.executable:
         exec_n_args += "%s " % (jd.executable)
     if jd.arguments:
@@ -160,32 +168,18 @@ def _torquescript_generator(url, logger, jd, ppn, gres, torque_version, is_cray=
             exec_n_args += "%s " % (arg)
 
     if jd.name:
-        pbs_params += "#PBS -N %s \n" % jd.name
+        cobalt_params += '#COBALT --jobname %s\n' % jd.name
 
-    if (is_cray is ""):
-        # qsub on Cray systems complains about the -V option:
-        # Warning:
-        # Your job uses the -V option, which requests that all of your
-        # current shell environment settings (9913 bytes) be exported to
-        # it.  This is not recommended, as it causes problems for the
-        # batch environment in some cases.
-        pbs_params += "#PBS -V \n"
-
-    if jd.environment:
-        pbs_params += "#PBS -v %s\n" % \
-                ','.join (["%s=%s" % (k,v) 
-                           for k,v in jd.environment.iteritems()])
-
-    # apparently this doesn't work with older PBS installations
-    #    if jd.working_directory:
-    #        pbs_params += "#PBS -d %s \n" % jd.working_directory
-    # a workaround is to do an explicit 'cd'
     if jd.working_directory:
-        workdir_directives  = 'export    PBS_O_WORKDIR=%s \n' % jd.working_directory
-        workdir_directives += 'mkdir -p  %s\n' % jd.working_directory
-        workdir_directives += 'cd        %s\n' % jd.working_directory
-    else:
-        workdir_directives = ''
+        cobalt_params += '#COBALT --cwd %s\n' % jd.working_directory
+
+    # a workaround is to do an explicit 'cd'
+    # if jd.working_directory:
+    #     workdir_directives  = 'export    PBS_O_WORKDIR=%s \n' % jd.working_directory
+    #     workdir_directives += 'mkdir -p  %s\n' % jd.working_directory
+    #     workdir_directives += 'cd        %s\n' % jd.working_directory
+    # else:
+    #     workdir_directives = ''
 
     if jd.output:
         # if working directory is set, we want stdout to end up in
@@ -193,14 +187,14 @@ def _torquescript_generator(url, logger, jd, ppn, gres, torque_version, is_cray=
         # path name.
         if jd.working_directory:
             if os.path.isabs(jd.output):
-                pbs_params += "#PBS -o %s \n" % jd.output
+                cobalt_params += '#COBALT --output %s\n' % jd.output
             else:
                 # user provided a relative path for STDOUT. in this case 
                 # we prepend the workind directory path before passing
-                # it on to PBS
-                pbs_params += "#PBS -o %s/%s \n" % (jd.working_directory, jd.output)
+                # it on to Cobalt
+                cobalt_params += '#COBALT --output %s/%s\n' % (jd.working_directory, jd.output)
         else:
-            pbs_params += "#PBS -o %s \n" % jd.output
+            cobalt_params += '#COBALT --output %s\n' % jd.output
 
     if jd.error:
         # if working directory is set, we want stderr to end up in 
@@ -208,114 +202,120 @@ def _torquescript_generator(url, logger, jd, ppn, gres, torque_version, is_cray=
         # path name. 
         if jd.working_directory:
             if os.path.isabs(jd.error):
-                pbs_params += "#PBS -e %s \n" % jd.error
+                cobalt_params += '#COBALT --error %s\n' % jd.error
             else:
                 # user provided a realtive path for STDERR. in this case 
                 # we prepend the workind directory path before passing
-                # it on to PBS
-                pbs_params += "#PBS -e %s/%s \n" % (jd.working_directory, jd.error)
+                # it on to Cobalt
+                cobalt_params += '#COBALT --error %s/%s\n' % (jd.working_directory, jd.error)
         else:
-            pbs_params += "#PBS -e %s \n" % jd.error
+            cobalt_params += '#COBALT --error %s\n' % jd.error
 
     if jd.wall_time_limit:
         hours = jd.wall_time_limit / 60
         minutes = jd.wall_time_limit % 60
-        pbs_params += "#PBS -l walltime=%s:%s:00 \n" \
-            % (str(hours), str(minutes))
+        cobalt_params += '#COBALT --time %s:%s:00\n' \
+            % (str(hours).zfill(2), str(minutes).zfill(2))
 
-    if jd.queue and queue:
-        pbs_params += "#PBS -q %s \n" % queue
-    elif jd.queue and not queue:
-        pbs_params += "#PBS -q %s \n" % jd.queue
-    elif queue and not jd.queue:
-        pbs_params += "#PBS -q %s \n" % queue
-
+    if queue:
+        cobalt_params += '#COBALT --queue %s\n' % queue
+    elif jd.queue:
+        cobalt_params += '#COBALT --queue %s\n' % jd.queue
+    
     if jd.project:
-        pbs_params += "#PBS -A %s \n" % str(jd.project)
-
+        cobalt_params += '#COBALT --project %s\n' % str(jd.project)
+    
     if jd.job_contact:
-        pbs_params += "#PBS -m abe \n"
+        cobalt_params += '#COBALT --notify %s\n' % str(jd.job_contact)
 
-    # if total_cpu_count is not defined, we assume 1
-    if not jd.total_cpu_count:
-        jd.total_cpu_count = 1
+    #
+    # This section takes care of CPU/Process/Node calculation
+    #
+    # Handle number of cores
+    # Default total_cpu_count = 1
+    if jd.attribute_exists ("total_cpu_count"):
+        total_cpu_count = jd.total_cpu_count
+    else:
+        logger.warning("total_cpu_count not specified in submitted Cobalt job description -- defaulting to (1)!")
+        total_cpu_count = 1
 
     # Request enough nodes to cater for the number of cores requested
-    nnodes = jd.total_cpu_count / ppn
-    if jd.total_cpu_count % ppn > 0:
-        nnodes += 1
+    number_of_nodes = total_cpu_count / ppn
+    if total_cpu_count % ppn > 0:
+        number_of_nodes += 1
 
-    # We use the ncpus value for systems that need to specify ncpus as multiple of PPN
-    ncpus = nnodes * ppn
-
-    # Node properties are appended to the nodes argument in the resource_list.
-    node_properties = []
-
-    # Parse candidate_hosts
-    #
-    # Currently only implemented for "bigflash" on Gordon@SDSC
-    # https://github.com/radical-cybertools/saga-python/issues/406
-    #
-    if jd.candidate_hosts:
-        if 'BIG_FLASH' in jd.candidate_hosts:
-            node_properties.append('bigflash')
-        else:
-            raise saga.NotImplemented("This type of 'candidate_hosts' not implemented: '%s'" % jd.candidate_hosts)
-
-    if is_cray is not "":
-        # Special cases for PBS/TORQUE on Cray. Different PBSes,
-        # different flags. A complete nightmare...
-        if '5.1.0.h1' in torque_version:
-            # Can't really use hostname as we run also from the headnode
-            logger.info("Using Titan (Cray XP) specific '#PBS -l nodes=xx'")
-            pbs_params += "#PBS -l nodes=%d\n" % nnodes
-        elif 'edison' in url.host:
-            logger.info("Using Edison@NERSC (Cray XC30) specific '#PBS -l mppwidth=xx' parameter.")
-            pbs_params += "#PBS -l mppwidth=%s \n" % jd.total_cpu_count
-        elif 'bw.ncsa.illinois.edu' in url.host:
-            logger.info("Using Blue Waters (Cray XE6/XK7) specific '#PBS -l nodes=xx:ppn=yy'")
-            pbs_params += "#PBS -l nodes=%d:ppn=%d\n" % (nnodes, ppn)
-        elif 'Version: 5.' in torque_version:
-            # What would removing this catchall break?
-            logger.info("Using TORQUE 5.x notation '#PBS -l procs=XX' ")
-            pbs_params += "#PBS -l procs=%d\n" % jd.total_cpu_count
-        else:
-            logger.info("Using Cray XT (e.g. Kraken, Jaguar) specific '#PBS -l size=xx' flags (TORQUE).")
-            pbs_params += "#PBS -l size=%s\n" % jd.total_cpu_count
-    elif 'version: 2.3.13' in torque_version:
-        # e.g. Blacklight
-        # TODO: The more we add, the more it screams for a refactoring
-        pbs_params += "#PBS -l ncpus=%d\n" % ncpus
-    elif 'hopper' in url.host:
-        logger.info("Using Hopper@NERSC (Cray XE6) specific '#PBS -l mppwidth=xx' parameter.")
-        pbs_params += "#PBS -l mppwidth=%s \n" % jd.total_cpu_count
-    elif 'rhea.ccs.ornl.gov' in url.host or 'rhea-login' in os.uname()[1]:
-        # Not allowed to specify ppn on Rhea
-        pbs_params += "#PBS -l nodes=%d\n" % (nnodes)
+    # Get number of processes
+    # Defaults to number_of_processes = number_of_nodes
+    if jd.attribute_exists ("number_of_processes"):
+        number_of_processes = jd.number_of_processes
     else:
-        # Default case, i.e, standard HPC cluster (non-Cray)
+        logger.debug("number_of_processes not specified in submitted Cobalt job description -- defaulting to (1) per number_of_nodes! (%d)" % number_of_nodes)
+        number_of_processes = number_of_nodes
 
-        # If we want just a slice of one node
-        if jd.total_cpu_count < ppn:
-            ppn = jd.total_cpu_count
+    # Get number of processes per host/node
+    # Defaults to processes_per_host = 1
+    if jd.attribute_exists("processes_per_host"):
+        processes_per_host = jd.processes_per_host
+    else:
+        logger.debug("processes_per_host not specified in submitted Cobalt job description -- defaulting to 1!")
+        processes_per_host = 1
 
-        pbs_params += "#PBS -l nodes=%d:ppn=%d%s\n" % (
-            nnodes, ppn, ''.join([':%s' % prop for prop in node_properties]))
+    # Need to make sure that the 'processes_per_host' is a valid one
+    # Blue Gene/Q valid modes ==> [1, 2, 4, 8, 16, 32, 64]
+    # At the Blue Gene/Q, 1 Node == 16 Cores and can handle UP TO 4 tasks per CPU/Core == 64 tasks
+    # References: 
+    #   http://www.alcf.anl.gov/user-guides/cobalt-job-control
+    #   https://www.alcf.anl.gov/user-guides/blue-geneq-versus-blue-genep
+    if processes_per_host not in blue_gene_q_modes:
+        log_error_and_raise("Number of processes per host (%d) requested is not compatible with available modes! (%d)" % (processes_per_host, blue_gene_q_modes), saga.BadParameter, logger)
 
-    # Process Generic Resource specification request
-    if gres:
-        pbs_params += "#PBS -l gres=%s\n" % gres
+    # Make sure we aren't doing funky math
+    # References:
+    #   http://www.alcf.anl.gov/user-guides/machine-partitions
+    #   the --proccount flag value must be <= nodecount * mode
+    if  number_of_processes > (number_of_nodes * processes_per_host):
+        log_error_and_raise ("number_of_processes (%d) must be less than or equal to (number_of_nodes * processes_per_host) (%d * %d = %d)" 
+            % (number_of_processes, number_of_nodes, processes_per_host, (number_of_nodes * processes_per_host)), 
+            saga.NoSuccess, logger)
+    ## Other funky math checks should go here ~
 
-    # escape all double quotes and dollarsigns, otherwise 'echo |'
-    # further down won't work
+    # Set number of nodes
+    cobalt_params += '#COBALT --nodecount %d\n' % number_of_nodes
+
+    # Set the total number of processes
+    cobalt_params += '#COBALT --proccount %d\n' % number_of_processes
+
+    # The Environments are added at the end because for now
+    # Cobalt isn't supporting spaces in the env variables...
+    # Which mess up the whole script if they are at the begining of the list...
+    if jd.environment:
+        cobalt_params += '#COBALT --env %s\n' % \
+                ':'.join (["%s=%s" % (k,v.replace(':', '\\:').replace('=', '\\=')) # escape chars
+                           for k,v in jd.environment.iteritems()])
+
+    # Why do I need this?
+    # Andre on Dev 16 2016: 
+    # You don't, but it can be useful for some applications, 
+    # so this is supposed to be available in the job environment for inspection.
+    # This makes sense to be exported as an environment Variable
+    cobalt_params += '#COBALT --env SAGA_PPN=%d\n' % ppn
+
+    # may not need to escape all double quotes and dollarsigns, 
+    # since we don't do 'echo |' further down (like torque/pbspro)
     # only escape '$' in args and exe. not in the params
-    exec_n_args = workdir_directives + exec_n_args
+    # exec_n_args = exec_n_args.replace('$', '\\$')
+
+    # Set the MPI rank per node (mode).
+    #   mode --> c1, c2, c4, c8, c16, c32, c64
+    #   Mode is represented by the runjob's '--ranks-per-node' flag
+    exec_n_args = "%s --ranks-per-node %d --np %d --block $COBALT_PARTNAME --verbose=INFO : %s\n" % (run_job, processes_per_host, number_of_processes, exec_n_args)
     exec_n_args = exec_n_args.replace('$', '\\$')
 
-    pbscript = "\n#!/bin/bash \n%s%s" % (pbs_params, exec_n_args)
-
-    pbscript = pbscript.replace('"', '\\"')
-    return pbscript
+    # Need a new line before the shebang because linux is a bit of a pain when echoing it
+    # It will be removed later though...
+    cobaltscript = "\n#!/bin/bash \n%s\n%s" % (cobalt_params, exec_n_args)
+    cobaltscript = cobaltscript.replace('"', '\\"')
+    return cobaltscript
 
 
 # --------------------------------------------------------------------
@@ -326,9 +326,40 @@ _PTY_TIMEOUT = 2.0
 # --------------------------------------------------------------------
 # the adaptor name
 #
-_ADAPTOR_NAME          = "saga.adaptor.torquejob"
-_ADAPTOR_SCHEMAS       = ["torque", "torque+ssh", "torque+gsissh"]
-_ADAPTOR_OPTIONS       = []
+_ADAPTOR_NAME          = "saga.adaptor.cobaltjob"
+_ADAPTOR_SCHEMAS       = ["cobalt", "cobalt+ssh", "cobalt+gsissh"]
+_ADAPTOR_OPTIONS       = [
+    {
+    'category'         : 'saga.adaptor.cobaltjob',
+    'name'             : 'base_workdir',
+    'type'             : str,
+    'default'          : "$HOME/.saga/adaptors/cobaltjob/",
+    'documentation'    : '''The adaptor stores job state information on the
+                          filesystem on the target resource. This parameter
+                          specified what location should be used.''',
+    'env_variable'     : None
+    },
+    {
+    'category'         : 'saga.adaptor.cobaltjob',
+    'name'             : 'purge_on_start',
+    'type'             : bool,
+    'default'          : True,
+    'valid_options'    : [True, False],
+    'documentation'    : '''Purge temporary job information for all
+                          jobs which are older than a number of days.
+                          The number of days can be configured with <purge_older_than>.''',
+    'env_variable'     : None
+    },
+    {
+    'category'         : 'saga.adaptor.cobaltjob',
+    'name'             : 'purge_older_than',
+    'type'             : int,
+    'default'          : 30,
+    'documentation'    : '''When <purge_on_start> is enabled this specifies the number
+                            of days to consider a temporary file older enough to be deleted.''',
+    'env_variable'     : None
+    },
+]
 
 # --------------------------------------------------------------------
 # the adaptor capabilities & supported attributes
@@ -337,20 +368,19 @@ _ADAPTOR_CAPABILITIES = {
     "jdes_attributes":   [saga.job.NAME,
                           saga.job.EXECUTABLE,
                           saga.job.ARGUMENTS,
-                          saga.job.CANDIDATE_HOSTS,
                           saga.job.ENVIRONMENT,
                           saga.job.INPUT,
                           saga.job.OUTPUT,
                           saga.job.ERROR,
                           saga.job.QUEUE,
                           saga.job.PROJECT,
-                          saga.job.FILE_TRANSFER,
                           saga.job.WALL_TIME_LIMIT,
                           saga.job.WORKING_DIRECTORY,
-                          saga.job.WALL_TIME_LIMIT,
+                          saga.job.SPMD_VARIATION, # TODO: 'hot'-fix for BigJob
                           saga.job.PROCESSES_PER_HOST,
-                          saga.job.SPMD_VARIATION,
-                          saga.job.TOTAL_CPU_COUNT],
+                          saga.job.TOTAL_CPU_COUNT,
+                          saga.job.NUMBER_OF_PROCESSES,
+                          saga.job.JOB_CONTACT],
     "job_attributes":    [saga.job.EXIT_CODE,
                           saga.job.EXECUTION_HOSTS,
                           saga.job.CREATED,
@@ -371,32 +401,31 @@ _ADAPTOR_DOC = {
     "cfg_options":   _ADAPTOR_OPTIONS,
     "capabilities":  _ADAPTOR_CAPABILITIES,
     "description":  """
-The TORQUE adaptor allows to run and manage jobs on
-`TORQUE <http://www.adaptivecomputing.com/products/open-source/torque>`_
+The Cobalt adaptor allows to run and manage jobs on `Cobalt <http://trac.mcs.anl.gov/projects/cobalt>`_
 controlled HPC clusters.
 """,
-    "example": "examples/jobs/torquejob.py",
-    "schemas": {"torque":        "connect to a local cluster",
-                "torque+ssh":    "connect to a remote cluster via SSH",
-                "torque+gsissh": "connect to a remote cluster via GSISSH"}
+    "example": "examples/jobs/cobaltjob.py",
+    "schemas": {"cobalt":        "connect to a local cluster",
+                "cobalt+ssh":    "connect to a remote cluster via SSH",
+                "cobalt+gsissh": "connect to a remote cluster via GSISSH"}
 }
 
 # --------------------------------------------------------------------
 # the adaptor info is used to register the adaptor with SAGA
 #
 _ADAPTOR_INFO = {
-    "name"        :    _ADAPTOR_NAME,
+    "name"        : _ADAPTOR_NAME,
     "version"     : "v0.1",
     "schemas"     : _ADAPTOR_SCHEMAS,
-    "capabilities":  _ADAPTOR_CAPABILITIES,
+    "capabilities": _ADAPTOR_CAPABILITIES,
     "cpis": [
         {
         "type": "saga.job.Service",
-        "class": "TORQUEJobService"
+        "class": "CobaltJobService"
         },
         {
         "type": "saga.job.Job",
-        "class": "TORQUEJob"
+        "class": "CobaltJob"
         }
     ]
 }
@@ -419,6 +448,15 @@ class Adaptor (saga.adaptors.base.Base):
         self.id_re = re.compile('^\[(.*)\]-\[(.*?)\]$')
         self.opts  = self.get_config (_ADAPTOR_NAME)
 
+        # Adaptor Options
+        self.base_workdir = os.path.normpath(self.opts['base_workdir'].get_value ())
+        self.purge_on_start = self.opts['purge_on_start'].get_value()
+        self.purge_older_than = self.opts['purge_older_than'].get_value()
+
+        # dictionaries to keep track of certain Cobalt jobs data
+        self._script_file           = dict() # keep track of the cobalt script file
+        self._job_current_workdir   = dict() # keep track of the current working directory, for final status checking...
+
     # ----------------------------------------------------------------
     #
     def sanity_check(self):
@@ -439,8 +477,8 @@ class Adaptor (saga.adaptors.base.Base):
 
 
 ###############################################################################
-#
-class TORQUEJobService (saga.adaptors.cpi.job.Service):
+# CobaltJobService
+class CobaltJobService (saga.adaptors.cpi.job.Service):
     """ implements saga.adaptors.cpi.job.Service
     """
 
@@ -449,7 +487,7 @@ class TORQUEJobService (saga.adaptors.cpi.job.Service):
     def __init__(self, api, adaptor):
 
         self._mt  = None
-        _cpi_base = super(TORQUEJobService, self)
+        _cpi_base = super(CobaltJobService, self)
         _cpi_base.__init__(api, adaptor)
 
         self._adaptor = adaptor
@@ -470,6 +508,7 @@ class TORQUEJobService (saga.adaptors.cpi.job.Service):
             self.mt.join(10)  # don't block forever on join()
 
         self._logger.info("Job monitoring thread stopped.")
+
         self.finalize(True)
 
 
@@ -490,7 +529,7 @@ class TORQUEJobService (saga.adaptors.cpi.job.Service):
         """
         self.rm      = rm_url
         self.session = session
-        self.ppn     = None
+        self.ppn     = 16       # DEFAULT MIRA -- BLUE GENE / Q IS 16 
         self.is_cray = ""
         self.queue   = None
         self.shell   = None
@@ -510,34 +549,35 @@ class TORQUEJobService (saga.adaptors.cpi.job.Service):
             for key, val in parse_qs(rm_url.query).iteritems():
                 if key == 'queue':
                     self.queue = val[0]
-                elif key == 'craytype':
-                    self.is_cray = val[0]
-                elif key == 'gres':
-                    self.gres = val[0]
-
+                # Disableing 'ppn' since Blue Gene/Q only supports 16 PPN
+                # elif key == 'ppn':
+                #     self.ppn = int(val[0])
 
         # we need to extract the scheme for PTYShell. That's basically the
         # job.Service Url without the pbs+ part. We use the PTYShell to execute
         # pbs commands either locally or via gsissh or ssh.
-        if rm_scheme == "torque":
+        if rm_scheme == "cobalt":
             pty_url.scheme = "fork"
-        elif rm_scheme == "torque+ssh":
+        elif rm_scheme == "cobalt+ssh":
             pty_url.scheme = "ssh"
-        elif rm_scheme == "torque+gsissh":
+        elif rm_scheme == "cobalt+gsissh":
             pty_url.scheme = "gsissh"
 
-        # these are the commands that we need in order to interact with PBS.
+        # these are the commands that we need in order to interact with Cobalt.
         # the adaptor will try to find them during initialize(self) and bail
         # out in case they are note available.
-        self._commands = {'pbsnodes': None,
+        self._commands = {'nodelist': None,
+                          'partlist': None,
                           'qstat':    None,
                           'qsub':     None,
-                          'qdel':     None}
+                          'qdel':     None,
+                          'runjob':   None # For running scripts
+                          }
 
         self.shell = sups.PTYShell(pty_url, self.session)
 
-      # self.shell.set_initialize_hook(self.initialize)
-      # self.shell.set_finalize_hook(self.finalize)
+        # self.shell.set_initialize_hook(self.initialize)
+        # self.shell.set_finalize_hook(self.finalize)
 
         self.initialize()
         return self.get_api()
@@ -546,78 +586,43 @@ class TORQUEJobService (saga.adaptors.cpi.job.Service):
     # ----------------------------------------------------------------
     #
     def initialize(self):
-        # check if all required pbs tools are available
+
+        # Create the staging directory
+        ret, out, _ = self.shell.run_sync ("mkdir -p %s" % self._adaptor.base_workdir)
+        if  ret != 0 :
+            raise saga.NoSuccess ("Error creating staging directory. (%s): (%s)" % (ret, out))
+
+        # Purge temporary files
+        if self._adaptor.purge_on_start:
+            cmd = "find %s -type f -mtime +%d -print -delete | wc -l" % (
+                self._adaptor.base_workdir, 
+                self._adaptor.purge_older_than
+            )
+            ret, out, _ = self.shell.run_sync(cmd)
+            if ret == 0 and out != "0":
+                self._logger.info("Purged %s temporary files" % out)
+
+        # Check if all required cobalt tools are available
         for cmd in self._commands.keys():
             ret, out, _ = self.shell.run_sync("which %s " % cmd)
             if ret != 0:
-                message = "Error finding PBS tools: %s" % out
+                message = "Error finding Cobalt tools: %s" % out
                 log_error_and_raise(message, saga.NoSuccess, self._logger)
             else:
                 path = out.strip()  # strip removes newline
-                if cmd == 'qdel':  # qdel doesn't support --version!
-                    self._commands[cmd] = {"path":    path,
-                                           "version": "?"}
-                elif cmd == 'qsub':  # qsub doesn't always support --version!
-                    self._commands[cmd] = {"path":    path,
-                                           "version": "?"}
+                ret, out, _ = self.shell.run_sync("%s --version" % cmd)
+                if ret != 0:
+                    message = "Error finding Cobalt tools: %s" % out
+                    log_error_and_raise(message, saga.NoSuccess,
+                        self._logger)
                 else:
-                    ret, out, _ = self.shell.run_sync("%s --version" % cmd)
-                    if ret != 0:
-                        message = "Error finding PBS tools: %s" % out
-                        log_error_and_raise(message, saga.NoSuccess,
-                            self._logger)
-                    else:
-                        # version is reported as: "version: x.y.z"
-                        version = out#.strip().split()[1]
+                    # version is reported as: "version: x.y.z" #.strip().split()[1]
+                    version = out.strip().replace('\n', '')
 
-                        # add path and version to the command dictionary
-                        self._commands[cmd] = {"path":    path,
-                                               "version": version}
+                    # add path and version to the command dictionary
+                    self._commands[cmd] = {"path": path, "version": version}
+        self._logger.info("Found Cobalt tools: %s" % self._commands)
 
-        self._logger.info("Found PBS tools: %s" % self._commands)
-
-        #
-        # TODO: Get rid of this, as I dont think there is any justification that Cray's are special
-        #
-        # let's try to figure out if we're working on a Cray machine.
-        # naively, we assume that if we can find the 'aprun' command in the
-        # path that we're logged in to a Cray machine.
-        if self.is_cray == "":
-            ret, out, _ = self.shell.run_sync('which aprun')
-            if ret != 0:
-                self.is_cray = ""
-            else:
-                self._logger.info("Host '%s' seems to be a Cray machine." \
-                    % self.rm.host)
-                self.is_cray = "unknowncray"
-        else: 
-            self._logger.info("Assuming host is a Cray since 'craytype' is set to: %s" % self.is_cray)
-
-        ret, out, _ = self.shell.run_sync('unset GREP_OPTIONS; %s -a | grep -E "(np|pcpu)[[:blank:]]*=" ' % \
-                self._commands['pbsnodes']['path'])
-        if ret != 0:
-            message = "Error running pbsnodes: %s" % out
-            log_error_and_raise(message, saga.NoSuccess, self._logger)
-        else:
-            # this is black magic. we just assume that the highest occurrence
-            # of a specific np is the number of processors (cores) per compute
-            # node. this equals max "PPN" for job scripts
-            ppn_list = dict()
-            for line in out.split('\n'):
-                np = line.split(' = ')
-                if len(np) == 2:
-                    np_str = np[1].strip()
-                    if np_str == '<various>':
-                        continue
-                    else:
-                        np = int(np_str)
-                    if np in ppn_list:
-                        ppn_list[np] += 1
-                    else:
-                        ppn_list[np] = 1
-            self.ppn = max(ppn_list, key=ppn_list.get)
-            self._logger.debug("Found the following 'ppn' configurations: %s. "
-                "Using %s as default ppn."  % (ppn_list, self.ppn))
 
     # ----------------------------------------------------------------
     #
@@ -625,9 +630,12 @@ class TORQUEJobService (saga.adaptors.cpi.job.Service):
         """ runs a job via qsub
         """
 
+        # Defaults ...
+        cobalt_script_file      = None
+        job_current_workdir     = '$HOME'
+
         # get the job description
-        jd       = job_obj.get_description()
-        job_name = jd.name
+        jd = job_obj.get_description()
 
         # normalize working directory path
         if  jd.working_directory :
@@ -636,18 +644,19 @@ class TORQUEJobService (saga.adaptors.cpi.job.Service):
         # TODO: Why would one want this?
         if self.queue and jd.queue:
             self._logger.warning("Job service was instantiated explicitly with \
-'queue=%s', but job description tries to a different queue: '%s'. Using '%s'." %
+                'queue=%s', but job description tries to a different queue: '%s'. Using '%s'." %
                                 (self.queue, jd.queue, self.queue))
 
         try:
-            # create a PBS job script from SAGA job description
-            script = _torquescript_generator(url=self.rm, logger=self._logger,
-                                         jd=jd, ppn=self.ppn, gres=self.gres,
-                                         torque_version=self._commands['qstat']['version'],
-                                         is_cray=self.is_cray, queue=self.queue,
-                                         )
-
-            self._logger.info("Generated PBS script: %s" % script)
+            # create a Cobalt job script from SAGA job description
+            script = _cobaltscript_generator(url=self.rm, 
+                                            logger=self._logger, 
+                                            jd=jd, 
+                                            ppn=self.ppn, 
+                                            queue=self.queue, 
+                                            run_job=self._commands['runjob']['path']
+                                            )
+            self._logger.info("Generated Cobalt script: %s" % str(script))
         except Exception, ex:
             log_error_and_raise(str(ex), saga.BadParameter, self._logger)
 
@@ -657,16 +666,40 @@ class TORQUEJobService (saga.adaptors.cpi.job.Service):
         if jd.working_directory:
             self._logger.info("Creating working directory %s" % jd.working_directory)
             ret, out, _ = self.shell.run_sync("mkdir -p %s" % (jd.working_directory))
+            job_current_workdir = jd.working_directory # Keep track of the cwd, 
             if ret != 0:
                 # something went wrong
                 message = "Couldn't create working directory - %s" % (out)
                 log_error_and_raise(message, saga.NoSuccess, self._logger)
 
+
         # Now we want to execute the script. This process consists of two steps:
-        # (1) we create a temporary file with 'mktemp' and write the contents of 
-        #     the generated PBS script into it
-        # (2) we call 'qsub <tmpfile>' to submit the script to the queueing system
-        cmdline = """SCRIPTFILE=`mktemp -t SAGA-Python-TORQUEJobScript.XXXXXX` &&  echo "%s" > $SCRIPTFILE && %s $SCRIPTFILE && rm -f $SCRIPTFILE""" %  (script, self._commands['qsub']['path'])
+        # (1) we create a temporary file with 'mktemp' in the 'self._adaptor.base_workdir' 
+        #
+        # (2) write the contents of 
+        #     the generated Cobalt script into it, remove the first empty line
+        #     and make sure it is executable
+        #
+        # (3) we call 'qsub --mode script <tmpfile>' to submit the script to the queueing system
+        self._logger.info("Creating Cobalt script file at %s" % jd.working_directory)
+        ret, out, _ = self.shell.run_sync("""SCRIPTFILE=`mktemp -p %s -t SAGA-Python-PBSProJobScript.XXXXXX` && echo $SCRIPTFILE""" % (self._adaptor.base_workdir))
+        if ret != 0:
+            message = "Couldn't create Cobalt script file - %s" % (out)
+            log_error_and_raise(message, saga.NoSuccess, self._logger)
+        
+        # Save Script file for later...
+        # Cobalt *needs* the file to stick around, even after submission
+        # so, we will keep the file around and delete it *only* when
+        # the job is done.
+        cobalt_script_file = out.strip()
+
+        self._logger.info("Populating Cobalt script file at %s" % cobalt_script_file)
+        ret, out, _ = self.shell.run_sync("""SCRIPTFILE="%s" && echo "%s" > $SCRIPTFILE && echo "$(tail -n +2 $SCRIPTFILE)" > $SCRIPTFILE && chmod +x $SCRIPTFILE && echo $SCRIPTFILE""" % (cobalt_script_file, script))
+        if ret != 0:
+            message = "Couldn't create Cobalt script file - %s" % (out)
+            log_error_and_raise(message, saga.NoSuccess, self._logger)
+
+        cmdline = """%s --mode script %s""" %  (self._commands['qsub']['path'], cobalt_script_file)
         ret, out, _ = self.shell.run_sync(cmdline)
 
         if ret != 0:
@@ -685,18 +718,14 @@ class TORQUEJobService (saga.adaptors.cpi.job.Service):
                 self._logger.warning('qsub: %s' % ''.join(lines[:-2]))
 
             # we asssume job id is in the last line
-            #print cmdline
-            #print out
-
             job_id = "[%s]-[%s]" % (self.rm, lines[-1].strip().split('.')[0])
-            self._logger.info("Submitted PBS job with id: %s" % job_id)
+            self._logger.info("Submitted Cobalt job with id: %s" % job_id)
 
             state = saga.job.PENDING
 
             # populate job info dict
             self.jobs[job_id] = {'obj'         : job_obj,
                                  'job_id'      : job_id,
-                                 'name'        : job_name,
                                  'state'       : state,
                                  'exec_hosts'  : None,
                                  'returncode'  : None,
@@ -706,15 +735,28 @@ class TORQUEJobService (saga.adaptors.cpi.job.Service):
                                  'gone'        : False
                                  }
 
-            self._logger.info ("Assign job id  %s / %s / %s to watch list (%s)" \
-                            % (job_name, job_id, job_obj, self.jobs.keys()))
+            self._logger.info("assign job id  %s / %s / %s to watch list (%s)" 
+                % (None, job_id, job_obj, self.jobs.keys()))
 
             # set status to 'pending' and manually trigger callback
             job_obj._attributes_i_set('state', state, job_obj._UP, True)
 
+            # Since we now have the job_id, lets track the job's current workdir and script file
+            # We do this in the adaptor
+            self._adaptor._job_current_workdir[job_id]  = job_current_workdir
+            self._adaptor._script_file[job_id]          = cobalt_script_file
+
             # return the job id
             return job_id
 
+
+    # ----------------------------------------------------------------
+    #
+    def _retrieve_job(self, job_id):
+        """ see if we can get some info about a job that we don't
+            know anything about
+        """
+        pass
 
     # ----------------------------------------------------------------
     #
@@ -742,7 +784,7 @@ class TORQUEJobService (saga.adaptors.cpi.job.Service):
             job_info = {
                 'job_id':       job_id,
                 'state':        saga.job.UNKNOWN,
-                'name':         None,
+                'job_name':     None,
                 'exec_hosts':   None,
                 'returncode':   None,
                 'create_time':  None,
@@ -753,11 +795,12 @@ class TORQUEJobService (saga.adaptors.cpi.job.Service):
 
         rm, pid = self._adaptor.parse_id(job_id)
 
-        qstat_flag ='-f1'
-            
+        # run the Cobalt 'qstat' command to get some info about our job
+        qstat_flag ='--full --long'
         ret, out, _ = self.shell.run_sync("unset GREP_OPTIONS; %s %s %s | "
-                "grep -E -i '(job_state)|(Job_Name)|(exec_host)|(exit_status)|"
-                 "(ctime)|(start_time)|(stime)|(mtime)'"
+                "grep -E -i '(^ *JobName )|(^ *QueuedTime )|(^ *RunTime )|(^ *Nodes )|"
+                 "(^ *Procs )|(^ *State )|(^ *Location )|(^ *StartTime )|"
+                 "(^ *SubmitTime )|(^ *S )'"
                 % (self._commands['qstat']['path'], qstat_flag, pid))
 
         if ret != 0:
@@ -766,106 +809,119 @@ class TORQUEJobService (saga.adaptors.cpi.job.Service):
                 message = "Couldn't reconnect to job '%s': %s" % (job_id, out)
                 log_error_and_raise(message, saga.NoSuccess, self._logger)
 
-            if ("Unknown Job Id" in out):
-                # Let's see if the last known job state was running or pending. in
-                # that case, the job is gone now, which can either mean DONE,
-                # or FAILED. the only thing we can do is set it to 'DONE'
-                job_info['gone'] = True
-                # TODO: we can also set the end time?
-                self._logger.warning("Previously running job has disappeared. "
-                        "This probably means that the backend doesn't store "
-                        "information about finished jobs. Setting state to 'DONE'.")
-
-                if job_info['state'] in [saga.job.RUNNING, saga.job.PENDING]:
-                    job_info['state'] = saga.job.DONE
+            if out.strip() == '':
+                # Cobalt's 'qstat' command return's nothing
+                # When a job is finished but it exists with code '1' 
+                # Let's see the job's final state in the job's 'cobaltlog' file
+                # which can be found at: 'self._adaptor._job_current_workdir_cwd/pid.cobaltlog' 
+                # If file is found: get the final status of the job
+                # If file not found: let's assume it FAILED. 
+                
+                # Run a 'cat' command to the final info about our job
+                # Sample OUTPUT:
+                # ...
+                # Mon Jan 23 02:44:05 2017 +0000 (UTC) Info: task completed normally with an exit code of 126; initiating job cleanup and removal
+                
+                ret, out, _ = self.shell.run_sync("unset GREP_OPTIONS; cat %s/%s.cobaltlog | "
+                    "grep -P -i '^[A-Z][a-z]{2} [A-Z][a-z]{2} \d{2} \d{2}:\d{2}:\d{2} \d{4} \+\d{4} \([A-Za-z]+\) *Info: task completed'"
+                    % (self._adaptor._job_current_workdir[job_id], pid))
+                
+                if ret != 0:
+                    if reconnect:
+                        message = "Couldn't reconnect to job '%s': %s" % (job_id, out)
+                        log_error_and_raise(message, saga.NoSuccess, self._logger)
+                elif out.strip() == '':
+                    # Let's see if the last known job state was running or pending. in
+                    # that case, the job is gone now, which can either mean DONE,
+                    # or FAILED. the only thing we can do is set it to 'DONE'
+                    job_info['gone'] = True
+                    # TODO: we can also set the end time?
+                    self._logger.warning("Previously running job has disappeared. "
+                            "This probably means that the backend doesn't store "
+                            "information about finished jobs. Setting state to 'DONE'.")
+                    if job_info['state'] in [saga.job.RUNNING, saga.job.PENDING]:
+                        job_info['state'] = saga.job.DONE
+                    else:
+                        # TODO: This is an uneducated guess?
+                        job_info['state'] = saga.job.FAILED
                 else:
-                    # TODO: This is an uneducated guess?
-                    job_info['state'] = saga.job.FAILED
+                    try:
+                        # Found the cobaltlot file, let's grab the result...
+                        matches = re.search('^([A-Z][a-z]{2} [A-Z][a-z]{2} \d{2} \d{2}:\d{2}:\d{2} \d{4} \+\d{4} \([A-Za-z]+\)) *Info: task completed .+ an exit code of (\d+);', out)
+                        timestamp = matches.group(1).strip()
+                        exit_code = matches.group(2).strip()
+                    except Exception, ex:
+                        log_error_and_raise('Could not parse cobaltlog\'s job status' % (str(ex)), saga.NoSuccess, self._logger)
+                    
+                    # Current format: Mon Jan 23 02:44:05 2017 +0000 (UTC)
+                    # ASSUMPTION: Date is in UTC (as seen on the servers)
+                    # Will be parsed as UTC and output format: 
+                    # DDD mmm dd HH:MM:SS YYYY +0000 (UTC)
+                    # Wed Dec 21 15:51:34 2016 +0000 (UTC)
+                    end_time = datetime.datetime.strptime(timestamp, "%a %b %d %H:%M:%S %Y +0000 (UTC)")
+                    job_info['end_time'] = end_time.strftime("%a %b %d %H:%M:%S %Y +0000 (UTC)")
+                
+                    # Return code is on position '13'
+                    job_info['returncode'] = int(exit_code)
+                    
+                    # Final Job State given the exit code
+                    if job_info['returncode'] != 0:
+                        job_info['state'] = saga.job.FAILED
+                    else:
+                        job_info['state'] = saga.job.DONE
             else:
                 # something went wrong
                 message = "Error retrieving job info via 'qstat': %s" % out
                 log_error_and_raise(message, saga.NoSuccess, self._logger)
         else:
 
-            # The job seems to exist on the backend. let's process some data.
+            # The job seems to exist on the system. let's process some data.
 
             # TODO: make the parsing "contextual", in the sense that it takes
             #       the state into account.
 
             # parse the egrep result. this should look something like this:
-            #     job_state = C
-            #     exec_host = i72/0
-            #     exit_status = 0
+            #       QueuedTime        : 00:00:04
+            #       RunTime           : 00:00:39
+            #       Nodes             : 2
+            #       State             : running
+            #       Procs             : 3
+            #       Location          : CENTOS-04000-37331-512
+            #       StartTime         : Tue Nov 29 02:11:45 2016 +0000 (UTC)
+            #       SubmitTime        : Tue Nov 29 02:11:40 2016 +0000 (UTC)
+            #       S                 : R
             results = out.split('\n')
             for line in results:
-
-                if len(line.split('=')) == 2:
-                    key, val = line.split('=')
+                if len(line.split(':')) == 2:
+                    key, val = line.split(':')
                     key = key.strip()
                     val = val.strip()
 
                     # The ubiquitous job state
-                    if key in ['job_state']:
-                        job_state = val
-
-                    # The job name
-                    if key in ['job_name']:
-                        job_info['name'] = val
+                    if key in ['S']: # Cobalt's PBS-like state
+                        job_info['state'] = _cobalt_to_saga_jobstate(val)
 
                     # Hosts where the job ran
-                    elif key in ['exec_host']: # PBS Pro and TORQUE
-                        job_info['exec_hosts'] = val.split('+')  # format i73/7+i73/6+...
-
-                    # Exit code of the job
-                    elif key in ['exit_status']:
-                        job_info['returncode'] = int(val)
+                    elif key in ['Location']: # Cobalt's Node/Partition
+                        job_info['exec_hosts'] = val  # format CENTOS-04000-37331-512
 
                     # Time job got created in the queue
-                    elif key in ['ctime']: # PBS Pro and TORQUE
+                    elif key in ['SubmitTime']:
                         job_info['create_time'] = val
 
                     # Time job started to run
-                    elif key in ['start_time', # TORQUE
-                                 'stime'       # PBS Pro
-                                ]:
+                    elif key in ['StartTime']:
                         job_info['start_time'] = val
 
-                    # Time job ended.
-                    #
-                    # PBS Pro doesn't have an "end time" field.
-                    # It has an "resources_used.walltime" though,
-                    # which could be added up to the start time.
-                    # We will not do that arithmetic now though.
-                    #
-                    # Alternatively, we can use mtime, as the latest
-                    # modification time will generally also be the end time.
-                    #
-                    # TORQUE has an "comp_time" (completion? time) field,
-                    # that is generally the same as mtime at the finish.
-                    #
-                    # For the time being we will use mtime as end time for
-                    # both TORQUE and PBS Pro.
-                    #
-                    if key in ['mtime']: # PBS Pro and TORQUE
-                        job_info['end_time'] = val
+                    # Job name
+                    elif key in ['JobName']:
+                        job_info['job_name'] = val
 
-            # TORQUE doesn't allow us to distinguish DONE/FAILED on final state alone,
-            # we need to consider the exit_status.
-            # TODO: move this logic into _torque_to_saga_jobstate in a future life
-            if job_state == 'C': # "Job is completed after having run."
-                if job_info['returncode'] == 0:
-                    job_info['state'] = saga.job.DONE
-                else:
-                    job_info['state'] = saga.job.FAILED
-            else:
-                job_info['state'] = _torque_to_saga_jobstate(job_state)
 
         # return the updated job info
         return job_info
 
     def _parse_qstat(self, haystack, job_info):
-
-
         # return the new job info dict
         return job_info
 
@@ -1028,8 +1084,9 @@ class TORQUEJobService (saga.adaptors.cpi.job.Service):
         """
         ids = []
 
-        ret, out, _ = self.shell.run_sync("unset GREP_OPTIONS; %s | grep `whoami`" %
-                                          self._commands['qstat']['path'])
+        ret, out, _ = self.shell.run_sync("unset GREP_OPTIONS; %s "
+            "--header=JobID:JobName:User:Walltime:RunTime:Nodes:State:short_state:Location:Queue "
+            "| grep `whoami`" % self._commands['qstat']['path'])
 
         if ret != 0 and len(out) > 0:
             message = "failed to list jobs via 'qstat': %s" % out
@@ -1039,60 +1096,60 @@ class TORQUEJobService (saga.adaptors.cpi.job.Service):
             pass
         else:
             for line in out.split("\n"):
-                # output looks like this:
-                # 112059.svc.uc.futuregrid testjob oweidner 0 Q batch
-                # 112061.svc.uc.futuregrid testjob oweidner 0 Q batch
+                # output looks like this: 
+                # (NOT INLCUDING THE FIRST LINE - THAT IS FOR REFERENCE ONLY)
+                #
+                # JobID  JobName  User     Walltime  RunTime   Nodes  State      S  Location                Queue
+                # 32     hello    vagrant  00:50:00  00:00:00  2      starting   R  CENTOS-04400-37731-512  default  
+                # 33     hello    vagrant  00:50:00  00:00:11  2      running    R  CENTOS-04440-37771-512  default  
+                # 35     hello    vagrant  00:50:00  N/A       4      queued     Q  None                    default  
+                # 36     hello    vagrant  00:50:00  N/A       2      queued     Q  None                    default  
+                # 37     hello    vagrant  00:50:00  00:00:22  2      running    R  CENTOS-04040-37371-512  default  
+                # 38     hello    vagrant  00:50:00  N/A       2      queued     Q  None                    default  
+                # 40     hello    vagrant  00:50:00  N/A       2      user_hold  H  None                    default 
+                # 41     hello    vagrant  00:50:00  N/A       1      queued     Q  None                    default  
                 if len(line.split()) > 1:
-                    job_id = "[%s]-[%s]" % (self.rm, line.split()[0].split('.')[0])
+                    job_id = "[%s]-[%s]" % (self.rm, line.split()[0].strip())
                     ids.append(str(job_id))
-
         return ids
 
 
     # ----------------------------------------------------------------
     #
     def container_run (self, jobs) :
-
         self._logger.debug ("container run: %s"  %  str(jobs))
-
         # TODO: this is not optimized yet
         for job in jobs:
             job.run ()
-   
-   
+    
+    
     # ----------------------------------------------------------------
     #
     def container_wait (self, jobs, mode, timeout) :
-
         self._logger.debug ("container wait: %s"  %  str(jobs))
-
         # TODO: this is not optimized yet
         for job in jobs:
             job.wait ()
-   
-   
+    
+    
     # ----------------------------------------------------------------
     #
     def container_cancel (self, jobs) :
-
-        self._logger.debug ("container cancel: %s"  %  str(jobs))
-
         # TODO: this is not optimized yet
         for job in jobs:
-            job.cancel ()
-
+            job.cancel()
 
 
 ###############################################################################
 #
-class TORQUEJob (saga.adaptors.cpi.job.Job):
+class CobaltJob (saga.adaptors.cpi.job.Job):
     """ implements saga.adaptors.cpi.job.Job
     """
 
     def __init__(self, api, adaptor):
 
         # initialize parent class
-        _cpi_base = super(TORQUEJob, self)
+        _cpi_base = super(CobaltJob, self)
         _cpi_base.__init__(api, adaptor)
 
     def _get_impl(self):
@@ -1107,18 +1164,14 @@ class TORQUEJob (saga.adaptors.cpi.job.Job):
         self.jd = job_info["job_description"]
         self.js = job_info["job_service"]
 
-        self._logger.info('set job name 1: %s', self.jd.name)
-
         if job_info['reconnect'] is True:
             self._id      = job_info['reconnect_jobid']
-            self._name    = self.jd.name
+            self._name    = self.jd.get(saga.job.NAME)
             self._started = True
         else:
             self._id      = None
-            self._name    = self.jd.name
+            self._name    = self.jd.get(saga.job.NAME)
             self._started = False
-
-        self._logger.info('set job name 2: %s', self._name)
 
         return self.get_api()
 
@@ -1187,7 +1240,6 @@ class TORQUEJob (saga.adaptors.cpi.job.Job):
     @SYNC_CALL
     def get_name (self):
         """ Implements saga.adaptors.cpi.job.Job.get_name() """        
-        self._logger.info('get job name 1: %s', self._name)
         return self._name
 
     # ----------------------------------------------------------------
