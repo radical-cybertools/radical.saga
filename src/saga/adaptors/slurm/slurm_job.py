@@ -56,7 +56,7 @@ _ADAPTOR_CAPABILITIES  = {
                           saga.job.ENVIRONMENT,
                           saga.job.SPMD_VARIATION,
                           saga.job.TOTAL_CPU_COUNT,
-                          saga.job.TOTAL_GPU_COUNT],
+                          saga.job.TOTAL_GPU_COUNT,
                           saga.job.NUMBER_OF_PROCESSES,
                           saga.job.PROCESSES_PER_HOST,
                           saga.job.THREADS_PER_PROCESS,
@@ -75,8 +75,7 @@ _ADAPTOR_CAPABILITIES  = {
                           saga.job.CANDIDATE_HOSTS,
                           saga.job.QUEUE,
                           saga.job.PROJECT,
-                          saga.job.JOB_CONTACT,
-
+                          saga.job.JOB_CONTACT],
     "job_attributes"   : [saga.job.EXIT_CODE,
                           saga.job.EXECUTION_HOSTS,
                           saga.job.CREATED,
