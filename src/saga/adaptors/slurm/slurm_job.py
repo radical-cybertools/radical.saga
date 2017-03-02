@@ -54,13 +54,14 @@ _ADAPTOR_CAPABILITIES  = {
                           saga.job.POST_EXEC,
                           saga.job.ARGUMENTS,
                           saga.job.ENVIRONMENT,
-                          saga.job.SPMD_VARIATION, #implement later, somehow
+                          saga.job.SPMD_VARIATION,
                           saga.job.TOTAL_CPU_COUNT,
+                          saga.job.TOTAL_GPU_COUNT],
                           saga.job.NUMBER_OF_PROCESSES,
                           saga.job.PROCESSES_PER_HOST,
                           saga.job.THREADS_PER_PROCESS,
                           saga.job.WORKING_DIRECTORY,
-                          #saga.job.INTERACTIVE,
+                         #saga.job.INTERACTIVE,
                           saga.job.INPUT,
                           saga.job.OUTPUT,
                           saga.job.ERROR,
@@ -69,12 +70,12 @@ _ADAPTOR_CAPABILITIES  = {
                           saga.job.JOB_START_TIME,
                           saga.job.WALL_TIME_LIMIT,
                           saga.job.TOTAL_PHYSICAL_MEMORY,
-                          #saga.job.CPU_ARCHITECTURE,
-                          #saga.job.OPERATING_SYSTEM_TYPE,
+                         #saga.job.CPU_ARCHITECTURE,
+                         #saga.job.OPERATING_SYSTEM_TYPE,
                           saga.job.CANDIDATE_HOSTS,
                           saga.job.QUEUE,
                           saga.job.PROJECT,
-                          saga.job.JOB_CONTACT],
+                          saga.job.JOB_CONTACT,
 
     "job_attributes"   : [saga.job.EXIT_CODE,
                           saga.job.EXECUTION_HOSTS,
@@ -400,6 +401,7 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         job_name            = jd.as_dict().get(saga.job.NAME)
         spmd_variation      = jd.as_dict().get(saga.job.SPMD_VARIATION)
         total_cpu_count     = jd.as_dict().get(saga.job.TOTAL_CPU_COUNT)
+        total_gpu_count     = jd.as_dict().get(saga.job.TOTAL_GPU_COUNT)
         number_of_processes = jd.as_dict().get(saga.job.NUMBER_OF_PROCESSES)
         processes_per_host  = jd.as_dict().get(saga.job.PROCESSES_PER_HOST)
         output              = jd.as_dict().get(saga.job.OUTPUT, "radical.saga.default.out")
@@ -462,6 +464,11 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
 
         if processes_per_host:
             slurm_script += "#SBATCH --ntasks-per-node=%s\n" % processes_per_host
+
+        # handle requested GPUs
+        # TODO: right now we only support the `--gpus=[n]` variant
+        if total_gpu_count:
+            slurm_script += "#SBATCH --gpus=%s\n" % total_gpu_count
 
         # try to create the working directory (if defined)
         if cwd:
