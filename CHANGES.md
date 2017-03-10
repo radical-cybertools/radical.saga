@@ -5,6 +5,13 @@
   - For a list of open issues and known problems, see
     https://github.com/radical-cybertools/saga-python/issues?q=is%3Aissue+is%3Aopen+
 
+
+Version 0.45.1                                                        2017-02-28
+--------------------------------------------------------------------------------
+
+  - hotfix to support CandidateHosts for LoadLeveler
+
+
 Version 0.45                                                          2017-02-28
 --------------------------------------------------------------------------------
 
