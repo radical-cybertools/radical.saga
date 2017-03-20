@@ -142,7 +142,7 @@ def _torque_to_saga_jobstate(torquejs):
 
 # --------------------------------------------------------------------
 #
-def _torquescript_generator(url, logger, jd, ppn, gres, torque_version, is_cray=None, queue=None):
+def _torquescript_generator(url, logger, jd, ppn, gpn, gres, torque_version, is_cray=None, queue=None):
     """ generates a PBS script from a SAGA job description
     """
     pbs_params  = str()
@@ -153,8 +153,11 @@ def _torquescript_generator(url, logger, jd, ppn, gres, torque_version, is_cray=
         ppn = jd.processes_per_host
 
     exec_n_args += 'export SAGA_PPN=%d\n' % ppn
+    exec_n_args += 'export SAGA_GPN=%d\n' % gpn
+
     if jd.executable:
         exec_n_args += "%s " % (jd.executable)
+
     if jd.arguments:
         for arg in jd.arguments:
             exec_n_args += "%s " % (arg)
@@ -236,16 +239,34 @@ def _torquescript_generator(url, logger, jd, ppn, gres, torque_version, is_cray=
     if jd.job_contact:
         pbs_params += "#PBS -m abe \n"
 
-    # if total_cpu_count is not defined, we assume 1
+    # if total_cpu_count is not defined, we assume 0
     if not jd.total_cpu_count:
-        jd.total_cpu_count = 1
+        jd.total_cpu_count = 0
+
+    # if total_gpu_count is not defined, we assume 0
+    if not jd.total_gpu_count:
+        jd.total_gpu_count = 0
+
+    # make sure we want CPUs or GPUs
+    assert(jd.total_cpu_count + jd.total_gpu_count > 0)
 
     # Request enough nodes to cater for the number of cores requested
-    nnodes = jd.total_cpu_count / ppn
-    if jd.total_cpu_count % ppn > 0:
-        nnodes += 1
+    cpu_nnodes = 0
+    if jd.total_cpu_count:
+        cpu_nnodes = jd.total_cpu_count / ppn
+        if jd.total_cpu_count % ppn > 0:
+            cpu_nnodes += 1
 
-    # We use the ncpus value for systems that need to specify ncpus as multiple of PPN
+    # Request enough nodes to cater for the number of cores requested
+    gpu_nnodes = 0
+    if jd.total_gpu_count:
+        gpu_nnodes = jd.total_gpu_count / gpn
+        if jd.total_gpu_count % gpn > 0:
+            gpu_nnodes += 1
+
+    nnodes = max([cpu_nnodes, gpu_nnodes])
+
+    # use the ncpus for systems that need to specify ncpus as multiple of PPN
     ncpus = nnodes * ppn
 
     # Node properties are appended to the nodes argument in the resource_list.
@@ -350,7 +371,8 @@ _ADAPTOR_CAPABILITIES = {
                           saga.job.WALL_TIME_LIMIT,
                           saga.job.PROCESSES_PER_HOST,
                           saga.job.SPMD_VARIATION,
-                          saga.job.TOTAL_CPU_COUNT],
+                          saga.job.TOTAL_CPU_COUNT,
+                          saga.job.TOTAL_GPU_COUNT],
     "job_attributes":    [saga.job.EXIT_CODE,
                           saga.job.EXECUTION_HOSTS,
                           saga.job.CREATED,
@@ -491,6 +513,7 @@ class TORQUEJobService (saga.adaptors.cpi.job.Service):
         self.rm      = rm_url
         self.session = session
         self.ppn     = None
+        self.gpn     = 1   # gpus per node  # FIXME: inspect system
         self.is_cray = ""
         self.queue   = None
         self.shell   = None
@@ -642,7 +665,8 @@ class TORQUEJobService (saga.adaptors.cpi.job.Service):
         try:
             # create a PBS job script from SAGA job description
             script = _torquescript_generator(url=self.rm, logger=self._logger,
-                                         jd=jd, ppn=self.ppn, gres=self.gres,
+                                         jd=jd, ppn=self.ppn, gpn=self.gpn, 
+                                         gres=self.gres,
                                          torque_version=self._commands['qstat']['version'],
                                          is_cray=self.is_cray, queue=self.queue,
                                          )
