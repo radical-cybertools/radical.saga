@@ -415,95 +415,10 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         # check to see what's available in our job description
         # to override defaults
 
-        if isinstance(candidate_hosts, list):
-            candidate_hosts = ','.join(candidate_hosts)
-
-        if isinstance(job_contact, list):
-            job_contact = job_contact[0]
-
-
-        slurm_script = "#!/bin/sh\n\n"
-
-        if job_name:
-            slurm_script += '#SBATCH -J "%s"\n' % job_name
-
-        if spmd_variation:
-            pass # TODO
-
-        #### HANDLE NUMBER OF CORES
-        # make sure we have something for total_cpu_count
-        if not total_cpu_count:
-            self._logger.warning("total_cpu_count not specified in submitted "
-                                 "SLURM job description -- defaulting to 1!")
-            total_cpu_count = 1
-
-        # make sure we have something for number_of_processes
-        if not number_of_processes:
-            self._logger.debug("number_of_processes not specified in submitted "
-                                 "SLURM job description -- defaulting to 1 per total_cpu_count! (%s)" % total_cpu_count)
-            number_of_processes = total_cpu_count
-
-        # make sure we aren't given more processes than CPUs
-        if number_of_processes > total_cpu_count:
-            log_error_and_raise("More processes (%s) requested than total number of CPUs! (%s)" \
-                            % (number_of_processes, total_cpu_count), saga.NoSuccess, self._logger)
-
-        # make sure we aren't doing funky math
-        if total_cpu_count % number_of_processes != 0:
-            log_error_and_raise ("total_cpu_count (%s) must be evenly " \
-                                 "divisible by number_of_processes (%s)" \
-                              % (total_cpu_count, number_of_processes),
-                                 saga.NoSuccess, self._logger)
-
-        slurm_script += "#SBATCH --ntasks=%s\n" % (number_of_processes)
-
-        if total_cpu_count != number_of_processes:
-            slurm_script += "#SBATCH --cpus-per-task=%s\n" % (total_cpu_count / number_of_processes)
-
-        if processes_per_host:
-            slurm_script += "#SBATCH --ntasks-per-node=%s\n" % processes_per_host
-
         # try to create the working directory (if defined)
+        # NOTE: this assumes a shared filesystem between login node and
+        #       comnpute nodes.
         if cwd:
-            slurm_script += "#SBATCH --workdir %s\n" % cwd
-
-        if output:
-            slurm_script += "#SBATCH --output %s\n" % output
-
-        if error:
-            slurm_script += "#SBATCH --error %s\n" % error
-
-        if wall_time_limit:
-            hours   = wall_time_limit / 60
-            minutes = wall_time_limit % 60
-            slurm_script += "#SBATCH --time %02d:%02d:00\n" % (hours, minutes)
-
-        if queue:
-            slurm_script += "#SBATCH --partition %s\n" % queue
-
-        if project:
-            if not ':' in project:
-                account = project
-            else:
-                account, reservation = project.split(':')
-                slurm_script += "#SBATCH --reservation %s\n" % reservation
-
-            slurm_script += "#SBATCH --account %s\n" % account
-
-        if job_memory:
-            slurm_script += "#SBATCH --mem=%s\n" % job_memory
-
-        if candidate_hosts:
-            slurm_script += "#SBATCH --nodelist=%s\n" % candidate_hosts
-
-        if job_contact:
-            slurm_script += "#SBATCH --mail-user=%s\n" % job_contact
-
-
-        if cwd:
-             # try to create the working directory (if defined)
-             # WRANING: this assumes a shared filesystem between login node and
-             #           comnpute nodes.
              self._logger.info("Creating working directory %s" % cwd)
              ret, out, _ = self.shell.run_sync("mkdir -p %s"   % cwd)
              if ret:
@@ -512,9 +427,56 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
                  log_error_and_raise(message, saga.NoSuccess, self._logger)
 
 
-        # add our own script elements
-        slurm_script += '\n'
+        if isinstance(candidate_hosts, list):
+            candidate_hosts = ','.join(candidate_hosts)
 
+        if isinstance(job_contact, list):
+            job_contact = job_contact[0]
+
+        if project and ':' in project:
+            account, reservation = project.split()
+        else:
+            account, reservation = project, None
+
+        slurm_script = "#!/bin/sh\n\n"
+
+        # make sure we have something for total_cpu_count
+        if not total_cpu_count:
+            total_cpu_count = 1
+
+        # make sure we have something for number_of_processes
+        if not number_of_processes:
+            number_of_processes = total_cpu_count
+
+        if spmd_variation:
+            if spmd_variation.lower() not in 'mpi':
+                raise saga.BadParameter("Slurm cannot handle spmd variation '%s'" % spmd_variation)
+            mpi_cmd = 'mpirun -n %d ' % number_of_processes
+
+        else:
+            # we start N independent processes
+            mpi_cmd = ''
+            slurm_script += "# SBATCH --ntasks=%s\n" % (number_of_processes)
+
+            if total_cpu_count and number_of_processes:
+                slurm_script += "#SBATCH --cpus-per-task=%s\n" \
+                              % (int(total_cpu_count / number_of_processes))
+
+            if processes_per_host:
+                slurm_script += "#SBATCH --ntasks-per-node=%s\n" % processes_per_host
+
+        if cwd:             slurm_script += "#SBATCH --workdir %s\n"     % cwd 
+        if output:          slurm_script += "#SBATCH --output %s\n"      % output 
+        if error:           slurm_script += "#SBATCH --error %s\n"       % error 
+        if queue:           slurm_script += "#SBATCH --partition %s\n"   % queue
+        if job_name:        slurm_script += '#SBATCH -J "%s"\n'          % job_name
+        if job_memory:      slurm_script += "#SBATCH --mem=%s\n"         % job_memory 
+        if candidate_hosts: slurm_script += "#SBATCH --nodelist=%s\n"    % candidate_hosts 
+        if job_contact:     slurm_script += "#SBATCH --mail-user=%s\n"   % job_contact
+        if account:         slurm_script += "#SBATCH --account %s\n"     % account
+        if reservation:     slurm_script += "#SBATCH --reservation %s\n" % reservation
+        if wall_time_limit: slurm_script += "#SBATCH --time %02d:%02d:00\n" \
+                                          % (wall_time_limit/60,wall_time_limit%60)
         if env:
             slurm_script += "\n## ENVIRONMENT\n"
             for key,val in env.iteritems():
@@ -526,7 +488,7 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
 
         # create our commandline
         slurm_script += "\n## EXEC\n"
-        slurm_script += '%s %s' % (exe, ' '.join(args))
+        slurm_script += '%s%s %s' % (mpi_cmd, exe, ' '.join(args))
         slurm_script += '\n'
 
         if post :
