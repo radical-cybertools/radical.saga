@@ -553,9 +553,10 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
             retries -= 1
 
             qres = self.__kvcmd_results('qacct', "-j %s | grep -E '%s'" % (
-                                            sge_job_id, "hostname|qsub_time|start_time|end_time|exit_status|failed"))
+                                            sge_job_id, "jobname|hostname|qsub_time|start_time|end_time|exit_status|failed"))
 
             if qres is not None: # ok, extract job info from qres
+                # jobname      test
                 # hostname     sge
                 # qsub_time    Mon Jun 24 17:24:43 2013
                 # start_time   Mon Jun 24 17:24:50 2013
@@ -564,6 +565,7 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
                 # exit_status  0
                 job_info = dict(
                     state=saga.job.DONE if qres.get("failed") == "0" else saga.job.FAILED,
+                    name=qres.get("jobname"),
                     exec_hosts=qres.get("hostname"),
                     returncode=int(qres.get("exit_status", -1)),
                     create_time=qres.get("qsub_time"),
@@ -620,6 +622,7 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
 
         job_info = dict(
                     state=state,
+                    name=qres.get("jobname"),
                     exec_hosts=qres.get("hostname"),
                     returncode=int(qres.get("exit_status", -1)),
                     create_time=qres.get("qsub_time"),
@@ -744,6 +747,7 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
             'mkdir -p %s' % self.temp_path,
             'for sig in SIGHUP SIGINT SIGQUIT SIGTERM SIGUSR1 SIGUSR2; do trap "aborted $sig" $sig; done',
             'echo "hostname: $HOSTNAME" >%s' % job_info_path,
+            'echo "jobname: %s" >>%s' % (jd.name, job_info_path),
             'echo "qsub_time: %s" >>%s' % (datetime.now().strftime("%a %b %d %H:%M:%S %Y"), job_info_path),
             'echo "start_time: $(LC_ALL=en_US.utf8 date \'+%%a %%b %%d %%H:%%M:%%S %%Y\')" >>%s' % job_info_path
         ]
@@ -845,6 +849,7 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
         # add job to internal list of known jobs.
         self.jobs[job_id] = {
             'state':        saga.job.PENDING,
+            'name':         jd.name,
             'exec_hosts':   None,
             'returncode':   None,
             'create_time':  None,
@@ -905,7 +910,7 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
                 # self.__shell_run("%s %s" % (self._commands['qdel']['path'], pid))
 
             if job_info is None: # use qstat -j pid
-                qres = self.__kvcmd_results('qstat', "-j %s | grep -E 'submission_time|sge_o_host'" % pid,
+                qres = self.__kvcmd_results('qstat', "-j %s | grep -E 'job_name|submission_time|sge_o_host'" % pid,
                                             key_suffix=":")
 
                 if qres is not None: # when qstat fails it will fall back to qacct
@@ -914,6 +919,7 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
                     # sge_o_host:                 sge
                     job_info = dict(
                         state=self.__sge_to_saga_jobstate(state),
+                        name=qres.get("job_name"),
                         exec_hosts=exec_host or qres.get("sge_o_host"),
                         returncode=None, # it can not be None because it will be casted to int()
                         create_time=qres.get("submission_time"),
@@ -936,7 +942,7 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
             log_error_and_raise(message, saga.NoSuccess, self._logger)
 
         self._logger.debug("job_info(%s)=[%s]" % (pid, ", ".join(["%s=%s" % (k, str(job_info[k])) for k in [
-                "state", "returncode", "exec_hosts", "create_time", "start_time", "end_time", "gone"]])))
+                "name", "state", "returncode", "exec_hosts", "create_time", "start_time", "end_time", "gone"]])))
 
         return job_info
 
@@ -948,7 +954,7 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
 
         # if we don't have the job in our dictionary, we don't want it
         if job_id not in self.jobs:
-            message = "Unkown job ID: %s. Can't update state." % job_id
+            message = "Unknown job ID: %s. Can't update state." % job_id
             log_error_and_raise(message, saga.NoSuccess, self._logger)
 
         # prev. info contains the info collect when _job_get_info
@@ -1228,11 +1234,11 @@ class SGEJob (saga.adaptors.cpi.job.Job):
 
         if job_info['reconnect'] is True:
             self._id      = job_info['reconnect_jobid']
-            self._name    = self.jd.get(saga.job.NAME)
+            self._name    = self.jd.name
             self._started = True
         else:
             self._id      = None
-            self._name    = self.jd.get(saga.job.NAME)
+            self._name    = self.jd.name
             self._started = False
 
         return self.get_api()
@@ -1247,7 +1253,7 @@ class SGEJob (saga.adaptors.cpi.job.Job):
     #
     @SYNC_CALL
     def get_state(self):
-        """ mplements saga.adaptors.cpi.job.Job.get_state()
+        """ implements saga.adaptors.cpi.job.Job.get_state()
         """
         if self._started is False:
             # jobs that are not started are always in 'NEW' state
@@ -1308,7 +1314,7 @@ class SGEJob (saga.adaptors.cpi.job.Job):
     #
     @SYNC_CALL
     def get_name (self):
-        """ Implements saga.adaptors.cpi.job.Job.get_name() """        
+        """ Implements saga.adaptors.cpi.job.Job.get_name() """
         return self._name
 
     # ----------------------------------------------------------------
