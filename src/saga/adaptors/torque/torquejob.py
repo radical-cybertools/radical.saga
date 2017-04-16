@@ -118,22 +118,48 @@ def log_error_and_raise(message, exception, logger):
 
 # --------------------------------------------------------------------
 #
-def _torque_to_saga_jobstate(torquejs):
+def _torque_to_saga_jobstate(job_status, exit_status):
     """ translates a torque one-letter state to saga
     """
-    if torquejs == 'H': #  "Job is held."
+    # TORQUE doesn't allow us to distinguish DONE/FAILED on final state alone,
+    # we need to consider the exit_status.
+    #define JOB_EXEC_OK              0   /* job exec successful */
+    #define JOB_EXEC_FAIL1          -1   /* job exec failed, before files, no retry */
+    #define JOB_EXEC_FAIL2          -2   /* job exec failed, after files, no retry  */
+    #define JOB_EXEC_RETRY          -3   /* job execution failed, do retry    */
+    #define JOB_EXEC_INITABT        -4   /* job aborted on MOM initialization */
+    #define JOB_EXEC_INITRST        -5   /* job aborted on MOM init, checkpoint, no migrate */
+    #define JOB_EXEC_INITRMG        -6   /* job aborted on MOM init, checkpoint, ok migrate */
+    #define JOB_EXEC_BADRESRT       -7   /* job restart failed */
+    #define JOB_EXEC_CMDFAIL        -8   /* exec() of user command failed */
+    #define JOB_EXEC_STDOUTFAIL     -9   /* could not create/open stdout stderr files */
+    #define JOB_EXEC_OVERLIMIT_MEM  -10  /* job exceeded a memory limit */
+    #define JOB_EXEC_OVERLIMIT_WT   -11  /* job exceeded a walltime limit */
+    #define JOB_EXEC_OVERLIMIT_CPUT -12  /* job exceeded a cpu time limit */
+    # exit_status=271 : walltime
+    # exit_status=265 :
+    if job_status == 'C' and exit_status is not None: # "Job is completed after having run."
+        if exit_status < 0:
+            return saga.job.FAILED
+        elif exit_status == 0:
+            return saga.job.DONE
+        elif exit_status > 0 and exit_status <= 127:
+            return saga.job.FAILED
+        elif exit_status >= 128:
+            return saga.job.DONE
+    elif job_status == 'H': #  "Job is held."
         return saga.job.PENDING
-    elif torquejs == 'Q': # "Job is queued(, eligible to run or routed.)
+    elif job_status == 'Q': # "Job is queued(, eligible to run or routed.)
         return saga.job.PENDING
-    elif torquejs == 'S': # "Job is suspended."
+    elif job_status == 'S': # "Job is suspended."
         return saga.job.PENDING
-    elif torquejs == 'W': # "Job is waiting for its execution time to be reached."
+    elif job_status == 'W': # "Job is waiting for its execution time to be reached."
         return saga.job.PENDING
-    elif torquejs == 'R': # "Job is running."
+    elif job_status == 'R': # "Job is running."
         return saga.job.RUNNING
-    elif torquejs == 'E': # "Job is exiting after having run"
+    elif job_status == 'E': # "Job is exiting after having run"
         return saga.job.RUNNING
-    elif torquejs == 'T': # "Job is being moved to new location."
+    elif job_status == 'T': # "Job is being moved to new location."
         # TODO: PENDING?
         return saga.job.RUNNING
     else:
@@ -796,6 +822,7 @@ class TORQUEJobService (saga.adaptors.cpi.job.Service):
             #     job_state = C
             #     exec_host = i72/0
             #     exit_status = 0
+            job_state = None
             results = out.split('\n')
             for line in results:
 
@@ -849,16 +876,8 @@ class TORQUEJobService (saga.adaptors.cpi.job.Service):
                     if key in ['mtime']: # PBS Pro and TORQUE
                         job_info['end_time'] = val
 
-            # TORQUE doesn't allow us to distinguish DONE/FAILED on final state alone,
-            # we need to consider the exit_status.
-            # TODO: move this logic into _torque_to_saga_jobstate in a future life
-            if job_state == 'C': # "Job is completed after having run."
-                if job_info['returncode'] == 0:
-                    job_info['state'] = saga.job.DONE
-                else:
-                    job_info['state'] = saga.job.FAILED
-            else:
-                job_info['state'] = _torque_to_saga_jobstate(job_state)
+            if job_state:
+                job_info['state'] = _torque_to_saga_jobstate(job_state, job_info.get('returncode'))
 
         # return the updated job info
         return job_info
