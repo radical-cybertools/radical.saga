@@ -641,7 +641,8 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
 
         # SGE parameters
 
-        sge_params = ["#$ -S /bin/bash"]
+        sge_params = ["$ -S /bin/bash"]
+        # sge_params = []
 
         if jd.name is not None:
             sge_params += ["#$ -N %s" % jd.name]
@@ -775,7 +776,7 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
         # only escape '$' in args and exe. not in the params
         script_body = "\n".join(script_body).replace('$', '\\$')
 
-        sgescript = "\n#!/bin/bash \n%s \n%s" % (sge_params, script_body)
+        sgescript = "#!/bin/bash\n%s\n%s\n" % (sge_params, script_body)
 
         return sgescript.replace('"', '\\"')
 
@@ -824,7 +825,7 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
         # (1) we create a temporary file with 'mktemp' and write the contents of 
         #     the generated PBS script into it
         # (2) we call 'qsub <tmpfile>' to submit the script to the queueing system
-        cmdline = """SCRIPTFILE=`mktemp -t SAGA-Python-SGEJobScript.XXXXXX` &&  echo "%s" > $SCRIPTFILE && %s -notify $SCRIPTFILE && rm -f $SCRIPTFILE""" %  (script, self._commands['qsub']['path'])
+        cmdline = """SCRIPTFILE=`mktemp -t SAGA-Python-SGEJobScript.XXXXXX` && echo "%s" > $SCRIPTFILE && %s -b no -notify $SCRIPTFILE && rm -f $SCRIPTFILE""" %  (script, self._commands['qsub']['path'])
         #cmdline = 'echo "%s" | %s -notify' % (script, self._commands['qsub']['path'])
         ret, out, _ = self.shell.run_sync(cmdline)
 
