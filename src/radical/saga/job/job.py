@@ -6,6 +6,7 @@ __license__   = "MIT"
 
 """ SAGA job interface """
 
+import radical.utils            as ru
 import radical.utils.signatures as rus
 
 from .constants  import *
@@ -17,7 +18,6 @@ from .. import exceptions       as se
 from .. import async            as sasync
 from .. import task             as st
 from .. import base             as sb
-from .. import url              as surl
 
 from .  import description      as descr
 
@@ -733,7 +733,7 @@ class Job (sb.Base, st.Task, sasync.Async) :
     #
     @rus.takes       ('Job',
                       rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
-    @rus.returns     ((rus.nothing, surl.Url, st.Task))
+    @rus.returns     ((rus.nothing, ru.Url, st.Task))
     def _get_service_url (self, ttype=None) :
         return self._adaptor.get_service_url (ttype=ttype)
 

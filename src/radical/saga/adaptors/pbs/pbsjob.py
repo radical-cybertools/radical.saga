@@ -11,7 +11,8 @@ __license__   = "MIT"
 
 import threading
 
-import saga.url             as surl
+import radical.utils as ru
+
 import saga.utils.pty_shell as sups
 import saga.adaptors.base
 import saga.adaptors.cpi.job
@@ -512,7 +513,7 @@ class PBSJobService (saga.adaptors.cpi.job.Service):
         self.mt.start()
 
         rm_scheme = rm_url.scheme
-        pty_url   = surl.Url(rm_url)
+        pty_url   = ru.Url(rm_url)
 
         # this adaptor supports options that can be passed via the
         # 'query' component of the job service URL.

@@ -7,13 +7,13 @@ __license__   = "MIT"
 """ SAGA job service interface """
 
 
+import radical.utils            as ru
 import radical.utils.signatures as rus
 
 from .constants  import *
 from ..constants import SYNC, ASYNC, TASK
 from ..adaptors  import base    as sab
 
-from .. import url              as surl
 from .. import task             as st
 from .. import base             as sb
 from .. import async            as sasync
@@ -63,7 +63,7 @@ class Service (sb.Base, sasync.Async) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Service', 
-                  rus.optional ((basestring, surl.Url)), 
+                  rus.optional ((basestring, ru.Url)), 
                   rus.optional (ss.Session), 
                   rus.optional (sab.Base),
                   rus.optional (dict),
@@ -99,7 +99,7 @@ class Service (sb.Base, sasync.Async) :
 
         # param checks
         self.valid  = False
-        url         = surl.Url (rm)
+        url         = ru.Url (rm)
 
         if  not url.scheme :
             url.scheme = 'fork'
@@ -122,7 +122,7 @@ class Service (sb.Base, sasync.Async) :
     #
     @classmethod
     @rus.takes   ('Service', 
-                  rus.optional ((surl.Url, basestring)), 
+                  rus.optional ((ru.Url, basestring)), 
                   rus.optional (ss.Session), 
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns (st.Task)
@@ -142,7 +142,7 @@ class Service (sb.Base, sasync.Async) :
         if not session :
             session = ss.Session (default=True)
 
-        url     = surl.Url (rm)
+        url     = ru.Url (rm)
         scheme  = url.scheme.lower ()
 
         return cls (url, session, _ttype=ttype)._init_task
@@ -397,7 +397,7 @@ class Service (sb.Base, sasync.Async) :
     #
     @rus.takes   ('Service',
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
-    @rus.returns ((surl.Url, st.Task))
+    @rus.returns ((ru.Url, st.Task))
     def get_url  (self, ttype=None) :
         """ 
         get_url()

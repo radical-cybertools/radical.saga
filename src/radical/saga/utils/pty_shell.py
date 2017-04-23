@@ -10,16 +10,15 @@ import sys
 import errno
 import tempfile
 
-import radical.utils                as ru
+import radical.utils as ru
 
 from  .  import misc                       as sumisc
 from  .  import pty_shell_factory          as supsf
 from  .  import pty_process                as supp
-from  .. import url                        as surl
 from  .. import session                    as ss
 from  .. import filesystem                 as sfs
 
-from  .  import pty_exceptions              as ptye
+from  .  import pty_exceptions             as ptye
 
 from  ..exceptions import *
 

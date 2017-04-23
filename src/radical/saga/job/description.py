@@ -6,7 +6,7 @@ __license__   = "MIT"
 
 """ SAGA job description interface """
 
-iright radical.utils.signatures   as rus
+import radical.utils.signatures   as rus
 
 from ..         import attributes as sa
 from .constants import *
@@ -57,8 +57,8 @@ class Description (sa.Attributes) :
         self._attributes_register  (PROJECT              , None, sa.STRING, sa.SCALAR, sa.WRITEABLE)
         self._attributes_register  (JOB_CONTACT          , None, sa.STRING, sa.VECTOR, sa.WRITEABLE)
         self._attributes_register  (SPMD_VARIATION       , None, sa.ENUM,   sa.SCALAR, sa.WRITEABLE)
-      ohright
-      klkkkibutes_set_enums (SPMD_VARIATION,      ['MPI', 'OpenMP', 'MPICH-G'])
+      
+        self._attributes_set_enums (SPMD_VARIATION,      ['MPI', 'OpenMP', 'MPICH-G'])
 
         self._env_is_list = False
 

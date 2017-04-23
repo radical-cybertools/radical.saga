@@ -4,6 +4,7 @@ __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
 
+import radical.utils              as ru
 import radical.utils.signatures   as rus
 
 from .constants  import *
@@ -14,7 +15,6 @@ from ..namespace import directory as nsdir
 from .. import attributes         as sa
 from .. import session            as ss
 from .. import task               as st
-from .. import url                as surl
 
 # ------------------------------------------------------------------------------
 #
@@ -23,7 +23,7 @@ class LogicalDirectory (nsdir.Directory, sa.Attributes) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('LogicalDirectory', 
-                  rus.optional ((surl.Url, basestring)), 
+                  rus.optional ((ru.Url, basestring)), 
                   rus.optional (int, rus.nothing), 
                   rus.optional (ss.Session),
                   rus.optional (sab.Base), 
@@ -45,7 +45,7 @@ class LogicalDirectory (nsdir.Directory, sa.Attributes) :
 
         # param checks
         if not flags : flags = 0
-        url = surl.Url (url)
+        url = ru.Url (url)
 
         self._nsdirec = super  (LogicalDirectory, self)
         self._nsdirec.__init__ (url, flags, session, 
@@ -56,7 +56,7 @@ class LogicalDirectory (nsdir.Directory, sa.Attributes) :
     #
     @classmethod
     @rus.takes   ('LogicalDirectory', 
-                  rus.one_of (surl.Url, basestring), 
+                  rus.one_of (ru.Url, basestring), 
                   rus.optional (int, rus.nothing), 
                   rus.optional (ss.Session),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
@@ -76,7 +76,7 @@ class LogicalDirectory (nsdir.Directory, sa.Attributes) :
 
 
     @rus.takes   ('LogicalDirectory', 
-                  rus.one_of (surl.Url, basestring), 
+                  rus.one_of (ru.Url, basestring), 
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((bool, st.Task))
     def is_file (self, tgt=None, ttype=None) :
@@ -92,7 +92,7 @@ class LogicalDirectory (nsdir.Directory, sa.Attributes) :
 
 
     @rus.takes   ('LogicalDirectory', 
-                  rus.one_of (surl.Url, basestring), 
+                  rus.one_of (ru.Url, basestring), 
                   rus.optional (int, rus.nothing),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns (('LogicalFile', st.Task))
@@ -106,12 +106,12 @@ class LogicalDirectory (nsdir.Directory, sa.Attributes) :
         ret:      saga.namespace.Entry / saga.Task
         '''
         if not flags : flags = 0
-        tgt_url = surl.Url (tgt)
+        tgt_url = ru.Url (tgt)
         return self._adaptor.open (tgt_url, flags, ttype=ttype)
 
 
     @rus.takes   ('LogicalDirectory', 
-                  rus.one_of (surl.Url, basestring), 
+                  rus.one_of (ru.Url, basestring), 
                   rus.optional (int, rus.nothing),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns (('LogicalDirectory', st.Task))
@@ -136,7 +136,7 @@ class LogicalDirectory (nsdir.Directory, sa.Attributes) :
                data = dir.open_dir ('data/', saga.namespace.Create)
         '''
         if not flags : flags = 0
-        tgt_url = surl.Url (tgt)
+        tgt_url = ru.Url (tgt)
         return self._adaptor.open_dir (tgt_url, flags, ttype=ttype)
 
 
@@ -147,7 +147,7 @@ class LogicalDirectory (nsdir.Directory, sa.Attributes) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('LogicalDirectory', 
-                  rus.one_of (surl.Url, basestring),
+                  rus.one_of (ru.Url, basestring),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((int, st.Task))
     def get_size (self, tgt, ttype=None) :
@@ -169,7 +169,7 @@ class LogicalDirectory (nsdir.Directory, sa.Attributes) :
                print lf.get_size ('data.dat')
 
         '''
-        tgt_url = surl.Url (tgt)
+        tgt_url = ru.Url (tgt)
         return self._adaptor.get_size (tgt_url, ttype=ttype)
 
   
@@ -178,7 +178,7 @@ class LogicalDirectory (nsdir.Directory, sa.Attributes) :
                   rus.optional (basestring),
                   rus.optional (int, rus.nothing),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
-    @rus.returns ((rus.list_of (surl.Url), st.Task))
+    @rus.returns ((rus.list_of (ru.Url), st.Task))
     def find (self, name_pattern, attr_pattern=None, flags=RECURSIVE, ttype=None) :
         '''
         find(name_pattern, attr_pattern=None, flags=RECURSIVE)

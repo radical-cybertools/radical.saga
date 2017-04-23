@@ -4,6 +4,7 @@ __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
 
+import radical.utils               as ru
 import radical.utils.signatures    as rus
 
 from .constants  import *
@@ -17,7 +18,6 @@ from .. import session             as ss
 from .. import exceptions          as se
 from .. import attributes          as sa
 from .. import constants           as sc
-from .. import url                 as surl
 
 from .  import description         as descr
 from .  import resource            as resrc
@@ -41,7 +41,7 @@ class Manager (sb.Base, async.Async) :
     # --------------------------------------------------------------------------
     # 
     @rus.takes   ('Manager', 
-                  rus.optional (basestring, surl.Url), 
+                  rus.optional (basestring, ru.Url), 
                   rus.optional (ss.Session),
                   rus.optional (sab.Base), 
                   rus.optional (dict), 
@@ -59,7 +59,7 @@ class Manager (sb.Base, async.Async) :
         """
 
         # param checks
-        _url   = surl.Url(url)
+        _url   = ru.Url(url)
         scheme = _url.scheme.lower()
 
         if not session :
@@ -74,7 +74,7 @@ class Manager (sb.Base, async.Async) :
     #
     @classmethod
     @rus.takes   ('Manager', 
-                  rus.optional ((surl.Url, basestring)), 
+                  rus.optional ((ru.Url, basestring)), 
                   rus.optional (ss.Session),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns (st.Task)
@@ -214,7 +214,7 @@ class Manager (sb.Base, async.Async) :
     # --------------------------------------------------------------------------
     # 
     @rus.takes   ('Manager', 
-                  (basestring, surl.Url, descr.Description),
+                  (basestring, ru.Url, descr.Description),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((resrc.Resource, st.Task))
     def acquire  (self, spec, ttype=None) :
@@ -235,7 +235,7 @@ class Manager (sb.Base, async.Async) :
         If the `spec` parameter is 
         """
 
-        if  isinstance (spec, surl.Url) or \
+        if  isinstance (spec, ru.Url) or \
             isinstance (spec, basestring)  :
 
             return self._adaptor.acquire_by_id(spec, ttype=ttype)

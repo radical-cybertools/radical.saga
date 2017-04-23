@@ -4,6 +4,7 @@ __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
 
+import radical.utils               as ru
 import radical.utils.signatures    as rus
 
 from .constants  import *
@@ -17,7 +18,6 @@ from .. import session             as ss
 from .. import exceptions          as se
 from .. import attributes          as sa
 from .. import constants           as sc
-from .. import url                 as surl
 
 from .  import description         as descr
 
@@ -167,7 +167,7 @@ class Resource (sb.Base, sa.Attributes, async.Async) :
             # ID is formatted as '[manager-url]-[resource-id]'
             import parse
             res      = parse.parse('[{}]-[{}]', id)
-            url, rid = surl.Url(res[0]), res[1]
+            url, rid = ru.Url(res[0]), res[1]
             scheme   = url.scheme.lower ()
 
         if not session :

@@ -7,6 +7,8 @@ import traceback
 import stat
 import errno
 
+import radical.utils as ru
+
 import saga.url
 import saga.adaptors.base
 import saga.adaptors.cpi.filesystem
@@ -120,7 +122,7 @@ class Adaptor(saga.adaptors.base.Base):
 
     def srm_stat(self, shell, url):
 
-        # In case of SURL the fields are:
+        # In case of an URL the fields are:
         # file mode, number of links to the file, user id, group id, file size(bytes), locality, file name.
         # srm://srm.hep.fiu.edu:8443/srm/v2/server?SFN=/mnt/hadoop/osg/marksant/TESTFILE")
         # -rwxr-xr-x   1     1     2      19               ONLINE /mnt/hadoop/osg/marksant/TESTFILE
@@ -176,7 +178,7 @@ class Adaptor(saga.adaptors.base.Base):
     #
     def srm_transfer(self, shell, flags, src, dst):
 
-        if isinstance(src, saga.Url):
+        if isinstance(src, ru.Url):
             src = src.__str__()
         if isinstance(dst, saga.filesystem.file.File):
             dst = dst.get_url()
@@ -226,7 +228,7 @@ class Adaptor(saga.adaptors.base.Base):
             tgt = tgt.get_url()
         if isinstance(tgt, saga.filesystem.file.File):
             tgt = tgt.get_url()
-        if isinstance(tgt, saga.Url):
+        if isinstance(tgt, ru.Url):
             tgt = str(tgt)
 
         try:
@@ -312,7 +314,7 @@ class Adaptor(saga.adaptors.base.Base):
     # --------------------------------------------------------------------------
     #
     def surl2query(self, url, surl, tgt_in):
-        url = saga.Url(url)
+        url = ru.Url(url)
         if tgt_in:
             surl = os.path.join(surl, str(tgt_in))
         url.query = 'SFN=%s' % surl
@@ -344,7 +346,7 @@ class SRMDirectory (saga.adaptors.cpi.filesystem.Directory):
     @SYNC_CALL
     def init_instance(self, adaptor_state, url, flags, session):
 
-        self._url       = saga.Url(url) # deep copy
+        self._url       = ru.Url(url) # deep copy
         self._flags     = flags
         self._session   = session
 

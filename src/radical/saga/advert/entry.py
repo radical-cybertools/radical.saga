@@ -4,6 +4,7 @@ __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
 
+import radical.utils               as ru
 import radical.utils.signatures as rus
 
 from .constants  import *
@@ -13,7 +14,6 @@ from ..namespace import entry      as nsentry
 from .. import attributes          as sa
 from .. import session             as ss
 from .. import task                as st
-from .. import url                 as surl
 
 
 # ------------------------------------------------------------------------------
@@ -24,7 +24,7 @@ class Entry (nsentry.Entry, sa.Attributes) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Entry', 
-                  rus.optional ((surl.Url, basestring)), 
+                  rus.optional ((ru.Url, basestring)), 
                   rus.optional (int, rus.nothing),
                   rus.optional (ss.Session), 
                   rus.optional (sab.Base),
@@ -41,7 +41,7 @@ class Entry (nsentry.Entry, sa.Attributes) :
         '''
 
         # param checks
-        url = surl.Url (url)
+        url = ru.Url (url)
 
         self._nsentry = super  (Entry, self)
         self._nsentry.__init__ (url, flags, session, 
@@ -73,7 +73,7 @@ class Entry (nsentry.Entry, sa.Attributes) :
     #
     @classmethod
     @rus.takes   ('Entry', 
-                  rus.optional ((surl.Url, basestring)), 
+                  rus.optional ((ru.Url, basestring)), 
                   rus.optional (int, rus.nothing), 
                   rus.optional (ss.Session), 
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))

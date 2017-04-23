@@ -7,10 +7,9 @@ __license__   = "MIT"
 """ LSF job adaptor implementation
 """
 
-import radical.utils.which
-import radical.utils.threads as sut
+import radical.utils         as ru
+import radical.utils.threads as rut
 
-import saga.url as surl
 import saga.utils.pty_shell
 
 import saga.adaptors.base
@@ -41,7 +40,7 @@ class _job_state_monitor(threading.Thread):
 
         self.logger = job_service._logger
         self.js = job_service
-        self._stop = sut.Event()
+        self._stop = rut.Event()
 
         super(_job_state_monitor, self).__init__()
         self.setDaemon(True)
@@ -394,7 +393,7 @@ class LSFJobService (saga.adaptors.cpi.job.Service):
         self.mt.start()
 
         rm_scheme = rm_url.scheme
-        pty_url   = surl.Url (rm_url)
+        pty_url   = ru.Url (rm_url)
 
         # this adaptor supports options that can be passed via the
         # 'query' component of the job service URL.

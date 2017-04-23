@@ -9,9 +9,10 @@ __license__   = "MIT"
 #TODO: Throw errors if a user does not specify the MINIMUM number of
 #      attributes required for SLURM in a job description
 
+import radical.utils as ru
+
 import saga.utils.pty_shell
 
-import saga.url as surl
 import saga.adaptors.base
 import saga.adaptors.cpi.job
 
@@ -337,7 +338,7 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         if  self.rm.port:
             shell_url += ":" + str(self.rm.port)
 
-        shell_url = saga.url.Url(shell_url)
+        shell_url = ru.Url(shell_url)
 
         # establish shell connection
         self._logger.debug("Opening shell of type: %s" % shell_url)

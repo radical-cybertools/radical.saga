@@ -4,6 +4,7 @@ __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
 
+import radical.utils               as ru
 import radical.utils.signatures    as rus
 
 from .constants  import *
@@ -13,7 +14,6 @@ from ..namespace import entry      as nsentry
 
 from .. import session             as ss
 from .. import task                as st
-from .. import url                 as surl
 
 
 # ------------------------------------------------------------------------------
@@ -39,7 +39,7 @@ class File (nsentry.Entry) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('File', 
-                  rus.optional ((surl.Url, basestring)), 
+                  rus.optional ((ru.Url, basestring)), 
                   rus.optional (int, rus.nothing), 
                   rus.optional (ss.Session),
                   rus.optional (sab.Base), 
@@ -74,7 +74,7 @@ class File (nsentry.Entry) :
 
         # param checks
         if  not flags : flags = 0
-        url = surl.Url (url)
+        url = ru.Url (url)
 
         if  not url.schema :
             url.schema = 'file'
@@ -90,7 +90,7 @@ class File (nsentry.Entry) :
     #
     @classmethod
     @rus.takes   ('File', 
-                  rus.optional ((surl.Url, basestring)), 
+                  rus.optional ((ru.Url, basestring)), 
                   rus.optional (int, rus.nothing), 
                   rus.optional (ss.Session),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))

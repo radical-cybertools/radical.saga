@@ -9,11 +9,11 @@ __license__   = "MIT"
 import re
 import inspect
 
+# from ...task       import Task  as T_Task   # class
 from ...exceptions import *
 from ...constants  import SYNC  as T_SYNC
 from ...constants  import ASYNC as T_ASYNC
 from ...constants  import TASK  as T_TASK   # flag
-from ...task       import Task  as T_Task   # class
 
 
 # ------------------------------------

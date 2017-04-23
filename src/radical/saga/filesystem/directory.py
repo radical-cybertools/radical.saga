@@ -4,6 +4,7 @@ __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
 
+import radical.utils               as ru
 import radical.utils.signatures    as rus
 
 from .constants  import *
@@ -13,7 +14,6 @@ from ..namespace import directory  as nsdir
 
 from .. import session             as ss
 from .. import task                as st
-from .. import url                 as surl
 
 
 # ------------------------------------------------------------------------------
@@ -45,7 +45,7 @@ class Directory (nsdir.Directory) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Directory', 
-                  rus.optional ((surl.Url, basestring)), 
+                  rus.optional ((ru.Url, basestring)), 
                   rus.optional (int, rus.nothing), 
                   rus.optional (ss.Session),
                   rus.optional (sab.Base), 
@@ -82,7 +82,7 @@ class Directory (nsdir.Directory) :
 
         # param checks
         if  not flags : flags = 0
-        url = surl.Url (url)
+        url = ru.Url (url)
 
         if  not url.schema :
             url.schema = 'file'
@@ -99,7 +99,7 @@ class Directory (nsdir.Directory) :
     #
     @classmethod
     @rus.takes   ('Directory', 
-                  rus.optional ((surl.Url, basestring)), 
+                  rus.optional ((ru.Url, basestring)), 
                   rus.optional (int, rus.nothing), 
                   rus.optional (ss.Session),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
@@ -122,7 +122,7 @@ class Directory (nsdir.Directory) :
     # filesystem directory methods
     #
     @rus.takes   ('Directory', 
-                  (surl.Url, basestring),
+                  (ru.Url, basestring),
                   rus.optional (int, rus.nothing),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns (('File', st.Task))
@@ -145,7 +145,7 @@ class Directory (nsdir.Directory) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Directory', 
-                  (surl.Url, basestring),
+                  (ru.Url, basestring),
                   rus.optional (int, rus.nothing),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns (('Directory', st.Task))
@@ -174,7 +174,7 @@ class Directory (nsdir.Directory) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Directory', 
-                  rus.optional ((surl.Url, basestring)),
+                  rus.optional ((ru.Url, basestring)),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((int, st.Task))
     def get_size (self, path=None, ttype=None) :
@@ -215,7 +215,7 @@ class Directory (nsdir.Directory) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Directory', 
-                  rus.optional ((surl.Url, basestring)),
+                  rus.optional ((ru.Url, basestring)),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((bool, st.Task))
     def is_file (self, path=None, ttype=None) :

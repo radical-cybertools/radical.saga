@@ -260,17 +260,19 @@ class Engine(object):
             adaptor_enabled = False
 
             try :
-                adaptor_config  = ru.get_config('radical.saga.adaptor_%s' % adaptor_name)
+                adaptor_config  = ru.get_config('%s' % adaptor_name)
                 if adaptor_config.get('enabled', True) in [0, False, 'False']:
                     adaptor_enabled = False
                 else:
                     adaptor_enabled = True
 
             except SagaException as e:
-                self._logger.exception ("Skipping adaptor %s: adaptor init failed: %s" % (module_name, e))
+                self._logger.exception ("Skipping adaptor %s: init failed: %s" \
+                                     % (module_name, e))
                 continue # skip to next adaptor
             except Exception as e:
-                self._logger.exception ("Skipping adaptor %s: adaptor init error : %s" % (module_name, e))
+                self._logger.exception ("Skipping adaptor %s: init error : %s" \
+                                     % (module_name, e))
                 continue # skip to next adaptor
 
 
@@ -338,13 +340,13 @@ class Engine(object):
                 # we add a lower cased version of the class name as last
                 # namespace element, and check again.
 
-                # ->   saga .  job .  Service
-                # <- ['saga', 'job', 'Service']
+                # ->   radical .  saga .  job .  Service
+                # <- ['radical', 'saga', 'job', 'Service']
                 cpi_type_nselems = cpi_type.split ('.')
-                print cpi_type_nselems
+              # print cpi_type_nselems
 
-                if  len(cpi_type_nselems) < 2 or \
-                    len(cpi_type_nselems) > 3    :
+                if  len(cpi_type_nselems) < 3 or \
+                    len(cpi_type_nselems) > 4    :
                     self._logger.exception ("Skipping adaptor %s: cpi type not valid: '%s'" \
                                      % (module_name, cpi_type))
                     continue # skip to next cpi info
@@ -355,16 +357,16 @@ class Engine(object):
                                      % (module_name, cpi_type))
                     continue # skip to next cpi info
 
-                # -> ['saga',                    'job', 'Service']
-                # <- ['saga', 'adaptors', 'cpi', 'job', 'Service']
-                cpi_type_nselems.insert (1, 'adaptors')
-                cpi_type_nselems.insert (2, 'cpi')
+                # -> ['radical', 'saga',                    'job', 'Service']
+                # <- ['radical', 'saga', 'adaptors', 'cpi', 'job', 'Service']
+                cpi_type_nselems.insert (2, 'adaptors')
+                cpi_type_nselems.insert (3, 'cpi')
 
-                # -> ['saga', 'adaptors', 'cpi', 'job',  'Service']
-                # <- ['saga', 'adaptors', 'cpi', 'job'], 'Service'
+                # -> ['radical', 'saga', 'adaptors', 'cpi', 'job',  'Service']
+                # <- ['radical', 'saga', 'adaptors', 'cpi', 'job'], 'Service'
                 cpi_type_cname = cpi_type_nselems.pop ()
 
-                # -> ['saga', 'adaptors', 'cpi', 'job'], 'Service'
+                # -> ['radical', 'saga', 'adaptors', 'cpi', 'job'], 'Service'
                 # <-  'radical.saga.adaptors.cpi.job
                 # <-  'radical.saga.adaptors.cpi.job.service
                 cpi_type_modname_1 = '.'.join (cpi_type_nselems)
@@ -372,8 +374,8 @@ class Engine(object):
 
                 # does either module exist?
                 cpi_type_modname = None
-                print cpi_type_modname_1
-                print cpi_type_modname_2
+              # print cpi_type_modname_1
+              # print cpi_type_modname_2
                 pprint.pprint(sys.modules)
 
                 if  cpi_type_modname_1 in sys.modules :

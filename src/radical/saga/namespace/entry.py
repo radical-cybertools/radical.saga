@@ -4,6 +4,7 @@ __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
 
+import radical.utils            as ru
 import radical.utils.signatures as rus
 
 from .constants  import *
@@ -13,7 +14,6 @@ from ..adaptors  import base    as sab
 from .. import exceptions       as se
 from .. import session          as ss
 from .. import task             as st
-from .. import url              as surl
 from .. import base             as sb
 from .. import async            as sasync
 
@@ -41,7 +41,7 @@ class Entry (sb.Base, sasync.Async) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Entry', 
-                  rus.optional ((surl.Url, basestring)), 
+                  rus.optional ((ru.Url, basestring)), 
                   rus.optional (int, rus.nothing), 
                   rus.optional (ss.Session),
                   rus.optional (sab.Base), 
@@ -81,7 +81,7 @@ class Entry (sb.Base, sasync.Async) :
             session = ss.Session (default=True)
 
         if  not flags : flags = 0
-        url     = surl.Url (url)
+        url     = ru.Url (url)
         scheme  = url.scheme.lower ()
 
         self._base = super  (Entry, self)
@@ -93,7 +93,7 @@ class Entry (sb.Base, sasync.Async) :
     #
     @classmethod
     @rus.takes   ('Entry', 
-                  rus.optional ((surl.Url, basestring)), 
+                  rus.optional ((ru.Url, basestring)), 
                   rus.optional (int, rus.nothing), 
                   rus.optional (ss.Session),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
@@ -122,7 +122,7 @@ class Entry (sb.Base, sasync.Async) :
     #
     @rus.takes   ('Entry',
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
-    @rus.returns ((surl.Url, st.Task))
+    @rus.returns ((ru.Url, st.Task))
     def get_url  (self, ttype=None) :
         '''
         ttype:         saga.task.type enum
@@ -221,7 +221,7 @@ class Entry (sb.Base, sasync.Async) :
     #
     @rus.takes    ('Entry',
                    rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
-    @rus.returns  ((surl.Url, st.Task))
+    @rus.returns  ((ru.Url, st.Task))
     def read_link (self, ttype=None) :
         '''
         tgt:           saga.Url / None
@@ -236,7 +236,7 @@ class Entry (sb.Base, sasync.Async) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Entry',
-                  (surl.Url, basestring),
+                  (ru.Url, basestring),
                   rus.optional (int, rus.nothing),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((rus.nothing, st.Task))
@@ -269,7 +269,7 @@ class Entry (sb.Base, sasync.Async) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Entry',
-                  (surl.Url, basestring),
+                  (ru.Url, basestring),
                   rus.optional (int, rus.nothing),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((rus.nothing, st.Task))
@@ -288,7 +288,7 @@ class Entry (sb.Base, sasync.Async) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Entry',
-                  (surl.Url, basestring),
+                  (ru.Url, basestring),
                   rus.optional (int, rus.nothing),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((rus.nothing, st.Task))

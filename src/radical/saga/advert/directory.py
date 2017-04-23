@@ -4,6 +4,7 @@ __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
 
+import radical.utils               as ru
 import radical.utils.signatures    as rus
 
 from .constants  import *
@@ -13,7 +14,6 @@ from ..namespace import directory  as nsdir
 from .. import attributes          as sa
 from .. import session             as ss
 from .. import task                as st
-from .. import url                 as surl
 
 
 
@@ -24,7 +24,7 @@ class Directory (nsdir.Directory, sa.Attributes) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Directory', 
-                  rus.optional ((surl.Url, basestring)), 
+                  rus.optional ((ru.Url, basestring)), 
                   rus.optional (int, rus.nothing),
                   rus.optional (ss.Session), 
                   rus.optional (sab.Base),
@@ -42,7 +42,7 @@ class Directory (nsdir.Directory, sa.Attributes) :
 
         # param checks
         if not flags : flags = 0
-        url = surl.Url (url)
+        url = ru.Url (url)
 
         self._nsdirec = super  (Directory, self)
         self._nsdirec.__init__ (url, flags, session, 
@@ -72,7 +72,7 @@ class Directory (nsdir.Directory, sa.Attributes) :
     #
     @classmethod
     @rus.takes   ('Directory', 
-                  rus.optional ((surl.Url, basestring)), 
+                  rus.optional ((ru.Url, basestring)), 
                   rus.optional (int, rus.nothing), 
                   rus.optional (ss.Session), 
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
@@ -148,7 +148,7 @@ class Directory (nsdir.Directory, sa.Attributes) :
     # advert methods
     #
     @rus.takes   ('Directory', 
-                  (surl.Url, basestring), 
+                  (ru.Url, basestring), 
                   float, 
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((rus.nothing, st.Task))
@@ -167,7 +167,7 @@ class Directory (nsdir.Directory, sa.Attributes) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Directory', 
-                  rus.optional ((surl.Url, basestring)), 
+                  rus.optional ((ru.Url, basestring)), 
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((float, st.Task))
     def get_ttl  (self, tgt=None, ttype=None) : 
@@ -189,7 +189,7 @@ class Directory (nsdir.Directory, sa.Attributes) :
                   rus.optional ((basestring, object)),
                   rus.optional (int, rus.nothing),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
-    @rus.returns ((rus.list_of (surl.Url), st.Task))
+    @rus.returns ((rus.list_of (ru.Url), st.Task))
     def find     (self, name_pattern, attr_pattern=None, obj_type=None,
                   flags=RECURSIVE, ttype=None) : 
         """

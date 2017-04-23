@@ -4,6 +4,7 @@ __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
 
+import radical.utils            as ru
 import radical.utils.signatures as rus
 
 from .constants  import *
@@ -12,7 +13,6 @@ from ..adaptors  import base    as sab
 
 from .. import session          as ss
 from .. import task             as st
-from .. import url              as surl
 from .  import entry
 
 
@@ -54,7 +54,7 @@ class Directory (entry.Entry) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Directory', 
-                  rus.optional ((surl.Url, basestring)), 
+                  rus.optional ((ru.Url, basestring)), 
                   rus.optional (int, rus.nothing), 
                   rus.optional (ss.Session),
                   rus.optional (sab.Base), 
@@ -98,7 +98,7 @@ class Directory (entry.Entry) :
     #
     @classmethod
     @rus.takes   ('Directory', 
-                  rus.optional ((surl.Url, basestring)), 
+                  rus.optional ((ru.Url, basestring)), 
                   rus.optional (int, rus.nothing), 
                   rus.optional (ss.Session),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
@@ -120,7 +120,7 @@ class Directory (entry.Entry) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Directory', 
-                  (surl.Url, basestring), 
+                  (ru.Url, basestring), 
                   rus.optional (int, rus.nothing),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((entry.Entry, st.Task))
@@ -132,14 +132,14 @@ class Directory (entry.Entry) :
         ret:      saga.namespace.Entry / saga.Task
         '''
         if  not flags : flags = 0
-        url = surl.Url(name)
+        url = ru.Url(name)
         return self._adaptor.open (url, flags, ttype=ttype)
 
 
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Directory', 
-                  (surl.Url, basestring), 
+                  (ru.Url, basestring), 
                   rus.optional (int, rus.nothing),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns (('Directory', st.Task))
@@ -162,7 +162,7 @@ class Directory (entry.Entry) :
                data = dir.open_dir ('data/', saga.namespace.Create)
         '''
         if  not flags : flags = 0
-        return self._adaptor.open_dir (surl.Url(path), flags, ttype=ttype)
+        return self._adaptor.open_dir (ru.Url(path), flags, ttype=ttype)
 
     
     # ----------------------------------------------------------------
@@ -170,7 +170,7 @@ class Directory (entry.Entry) :
     # namespace directory methods
     #
     @rus.takes   ('Directory', 
-                  (surl.Url, basestring), 
+                  (ru.Url, basestring), 
                   rus.optional (int, rus.nothing),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((rus.nothing, st.Task))
@@ -193,13 +193,13 @@ class Directory (entry.Entry) :
             dir.make_dir ('data/')
         '''
         if  not flags : flags = 0
-        return self._adaptor.make_dir (surl.Url (tgt), flags, ttype=ttype)
+        return self._adaptor.make_dir (ru.Url (tgt), flags, ttype=ttype)
   
     
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Directory', 
-                  (surl.Url, basestring), 
+                  (ru.Url, basestring), 
                   rus.optional (int, rus.nothing),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((rus.nothing, st.Task))
@@ -220,7 +220,7 @@ class Directory (entry.Entry) :
                   rus.optional (basestring),
                   rus.optional (int, rus.nothing),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
-    @rus.returns ((rus.list_of (surl.Url), st.Task))
+    @rus.returns ((rus.list_of (ru.Url), st.Task))
     def list (self, pattern=None, flags=0, ttype=None) :
         '''
         :param pattern: Entry name pattern (like POSIX 'ls', e.g. '\*.txt')
@@ -245,7 +245,7 @@ class Directory (entry.Entry) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Directory', 
-                  (surl.Url, basestring),
+                  (ru.Url, basestring),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((bool, st.Task))
     def exists (self, path, ttype=None) :
@@ -275,7 +275,7 @@ class Directory (entry.Entry) :
                   rus.optional (basestring),
                   rus.optional (int, rus.nothing),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
-    @rus.returns ((rus.list_of (surl.Url), st.Task))
+    @rus.returns ((rus.list_of (ru.Url), st.Task))
     def find (self, pattern, flags=RECURSIVE, ttype=None) :
         '''
         pattern:       string
@@ -305,7 +305,7 @@ class Directory (entry.Entry) :
     @rus.takes   ('Directory', 
                   int, 
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
-    @rus.returns ((surl.Url, st.Task))
+    @rus.returns ((ru.Url, st.Task))
     def get_entry (self, num, ttype=None) :
         '''
         num:           int 
@@ -320,8 +320,8 @@ class Directory (entry.Entry) :
     # methods overloaded from namespace.Entry
     #
     @rus.takes   ('Directory', 
-                  (surl.Url, basestring), 
-                  rus.optional ((surl.Url, basestring)), 
+                  (ru.Url, basestring), 
+                  rus.optional ((ru.Url, basestring)), 
                   rus.optional (int, rus.nothing),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((rus.nothing, st.Task))
@@ -356,8 +356,8 @@ class Directory (entry.Entry) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Directory', 
-                  (surl.Url, basestring), 
-                  rus.optional ((surl.Url, basestring)), 
+                  (ru.Url, basestring), 
+                  rus.optional ((ru.Url, basestring)), 
                   rus.optional (int, rus.nothing),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((rus.nothing, st.Task))
@@ -377,8 +377,8 @@ class Directory (entry.Entry) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Directory', 
-                  (surl.Url, basestring), 
-                  rus.optional ((surl.Url, basestring)), 
+                  (ru.Url, basestring), 
+                  rus.optional ((ru.Url, basestring)), 
                   rus.optional (int, rus.nothing),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((rus.nothing, st.Task))
@@ -409,7 +409,7 @@ class Directory (entry.Entry) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Directory', 
-                  (surl.Url, basestring), 
+                  (ru.Url, basestring), 
                   rus.optional (int, rus.nothing),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((rus.nothing, st.Task))
@@ -428,7 +428,7 @@ class Directory (entry.Entry) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Directory', 
-                  rus.optional ((surl.Url, basestring)),
+                  rus.optional ((ru.Url, basestring)),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((bool, st.Task))
     def is_dir (self, tgt=None, ttype=None) :
@@ -453,7 +453,7 @@ class Directory (entry.Entry) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Directory', 
-                  rus.optional ((surl.Url, basestring)),
+                  rus.optional ((ru.Url, basestring)),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((bool, st.Task))
     def is_entry (self, tgt=None, ttype=None) :
@@ -469,7 +469,7 @@ class Directory (entry.Entry) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Directory', 
-                  rus.optional ((surl.Url, basestring)),
+                  rus.optional ((ru.Url, basestring)),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((bool, st.Task))
     def is_link (self, tgt=None, ttype=None) :
@@ -485,9 +485,9 @@ class Directory (entry.Entry) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Directory', 
-                  rus.optional ((surl.Url, basestring)),
+                  rus.optional ((ru.Url, basestring)),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
-    @rus.returns ((surl.Url, st.Task))
+    @rus.returns ((ru.Url, st.Task))
     def read_link (self, tgt=None, ttype=None) :
         '''
         tgt:           saga.Url / None
