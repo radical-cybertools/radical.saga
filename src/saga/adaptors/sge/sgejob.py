@@ -404,8 +404,8 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
                         optional_attrs.append(name)
                     elif att_type == 'MEMORY' and requestable == 'FORCED':
                         mandatory_attrs.append(name)
-            self._logger.debug("Optional memory attributes: %s" % (mandatory_attrs))
-            self._logger.debug("Mandatory memory attributes: %s" % (optional_attrs))       
+            self._logger.debug("Optional memory attributes: %s" % (optional_attrs))
+            self._logger.debug("Mandatory memory attributes: %s" % (mandatory_attrs))
         # find out user specified memory attributes in job.Service URL
         if self.memreqs is None:
             flags = []
