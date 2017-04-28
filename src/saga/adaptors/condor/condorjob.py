@@ -705,7 +705,6 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
 
             results = out.split('\n')
             for result in results:
-                print 'ret: %s' % result
                 if len(result.split('=')) == 2:
                     key, val = result.split('=')
                     key = key.strip()  # strip() removes whitespaces at the
@@ -889,7 +888,6 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
             # CompletionDate = 0
             results = filter(bool, out.split('\n'))
             for result in results:
-                print 'inf: %s' % result
                 key, val = result.split('=', 1)
                 key = key.strip()
                 val = val.strip()
@@ -921,7 +919,6 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
                     # ExitStatus = 0
                     results = out.split('\n')
                     for result in results:
-                        print 'his: %s' % result
                         if len(result.split('=')) == 2:
                             key, val = result.split('=')
                             key = key.strip()  # strip() removes whitespaces at the
@@ -990,7 +987,6 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
             # Some processes in cluster found with condor_q!
             procid, jobstatus, exit_code, exit_by_signal, completiondate \
                     = [col.strip() for col in row.split(',')]
-            print 'bul: %s' % row
 
             # we always set exit_code to '1' if exited_by_signal
             if not exit_code and exit_by_signal == 'true':
@@ -1033,8 +1029,6 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
                 results = filter(bool, out.split('\n'))
                 ts      = time.time()
                 for row in results:
-
-                    print 'hul: %s' % row
 
                     elems = [col.strip() for col in row.split(',')]
                     if len(elems) != 8:
