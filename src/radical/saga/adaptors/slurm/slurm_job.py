@@ -457,7 +457,7 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         else:
             # we start N independent processes
             mpi_cmd = ''
-            slurm_script += "# SBATCH --ntasks=%s\n" % (number_of_processes)
+            slurm_script += "#SBATCH --ntasks=%s\n" % (number_of_processes)
 
             if total_cpu_count and number_of_processes:
                 slurm_script += "#SBATCH --cpus-per-task=%s\n" \
@@ -766,11 +766,11 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
 
     # --------------------------------------------------------------------------
     #
-    def container_cancel(self, jobs):
+    def container_cancel(self, jobs, timeout):
 
         # TODO: this is not optimized yet
         for job in jobs:
-            job.cancel()
+            job.cancel(timeout)
 
 
     # --------------------------------------------------------------------------

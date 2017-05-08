@@ -145,10 +145,10 @@ class BulkDirectory (saga.adaptors.cpi.advert.Directory) :
 
     # ----------------------------------------------------------------
     #
-    def container_cancel (self, tasks) :
+    def container_cancel (self, tasks, timeout) :
 
         for task in tasks :
-            task.cancel ()
+            task.cancel (timeout)
 
 
     # ----------------------------------------------------------------
