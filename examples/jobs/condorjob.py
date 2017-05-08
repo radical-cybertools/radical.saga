@@ -15,8 +15,8 @@ import getpass
 
 URL = "condor+ssh://gw68.quarry.iu.teragrid.org?WhenToTransferOutput=ON_EXIT&should_transfer_files=YES&notification=Always",
 URL = "condor+gsissh://login.osgconnect.net"
-URL = "condor+ssh://submit-1.osg.xsede.org"
 URL = "condor+gsissh://xd-login.opensciencegrid.org"
+URL = "condor+gsissh://submit-1.osg.xsede.org"
 
 def main():
     try:
@@ -38,10 +38,10 @@ def main():
         # a job that runs for $RUNTIME seconds.
         jd.name            = 'testjob'
         jd.project         = 'TG-CCR140028'
-        jd.environment     = {'RUNTIME': '/etc/passwd'}
+        jd.environment     = {'RUNTIME': '30'}
         jd.wall_time_limit = 2 # minutes
 
-        jd.executable = '/bin/cat'
+        jd.executable = '/bin/sleep'
         jd.arguments = ["$RUNTIME"]
 
         jd.output          = "saga_condorjob.stdout"
