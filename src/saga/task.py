@@ -407,8 +407,6 @@ class Container (sbase.SimpleBase, satt.Attributes) :
 
     # --------------------------------------------------------------------------
     #
-    # --------------------------------------------------------------------------
-    #
     @rus.takes   ('Container', 
                   rus.one_of   (ANY, ALL),
                   rus.optional (float))
@@ -549,9 +547,7 @@ class Container (sbase.SimpleBase, satt.Attributes) :
         
         # handle all tasks not bound to containers
         for task in buckets['unbound'] :
-
             futures.append (ru.Future.Run (task.cancel, timeout))
-            
 
         for future in futures :
             future.join ()
