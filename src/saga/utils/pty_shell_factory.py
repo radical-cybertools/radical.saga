@@ -257,7 +257,7 @@ class PTYShellFactory (object) :
                 # Error messages may appear for tcsh and others.  Excuse
                 # non-posix shells
                 if posix:
-                    pty_shell.write (" export PS1='$' ; set prompt='$'\n")
+                    pty_shell.write(" export PROMPT_COMMAND='' PS1='$' ; set prompt='$'\n")
 
                 # find a prompt
                 n, match = pty_shell.find (prompt_patterns, delay)
@@ -299,7 +299,7 @@ class PTYShellFactory (object) :
 
                         if posix:
                             # use a very aggressive, but portable prompt setting scheme
-                            pty_shell.write (" export PS1='$' > /dev/null 2>&1 || set prompt='$'\n")
+                            pty_shell.write (" export PROMPT_COMMAND='' PS1='$' > /dev/null 2>&1 || set prompt='$'\n")
                             pty_shell.write (" printf 'HELLO_%%d_SAGA\\n' %d\n" % retries)
                             used_trigger = True
 
@@ -524,8 +524,8 @@ class PTYShellFactory (object) :
                 info['shell_type'] = "sh"
                 info['copy_mode']  = "sh"
                 info['share_mode'] = "auto"
-                info['sh_env']     = "/usr/bin/env TERM=vt100 PS1='PROMPT-$?->'"
-                info['cp_env']     = "/usr/bin/env TERM=vt100 PS1='PROMPT-$?->'"
+                info['sh_env']     = "/usr/bin/env TERM=vt100 PROMPT_COMMAND='' PS1='PROMPT-$?->'"
+                info['cp_env']     = "/usr/bin/env TERM=vt100 PROMPT_COMMAND='' PS1='PROMPT-$?->'"
                 info['scp_root']   = "/"
 
                 if interactive: info['sh_args'] = "-i"
