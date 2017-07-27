@@ -117,35 +117,34 @@ def log_error_and_raise(message, exception, logger):
 
 # --------------------------------------------------------------------
 #
-def _pbs_to_saga_jobstate(pbsjs, logger=None):
+def _pbs_to_saga_jobstate(job_state, logger=None):
     """ translates a pbs one-letter state to saga
     """
-    # 'C' Torque "Job is completed after having run."
-    # 'F' PBS Pro "Job is finished."
-    # 'H' PBS Pro and TORQUE "Job is held."
-    # 'Q' PBS Pro and TORQUE "Job is queued(, eligible to run or routed.)
-    # 'S' PBS Pro and TORQUE "Job is suspended."
-    # 'W' PBS Pro and TORQUE "Job is waiting for its execution time to be reached."
-    # 'R' PBS Pro and TORQUE "Job is running."
-    # 'E' PBS Pro and TORQUE "Job is exiting after having run"
-    # 'T' PBS Pro and TORQUE "Job is being moved to new location."
-    # 'X' PBS Pro "Subjob has completed execution or has been deleted."
+    # 'C' Torque            : Job is completed after having run
+    # 'F' PBS Pro           : Job is finished
+    # 'H' PBS Pro and TORQUE: Job is held
+    # 'Q' PBS Pro and TORQUE: Job is queued, eligible to run or routed
+    # 'S' PBS Pro and TORQUE: Job is suspended."
+    # 'W' PBS Pro and TORQUE: Job is waiting for its execution time to be reached
+    # 'R' PBS Pro and TORQUE: Job is running
+    # 'E' PBS Pro and TORQUE: Job is exiting after having run
+    # 'T' PBS Pro and TORQUE: Job is being moved to new location
+    # 'X' PBS Pro           : Subjob has completed execution or has been deleted
 
     ret = None
 
-    if   pbsjs == 'C': ret = saga.job.DONE
-    elif pbsjs == 'F': ret = saga.job.DONE
-    elif pbsjs == 'H': ret = saga.job.PENDING
-    elif pbsjs == 'Q': ret = saga.job.PENDING
-    elif pbsjs == 'S': ret = saga.job.PENDING
-    elif pbsjs == 'W': ret = saga.job.PENDING
-    elif pbsjs == 'R': ret = saga.job.RUNNING
-    elif pbsjs == 'E': ret = saga.job.RUNNING
-    elif pbsjs == 'T': ret = saga.job.RUNNING
-    elif pbsjs == 'X': ret = saga.job.CANCELED
-    else             : ret = saga.job.UNKNOWN
+    if   job_state == 'F': ret = saga.job.DONE
+    elif job_state == 'H': ret = saga.job.PENDING
+    elif job_state == 'Q': ret = saga.job.PENDING
+    elif job_state == 'S': ret = saga.job.PENDING
+    elif job_state == 'W': ret = saga.job.PENDING
+    elif job_state == 'R': ret = saga.job.RUNNING
+    elif job_state == 'E': ret = saga.job.RUNNING
+    elif job_state == 'T': ret = saga.job.RUNNING
+    elif job_state == 'X': ret = saga.job.CANCELED
+    else                 : ret = saga.job.UNKNOWN
 
-    logger.debug('check state: %s', pbsjs)
+    logger.debug('check state: %s', job_state)
     logger.debug('use   state: %s', ret)
     return ret
 
@@ -158,6 +157,10 @@ def _pbscript_generator(url, logger, jd, ppn, gres, pbs_version, is_cray=False,
     """
     pbs_params  = str()
     exec_n_args = str()
+
+    if jd.processes_per_host:
+        logger.info("Overriding the detected ppn (%d) with the user specified processes_per_host (%d)" % (ppn, jd.processes_per_host))
+        ppn = jd.processes_per_host
 
     exec_n_args += 'export SAGA_PPN=%d\n' % ppn
     if jd.executable:
@@ -380,11 +383,12 @@ _ADAPTOR_CAPABILITIES = {
                           saga.job.ERROR,
                           saga.job.QUEUE,
                           saga.job.PROJECT,
+                          saga.job.FILE_TRANSFER,
                           saga.job.WALL_TIME_LIMIT,
                           saga.job.WORKING_DIRECTORY,
                           saga.job.WALL_TIME_LIMIT,
-                          saga.job.SPMD_VARIATION, # TODO: 'hot'-fix for BigJob
                           saga.job.PROCESSES_PER_HOST,
+                          saga.job.SPMD_VARIATION,
                           saga.job.TOTAL_CPU_COUNT],
     "job_attributes":    [saga.job.EXIT_CODE,
                           saga.job.EXECUTION_HOSTS,
@@ -745,6 +749,7 @@ class PBSProJobService (saga.adaptors.cpi.job.Service):
             # populate job info dict
             self.jobs[job_id] = {'obj'         : job_obj,
                                  'job_id'      : job_id,
+                                 'name'        : job_name,
                                  'state'       : state,
                                  'exec_hosts'  : None,
                                  'returncode'  : None,
@@ -755,7 +760,7 @@ class PBSProJobService (saga.adaptors.cpi.job.Service):
                                  }
 
             self._logger.info ("assign job id  %s / %s / %s to watch list (%s)" \
-                            % (None, job_id, job_obj, self.jobs.keys()))
+                            % (job_name, job_id, job_obj, self.jobs.keys()))
 
             # set status to 'pending' and manually trigger callback
             job_obj._attributes_i_set('state', state, job_obj._UP, True)
@@ -830,6 +835,7 @@ class PBSProJobService (saga.adaptors.cpi.job.Service):
             job_info = {
                 'job_id':       job_id,
                 'state':        saga.job.UNKNOWN,
+                'name':         None,
                 'exec_hosts':   None,
                 'returncode':   None,
                 'create_time':  None,
@@ -848,7 +854,7 @@ class PBSProJobService (saga.adaptors.cpi.job.Service):
             qstat_flag ='-f1'
             
         ret, out, _ = self.shell.run_sync("unset GREP_OPTIONS; %s %s %s | "
-                "grep -E -i '(job_state)|(exec_host)|(exit_status)|"
+                "grep -E -i '(job_state)|(Job_Name)|(exec_host)|(exit_status)|"
                  "(ctime)|(start_time)|(stime)|(mtime)'"
                 % (self._commands['qstat']['path'], qstat_flag, pid))
 
@@ -890,6 +896,7 @@ class PBSProJobService (saga.adaptors.cpi.job.Service):
             #     exit_status = 0
             results = out.split('\n')
             for line in results:
+
                 if len(line.split('=')) == 2:
                     key, val = line.split('=')
                     key = key.strip()
@@ -898,6 +905,10 @@ class PBSProJobService (saga.adaptors.cpi.job.Service):
                     # The ubiquitous job state
                     if key in ['job_state']: # PBS Pro and TORQUE
                         job_info['state'] = _pbs_to_saga_jobstate(val, self._logger)
+
+                    # The job name
+                    if key in ['job_name']:
+                        job_info['name'] = val
 
                     # Hosts where the job ran
                     elif key in ['exec_host']: # PBS Pro and TORQUE
@@ -1133,29 +1144,38 @@ class PBSProJobService (saga.adaptors.cpi.job.Service):
         return ids
 
 
-  # # ----------------------------------------------------------------
-  # #
-  # def container_run (self, jobs) :
-  #     self._logger.debug ("container run: %s"  %  str(jobs))
-  #     # TODO: this is not optimized yet
-  #     for job in jobs:
-  #         job.run ()
-  #
-  #
-  # # ----------------------------------------------------------------
-  # #
-  # def container_wait (self, jobs, mode, timeout) :
-  #     self._logger.debug ("container wait: %s"  %  str(jobs))
-  #     # TODO: this is not optimized yet
-  #     for job in jobs:
-  #         job.wait ()
-  #
-  #
-  # # ----------------------------------------------------------------
-  # #
-  # def container_cancel (self, jobs, timeout) :
-  #     self._logger.debug ("container cancel: %s"  %  str(jobs))
-  #     raise saga.NoSuccess ("Not Implemented");
+    # ----------------------------------------------------------------
+    #
+    def container_run (self, jobs) :
+
+        self._logger.debug ("container run: %s"  %  str(jobs))
+
+        # TODO: this is not optimized yet
+        for job in jobs:
+            job.run ()
+   
+   
+    # ----------------------------------------------------------------
+    #
+    def container_wait (self, jobs, mode, timeout) :
+
+        self._logger.debug ("container wait: %s"  %  str(jobs))
+
+        # TODO: this is not optimized yet
+        for job in jobs:
+            job.wait ()
+   
+   
+    # ----------------------------------------------------------------
+    #
+    def container_cancel (self, jobs, timeout) :
+
+        self._logger.debug ("container cancel: %s"  %  str(jobs))
+
+        # TODO: this is not optimized yet
+        for job in jobs:
+            job.cancel (timeout)
+
 
 
 ###############################################################################
