@@ -680,7 +680,8 @@ class PBSProJobService (saga.adaptors.cpi.job.Service):
         """
 
         # get the job description
-        jd = job_obj.get_description()
+        jd       = job_obj.get_description()
+        job_name = jd.name
 
         # normalize working directory path
         if  jd.working_directory :
@@ -907,7 +908,7 @@ class PBSProJobService (saga.adaptors.cpi.job.Service):
                         job_info['state'] = _pbs_to_saga_jobstate(val, self._logger)
 
                     # The job name
-                    if key in ['job_name']:
+                    if key in ['Job_Name']:
                         job_info['name'] = val
 
                     # Hosts where the job ran

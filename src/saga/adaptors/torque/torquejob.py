@@ -844,7 +844,7 @@ class TORQUEJobService (saga.adaptors.cpi.job.Service):
                         job_state = val
 
                     # The job name
-                    if key in ['job_name']:
+                    if key in ['Job_Name']:
                         job_info['name'] = val
 
                     # Hosts where the job ran
