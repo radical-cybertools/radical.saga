@@ -1052,11 +1052,15 @@ class TORQUEJobService (saga.adaptors.cpi.job.Service):
         # Try to get some initial information about this job (again)
         job_info = self._job_get_info(job_id, reconnect=True)
 
+        # create job description from queue info
+        # FIXME: incomplete
+        jd = saga.job.Description()
+        jd.name = job_info['name']
+
         # this dict is passed on to the job adaptor class -- use it to pass any
         # state information you need there.
         adaptor_state = {"job_service":     self,
-                         # TODO: fill job description
-                         "job_description": saga.job.Description(),
+                         "job_description": jd,
                          "job_schema":      self.rm.schema,
                          "reconnect":       True,
                          "reconnect_jobid": job_id
@@ -1168,11 +1172,11 @@ class TORQUEJob (saga.adaptors.cpi.job.Job):
 
         if job_info['reconnect'] is True:
             self._id      = job_info['reconnect_jobid']
-            self._name    = self.jd.get(saga.job.NAME)
+            self._name    = self.jd.name
             self._started = True
         else:
             self._id      = None
-            self._name    = self.jd.get(saga.job.NAME)
+            self._name    = self.jd.name
             self._started = False
 
         return self.get_api()
