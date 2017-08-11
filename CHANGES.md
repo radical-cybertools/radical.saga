@@ -6,6 +6,41 @@
     https://github.com/radical-cybertools/saga-python/issues?q=is%3Aissue+is%3Aopen+
 
 
+Version 0.46                                                          2017-08-11
+--------------------------------------------------------------------------------
+
+  - Fix several debug messages
+  - Fix/621 experiment aimes (#622) 
+  - Fixed run_job to run in service.py 
+  - Properly support SGE job name. (#624) 
+  - Anselm support in pbspro v.13 (#634) 
+  - fix a condor script syntax error 
+  - attempt to prevent job eviction 
+  - be resiliant against lingering NFS locks (hi titan) 
+  - clean bulk job info for condor 
+  - clean up state management in condor adaptor,
+  - slim down condor log calls, simplify status updates, ensure output transfer 
+  - container_cancel needs to accept timeout parameter (#633) 
+  - don't barf on failing condor_history 
+  - don't limit status check length 
+  - iteration on slurm mpi support (#623) 
+  - fix logic error in directive evaluation 
+  - fix parsing of condor_history for multi-file staging
+  - fixes on src/tgt ordering in osg staging 
+  - follow the rename of ru.Task to ru.Future 
+  - follow the rename of ru.Thread to ru.Future 
+  - implement bulk cancel for condor 
+  - iteration on bulk submission, data staging 
+  - iteration on run_job implementatio 
+  - improve condor scaling / performance
+  - make sure we alsways have a valid transfer directive in condor 
+  - make sure we do not fail on a missing exit code 
+  - more clarity on file staging semantics, some cleanup 
+  - better handling of $PROMPT_COMMAND 
+  - resilience against condor_history errors 
+  - update on torque to avoid triggering a check 
+
+
 Version 0.45.1                                                        2017-02-28
 --------------------------------------------------------------------------------
 
@@ -703,4 +738,5 @@ Version 0.1.7 released 2011-11-09
 
 
 --------------------------------------------------------------------------------
+
 
