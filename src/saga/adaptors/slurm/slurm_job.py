@@ -466,6 +466,11 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
             if processes_per_host:
                 slurm_script += "#SBATCH --ntasks-per-node=%s\n" % processes_per_host
 
+        if 'bridges' in self.rm.host.lower():
+            # bridges requires '-C EGRESS' to enable outbound network
+            # connections.
+            # FIXME: this should be moved into a resource config file
+            slurm_script += "#SBATCH -C EGRESS\n"
 
         if cwd:             slurm_script += "#SBATCH --workdir %s\n"     % cwd 
         if output:          slurm_script += "#SBATCH --output %s\n"      % output 

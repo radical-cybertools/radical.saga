@@ -144,8 +144,8 @@ def _torque_to_saga_jobstate(job_state):
     elif job_state == 'T': ret = saga.job.RUNNING
     else                 : ret = saga.job.UNKNOWN
 
-    logger.debug('check state: %s', job_state)
-    logger.debug('use   state: %s', ret)
+  # logger.debug('check state: %s', job_state)
+  # logger.debug('use   state: %s', ret)
     return ret
 
 
@@ -312,7 +312,8 @@ def _torquescript_generator(url, logger, jd, ppn, gpn, gres, torque_version,
     if is_cray is not "":
         # Special cases for PBS/TORQUE on Cray. Different PBSes,
         # different flags. A complete nightmare...
-        if '5.1.0.h1' in torque_version:
+        if  '5.1.0.h1'   in torque_version or \
+            '6.1.1.1.h2' in torque_version:
             # Can't really use hostname as we run also from the headnode
             logger.info("Using Titan (Cray XP) specific '#PBS -l nodes=xx'")
             pbs_params += "#PBS -l nodes=%d\n" % nnodes
@@ -580,10 +581,10 @@ class TORQUEJobService (saga.adaptors.cpi.job.Service):
         # these are the commands that we need in order to interact with PBS.
         # the adaptor will try to find them during initialize(self) and bail
         # out in case they are note available.
-        self._commands = {'pbsnodes': None,
-                          'qstat':    None,
-                          'qsub':     None,
-                          'qdel':     None}
+        self._commands = {'pbsnodes': dict(),
+                          'qstat':    dict(),
+                          'qsub':     dict(),
+                          'qdel':     dict()}
 
         self.shell = sups.PTYShell(pty_url, self.session)
 
