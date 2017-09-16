@@ -50,22 +50,14 @@ def _condor_to_saga_jobstate(condorjs):
     # 5   Held            H
     # 6   Submission_err  E
 
-    if int(condorjs) == 0:
-        return saga.job.PENDING
-    elif int(condorjs) == 1:
-        return saga.job.PENDING
-    elif int(condorjs) == 2:
-        return saga.job.RUNNING
-    elif int(condorjs) == 3:
-        return saga.job.CANCELED
-    elif int(condorjs) == 4:
-        return saga.job.DONE
-    elif int(condorjs) == 5:
-        return saga.job.PENDING
-    elif int(condorjs) == 6:
-        return saga.job.FAILED
-    else:
-        return saga.job.UNKNOWN
+    if   int(condorjs) == 0: return saga.job.PENDING
+    elif int(condorjs) == 1: return saga.job.PENDING
+    elif int(condorjs) == 2: return saga.job.RUNNING
+    elif int(condorjs) == 3: return saga.job.CANCELED
+    elif int(condorjs) == 4: return saga.job.DONE
+    elif int(condorjs) == 5: return saga.job.PENDING
+    elif int(condorjs) == 6: return saga.job.FAILED
+    else                   : return saga.job.UNKNOWN
 
 
 # --------------------------------------------------------------------
@@ -538,6 +530,8 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
                 out += '\n\nretry %d:\n%s' % (n, _out)
                 err += '\n\nretry %d:\n%s' % (n, _err)
 
+                self._logger.debug(' === need retry %s', options)
+
                 # if pid was given, then failur means job not found.  No point
                 # retrying...
                 if pid:
@@ -964,6 +958,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
                 raise ValueError('job %s: unknown')
 
             if self.jobs[job_id]['gone']:
+                self._logger.debug('dont check %s', job_id)
                 found.append(job_id)
             else:
                 to_check.append(job_id)
@@ -973,9 +968,10 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
             return
 
         # run the Condor 'condor_q' command to get some infos about our job
-        ret, out, err = self._run_condor_q(retries=3, timeout=60,
-                options="%s -autoformat:, ProcId JobStatus ExitStatus ExitBySignal CompletionDate" %
-                         cluster_id)
+        opts = "%s -autoformat:, ProcId JobStatus ExitStatus ExitBySignal CompletionDate" %
+                         cluster_id
+        ret, out, err = self._run_condor_q(retries=3, timeout=60, options=opts)
+        self._logger.debug(' === got state info:%s\n%s\n%s\n%s', opts, ret, out, err)
 
         if ret != 0:
             raise Exception("condor_q failed\n[%s]\n[%s]" % (out, err))
@@ -984,9 +980,13 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
         ts      = time.time()
         for row in results:
 
+            self._logger.debug('row: %s', row)
+
             # Some processes in cluster found with condor_q!
             procid, jobstatus, exit_code, exit_by_signal, completiondate \
                     = [col.strip() for col in row.split(',')]
+
+            self._logger.debug('   : %s - %s - %s - %s - %s', procid, jobstatus, exit_code, exit_by_signal, completiondate)
 
             # we always set exit_code to '1' if exited_by_signal
             if not exit_code and exit_by_signal == 'true':
@@ -997,6 +997,8 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
 
                 if job_id.endswith('.%s]' % procid):
 
+                    self._logger.debug('match: %s', job_id)
+
                     found.append(job_id)
                     info = self.jobs[job_id]
                     info['state']      = _condor_to_saga_jobstate(jobstatus)
@@ -1004,6 +1006,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
                     info['returncode'] = exit_code
                     info['timestamp']  = ts
                     matched = True
+                    self._logger.debug('     : %s', info['state'])
                     break
 
             if not matched:
@@ -1011,6 +1014,8 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
 
 
         if len(found) < len(job_ids):
+
+            self._logger.debug('incomplete: %s < %s', found, job_ids)
 
             cmd = "%s %s -autoformat:, " \
                   "ProcId ExitCode ExitBySignal CompletionDate " \
@@ -1029,6 +1034,8 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
                 results = filter(bool, out.split('\n'))
                 ts      = time.time()
                 for row in results:
+
+                    self._logger.debug('hist row: %s', row)
 
                     elems = [col.strip() for col in row.split(',')]
                     if len(elems) != 8:
@@ -1055,6 +1062,14 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
                     for job_id in to_check:
 
                         if job_id.endswith('.%s]' % procid):
+                        
+                            matched = True
+
+                            if job_id in found:
+                                self._logger.debug('hurray! %s', job_id)
+                                continue
+
+                            self._logger.debug('match hist: %s: %s', job_id, elems)
                             found.append(job_id)
                             info = self.jobs[job_id]
                             info['returncode']  = int(exit_code)
@@ -1069,9 +1084,10 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
                             else:
                                 info['state'] = saga.job.FAILED
 
+                            self._logger.debug('move state of %s to %s', job_id, info['state'])
+
                             info['gone']      = True
                             info['timestamp'] = ts
-                            matched = True
                             break
 
                     if not matched:
@@ -1570,6 +1586,8 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
     @SYNC_CALL
     def container_get_states(self, jobs):
 
+        log = self._logger
+
         # JobIds also include the rm, so we strip that out.  Then sort in
         # clusters we can query
         clusters = dict()
@@ -1578,6 +1596,8 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
             job_id     = job._adaptor._id
             proc_id    = self._adaptor.parse_id(job_id)[1]
             cluster_id = proc_id.split('.', 1)[0]
+
+            log.debug('=== get bulk state for %s %s %s', job_id, proc_id, cluster_id)
 
             if not cluster_id in clusters:
                 clusters[cluster_id] = list()
@@ -1588,6 +1608,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
         for cluster_id in clusters:
 
             job_ids   = clusters[cluster_id]
+            log.debug(' === query job state for %s', job_ids)
             bulk_info = self._job_get_info_bulk(cluster_id, job_ids)
             states   += [self.jobs[job_id]['state'] for job_id in job_ids]
 
