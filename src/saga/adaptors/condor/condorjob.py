@@ -968,8 +968,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
             return
 
         # run the Condor 'condor_q' command to get some infos about our job
-        opts = "%s -autoformat:, ProcId JobStatus ExitStatus ExitBySignal CompletionDate" %
-                         cluster_id
+        opts = "%s -autoformat:, ProcId JobStatus ExitStatus ExitBySignal CompletionDate" % cluster_id
         ret, out, err = self._run_condor_q(retries=3, timeout=60, options=opts)
         self._logger.debug(' === got state info:%s\n%s\n%s\n%s', opts, ret, out, err)
 
