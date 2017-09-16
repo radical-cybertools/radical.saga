@@ -1012,9 +1012,11 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
                 self._logger.warn('cannot match job info to any known job (%s)', row)
 
 
-        if len(found) < len(job_ids):
+        # Now, see if any ids are missing, and search condor history for those:
+        missing = [job_id for job_id in job_ids if job_id not in found]
+        if missing:
 
-            self._logger.debug('incomplete: %s < %s', found, job_ids)
+            self._logger.debug('incomplete %s: %s', len(missing), missing)
 
             cmd = "%s %s -autoformat:, " \
                   "ProcId ExitCode ExitBySignal CompletionDate " \
@@ -1064,8 +1066,8 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
                         
                             matched = True
 
-                            if job_id in found:
-                                self._logger.debug('hurray! %s', job_id)
+                            if job_id not in missing:
+                                self._logger.debug('not missed: %s', job_id)
                                 continue
 
                             self._logger.debug('match hist: %s: %s', job_id, elems)
@@ -1093,14 +1095,16 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
                         self._logger.warn('cannot match job info to any known job (%s)', row)
 
 
-        if len(found) < len(job_ids):
+        missing = [job_id for job_id in job_ids if job_id not in found]
+        if missing:
+
             # alas, condor_history seems not to work on the osg xsede bridge, so
             # we cannot consider this an error.  We will handle all remaining
             # jobs as disappeared, ie. as DONE.
-            self._logger.warn('could not find all jobs (%s < %s)', len(found), len(job_ids))
+            self._logger.warn('could not find all jobs %s: %s', len(missing), missing)
 
             ts = time.time()
-            for job_id in to_check:
+            for job_id in missing:
                 self._logger.warn('jobs %s disappeared', job_id)
                 info = self.jobs[job_id]
                 info['state']     = saga.job.DONE
