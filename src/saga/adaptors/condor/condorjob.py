@@ -22,7 +22,7 @@ import time
 from urlparse import parse_qs
 from tempfile import NamedTemporaryFile
 
-SYNC_CALL = saga.adaptors.cpi.decorators.SYNC_CALL
+SYNC_CALL  = saga.adaptors.cpi.decorators.SYNC_CALL
 ASYNC_CALL = saga.adaptors.cpi.decorators.ASYNC_CALL
 
 
@@ -897,12 +897,12 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
 
             if info['state'] in [saga.job.RUNNING, saga.job.PENDING]:
 
-                # run the Condor 'condor_history' command to get info about 
+                # run the Condor 'condor_history' command to get info about
                 # finished jobs
                 ret, out, err = self.shell.run_sync("unset GREP_OPTIONS; %s -long -match 1 %s | \
                     grep -E '(ExitCode)|(CompletionDate)|(JobCurrentStartDate)|(QDate)|(Err)|(Out)'" \
                     % (self._commands['condor_history'], pid))
-                
+
                 if ret != 0:
                     # no job hist either - declar job as MIA
                     self._logger.error("Error using 'condor_history': %s : %s", out, err)
@@ -943,7 +943,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
         """ get job attributes via condor_q
         """
 
-        # NOTE: bulk queries ignore the cache timeout, 
+        # NOTE: bulk queries ignore the cache timeout,
         #       but they do update the timestamps
 
         # if the 'gone' flag is set, there's no need to query the job
@@ -954,7 +954,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
         # we don't need to check final jobs
         for job_id in job_ids:
 
-            if not job_id in self.jobs:
+            if job_id not in self.jobs:
                 raise ValueError('job %s: unknown')
 
             if self.jobs[job_id]['gone']:
@@ -985,7 +985,8 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
             procid, jobstatus, exit_code, exit_by_signal, completiondate \
                     = [col.strip() for col in row.split(',')]
 
-            self._logger.debug('   : %s - %s - %s - %s - %s', procid, jobstatus, exit_code, exit_by_signal, completiondate)
+            self._logger.debug('   : %s - %s - %s - %s - %s',
+                    procid, jobstatus, exit_code, exit_by_signal, completiondate)
 
             # we always set exit_code to '1' if exited_by_signal
             if not exit_code and exit_by_signal == 'true':
@@ -1040,7 +1041,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
 
                     elems = [col.strip() for col in row.split(',')]
                     if len(elems) != 8:
-                        self._logger.error('condor_history noise [%s]' % row)
+                        self._logger.error('condor_history noise [%s]', row)
                         continue
 
                     procid, exit_code, exit_by_signal,  \
@@ -1063,7 +1064,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
                     for job_id in to_check:
 
                         if job_id.endswith('.%s]' % procid):
-                        
+
                             matched = True
 
                             if job_id not in missing:
@@ -1163,7 +1164,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
         """ cancel jobs via condor_rm
         """
 
-        # NOTE: bulk queries ignore the cache timeout, 
+        # NOTE: bulk queries ignore the cache timeout,
         #       but they do update the timestamps
 
         self._logger.debug('cancel cluster %s %s', cluster_id, job_ids)
@@ -1182,7 +1183,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
                 self._logger.warning("Job is already gone.")
 
         # run the Condor 'condor_q' command to get some infos about our job
-        ret, out, _ = self.shell.run_sync( "%s %s" % (condor_rm, cluster_id))
+        ret, out, _ = self.shell.run_sync("%s %s" % (condor_rm, cluster_id))
 
         if ret != 0:
             raise RuntimeError("condor_rm failed")
@@ -1198,16 +1199,17 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
         """ get the job's state
         """
         # check if we have already reach a terminal state
-        if self.jobs[job_id]['state'] in [saga.job.CANCELED, \
-                                          saga.job.FAILED, \
+        if self.jobs[job_id]['state'] in [saga.job.CANCELED,
+                                          saga.job.FAILED,
                                           saga.job.DONE]:
             return self.jobs[job_id]['state']
 
         # check if we can / should update
-        if (self.jobs[job_id]['gone'] is not True):
+        if self.jobs[job_id]['gone'] is not True:
             self._job_get_info(job_id=job_id)
 
         return self.jobs[job_id]['state']
+
 
     # ----------------------------------------------------------------
     #
@@ -1222,8 +1224,9 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
         ret = self.jobs[job_id]['returncode']
 
         # FIXME: 'None' should cause an exception
-        if ret == None : return None
-        else           : return int(ret)
+        if ret == None: return None
+        else          : return int(ret)
+
 
     # ----------------------------------------------------------------
     #
@@ -1232,29 +1235,33 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
         """
         return self.jobs[job_id]['name']
 
+
     # ----------------------------------------------------------------
     #
     def _job_get_execution_hosts(self, job_id):
         """ get the job's exit code
         """
         # check if we can / should update
-        if (self.jobs[job_id]['gone'] is not True) \
-        and (self.jobs[job_id]['exec_hosts'] is None):
+        if  (self.jobs[job_id]['gone']       is not True) and \
+            (self.jobs[job_id]['exec_hosts'] is     None):
             self._job_get_info(job_id=job_id)
 
         return self.jobs[job_id]['exec_hosts']
+
 
     # ----------------------------------------------------------------
     #
     def _job_get_create_time(self, job_id):
         """ get the job's creation time
         """
+
         # check if we can / should update
-        if (self.jobs[job_id]['gone'] is not True) \
-        and (self.jobs[job_id]['create_time'] is None):
+        if  (self.jobs[job_id]['gone']        is not True) and \
+            (self.jobs[job_id]['create_time'] is     None):
             self._job_get_info(job_id=job_id)
 
         return self.jobs[job_id]['create_time']
+
 
     # ----------------------------------------------------------------
     #
@@ -1262,11 +1269,12 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
         """ get the job's start time
         """
         # check if we can / should update
-        if (self.jobs[job_id]['gone'] is not True) \
-        and (self.jobs[job_id]['start_time'] is None):
+        if  (self.jobs[job_id]['gone']       is not True) and \
+            (self.jobs[job_id]['start_time'] is     None):
             self._job_get_info(job_id=job_id)
 
         return self.jobs[job_id]['start_time']
+
 
     # ----------------------------------------------------------------
     #
@@ -1274,20 +1282,21 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
         """ get the job's end time
         """
         # check if we can / should update
-        if (self.jobs[job_id]['gone'] is not True) \
-        and (self.jobs[job_id]['end_time'] is None):
+        if  (self.jobs[job_id]['gone']     is not True) and \
+            (self.jobs[job_id]['end_time'] is     None):
             self._job_get_info(job_id=job_id)
 
         return self.jobs[job_id]['end_time']
+
 
     # ----------------------------------------------------------------
     #
     def _job_cancel(self, job_id):
         """ cancel the job via 'condor_rm'
         """
-        rm, pid = self._adaptor.parse_id(job_id)
+        _, pid = self._adaptor.parse_id(job_id)
 
-        ret, out, _ = self.shell.run_sync("%s %s\n" \
+        ret, out, _ = self.shell.run_sync("%s %s\n"
             % (self._commands['condor_rm'], pid))
 
         if ret != 0:
@@ -1296,6 +1305,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
 
         # assume the job was successfully canceled
         self.jobs[job_id]['state'] = saga.job.CANCELED
+
 
     # ----------------------------------------------------------------
     #
@@ -1310,10 +1320,11 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
         while True:
             state = self._job_get_state(job_id=job_id)
 
-            if state == saga.job.DONE or \
-               state == saga.job.FAILED or \
-               state == saga.job.CANCELED:
-                    return True
+            if  state == saga.job.DONE   or \
+                state == saga.job.FAILED or \
+                state == saga.job.CANCELED:
+                return True
+
             # avoid busy poll
             time.sleep(0.5)
 
@@ -1322,6 +1333,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
                 time_now = time.time()
                 if time_now - time_start > timeout:
                     return False
+
 
     # ----------------------------------------------------------------
     #
@@ -1339,6 +1351,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
 
         return saga.job.Job(_adaptor=self._adaptor,
                             _adaptor_state=adaptor_state)
+
 
     # ----------------------------------------------------------------
     #
@@ -1364,6 +1377,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
         return saga.job.Job(_adaptor=self._adaptor,
                             _adaptor_state=adaptor_state)
 
+
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
@@ -1372,14 +1386,15 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
         """
         return self.rm
 
+
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
     def list(self):
         """ implements saga.adaptors.cpi.job.Service.list()
         """
-        ids = []
 
+        ids = []
         ret, out, err = self._run_condor_q(retries=3, timeout=60,
                                            options='-submitter `whoami`')
 
@@ -1392,19 +1407,19 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
         # time, we at this point ignore them all.
         if ret != 0:
             self._logger.warn("failed to list jobs via 'condor_q': [%s] [%s]",
-                    out, err)
+                              out, err)
 
         else:
 
             # --------------------------------------------------------------------------------------
             #
             # -- Schedd: xd-login.opensciencegrid.org : <129.79.53.198:9615?...
-            #  ID      OWNER            SUBMITTED     RUN_TIME ST PRI SIZE CMD               
+            #  ID      OWNER            SUBMITTED     RUN_TIME ST PRI SIZE CMD
             #
             # 36100000.0   mturilli        2/21 20:14   0+01:50:56 R  0   14648.4 env /bin/sh -c /bi
             # 36100000.8   mturilli        2/21 20:14   0+01:50:55 R  0   14648.4 env /bin/sh -c /bi
             # 36100000.9   mturilli        2/21 20:14   0+01:50:56 R  0   14648.4 env /bin/sh -c /bi
-            # 
+            #
             # 3 jobs; 0 completed, 0 removed, 0 idle, 3 running, 0 held, 0 suspended
             # --------------------------------------------------------------------------------------
 
@@ -1430,6 +1445,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
 
         return ids
 
+
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
@@ -1446,8 +1462,8 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
             # ensure consistency and viability of job description
             self._prepare_jd(jd)
 
-            # TODO: Given that input (and output) are likely similar for 
-            #       bulk tasks, we probably don't want to transfer 
+            # TODO: Given that input (and output) are likely similar for
+            #       bulk tasks, we probably don't want to transfer
             #       duplicates endlessly
             self._handle_file_transfers(jd.transfer_directives, mode='in')
 
@@ -1472,7 +1488,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
         jds = [job.description for job in jobs]
 
         # create a Condor job script from SAGA job description
-        script = _condorscript_generator(url=self.rm, logger=self._logger, 
+        script = _condorscript_generator(url=self.rm, logger=self._logger,
                                          jds=jds, option_dict=self.query_options)
         self._logger.info("Generated Condor script: %s", script)
 
@@ -1488,16 +1504,16 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
             self.shell.stage_to_remote(submit_file.name, submit_file_name)
 
         else:
-            raise NotImplementedError("%s support for Condor not implemented." % \
+            raise NotImplementedError("%s support for Condor not implemented." %
                     self.shell.url.scheme)
 
-        ret, out, _ = self.shell.run_sync('%s -verbose %s' \
+        ret, out, _ = self.shell.run_sync('%s -verbose %s'
                     % (self._commands['condor_submit'], submit_file_name))
 
         if ret != 0:
             # condor_submit went wrong
-            message = "Error running job via 'condor_submit': %s. Script was: %s" \
-                      % (out, script)
+            message = "Error running job via 'condor_submit': %s. Script: %s"
+                    % (out, script)
             log_error_and_raise(message, saga.NoSuccess, self._logger)
 
         pids = []
@@ -1510,7 +1526,8 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
                 pids.append(pid)
 
         if len(pids) != len(jobs):
-            raise Exception("Number of pids (%d) is different than number of jobs (%d)" % (len(pids), len(jobs)))
+            raise Exception("Number of pids (%d) != number of jobs (%d)" 
+                           % (len(pids), len(jobs)))
 
         # we don't want the 'query' part of the URL to be part of the ID,
         # simply because it can get terribly long (and ugly). to get rid
@@ -1534,7 +1551,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
 
         # remove submit file(s)
         # XXX: maybe leave them in case of debugging?
-        #ret, out, _ = self.shell.run_sync ('rm %s' % submit_file_name)
+        # ret, out, _ = self.shell.run_sync ('rm %s' % submit_file_name)
 
         os.remove(submit_file.name)
 
@@ -1602,7 +1619,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
 
             log.debug('=== get bulk state for %s %s %s', job_id, proc_id, cluster_id)
 
-            if not cluster_id in clusters:
+            if cluster_id not in clusters:
                 clusters[cluster_id] = list()
             clusters[cluster_id].append(job_id)
 
@@ -1630,6 +1647,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
         #
         # return self.jobs[job_id]['state']
 
+
 ###############################################################################
 #
 class CondorJob (saga.adaptors.cpi.job.Job):
@@ -1641,6 +1659,7 @@ class CondorJob (saga.adaptors.cpi.job.Job):
         # initialize parent class
         _cpi_base = super(CondorJob, self)
         _cpi_base.__init__(api, adaptor)
+
 
     @SYNC_CALL
     def init_instance(self, job_info):
@@ -1672,6 +1691,7 @@ class CondorJob (saga.adaptors.cpi.job.Job):
     def get_description(self):
         return self.jd
 
+
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
@@ -1683,6 +1703,7 @@ class CondorJob (saga.adaptors.cpi.job.Job):
             return saga.job.NEW
         else:
             return self.js._job_get_state(self._id)
+
 
     # ----------------------------------------------------------------
     #
@@ -1696,6 +1717,7 @@ class CondorJob (saga.adaptors.cpi.job.Job):
         else:
             self.js._job_wait(self._id, timeout)
 
+
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
@@ -1708,6 +1730,7 @@ class CondorJob (saga.adaptors.cpi.job.Job):
         else:
             self.js._job_cancel(self._id)
 
+
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
@@ -1717,6 +1740,7 @@ class CondorJob (saga.adaptors.cpi.job.Job):
         self._id = self.js._job_run(self.jd)
         self._started = True
 
+
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
@@ -1724,6 +1748,7 @@ class CondorJob (saga.adaptors.cpi.job.Job):
         """ implements saga.adaptors.cpi.job.Job.get_service_url()
         """
         return self.js.rm
+
 
     # ----------------------------------------------------------------
     #
@@ -1733,12 +1758,14 @@ class CondorJob (saga.adaptors.cpi.job.Job):
         """
         return self._id
 
+
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
     def get_name (self):
         """ Implements saga.adaptors.cpi.job.Job.get_name() """
         return self._name
+
 
     # ----------------------------------------------------------------
     #
@@ -1751,6 +1778,7 @@ class CondorJob (saga.adaptors.cpi.job.Job):
         else:
             return self.js._job_get_exit_code(self._id)
 
+
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
@@ -1761,6 +1789,7 @@ class CondorJob (saga.adaptors.cpi.job.Job):
             return None
         else:
             return self.js._job_get_create_time(self._id)
+
 
     # ----------------------------------------------------------------
     #
@@ -1773,6 +1802,7 @@ class CondorJob (saga.adaptors.cpi.job.Job):
         else:
             return self.js._job_get_start_time(self._id)
 
+
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
@@ -1784,6 +1814,7 @@ class CondorJob (saga.adaptors.cpi.job.Job):
         else:
             return self.js._job_get_end_time(self._id)
 
+
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
@@ -1794,4 +1825,7 @@ class CondorJob (saga.adaptors.cpi.job.Job):
             return None
         else:
             return self.js._job_get_execution_hosts(self._id)
+
+
+# ------------------------------------------------------------------------------
 
