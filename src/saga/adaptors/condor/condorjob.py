@@ -1029,7 +1029,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
         # Now, see if any ids are missing, and search condor history for those:
         missing = [x for x in job_ids if x not in found]
 
-        if missing self._adaptor.use_hist and missing:
+        if self._adaptor.use_hist and missing:
 
             self._logger.debug('incomplete %s: %s', len(missing), missing)
 
@@ -1527,7 +1527,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
 
         if ret != 0:
             # condor_submit went wrong
-            message = "Error running job via 'condor_submit': %s. Script: %s"
+            message = "Error running job via 'condor_submit': %s. Script: %s" \
                     % (out, script)
             log_error_and_raise(message, saga.NoSuccess, self._logger)
 
