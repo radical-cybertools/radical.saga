@@ -912,7 +912,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
 
                 # run the Condor 'condor_history' command to get info about
                 # finished jobs
-                self._logger.info("use condor_history on %s", pid)
+                self._logger.info("use condor_history on job %s", pid)
                 ret, out, err = self.shell.run_sync("unset GREP_OPTIONS; %s -long -match 1 %s | \
                     grep -E '(ExitCode)|(CompletionDate)|(JobCurrentStartDate)|(QDate)|(Err)|(Out)'" \
                     % (self._commands['condor_history'], pid))
@@ -1034,6 +1034,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
 
             self._logger.debug('incomplete %s: %s', len(missing), missing)
 
+            self._logger.info("use condor_history on cluster %s", cluster_id)
             cmd = "%s %s -autoformat:, " \
                   "ProcId ExitCode ExitBySignal CompletionDate " \
                   "JobCurrentStartDate QDate Err Out" \
