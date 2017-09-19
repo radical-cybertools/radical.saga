@@ -1027,9 +1027,9 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
 
 
         # Now, see if any ids are missing, and search condor history for those:
-        missing = [job_id for job_id in job_ids if job_id not in found]
+        missing = [x for x in job_ids if x not in found]
 
-        if self._adaptor.use_hist and missing:
+        if missing self._adaptor.use_hist and missing:
 
             self._logger.debug('incomplete %s: %s', len(missing), missing)
 
@@ -1110,22 +1110,8 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
                         self._logger.warn('cannot match job info to any known job (%s)', row)
 
    
-        if not self._adaptor.use_hist and missing:
-
-                for job_id in job_ids:
-                    if job_id not in found:
-
-                        info = self.jobs[job_id]
-                        if not info['gone']:
-                            info['returncode'] = int(-1)
-                            info['state']      = saga.job.FAILED
-                            info['gone']       = True
-                            info['timestamp']  = time.time()
-
-                found = job_ids
-
-
-        missing = [job_id for job_id in job_ids if job_id not in found]
+        # are still any jobs missing?
+        missing = [x for x in job_ids if x not in found]
         if missing:
 
             # alas, condor_history seems not to work on the osg xsede bridge, so
