@@ -348,6 +348,7 @@ class Adaptor (saga.adaptors.base.Base):
         self.id_re = re.compile('^\[(.*)\]-\[(.*?)\]$')
         self.opts  = self.get_config (_ADAPTOR_NAME)
         self.use_hist = self.opts['use_history'].get_value()
+        self._logger.info("use condor_history")
 
 
     # ----------------------------------------------------------------
