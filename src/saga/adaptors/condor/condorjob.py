@@ -256,7 +256,18 @@ _CACHE_TIMEOUT = 5.0
 #
 _ADAPTOR_NAME          = "saga.adaptor.condorjob"
 _ADAPTOR_SCHEMAS       = ["condor", "condor+ssh", "condor+gsissh"]
-_ADAPTOR_OPTIONS       = []
+_ADAPTOR_OPTIONS       = [
+    { 
+    'category'         : 'saga.adaptor.condorjob',
+    'name'             : 'use_history',
+    'type'             : str, 
+    'default'          : 'None',
+    'valid_options'    : ['True', 'False', 'None'],
+    'documentation'    : '''Enable the use of condor_history for job state
+                            checking (slow)''',
+    'env_variable'     : 'SAGA_CONDOR_USE_HISTORY'
+    },
+]
 
 # --------------------------------------------------------------------
 # the adaptor capabilities & supported attributes
@@ -344,6 +355,8 @@ class Adaptor (saga.adaptors.base.Base):
 
         self.id_re = re.compile('^\[(.*)\]-\[(.*?)\]$')
         self.opts  = self.get_config (_ADAPTOR_NAME)
+        self.use_hist = self.opts['use_history'].get_value()
+
 
     # ----------------------------------------------------------------
     #
@@ -1010,7 +1023,8 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
                 self._logger.warn('cannot match job info to any known job (%s)', row)
 
 
-        if len(found) < len(job_ids):
+        if  self._adaptor.use_hist and \
+            len(found) < len(job_ids)  :
 
             cmd = "%s %s -autoformat:, " \
                   "ProcId ExitCode ExitBySignal CompletionDate " \
@@ -1076,6 +1090,22 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
 
                     if not matched:
                         self._logger.warn('cannot match job info to any known job (%s)', row)
+
+   
+        if  not self._adaptor.use_hist and \
+            len(found) < len(job_ids)      :
+
+                for job_id in job_ids:
+                    if job_id not in found:
+
+                        info = self.jobs[job_id]
+                        if not info['gone']:
+                            info['returncode'] = int(-1)
+                            info['state']      = saga.job.FAILED
+                            info['gone']       = True
+                            info['timestamp']  = time.time()
+
+                found = job_ids
 
 
         if len(found) < len(job_ids):
