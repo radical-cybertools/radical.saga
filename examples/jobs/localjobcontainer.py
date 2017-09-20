@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 
 __author__    = "Andre Merzky, Ole Weidner"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
@@ -26,18 +27,20 @@ import random
 import time
 import saga
 
+URL = "condor+gsissh://xd-login.opensciencegrid.org"
+URL = "fork://locahost/'
 
 def main():
 
     # number of job 'groups' / containers
-    num_job_groups = 1
+    num_job_groups = 2
     # number of jobs per container
-    jobs_per_group = 1
+    jobs_per_group = 10
 
     try:
         # all jobs in this example are running on the same job service
         # this is not a requirement though. s
-        service = saga.job.Service("ssh://localhost/")
+        service = saga.job.Service(URL)
         print service.url
 
         t1 = time.time()
@@ -50,9 +53,11 @@ def main():
                 # add jobs to container. to make things a bit more
                 # interesting, we give each job a random runtime (1-60s)
                 jd = saga.job.Description()
-                jd.environment = {'RUNTIME': random.randrange(1000, 2000, 1)}
+                jd.environment = {'RUNTIME': random.randrange(10, 60)}
                 jd.executable  = '/bin/sleep'
                 jd.arguments   = ['$RUNTIME']
+                jd.name        = ['job.%02d.%03d' % (c, j)]
+                jd.project         = 'TG-CCR140028'
                 j = service.create_job(jd)
                 containers[c].add(j)
 
@@ -60,6 +65,9 @@ def main():
         for c in range(0, num_job_groups):
             print 'Starting container %s ... ' % c
             containers[c].run()
+
+            for j in containers[c].get_tasks():
+                print '%s: %s: %s' % (j.name, j.id, j.state)
 
             print containers[c].get_states ()
             containers[c].cancel()

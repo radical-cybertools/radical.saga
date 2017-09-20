@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 
 __author__    = "Andre Merzky, Ole Weidner"
 __copyright__ = "Copyright 2013, The SAGA Project"
@@ -32,7 +33,7 @@ def main():
         session.add_context(ctx)
 
         # open home directory on a remote machine
-        remote_dir = saga.filesystem.Directory('sftp://india.futuregrid.org/etc/',
+        remote_dir = saga.filesystem.Directory('sftp://stampede.tacc.xsede.org/etc/',
                                                session=session)
 
         # copy .bash_history to /tmp/ on the local machine

@@ -80,9 +80,9 @@ class Service (cpi_base.CPIBase, cpi_async.Async) :
     def container_wait_async       (self, jobs, mode, timeout) : pass
 
     @SYNC
-    def container_cancel           (self, jobs)                : pass
+    def container_cancel           (self, jobs, timeout)       : pass
     @ASYNC
-    def container_cancel_async     (self, jobs)                : pass
+    def container_cancel_async     (self, jobs, timeout)       : pass
 
     @SYNC
     def container_get_states       (self, jobs)                : pass

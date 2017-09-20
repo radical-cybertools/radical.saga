@@ -130,6 +130,8 @@ _ADAPTOR_CAPABILITIES = {
                           saga.job.WALL_TIME_LIMIT,
                           saga.job.WORKING_DIRECTORY,
                           saga.job.TOTAL_PHYSICAL_MEMORY,
+                          saga.job.PROCESSES_PER_HOST,
+                          saga.job.CANDIDATE_HOSTS,
                           saga.job.TOTAL_CPU_COUNT],
     "job_attributes":    [saga.job.EXIT_CODE,
                           saga.job.EXECUTION_HOSTS,
@@ -1020,7 +1022,7 @@ class LOADLJobService (saga.adaptors.cpi.job.Service):
   #
   # # ----------------------------------------------------------------
   # #
-  # def container_cancel (self, jobs) :
+  # def container_cancel (self, jobs, timeout) :
   #     self._logger.debug ("container cancel: %s"  %  str(jobs))
   #     raise saga.NoSuccess ("Not Implemented");
 
@@ -1047,10 +1049,12 @@ class LOADLJob (saga.adaptors.cpi.job.Job):
         self.js = job_info["job_service"]
 
         if job_info['reconnect'] is True:
-            self._id = job_info['reconnect_jobid']
+            self._id      = job_info['reconnect_jobid']
+            self._name    = self.jd.get(saga.job.NAME)
             self._started = True
         else:
-            self._id = None
+            self._id      = None
+            self._name    = self.jd.get(saga.job.NAME)
             self._started = False
 
         return self.get_api()
@@ -1115,6 +1119,13 @@ class LOADLJob (saga.adaptors.cpi.job.Job):
         """ implements saga.adaptors.cpi.job.Job.get_id()
         """
         return self._id
+
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def get_name (self):
+        """ Implements saga.adaptors.cpi.job.Job.get_name() """        
+        return self._name
 
     # ----------------------------------------------------------------
     #

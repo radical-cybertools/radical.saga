@@ -135,6 +135,16 @@ _ADAPTOR_OPTIONS       = [
                             of days to consider a temporary file older enough to be deleted.''',
     'env_variable'     : None
     },
+    {
+    'category'         : 'saga.adaptor.sgejob',
+    'name'             : 'base_workdir',
+    'type'             : str,
+    'default'          : "$HOME/.saga/adaptors/sge_job/",
+    'documentation'    : '''The adaptor stores job state information on the
+                          filesystem on the target resource.  This parameter
+                          specified what location should be used.''',
+    'env_variable'     : None
+    }
 ]
 # --------------------------------------------------------------------
 # the adaptor capabilities & supported attributes
@@ -153,6 +163,8 @@ _ADAPTOR_CAPABILITIES = {
                           saga.job.WORKING_DIRECTORY,
                           saga.job.SPMD_VARIATION,
                           saga.job.TOTAL_CPU_COUNT,
+                          saga.job.PROCESSES_PER_HOST,
+                          saga.job.CANDIDATE_HOSTS,
                           saga.job.TOTAL_PHYSICAL_MEMORY],
     "job_attributes":    [saga.job.EXIT_CODE,
                           saga.job.EXECUTION_HOSTS,
@@ -222,6 +234,7 @@ class Adaptor (saga.adaptors.base.Base):
 
         self.purge_on_start = self.opts['purge_on_start'].get_value()
         self.purge_older_than = self.opts['purge_older_than'].get_value()
+        self.base_workdir = self.opts['base_workdir'].get_value()
 
     # ----------------------------------------------------------------
     #
@@ -279,7 +292,7 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
         self.shell   = None
         self.mandatory_memreqs = list()
         self.accounting = False
-        self.temp_path = "$HOME/.saga/adaptors/sge_job"
+        self.temp_path = self._adaptor.base_workdir
 
 
         rm_scheme = rm_url.scheme
@@ -391,8 +404,8 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
                         optional_attrs.append(name)
                     elif att_type == 'MEMORY' and requestable == 'FORCED':
                         mandatory_attrs.append(name)
-            self._logger.debug("Optional memory attributes: %s" % (mandatory_attrs))
-            self._logger.debug("Mandatory memory attributes: %s" % (optional_attrs))       
+            self._logger.debug("Optional memory attributes: %s" % (optional_attrs))
+            self._logger.debug("Mandatory memory attributes: %s" % (mandatory_attrs))
         # find out user specified memory attributes in job.Service URL
         if self.memreqs is None:
             flags = []
@@ -426,7 +439,7 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
 
         # purge temporary files
         if self._adaptor.purge_on_start:
-            cmd = "find $HOME/.saga/adaptors/sge_job" \
+            cmd = "find " + self.temp_path + \
                   " -type f -mtime +%d -print -delete | wc -l" % self._adaptor.purge_older_than
             ret, out, _ = self.shell.run_sync(cmd)
             if ret == 0 and out != "0":
@@ -540,9 +553,10 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
             retries -= 1
 
             qres = self.__kvcmd_results('qacct', "-j %s | grep -E '%s'" % (
-                                            sge_job_id, "hostname|qsub_time|start_time|end_time|exit_status|failed"))
+                                            sge_job_id, "jobname|hostname|qsub_time|start_time|end_time|exit_status|failed"))
 
             if qres is not None: # ok, extract job info from qres
+                # jobname      test
                 # hostname     sge
                 # qsub_time    Mon Jun 24 17:24:43 2013
                 # start_time   Mon Jun 24 17:24:50 2013
@@ -551,6 +565,7 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
                 # exit_status  0
                 job_info = dict(
                     state=saga.job.DONE if qres.get("failed") == "0" else saga.job.FAILED,
+                    name=qres.get("jobname"),
                     exec_hosts=qres.get("hostname"),
                     returncode=int(qres.get("exit_status", -1)),
                     create_time=qres.get("qsub_time"),
@@ -607,6 +622,7 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
 
         job_info = dict(
                     state=state,
+                    name=qres.get("jobname"),
                     exec_hosts=qres.get("hostname"),
                     returncode=int(qres.get("exit_status", -1)),
                     create_time=qres.get("qsub_time"),
@@ -708,6 +724,12 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
                 raise Exception("jd.total_cpu_count requires that jd.spmd_variation is not empty. "
                                 "Valid options for jd.spmd_variation are: %s" % (self.pe_list))
 
+
+        # CANDEIDATE_HOSTS - this translates to 'qsub -l h="host1|host2|..."'
+        if jd.candidate_hosts:
+            sge_params.append('#$ -l h="%s"' % '|'.join(jd.candidate_hosts))
+
+
         # convert sge params into an string
         sge_params = "\n".join(sge_params)
 
@@ -725,6 +747,7 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
             'mkdir -p %s' % self.temp_path,
             'for sig in SIGHUP SIGINT SIGQUIT SIGTERM SIGUSR1 SIGUSR2; do trap "aborted $sig" $sig; done',
             'echo "hostname: $HOSTNAME" >%s' % job_info_path,
+            'echo "jobname: %s" >>%s' % (jd.name, job_info_path),
             'echo "qsub_time: %s" >>%s' % (datetime.now().strftime("%a %b %d %H:%M:%S %Y"), job_info_path),
             'echo "start_time: $(LC_ALL=en_US.utf8 date \'+%%a %%b %%d %%H:%%M:%%S %%Y\')" >>%s' % job_info_path
         ]
@@ -826,6 +849,7 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
         # add job to internal list of known jobs.
         self.jobs[job_id] = {
             'state':        saga.job.PENDING,
+            'name':         jd.name,
             'exec_hosts':   None,
             'returncode':   None,
             'create_time':  None,
@@ -886,7 +910,7 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
                 # self.__shell_run("%s %s" % (self._commands['qdel']['path'], pid))
 
             if job_info is None: # use qstat -j pid
-                qres = self.__kvcmd_results('qstat', "-j %s | grep -E 'submission_time|sge_o_host'" % pid,
+                qres = self.__kvcmd_results('qstat', "-j %s | grep -E 'job_name|submission_time|sge_o_host'" % pid,
                                             key_suffix=":")
 
                 if qres is not None: # when qstat fails it will fall back to qacct
@@ -895,6 +919,7 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
                     # sge_o_host:                 sge
                     job_info = dict(
                         state=self.__sge_to_saga_jobstate(state),
+                        name=qres.get("job_name"),
                         exec_hosts=exec_host or qres.get("sge_o_host"),
                         returncode=None, # it can not be None because it will be casted to int()
                         create_time=qres.get("submission_time"),
@@ -917,7 +942,7 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
             log_error_and_raise(message, saga.NoSuccess, self._logger)
 
         self._logger.debug("job_info(%s)=[%s]" % (pid, ", ".join(["%s=%s" % (k, str(job_info[k])) for k in [
-                "state", "returncode", "exec_hosts", "create_time", "start_time", "end_time", "gone"]])))
+                "name", "state", "returncode", "exec_hosts", "create_time", "start_time", "end_time", "gone"]])))
 
         return job_info
 
@@ -929,7 +954,7 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
 
         # if we don't have the job in our dictionary, we don't want it
         if job_id not in self.jobs:
-            message = "Unkown job ID: %s. Can't update state." % job_id
+            message = "Unknown job ID: %s. Can't update state." % job_id
             log_error_and_raise(message, saga.NoSuccess, self._logger)
 
         # prev. info contains the info collect when _job_get_info
@@ -1181,7 +1206,7 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
   #
   # # ----------------------------------------------------------------
   # #
-  # def container_cancel (self, jobs) :
+  # def container_cancel (self, jobs, timeout) :
   #     self._logger.debug ("container cancel: %s"  %  str(jobs))
   #     raise saga.NoSuccess ("Not Implemented");
 
@@ -1208,10 +1233,12 @@ class SGEJob (saga.adaptors.cpi.job.Job):
         self.js = job_info["job_service"]
 
         if job_info['reconnect'] is True:
-            self._id = job_info['reconnect_jobid']
+            self._id      = job_info['reconnect_jobid']
+            self._name    = self.jd.name
             self._started = True
         else:
-            self._id = None
+            self._id      = None
+            self._name    = self.jd.name
             self._started = False
 
         return self.get_api()
@@ -1226,7 +1253,7 @@ class SGEJob (saga.adaptors.cpi.job.Job):
     #
     @SYNC_CALL
     def get_state(self):
-        """ mplements saga.adaptors.cpi.job.Job.get_state()
+        """ implements saga.adaptors.cpi.job.Job.get_state()
         """
         if self._started is False:
             # jobs that are not started are always in 'NEW' state
@@ -1282,6 +1309,13 @@ class SGEJob (saga.adaptors.cpi.job.Job):
         """ implements saga.adaptors.cpi.job.Job.get_id()
         """
         return self._id
+
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def get_name (self):
+        """ Implements saga.adaptors.cpi.job.Job.get_name() """
+        return self._name
 
     # ----------------------------------------------------------------
     #

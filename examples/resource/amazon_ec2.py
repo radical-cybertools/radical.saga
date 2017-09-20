@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 
 __author__    = "Andre Merzky, Ole Weidner"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
@@ -10,12 +11,13 @@ __license__   = "MIT"
     In order to run this example, you need to set the following environment
     variables:
 
-    * EC2_ID:           Your Amazon EC2 ID
-    * EC2_KEY:          You Amazon EC2 KEY
-    * EC2_SSH_KEYPAIR:  The SSH keypair you want to use to access the VM, e.g.,
-                        /home/username/.ssh/rsa_ec2
-                        (You can create a new temporary one using 'ssh-keygen')
+    * EC2_ACCESS_KEY:     your Amazon EC2 ID
+    * EC2_SECRET_KEY:     your Amazon EC2 KEY
+    * EC2_SSH_KEYPAIR_ID: name of ssh keypair within EC2
+    * EC2_SSH_KEYPAIR:    your ssh keypair to use to access the VM, e.g.,
+                          /home/username/.ssh/id_rsa_ec2
 """
+
 
 import os
 import sys
@@ -23,67 +25,96 @@ import saga
 import time
 
 
+# ------------------------------------------------------------------------------
+#
 def main():
 
     # In order to connect to EC2, we need an EC2 ID and KEY. We read those
     # from the environment.
     ec2_ctx = saga.Context('EC2')
-    ec2_ctx.user_id = os.environ['EC2_ID']
-    ec2_ctx.user_key = os.environ['EC2_KEY']
+    ec2_ctx.user_id  = os.environ['EC2_ACCESS_KEY']
+    ec2_ctx.user_key = os.environ['EC2_SECRET_KEY']
 
     # The SSH keypair we want to use the access the EC2 VM. If the keypair is
-    # not yet registered on EC2 saga will register it automatically.
+    # not yet registered on EC2 saga will register it automatically.  This
+    # context specifies the key for VM startup, ie. the VM will be configured to
+    # accept this key
     ec2keypair_ctx = saga.Context('EC2_KEYPAIR')
-    ec2keypair_ctx.token = 'TODO'  # keypair name
-    ec2keypair_ctx.user_key = os.environ['EC2_SSH_KEYPAIR']
-    ec2keypair_ctx.user_id = 'root'  # the user id on the target VM
+    ec2keypair_ctx.token    = os.environ['EC2_KEYPAIR_ID']
+    ec2keypair_ctx.user_key = os.environ['EC2_KEYPAIR']
+    ec2keypair_ctx.user_id  = 'root'  # the user id on the target VM
 
-    # TODO
+    # We specify the *same* ssh key for ssh access to the VM.  That now should
+    # work if the VM go configured correctly per the 'EC2_KEYPAIR' context
+    # above.
     ssh_ctx = saga.Context('SSH')
-    ssh_ctx.user_id = 'root'
-    ssh_ctx.user_key = os.environ['EC2_SSH_KEYPAIR']
+    ssh_ctx.user_id  = 'root'
+    ssh_ctx.user_key = os.environ['EC2_KEYPAIR']
 
     session = saga.Session(False)  # FALSE: don't use other (default) contexts
     session.contexts.append(ec2_ctx)
     session.contexts.append(ec2keypair_ctx)
     session.contexts.append(ssh_ctx)
 
+    cr  = None  # compute resource handle
+    rid = None  # compute resource ID
     try:
-        ######################################################################
-        ##  STEP 1: Start a VM on EC2                                       ##
-        ######################################################################
 
-        # in this session, connect to the EC2 resource manager
-        rm = saga.resource.Manager("ec2://aws.amazon.com/", session=session)
+        # ----------------------------------------------------------------------
+        #
+        # reconnect to VM (ID given in ARGV[1])
+        #
+        if len(sys.argv) > 1:
+            
+            rid = sys.argv[1]
 
-        # Create a resource description with an image and an OS template,.
-        # We pick a small VM and a plain Ubuntu image...
-        cd = saga.resource.ComputeDescription()
-        cd.image = 'ami-0256b16b'
-        cd.template = 'Small Instance'
+            # reconnect to the given resource
+            print 'reconnecting to %s' % rid
+            cr = saga.resource.Compute(id=rid, session=session)
+            print 'reconnected  to %s' % rid
+            print "  state : %s (%s)" % (cr.state, cr.state_detail)
 
-        # Create a VM instance from that description.
-        cr = rm.acquire(cd)
 
-        print "\nWaiting for VM to become active..."
+        # ----------------------------------------------------------------------
+        #
+        # start a new VM
+        #
+        else:
 
+            # start a VM if needed
+            # in our session, connect to the EC2 resource manager
+            rm = saga.resource.Manager("ec2://aws.amazon.com/", session=session)
+
+            # Create a resource description with an image and an OS template,.
+            # We pick a small VM and a plain Ubuntu image...
+            cd = saga.resource.ComputeDescription()
+            cd.image    = 'ami-0256b16b'    # plain ubuntu
+            cd.template = 'Small Instance'
+
+            # Create a VM instance from that description.
+            cr  = rm.acquire(cd)
+            rid = cr.id
+
+            print "\nWaiting for VM to become active..."
+
+
+        # ----------------------------------------------------------------------
+        #
+        # use the VM
+        #
         # Wait for the VM to 'boot up', i.e., become 'ACTIVE'
-        if cr.state != saga.resource.ACTIVE:
-            cr.wait(saga.resource.ACTIVE)
+        cr.wait(saga.resource.ACTIVE)
 
         # Query some information about the newly created VM
-        print "\nCreated VM: %s" % cr.id
-        print "  state  : %s (%s)" % (cr.state, cr.state_detail)
-        print "  access : %s" % cr.access
+        print "Created VM: %s"      %  cr.id
+        print "  state   : %s (%s)" % (cr.state, cr.state_detail)
+        print "  access  : %s"      %  cr.access
 
         # give the VM some time to start up comlpetely, otherwise the subsequent
         # job submission might end up failing...
-        time.sleep(20)
+        time.sleep(60)
 
-        ######################################################################
-        ##  STEP 2: Run a Job on the VM                                     ##
-        ######################################################################
-
+        # create a job service which uses the VM's access URL (cr.access)
         js = saga.job.Service(cr.access, session=session)
 
         jd = saga.job.Description()
@@ -94,28 +125,38 @@ def main():
         job.run()
 
         print "\nRunning Job: %s" % job.id
-        print "  state : %s (%s)" % (job.state)
+        print "  state : %s" % job.state
         job.wait()
-        print "  state : %s (%s)" % (job.state)
+        print "  state : %s" % job.state
+
 
     except saga.SagaException, ex:
         # Catch all saga exceptions
         print "An exception occured: (%s) %s " % (ex.type, (str(ex)))
-        # Trace back the exception. That can be helpful for debugging.
-        print " \n*** Backtrace:\n %s" % ex.traceback
-        return -1
+        raise
+
+
+    except Exception as e:
+        # Catch all other exceptions
+        print "An Exception occured: %s " % e
+        raise
+
 
     finally:
 
-        ######################################################################
-        ##  STEP 2: Shut down the VM                                        ##
-        ######################################################################
+        # ----------------------------------------------------------------------
+        #
+        # shut VM down (only when id was specified on command line)
+        if cr and rid:
+            cr.destroy()
+            print "\nDestroyed VM: %s" % cr.id
+            print "  state : %s (%s)" % (cr.state, cr.state_detail)
 
-        cr.destroy()
 
-        print "\nDestroyed VM: %s" % cr.id
-        print "  state : %s (%s)" % (cr.state, cr.state_detail)
-        return 0
-
+# ------------------------------------------------------------------------------
+#
 if __name__ == "__main__":
+    
     sys.exit(main())
+
+

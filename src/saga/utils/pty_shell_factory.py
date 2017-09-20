@@ -7,6 +7,7 @@ __license__   = "MIT"
 import os
 import sys
 import pwd
+import time
 import string
 import getpass
 
@@ -58,8 +59,8 @@ _SCHEMAS = _SCHEMAS_SH + _SCHEMAS_SSH + _SCHEMAS_GSI
 # ssh versions...
 
 # ssh master/slave flag magic # FIXME: make timeouts configurable
-_SSH_FLAGS_MASTER   = "-o ControlMaster=%(share_mode)s -o ControlPath=%(ctrl)s -o TCPKeepAlive=no  -o ServerAliveInterval=10 -o ServerAliveCountMax=20"
-_SSH_FLAGS_SLAVE    = "-o ControlMaster=%(share_mode)s -o ControlPath=%(ctrl)s -o TCPKeepAlive=no  -o ServerAliveInterval=10 -o ServerAliveCountMax=20"
+_SSH_FLAGS_MASTER   = "-o ControlMaster=%(share_mode)s -o ControlPath=%(ctrl)s -o TCPKeepAlive=no  -o ServerAliveInterval=10 -o ServerAliveCountMax=20 %(connect_timeout)s"
+_SSH_FLAGS_SLAVE    = "-o ControlMaster=%(share_mode)s -o ControlPath=%(ctrl)s -o TCPKeepAlive=no  -o ServerAliveInterval=10 -o ServerAliveCountMax=20 %(connect_timeout)s"
 _SCP_FLAGS          = ""
 _SFTP_FLAGS         = ""
 
@@ -82,8 +83,8 @@ _SCRIPTS = {
     'sftp' : {
         'copy_to'      : '%(sftp_env)s "%(sftp_exe)s" %(sftp_args)s %(s_flags)s %(host_str)s',
         'copy_from'    : '%(sftp_env)s "%(sftp_exe)s" %(sftp_args)s %(s_flags)s %(host_str)s',
-        'copy_to_in'   : 'mput %(cp_flags)s "%(src)s" "%(tgt)s"',
-        'copy_from_in' : 'mget %(cp_flags)s "%(src)s" "%(tgt)s"',
+        'copy_to_in'   : 'mput "%(src)s" "%(tgt)s"',
+        'copy_from_in' : 'mget "%(src)s" "%(tgt)s"',
         'copy_is_posix': False
     },
     'sh' : {
@@ -145,14 +146,15 @@ class PTYShellFactory (object) :
     #
     def __init__ (self) :
 
-        self.logger     = rul.getLogger ('saga', 'PTYShellFactory')
+        self.logger     = ru.get_logger ('radical.saga.pty')
         self.registry   = {}
         self.rlock      = ru.RLock ('pty shell factory')
 
 
     # --------------------------------------------------------------------------
     #
-    def initialize (self, url, session=None, prompt=None, logger=None, posix=True) :
+    def initialize (self, url, session=None, prompt=None, logger=None,
+            posix=True, interactive=True) :
 
         with self.rlock :
 
@@ -163,11 +165,12 @@ class PTYShellFactory (object) :
                 prompt = "^(.*[\$#%>\]])\s*$"
 
             if  not logger :
-                logger = rul.getLogger ('saga', 'PTYShellFactory')
+                logger = self.logger
 
             # collect all information we have/need about the requested master
             # connection
-            info = self._create_master_entry (url, session, prompt, logger, posix)
+            info = self._create_master_entry (url, session, prompt, logger,
+                    posix, interactive)
 
             # we got master info - register the master, and create the instance!
             type_s = str(info['shell_type'])
@@ -227,6 +230,7 @@ class PTYShellFactory (object) :
             prompt     = info['prompt']
             logger     = info['logger']
             latency    = info['latency']
+            timeout    = info['ssh_timeout']
 
             pty_shell.latency = latency
 
@@ -237,8 +241,8 @@ class PTYShellFactory (object) :
             # went wrong.  Try to prompt a prompt (duh!)  Delay should be
             # minimum 0.1 second (to avoid flooding of local shells), and at
             # maximum 1 second (to keep startup time reasonable)
-            # most one second.  We try to get within that range with 100*latency.
-            delay = min (1.0, max (0.1, 50 * latency))
+            # most one second.  We try to get within that range with 10*latency.
+            delay = min (1.0, max (0.1, 10 * latency))
 
             try :
                 prompt_patterns = ["[Pp]assword:\s*$",             # password   prompt
@@ -253,7 +257,7 @@ class PTYShellFactory (object) :
                 # Error messages may appear for tcsh and others.  Excuse
                 # non-posix shells
                 if posix:
-                    pty_shell.write (" export PS1='$' ; set prompt='$'\n")
+                    pty_shell.write(" export PROMPT_COMMAND='' PS1='$' ; set prompt='$'\n")
 
                 # find a prompt
                 n, match = pty_shell.find (prompt_patterns, delay)
@@ -268,6 +272,7 @@ class PTYShellFactory (object) :
                 retry_trigger = True
                 used_trigger  = False
                 found_trigger = ""
+                time_start    = time.time()
 
                 while True :
 
@@ -281,7 +286,7 @@ class PTYShellFactory (object) :
                         # pattern only appears in the result, not in the
                         # command...
 
-                        if  retries > 100 :
+                        if time.time() - time_start > timeout:
                             raise se.NoSuccess ("Could not detect shell prompt (timeout)")
 
                         # make sure we retry a finite time...
@@ -294,7 +299,7 @@ class PTYShellFactory (object) :
 
                         if posix:
                             # use a very aggressive, but portable prompt setting scheme
-                            pty_shell.write (" export PS1='$' > /dev/null 2>&1 || set prompt='$'\n")
+                            pty_shell.write (" export PROMPT_COMMAND='' PS1='$' > /dev/null 2>&1 || set prompt='$'\n")
                             pty_shell.write (" printf 'HELLO_%%d_SAGA\\n' %d\n" % retries)
                             used_trigger = True
 
@@ -404,6 +409,7 @@ class PTYShellFactory (object) :
                         break
 
             except Exception as e :
+                logger.exception(e)
                 raise ptye.translate_exception (e)
 
 
@@ -448,7 +454,18 @@ class PTYShellFactory (object) :
 
     # --------------------------------------------------------------------------
     #
-    def _create_master_entry (self, url, session, prompt, logger, posix) :
+    def _which(self, cmd):
+
+        ret = ru.which(cmd)
+        if not ret:
+            raise RuntimeError('cmd %s not found' % cmd)
+        return ret
+
+
+    # --------------------------------------------------------------------------
+    #
+    def _create_master_entry (self, url, session, prompt, logger, posix,
+            interactive) :
         # FIXME: cache 'which' results, etc
         # FIXME: check 'which' results
 
@@ -464,9 +481,11 @@ class PTYShellFactory (object) :
             session_cfg = session.get_config ('saga.utils.pty')
             info['ssh_copy_mode']  = session_cfg['ssh_copy_mode'].get_value ()
             info['ssh_share_mode'] = session_cfg['ssh_share_mode'].get_value ()
+            info['ssh_timeout']    = session_cfg['ssh_timeout'].get_value ()
 
             logger.info ("ssh copy  mode set to '%s'" % info['ssh_copy_mode' ])
             logger.info ("ssh share mode set to '%s'" % info['ssh_share_mode'])
+            logger.info ("ssh timeout    set to '%s'" % info['ssh_timeout'])
 
 
             # fill the info dict with details for this master channel, and all
@@ -489,38 +508,48 @@ class PTYShellFactory (object) :
                 info['shell_type'] = "ssh"
                 info['copy_mode']  = info['ssh_copy_mode']
                 info['share_mode'] = info['ssh_share_mode']
-                info['ssh_exe']    = ru.which ("ssh")
-                info['scp_exe']    = ru.which ("scp")
-                info['sftp_exe']   = ru.which ("sftp")
+                info['ssh_exe']    = self._which ("ssh")
+                info['scp_exe']    = self._which ("scp")
+                info['sftp_exe']   = self._which ("sftp")
 
             elif info['schema'] in _SCHEMAS_GSI :
                 info['shell_type'] = "ssh"
                 info['copy_mode']  = info['ssh_copy_mode']
                 info['share_mode'] = info['ssh_share_mode']
-                info['ssh_exe']    = ru.which ("gsissh")
-                info['scp_exe']    = ru.which ("gsiscp")
-                info['sftp_exe']   = ru.which ("gsisftp")
+                info['ssh_exe']    = self._which ("gsissh")
+                info['scp_exe']    = self._which ("gsiscp")
+                info['sftp_exe']   = self._which ("gsisftp")
 
             elif info['schema'] in _SCHEMAS_SH :
                 info['shell_type'] = "sh"
                 info['copy_mode']  = "sh"
                 info['share_mode'] = "auto"
-                info['sh_args']    = "-i"
-                info['sh_env']     = "/usr/bin/env TERM=vt100 PS1='PROMPT-$?->'"
-                info['cp_env']     = "/usr/bin/env TERM=vt100 PS1='PROMPT-$?->'"
+                info['sh_env']     = "/usr/bin/env TERM=vt100 PROMPT_COMMAND='' PS1='PROMPT-$?->'"
+                info['cp_env']     = "/usr/bin/env TERM=vt100 PROMPT_COMMAND='' PS1='PROMPT-$?->'"
                 info['scp_root']   = "/"
 
+                if interactive: info['sh_args'] = "-i"
+                else          : info['sh_args'] = ""
+
                 if  "SHELL" in os.environ :
-                    info['sh_exe'] =  ru.which (os.environ["SHELL"])
-                    info['cp_exe'] =  ru.which ("cp")
+                    info['sh_exe'] =  self._which (os.environ["SHELL"])
+                    info['cp_exe'] =  self._which ("cp")
                 else :
-                    info['sh_exe'] =  ru.which ("sh")
-                    info['cp_exe'] =  ru.which ("cp")
+                    info['sh_exe'] =  self._which ("sh")
+                    info['cp_exe'] =  self._which ("cp")
 
             else :
                 raise se.BadParameter._log (self.logger, \
                           "cannot handle schema '%s://'" % url.schema)
 
+
+            # If an SSH timeout has been specified set up the ConnectTimeout
+            # string
+            if info['ssh_timeout']:
+                info['ssh_connect_timeout'] = ('-o ConnectTimeout=%s' 
+                    % int(float(info['ssh_timeout'])))
+            else:
+                info['ssh_connect_timeout'] = ''
 
             # depending on type, create command line (args, env etc)
             #
@@ -612,9 +641,9 @@ class PTYShellFactory (object) :
                                     info['sftp_env']  += "X509_CERT_DIR='%s' "  % context.cert_repository
 
                 if url.port and url.port != -1 :
-                    info['ssh_args']  += "-p %d " % int(url.port)
-                    info['scp_args']  += "-p %d " % int(url.port)
-                    info['sftp_args'] += "-P %d " % int(url.port)
+                    info['ssh_args']  += "-o Port=%d " % int(url.port)
+                    info['scp_args']  += "-o Port=%d " % int(url.port)
+                    info['sftp_args'] += "-o Port=%d " % int(url.port)
 
 
                 # all ssh based shells allow for user_id and user_pass from contexts
@@ -635,10 +664,15 @@ class PTYShellFactory (object) :
                     info['ctrl'] = "%s_%%h_%%p.ctrl" % (ctrl_base)
 
                 info['m_flags']  = _SSH_FLAGS_MASTER % ({'share_mode' : info['share_mode'],
-                                                         'ctrl'       : info['ctrl']})
+                                                         'ctrl'       : info['ctrl'],
+                                                         'connect_timeout': info['ssh_connect_timeout']})
                 info['s_flags']  = _SSH_FLAGS_SLAVE  % ({'share_mode' : info['share_mode'],
-                                                         'ctrl'       : info['ctrl']})
+                                                         'ctrl'       : info['ctrl'],
+                                                         'connect_timeout': info['ssh_connect_timeout']})
 
+                logger.debug('SSH Connection M_FLAGS: %s' % info['m_flags'])
+                logger.debug('SSH Connection S_FLAGS: %s' % info['s_flags'])
+                
                 # we want the userauth and hostname parts of the URL, to get the
                 # scp-scope fs root.
                 info['scp_root']  = ""

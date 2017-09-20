@@ -6,6 +6,255 @@
     https://github.com/radical-cybertools/saga-python/issues?q=is%3Aissue+is%3Aopen+
 
 
+Version 0.46                                                          2017-08-23
+--------------------------------------------------------------------------------
+
+  - hotfix for RP #1415
+
+
+Version 0.46                                                          2017-08-11
+--------------------------------------------------------------------------------
+
+  - Fix several debug messages
+  - Fix/621 experiment aimes (#622) 
+  - Fixed run_job to run in service.py 
+  - Properly support SGE job name. (#624) 
+  - Anselm support in pbspro v.13 (#634) 
+  - fix a condor script syntax error 
+  - attempt to prevent job eviction 
+  - be resiliant against lingering NFS locks (hi titan) 
+  - clean bulk job info for condor 
+  - clean up state management in condor adaptor,
+  - slim down condor log calls, simplify status updates, ensure output transfer 
+  - container_cancel needs to accept timeout parameter (#633) 
+  - don't barf on failing condor_history 
+  - don't limit status check length 
+  - iteration on slurm mpi support (#623) 
+  - fix logic error in directive evaluation 
+  - fix parsing of condor_history for multi-file staging
+  - fixes on src/tgt ordering in osg staging 
+  - follow the rename of ru.Task to ru.Future 
+  - follow the rename of ru.Thread to ru.Future 
+  - implement bulk cancel for condor 
+  - iteration on bulk submission, data staging 
+  - iteration on run_job implementatio 
+  - improve condor scaling / performance
+  - make sure we alsways have a valid transfer directive in condor 
+  - make sure we do not fail on a missing exit code 
+  - more clarity on file staging semantics, some cleanup 
+  - better handling of $PROMPT_COMMAND 
+  - resilience against condor_history errors 
+  - update on torque to avoid triggering a check 
+
+
+Version 0.45.1                                                        2017-02-28
+--------------------------------------------------------------------------------
+
+  - hotfix to support CandidateHosts for LoadLeveler
+
+
+Version 0.45                                                          2017-02-28
+--------------------------------------------------------------------------------
+
+  - Add srm adaptor - Thanks Mark!
+  - Add cobalt adaptor (blue gene/q) - Thanks Manuel!
+  - Add special case for Rhea
+  - Deal with timeouts. 
+  - Don't want our jobs to restart after eviction (OSG)
+  - Make pty shell url configurable. 
+  - Remove some more PBSPro remains. 
+  - address #585 
+  - fix #590 
+  - check that prev_info exists before populating curr_info with its info in _job_get_info 
+  - clean up slurm adaptor to get it fit for the split branch in RP
+  - fix state interpretation for pbspro 
+  - make torque fit for rp split branch 
+  - remove some debug logs 
+  - some consistency fixes
+  - update slurm example in context of #611 
+  - use `-o Port=%d` notation for ssh based channels 
+  - backport ft and bulk ops for torque from osg_optimization 
+
+
+Version 0.44                                                          2016-11-01
+--------------------------------------------------------------------------------
+
+  - added basework_dir parameter to sge and proxy adaptors
+  - added new PBS versions to pbsnodes CPU count check
+  - changed the regular expression to find the job-id on LSF adaptor. Fixes #568 
+  - re-enable fallback methods for slurm job containers, jd.name support for slurm 
+  - fix for issue #586, removing invalid dirs from shell wrapper script file path
+  - fix parsing of file staging directives 
+  - make shell job adaptor workdir configurable 
+  - avoid double close for shell job service 
+  - raise error on missing tools 
+  - removed duplicate get_name function in job class 
+  - add missing container method to get job states 
+  - merged pull request #583 
+  - enforce version in radical stack 
+  - fix #555 
+
+
+Version 0.41.3                                                        2016-07-07
+--------------------------------------------------------------------------------
+
+  - still hating it...
+
+
+Version 0.41.2                                                        2016-07-07
+--------------------------------------------------------------------------------
+
+  - I hate python deployment
+
+
+Version 0.41.1                                                        2016-07-07
+--------------------------------------------------------------------------------
+
+  - hotfix: remove some debug code which causes trouble in multiuser envs
+
+
+Version 0.41                                                          2016-06-02
+--------------------------------------------------------------------------------
+
+  - Feature/job name shell (#541) 
+  - implementation of job names for shell job adaptor and on API level 
+  - add job.name for condor
+  - address #552 
+  - allow for non-interative local pty shells 
+  - initialidir support for Condor
+  - change HOSTFILE settings 
+
+  - fix missing var setting in aws example 
+  - fix port opening directive, make sure port is opened just once 
+  - fix regression in job cancellation 
+  - fix rel path on open 
+  - fix staging calls 
+  - fix string formatting error 
+  - fix ssh context to handle passwords containing spaces 
+  - cleanup of the shell spawner, getting in sync with RP version 
+  - implement dir.exists 
+  - make sure we have a job description on reconnected jobs 
+  - make task passing to async calls optional 
+  - aws security group tweaking 
+  - remove invalid obj redirection 
+  - code simplification 
+  - simplify local mkdir in shell file adaptor 
+  - sync with updated benchmark tools 
+  - use shared shell connection for FS ops 
+
+
+Version 0.40.2                                                        2016-04-23
+--------------------------------------------------------------------------------
+
+  - Hotfix release to avoid security warnings on Stampede
+
+
+Version 0.40.1                                                        2016-02-05
+--------------------------------------------------------------------------------
+
+  - Hotfix release to address a tmp file race condition on file staging
+
+
+Version 0.40                                                          2016-01-19
+--------------------------------------------------------------------------------
+
+  - Added job monitor state update fix to PBSPro adapter. 
+  - Add session property to base class. Fix #480. 
+  - add traceback property to exception
+  - support gsissh for condor job submission 
+  - pass span parameter to LSF. 
+  - support SLURM reservation. 
+  - file staging for shell adaptor
+  - Fix #477, set session for shell job service 
+  - Fixed job state monitor to correctly identify state changes. 
+  - Fixed string formatting error. 
+  - Fixes #501. Thanks Javi! 
+  - fix session documentation.  Thanks Jeremy!
+  - Fix to allow use of environment vars in ssh context key/cert property file paths. 
+  - Implement bulk submit, states and wait for condor. 
+  - Improve file staging directives handling. 
+  - Logging goes into working directory. 
+  - make ssh connection timeout configirable (defaults now to 10 seconds) 
+  - Passing ssh_timeout param to ssh ConnectTimeout option 
+  - Updated fix to #494 to take account of empty key/cert parameter. 
+  - deprecate PBS adaptor
+
+
+Version 0.39                                                          2015-12-01
+--------------------------------------------------------------------------------
+
+  - support dynamic adaptor loading 
+  - fix #477, set session for shell job service (thanks Mehdi!)
+  - set session on file and directory instances, #480 
+
+
+Version 0.38.1 release                                                2015-11-11
+--------------------------------------------------------------------------------
+
+  - fix 0.38 after botched merge
+
+
+Version 0.38 release                                                  2015-11-06
+--------------------------------------------------------------------------------
+
+  - support for anaconda client install
+
+
+Version 0.37 release                                                  2015-10-15
+--------------------------------------------------------------------------------
+
+  - scattered bug fixes
+
+
+Version 0.36 release                                                  2015-10-15
+--------------------------------------------------------------------------------
+
+  - update of GO adaptor with recent GlobusOnline evolotion
+  - scattered fixes in GO adaptor
+
+
+Version 0.36 release                                                  2015-10-08
+--------------------------------------------------------------------------------
+
+  Note that RADICAL_SAGA_VERBOSE should now be used instead of SAGA_VERBOSE (but
+  the latter will be supported for a while).  PTY layer debug levels can
+  separately be enabled via RADICAL_SAGA_PTY_VERBOSE.
+
+  - fix cray qsub arguments
+  - fix interpretation of relative / absolute URLs in some cases
+  - fix #449 - thanks jcohen02! 
+  - keep up with logger changes in util 
+  - properly detect failed jobs.
+  - follow changes on resource configurations (BW)
+  - remove dead code.
+  - fix state mapping in some queue adaptors
+  - clean torque/pbs separation
+
+
+Version 0.35 release                                                  2015-07-14
+--------------------------------------------------------------------------------
+
+  - Add contexts to session at start of context list
+  - add tc.get_task(id)
+  - Add PROCESSES_PER_HOST to all job adaptors.
+  - sync an sdist naming fix
+  - Add dedicated PBS Pro adaptor.
+  - Get ppn from proccess_per_host.
+  - implement candidate_hosts for slurm adaptor
+  - processes_per_host for SLURM.
+
+
+Version 0.29 release                                                  2015-07-14
+--------------------------------------------------------------------------------
+
+  - apply setup/git fix
+  - fix exception type exception
+  - convert to locking "with"/by context manager.
+  - only create parents for the dir part of a target.
+  - reentrant lock to guard concurrent cache writing.
+  - fix object._id format
+
+
 Version 0.28 release 2015-04-16
 --------------------------------------------------------------------------------
 
@@ -339,7 +588,7 @@ Version 0.2.5 released 2012-10-24
   - Introduced support for GSISSH: pbs+gsissh://, sge+gsissh://
   - Re-implementation of a (more Python-esque) attribute interface
   - Fixed JobID issues, i.e., job.job_id returns 'None' in case the
-    job is not running instead of "[serviceurl]-[None]"
+    job is not running instead of
   - Introduced dynamic, fault-tolerant plug-in loader. If anything
     goes wrong during loading of a specific plug-in (i.e.,
     dependencies on 3rd party modules cannot be fulfilled, the plug-in

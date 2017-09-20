@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 
 __author__    = "Andre Merzky, Ole Weidner"
 __copyright__ = "Copyright 2013, The SAGA Project"
@@ -25,13 +26,13 @@ def main():
     try:
         # Your ssh identity on the remote machine.
         ctx = saga.Context("ssh")
-        ctx.user_id = getpass.getuser()  # Change if necessary
+       #ctx.user_id = getpass.getuser()  # Change if necessary
 
         session = saga.Session()
         session.add_context(ctx)
 
         # open home directory on a remote machine
-        remote_dir = saga.filesystem.Directory('sftp://hotel.futuregrid.org/opt/',
+        remote_dir = saga.filesystem.Directory('sftp://stampede.tacc.xsede.org/tmp/',
                                                session=session)
 
         for entry in remote_dir.list():

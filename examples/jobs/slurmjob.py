@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 
 __author__    = "Ole Weidner"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
@@ -15,23 +16,15 @@ import sys
 import saga
 
 
-def main():
+# ------------------------------------------------------------------------------
+#
+def start():
 
     try:
-        # Your ssh identity on the remote machine.
-        ctx = saga.Context("ssh")
-
-        # Change e.g., if you have a differnent username on the remote machine
-        #ctx.user_id = "your_ssh_username"
-
-        session = saga.Session()
-        session.add_context(ctx)
-
         # Create a job service object that represent a remote pbs cluster.
         # The keyword 'pbs' in the url scheme triggers the SGE adaptors
         # and '+ssh' enables SGE remote access via SSH.
-        js = saga.job.Service("slurm+ssh://login1.stampede.tacc.utexas.edu",
-                              session=session)
+        js = saga.job.Service("slurm+gsissh://stampede.tacc.xsede.org:2222/")
 
         # Next, we describe the job we want to run. A complete set of job
         # description attributes can be found in the API documentation.
@@ -42,61 +35,119 @@ def main():
         jd.executable        = '/bin/touch'
         jd.arguments         = ['$FILENAME']
 
+        jd.name              = "examplejob"
         jd.queue             = "development"
         jd.project           = "TG-MCB090174"
 
-        jd.working_directory = "$SCRATCH/A/B/C"
+        jd.working_directory = ".saga/test"
         jd.output            = "examplejob.out"
         jd.error             = "examplejob.err"
 
         # Create a new job from the job description. The initial state of
         # the job is 'New'.
-        touchjob = js.create_job(jd)
+        job = js.create_job(jd)
 
         # Check our job's id and state
-        print "Job ID    : %s" % (touchjob.id)
-        print "Job State : %s" % (touchjob.state)
+        print "Job ID    : %s" % (job.id)
+        print "Job State : %s" % (job.state)
 
         # Now we can start our job.
-        print "\n...starting job...\n"
-        touchjob.run()
+        print "starting job"
+        job.run()
 
-        print "Job ID    : %s" % (touchjob.id)
-        print "Job State : %s" % (touchjob.state)
+        print "Job ID    : %s" % (job.id)
+        print "Job State : %s" % (job.state)
+
+        js.close()
+
+    except saga.SagaException as e:
+
+        # Catch all saga exceptions
+        print "An exception occured: (%s) %s " % (e.type, (str(e)))
+
+        # Get the whole traceback in case of an exception -
+        # this can be helpful for debugging the problem
+        print " \n*** Backtrace:\n %s" % e.traceback
+        return -1
+
+# ------------------------------------------------------------------------------
+#
+def check(jobid):
+
+    try:
+        # Create a job service object to the same cluster
+        js  = saga.job.Service("slurm+gsissh://stampede.tacc.xsede.org:2222/")
 
         # List all jobs that are known by the adaptor.
         # This should show our job as well.
-        print "\nListing active jobs: "
-        for job in js.list():
-            print " * %s" % job
+        print "Listing active jobs: "
+        for jid in js.list():
+            if jid == jobid:
+                print ' * %s' % jid
+            else:
+                print ' - %s' % jid
 
-        # Now we disconnect and reconnect to our job by using the get_job()
-        # method and our job's id. While this doesn't make a lot of sense
-        # here,  disconnect / reconnect can become very important for
-        # long-running job.
-        touchjob_clone = js.get_job(touchjob.id)
+        # reconnect to the given job
+        job = js.get_job(jobid)
+        print "Job ID    : %s" % (job.id)
+        print "Job State : %s" % (job.state)
+
+        js.close()
+
+    except saga.SagaException as e:
+
+        # Catch all saga exceptions
+        print "An exception occured: (%s) %s " % (e.type, (str(e)))
+
+        # Get the whole traceback in case of an exception -
+        # this can be helpful for debugging the problem
+        print " \n*** Backtrace:\n %s" % e.traceback
+        return -1
+
+# ------------------------------------------------------------------------------
+#
+def stop(jobid):
+
+    try:
+
+        # Create a job service object to the same cluster and reconnect to job
+        js  = saga.job.Service("slurm+gsissh://stampede.tacc.xsede.org:2222/")
+        job = js.get_job(jobid)
+        print "Job ID    : %s" % (job.id)
+        print "Job State : %s" % (job.state)
+
+        print "cacnel job"
+        job.cancel()
 
         # wait for our job to complete
-        print "\n...waiting for job...\n"
-        touchjob_clone.wait()
+        print "wait for job"
+        job.wait()
 
-        print "Job State   : %s" % (touchjob_clone.state)
-        print "Exitcode    : %s" % (touchjob_clone.exit_code)
-        # print "Exec. hosts : %s" % (touchjob_clone.execution_hosts) # not impl.
-        # print "Create time : %s" % (touchjob_clone.created)
-        # print "Start time  : %s" % (touchjob_clone.started)
-        # print "End time    : %s" % (touchjob_clone.finished)
+        print "Job State   : %s" % (job.state)
+        print "Exitcode    : %s" % (job.exit_code)
 
         js.close()
         return 0
 
-    except saga.SagaException, ex:
+    except saga.SagaException as e:
+
         # Catch all saga exceptions
-        print "An exception occured: (%s) %s " % (ex.type, (str(ex)))
+        print "An exception occured: (%s) %s " % (e.type, (str(e)))
+
         # Get the whole traceback in case of an exception -
         # this can be helpful for debugging the problem
-        print " \n*** Backtrace:\n %s" % ex.traceback
+        print " \n*** Backtrace:\n %s" % e.traceback
         return -1
 
+# ------------------------------------------------------------------------------
+#
 if __name__ == "__main__":
-    sys.exit(main())
+
+    if len(sys.argv) < 2:
+        print "\n\tusage: %s [start | check | stop] <jobid>\n" % sys.argv[0]
+        sys.exit(-1)
+
+    if   sys.argv[1] == 'start': sys.exit(start())
+    elif sys.argv[1] == 'check': sys.exit(check(sys.argv[2]))
+    elif sys.argv[1] == 'stop' : sys.exit(stop(sys.argv[2]))
+

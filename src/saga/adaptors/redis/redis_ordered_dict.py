@@ -163,9 +163,11 @@ class OrderedDict (dict):
                             'arguments (%d given)' % (len(args),))
 
         # Make progressively weaker assumptions about "other"
-        other = ()
         if len(args) == 2:
             other = args[1]
+        else:
+            other = ()
+
         if isinstance(other, dict):
             for key in other:
                 self[key] = other[key]

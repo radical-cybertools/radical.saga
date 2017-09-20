@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 
 __author__    = "Andre Merzky, Ole Weidner"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
@@ -12,20 +13,23 @@ import sys
 import saga
 import getpass
 
+URL = "condor+ssh://gw68.quarry.iu.teragrid.org?WhenToTransferOutput=ON_EXIT&should_transfer_files=YES&notification=Always",
+URL = "condor+gsissh://login.osgconnect.net"
+URL = "condor+gsissh://xd-login.opensciencegrid.org"
+URL = "condor+gsissh://submit-1.osg.xsede.org"
 
 def main():
     try:
         # Your ssh identity on the remote machine.
-        ctx = saga.Context("ssh")
-        ctx.user_id = getpass.getuser()  # Change if necessary
+      # ctx = saga.Context("ssh")
+      # ctx.user_id = getpass.getuser()  # Change if necessary
 
         session = saga.Session()
-        session.add_context(ctx)
+      # session.add_context(ctx)
 
         # create a job service for the local machine. both, 'fork' and
         # 'local' schemes trigger the local job adaptor.
-        js = saga.job.Service("condor+ssh://gw68.quarry.iu.teragrid.org?WhenToTransferOutput=ON_EXIT&should_transfer_files=YES&notification=Always",
-                              session=session)
+        js = saga.job.Service(URL, session=session)
 
         # describe our job
         jd = saga.job.Description()
@@ -33,11 +37,11 @@ def main():
         # environment, executable & arguments. We use '/bin/sleep' to simulate
         # a job that runs for $RUNTIME seconds.
         jd.name            = 'testjob'
-        jd.project         = 'TG-MCB090174'
-        jd.environment     = {'RUNTIME': '/etc/passwd'}
+        jd.project         = 'TG-CCR140028'
+        jd.environment     = {'RUNTIME': '30'}
         jd.wall_time_limit = 2 # minutes
 
-        jd.executable = '/bin/cat'
+        jd.executable = '/bin/sleep'
         jd.arguments = ["$RUNTIME"]
 
         jd.output          = "saga_condorjob.stdout"
@@ -67,18 +71,18 @@ def main():
             print " * %s" % job
 
         # disconnect / reconnect
-        sleebjob_clone = js.get_job(sleepjob.id)
+        sleepjob_clone = js.get_job(sleepjob.id)
 
         # wait for our job to complete
         print "\n...waiting for job...\n"
-        sleebjob_clone.wait()
+        sleepjob_clone.wait()
 
-        print "Job State   : %s" % (sleebjob_clone.state)
-        print "Exitcode    : %s" % (sleebjob_clone.exit_code)
-        print "Exec. hosts : %s" % (sleebjob_clone.execution_hosts)
-        print "Create time : %s" % (sleebjob_clone.created)
-        print "Start time  : %s" % (sleebjob_clone.started)
-        print "End time    : %s" % (sleebjob_clone.finished)
+        print "Job State   : %s" % (sleepjob_clone.state)
+        print "Exitcode    : %s" % (sleepjob_clone.exit_code)
+        print "Exec. hosts : %s" % (sleepjob_clone.execution_hosts)
+        print "Create time : %s" % (sleepjob_clone.created)
+        print "Start time  : %s" % (sleepjob_clone.started)
+        print "End time    : %s" % (sleepjob_clone.finished)
 
         js.close()
         return 0

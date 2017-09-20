@@ -338,8 +338,8 @@ class Adaptor(saga.adaptors.base.Base):
             elif cwd_path:
                 ps_path = cwd_path
 
-        # the pathspec is the concatenation of ps_host and ps_path by a colon
-        ps = "%s:%s" % (ep_name, ps_path)
+        # the pathspec is the concatenation of ps_host and ps_path
+        ps = "%s%s" % (ep_name, ps_path)
 
         # check if we know the endpoint in XXX, and create/activate as needed
         ep = self.get_go_endpoint(session, shell, ep_url)
@@ -390,7 +390,7 @@ class Adaptor(saga.adaptors.base.Base):
             # Had contact on this with Globus Support, they couldn't suggest
             # anything better.
             if ep['MyProxy Server'] == 'myproxy.globusonline.org' and \
-            '/C=US/O=Globus Consortium/OU=Globus Connect Service/CN=' in ep['Subject(s)']:
+            '/C=US/O=Globus Consortium/OU=Globus Connect Service/CN=' in ep['Credential Subject']:
                 shell.run_sync("endpoint-activate %s" % ep_name)
             else:
                 shell.run_sync("endpoint-activate -g %s" % ep_name)
@@ -419,7 +419,19 @@ class Adaptor(saga.adaptors.base.Base):
                 endpoints = {}
                 name = None
 
-                _, out, _ = shell.run_sync("endpoint-list -v")
+                if ep_name:
+                    endpoint_selection = ep_name
+                else:
+                    endpoint_selection = '-a'
+
+                # Get the details of endpoints _OWNED_ by user
+                _, out, _ = shell.run_sync("endpoint-details %s -f "
+                                           "legacy_name,"        # Legacy Name
+                                           "credential_status,"  # Credential Status
+                                           "credential_subject," # Credential Subject
+                                           "myproxy_server"     # MyProxy Server
+                                           % endpoint_selection
+                                           )
 
                 for line in out.split('\n'):
                     elems = line.split(':', 1)
@@ -433,18 +445,13 @@ class Adaptor(saga.adaptors.base.Base):
                     if not key or not val:
                         continue
 
-                    if key == "Name":
+                    if key == "Legacy Name":
 
                         # we now operate on a new entry -- initialize it
                         name = val
 
                         endpoints[name] = {}
-
-                        # we make sure that some entries always exist, to simplify error
-                        # checks
-                        endpoints[name]['Name']              = name
-                        endpoints[name]['Credential Status'] = None
-                        endpoints[name]['Host(s)']           = None
+                        endpoints[name]['Legacy Name']       = name
 
                     else:
 
@@ -452,9 +459,10 @@ class Adaptor(saga.adaptors.base.Base):
                         try:
                             endpoints[name][key] = val
                         except:
-                            raise saga.NoSuccess("No entry name to operate on")
+                            raise saga.NoSuccess("No entry to operate on for: %s[%s]" % (key,val))
 
                 # replace the ep info dist with the new one, to clean out old entries.
+                # TODO: merge and not replace(?)
                 self.shells[session._id]['endpoints'] = endpoints
 
         if ep_name:
@@ -526,9 +534,9 @@ class Adaptor(saga.adaptors.base.Base):
         # existing elements.
         # TODO: Can't we check for existence? The errors are confusing.
 
-        host_ps, path_ps = tgt_ps.split(':', 1)
-        #path_ps = os.path.dirname(path_ps)
-        
+        host_ps, path_ps = tgt_ps.split('/', 1)
+        path_ps = '/' + path_ps
+
         self._logger.info('mkparents %s' % path_ps)
 
         if path_ps.startswith('/'):
@@ -542,7 +550,7 @@ class Adaptor(saga.adaptors.base.Base):
         for path_elem in path_elems :
 
             cur_path = "%s/%s" % (cur_path, path_elem)
-            out, err = self.run_go_cmd(shell, "mkdir %s:%s" % (host_ps, cur_path))
+            out, err = self.run_go_cmd(shell, "mkdir %s%s" % (host_ps, cur_path))
 
             if err:
                 error[cur_path] = err
@@ -595,7 +603,7 @@ class Adaptor(saga.adaptors.base.Base):
 
         # Initiate background copy
         # TODO: Should we use a deadline?
-        cmd = "scp -D %s -s %d '%s' '%s'" % (cmd_flags, sync_level, source, target)
+        cmd = "transfer %s -s %d -- '%s' '%s'" % (cmd_flags, sync_level, source, target)
         out, _ = self.run_go_cmd(shell, cmd)
         # 'Task ID: 8c6f989d-b6aa-11e4-adc6-22000a97197b'
         key, value = out.split(':')
@@ -899,8 +907,8 @@ class GODirectory(saga.adaptors.cpi.filesystem.Directory):
         src_ps = self.get_path_spec(url=src_in)
         tgt_ps = self.get_path_spec(url=tgt_in)
 
-        src_ep_str = src_ps.split(':', 1)[0]
-        tgt_ep_str = tgt_ps.split(':', 1)[0]
+        src_ep_str = src_ps.split('/', 1)[0]
+        tgt_ep_str = tgt_ps.split('/', 1)[0]
 
         if src_ep_str == tgt_ep_str:
 
@@ -1220,8 +1228,8 @@ class GOFile(saga.adaptors.cpi.filesystem.File):
         src_ps = self.get_path_spec()
         tgt_ps = self.get_path_spec(url=tgt_in)
 
-        src_ep_str = src_ps.split(':', 1)[0]
-        tgt_ep_str = tgt_ps.split(':', 1)[0]
+        src_ep_str = src_ps.split('/', 1)[0]
+        tgt_ep_str = tgt_ps.split('/', 1)[0]
 
         # TODO: check for errors
 

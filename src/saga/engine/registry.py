@@ -37,4 +37,7 @@ adaptor_registry = [
                     "saga.adaptors.loadl.loadljob",
                     "saga.adaptors.globus_online.go_file",
                     "saga.adaptors.torque.torquejob",
+                    "saga.adaptors.pbspro.pbsprojob",
+                    "saga.adaptors.srm.srmfile",
+                    "saga.adaptors.cobalt.cobaltjob"
                    ]

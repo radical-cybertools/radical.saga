@@ -1,5 +1,11 @@
 #!/usr/bin/env python
 
-import saga
-print saga.version
+import sys
+import saga as rs
+
+
+if len(sys.argv) > 1 and sys.argv[1] == '-v':
+    print rs.version_detail
+else:
+    print rs.version
 
