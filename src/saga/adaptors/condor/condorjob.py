@@ -909,7 +909,13 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
             # condor_q failed -- job is gone
             info['gone'] = True
 
-            if info['state'] in [saga.job.RUNNING, saga.job.PENDING]:
+            if not self._adaptor.use_hist:
+
+                # look the other way and pray...
+                info['returncode'] = 0
+                info['state']      = saga.job.DONE
+
+            elif info['state'] in [saga.job.RUNNING, saga.job.PENDING]:
 
                 # run the Condor 'condor_history' command to get info about
                 # finished jobs
