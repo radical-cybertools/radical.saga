@@ -434,7 +434,7 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
             job_contact = job_contact[0]
 
         if project and ':' in project:
-            account, reservation = project.split()
+            account, reservation = project.split(':', 1)
         else:
             account, reservation = project, None
 
