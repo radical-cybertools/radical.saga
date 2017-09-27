@@ -248,17 +248,15 @@ _CACHE_TIMEOUT = 5.0
 #
 _ADAPTOR_NAME          = "saga.adaptor.condorjob"
 _ADAPTOR_SCHEMAS       = ["condor", "condor+ssh", "condor+gsissh"]
-_ADAPTOR_OPTIONS       = [
-    { 
-    'category'         : 'saga.adaptor.condorjob',
-    'name'             : 'use_history',
-    'type'             : str, 
-    'default'          : 'None',
-    'valid_options'    : ['True', 'False', 'None'],
-    'documentation'    : '''Enable the use of condor_history for job state
-                            checking (slow)''',
-    'env_variable'     : 'SAGA_CONDOR_USE_HISTORY'
-    },
+_ADAPTOR_OPTIONS       = [{
+        'category'      : 'saga.adaptor.condorjob',
+        'name'          : 'use_history',
+        'type'          : bool,
+        'default'       : False,
+        'valid_options' : [True, False],
+        'documentation' : '''Enable condor_history for state checks (slow)''',
+        'env_variable'  : 'SAGA_CONDOR_USE_HISTORY'
+        },
 ]
 
 # --------------------------------------------------------------------
@@ -348,7 +346,7 @@ class Adaptor (saga.adaptors.base.Base):
         self.id_re = re.compile('^\[(.*)\]-\[(.*?)\]$')
         self.opts  = self.get_config (_ADAPTOR_NAME)
         self.use_hist = self.opts['use_history'].get_value()
-        self._logger.info("use condor_history")
+        self._logger.error("use condor_history: %s", self.use_hist)
 
 
     # ----------------------------------------------------------------
@@ -544,7 +542,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
                 out += '\n\nretry %d:\n%s' % (n, _out)
                 err += '\n\nretry %d:\n%s' % (n, _err)
 
-                self._logger.debug(' === need retry %s', options)
+                self._logger.debug('need retry %s', options)
 
                 # if pid was given, then failur means job not found.  No point
                 # retrying...
@@ -991,7 +989,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
         # run the Condor 'condor_q' command to get some infos about our job
         opts = "%s -autoformat:, ProcId JobStatus ExitStatus ExitBySignal CompletionDate" % cluster_id
         ret, out, err = self._run_condor_q(retries=3, timeout=60, options=opts)
-        self._logger.debug(' === got state info:%s\n%s\n%s\n%s', opts, ret, out, err)
+        self._logger.debug('got state info:%s\n%s\n%s\n%s', opts, ret, out, err)
 
         if ret != 0:
             raise Exception("condor_q failed\n[%s]\n[%s]" % (out, err))
@@ -1419,8 +1417,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
         """
 
         ids = []
-        ret, out, err = self._run_condor_q(retries=3, timeout=60,
-                                           options='-submitter `whoami`')
+        ret, out, err = self._run_condor_q(retries=3, timeout=60)
 
         # instead of listing all jobs and grep'ing for our user ID, we only list
         # jobs submitted by us.  The result is the same, but it reduces the load
@@ -1436,15 +1433,16 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
         else:
 
             # --------------------------------------------------------------------------------------
+            # $ /usr/bin/condor_q
             #
-            # -- Schedd: xd-login.opensciencegrid.org : <129.79.53.198:9615?...
-            #  ID      OWNER            SUBMITTED     RUN_TIME ST PRI SIZE CMD
             #
-            # 36100000.0   mturilli        2/21 20:14   0+01:50:56 R  0   14648.4 env /bin/sh -c /bi
-            # 36100000.8   mturilli        2/21 20:14   0+01:50:55 R  0   14648.4 env /bin/sh -c /bi
-            # 36100000.9   mturilli        2/21 20:14   0+01:50:56 R  0   14648.4 env /bin/sh -c /bi
+            # -- Schedd: xd-login.opensciencegrid.org : <129.79.53.198:9615?... @ 09/27/17 07:08:42
+            # OWNER  BATCH_NAME       SUBMITTED   DONE   RUN    IDLE  TOTAL JOB_IDS
+            # merzky CMD: /bin/env   9/27 07:07      _      1      _      1 70722204.0
+            # merzky CMD: /bin/env   9/27 07:07      _      1      _      1 70722205.0
             #
-            # 3 jobs; 0 completed, 0 removed, 0 idle, 3 running, 0 held, 0 suspended
+            # 2 jobs; 0 completed, 0 removed, 0 idle, 2 running, 0 held, 0 suspended
+            #
             # --------------------------------------------------------------------------------------
 
             for line in out.split("\n"):
@@ -1453,7 +1451,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
 
                 if not line              : continue
                 if line.startswith('-- '): continue
-                if line.startswith('ID '): continue
+                if 'OWNER'  in line      : continue
                 if 'jobs; ' in line      : continue
 
                 elems = line.split()
@@ -1641,7 +1639,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
             proc_id    = self._adaptor.parse_id(job_id)[1]
             cluster_id = proc_id.split('.', 1)[0]
 
-            log.debug('=== get bulk state for %s %s %s', job_id, proc_id, cluster_id)
+            log.debug('get bulk state for %s %s %s', job_id, proc_id, cluster_id)
 
             if cluster_id not in clusters:
                 clusters[cluster_id] = list()
@@ -1652,7 +1650,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
         for cluster_id in clusters:
 
             job_ids   = clusters[cluster_id]
-            log.debug(' === query job state for %s', job_ids)
+            log.debug(' query job state for %s', job_ids)
             bulk_info = self._job_get_info_bulk(cluster_id, job_ids)
             states   += [self.jobs[job_id]['state'] for job_id in job_ids]
 
