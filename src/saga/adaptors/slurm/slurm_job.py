@@ -459,11 +459,11 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
             mpi_cmd = ''
             slurm_script += "#SBATCH --ntasks=%s\n" % (number_of_processes)
 
-            if total_cpu_count and number_of_processes:
+            if not processes_per_host:
                 slurm_script += "#SBATCH --cpus-per-task=%s\n" \
                               % (int(total_cpu_count / number_of_processes))
 
-            if processes_per_host:
+            else:
                 slurm_script += "#SBATCH --ntasks-per-node=%s\n" % processes_per_host
 
         if 'bridges' in self.rm.host.lower():
