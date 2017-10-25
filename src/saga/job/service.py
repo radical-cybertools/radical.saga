@@ -338,7 +338,7 @@ class Service (sb.Base, sasync.Async) :
 
         jd = descr.Description()
         jd.executable = args[0]
-        js.arguments  = args[1:]
+        jd.arguments  = args[1:]
 
         job = self.create_job(jd)
         job.run()
