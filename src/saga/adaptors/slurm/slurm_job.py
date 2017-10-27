@@ -986,6 +986,7 @@ class SLURMJob(saga.adaptors.cpi.job.Job):
             return self.js._slurm_to_saga_jobstate(slurm_state)
 
         except Exception, ex:
+            self._logger.exception('failed to get job state')
             raise saga.NoSuccess("Error getting the job state for "
                                  "job %s:\n%s"%(pid,ex))
 
@@ -997,7 +998,10 @@ class SLURMJob(saga.adaptors.cpi.job.Job):
     # --------------------------------------------------------------------------
     #
     def _sacct_jobstate_match (self, pid):
-        """ get the job state from the slurm accounting data """
+        ''' 
+        get the job state from the slurm accounting data
+        '''
+
         ret, sacct_out, _ = self.js.shell.run_sync(
             "sacct --format=JobID,State --parsable2 --noheader --jobs=%s" % pid)
         # output will look like:
@@ -1007,10 +1011,14 @@ class SLURMJob(saga.adaptors.cpi.job.Job):
         # 500682|CANCELLED by 900369
         # 500682.batch|CANCELLED
 
-        for line in sacct_out.strip().split('\n'):
-            (slurm_id, slurm_state) = line.split('|', 1)
-            if slurm_id == pid and slurm_state:
-                return slurm_state.split()[0].strip()
+        try:
+            for line in sacct_out.strip().split('\n'):
+                (slurm_id, slurm_state) = line.split('|', 1)
+                if slurm_id == pid and slurm_state:
+                    return slurm_state.split()[0].strip()
+
+        except Exception as e:
+            self._log.warn('cannot parse sacct output:\n%s' % sacct_out)
 
         return None
 
