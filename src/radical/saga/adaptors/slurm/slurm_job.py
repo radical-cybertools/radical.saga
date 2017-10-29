@@ -70,7 +70,7 @@ _ADAPTOR_CAPABILITIES  = {
                           saga.job.JOB_START_TIME,
                           saga.job.WALL_TIME_LIMIT,
                           saga.job.TOTAL_PHYSICAL_MEMORY,
-                          #saga.job.CPU_ARCHITECTURE,
+                          saga.job.CPU_ARCHITECTURE,
                           #saga.job.OPERATING_SYSTEM_TYPE,
                           saga.job.CANDIDATE_HOSTS,
                           saga.job.QUEUE,
@@ -410,6 +410,7 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         queue               = jd.as_dict().get(saga.job.QUEUE)
         project             = jd.as_dict().get(saga.job.PROJECT)
         job_memory          = jd.as_dict().get(saga.job.TOTAL_PHYSICAL_MEMORY)
+        cpu_arch            = jd.as_dict().get(saga.job.CPU_ARCHITECTURE)
         job_contact         = jd.as_dict().get(saga.job.JOB_CONTACT)
         candidate_hosts     = jd.as_dict().get(saga.job.CANDIDATE_HOSTS)
 
@@ -435,7 +436,7 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
             job_contact = job_contact[0]
 
         if project and ':' in project:
-            account, reservation = project.split()
+            account, reservation = project.split(':', 1)
         else:
             account, reservation = project, None
 
@@ -457,14 +458,31 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         else:
             # we start N independent processes
             mpi_cmd = ''
-            slurm_script += "# SBATCH --ntasks=%s\n" % (number_of_processes)
+            slurm_script += "#SBATCH --ntasks=%s\n" % (number_of_processes)
 
-            if total_cpu_count and number_of_processes:
+            if not processes_per_host:
                 slurm_script += "#SBATCH --cpus-per-task=%s\n" \
                               % (int(total_cpu_count / number_of_processes))
 
-            if processes_per_host:
+            else:
                 slurm_script += "#SBATCH --ntasks-per-node=%s\n" % processes_per_host
+
+        if 'bridges' in self.rm.host.lower():
+            # bridges requires '-C EGRESS' to enable outbound network
+            # connections.
+            # FIXME: this should be moved into a resource config file
+            slurm_script += "#SBATCH -C EGRESS\n"
+
+        elif 'cori' in self.rm.host.lower():
+            # Cori rqeuires '-C knl', '-C haswell', .. for selecting
+            # the CPU architecture (on top of the job queues)
+            # From Cori's user guide:
+            #   short:       -C feature
+            #   long:        --constraint=feature
+            #   default:     none
+            #   description: Always specify what type of nodes to run. set to "haswell" for
+            #                Haswell nodes, and set "knl,quad,cache" (or other modes) for KNL.
+            if cpu_arch: slurm_script += "#SBATCH -C %s\n" % cpu_arch
 
         if cwd:             slurm_script += "#SBATCH --workdir %s\n"     % cwd 
         if output:          slurm_script += "#SBATCH --output %s\n"      % output 
@@ -766,11 +784,11 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
 
     # --------------------------------------------------------------------------
     #
-    def container_cancel(self, jobs):
+    def container_cancel(self, jobs, timeout):
 
         # TODO: this is not optimized yet
         for job in jobs:
-            job.cancel()
+            job.cancel(timeout)
 
 
     # --------------------------------------------------------------------------
@@ -981,6 +999,7 @@ class SLURMJob(saga.adaptors.cpi.job.Job):
             return self.js._slurm_to_saga_jobstate(slurm_state)
 
         except Exception, ex:
+            self._logger.exception('failed to get job state')
             raise saga.NoSuccess("Error getting the job state for "
                                  "job %s:\n%s"%(pid,ex))
 
@@ -992,7 +1011,10 @@ class SLURMJob(saga.adaptors.cpi.job.Job):
     # --------------------------------------------------------------------------
     #
     def _sacct_jobstate_match (self, pid):
-        """ get the job state from the slurm accounting data """
+        ''' 
+        get the job state from the slurm accounting data
+        '''
+
         ret, sacct_out, _ = self.js.shell.run_sync(
             "sacct --format=JobID,State --parsable2 --noheader --jobs=%s" % pid)
         # output will look like:
@@ -1002,10 +1024,14 @@ class SLURMJob(saga.adaptors.cpi.job.Job):
         # 500682|CANCELLED by 900369
         # 500682.batch|CANCELLED
 
-        for line in sacct_out.strip().split('\n'):
-            (slurm_id, slurm_state) = line.split('|', 1)
-            if slurm_id == pid and slurm_state:
-                return slurm_state.split()[0].strip()
+        try:
+            for line in sacct_out.strip().split('\n'):
+                (slurm_id, slurm_state) = line.split('|', 1)
+                if slurm_id == pid and slurm_state:
+                    return slurm_state.split()[0].strip()
+
+        except Exception as e:
+            self._log.warn('cannot parse sacct output:\n%s' % sacct_out)
 
         return None
 

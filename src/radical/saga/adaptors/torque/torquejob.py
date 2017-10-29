@@ -266,7 +266,8 @@ def _torquescript_generator(url, logger, jd, ppn, gres, torque_version, is_cray=
     if is_cray is not "":
         # Special cases for PBS/TORQUE on Cray. Different PBSes,
         # different flags. A complete nightmare...
-        if '5.1.0.h1' in torque_version:
+        if  '5.1.0.h1'   in torque_version or \
+            '6.1.1.1.h2' in torque_version:
             # Can't really use hostname as we run also from the headnode
             logger.info("Using Titan (Cray XP) specific '#PBS -l nodes=xx'")
             pbs_params += "#PBS -l nodes=%d\n" % nnodes
@@ -1074,13 +1075,13 @@ class TORQUEJobService (saga.adaptors.cpi.job.Service):
    
     # ----------------------------------------------------------------
     #
-    def container_cancel (self, jobs) :
+    def container_cancel (self, jobs, timeout) :
 
         self._logger.debug ("container cancel: %s"  %  str(jobs))
 
         # TODO: this is not optimized yet
         for job in jobs:
-            job.cancel ()
+            job.cancel (timeout)
 
 
 
