@@ -69,7 +69,7 @@ _ADAPTOR_CAPABILITIES  = {
                           saga.job.JOB_START_TIME,
                           saga.job.WALL_TIME_LIMIT,
                           saga.job.TOTAL_PHYSICAL_MEMORY,
-                          #saga.job.CPU_ARCHITECTURE,
+                          saga.job.CPU_ARCHITECTURE,
                           #saga.job.OPERATING_SYSTEM_TYPE,
                           saga.job.CANDIDATE_HOSTS,
                           saga.job.QUEUE,
@@ -409,6 +409,7 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         queue               = jd.as_dict().get(saga.job.QUEUE)
         project             = jd.as_dict().get(saga.job.PROJECT)
         job_memory          = jd.as_dict().get(saga.job.TOTAL_PHYSICAL_MEMORY)
+        cpu_arch            = jd.as_dict().get(saga.job.CPU_ARCHITECTURE)
         job_contact         = jd.as_dict().get(saga.job.JOB_CONTACT)
         candidate_hosts     = jd.as_dict().get(saga.job.CANDIDATE_HOSTS)
 
@@ -458,11 +459,11 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
             mpi_cmd = ''
             slurm_script += "#SBATCH --ntasks=%s\n" % (number_of_processes)
 
-            if total_cpu_count and number_of_processes:
+            if not processes_per_host:
                 slurm_script += "#SBATCH --cpus-per-task=%s\n" \
                               % (int(total_cpu_count / number_of_processes))
 
-            if processes_per_host:
+            else:
                 slurm_script += "#SBATCH --ntasks-per-node=%s\n" % processes_per_host
 
         if 'bridges' in self.rm.host.lower():
@@ -470,6 +471,17 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
             # connections.
             # FIXME: this should be moved into a resource config file
             slurm_script += "#SBATCH -C EGRESS\n"
+
+        elif 'cori' in self.rm.host.lower():
+            # Cori rqeuires '-C knl', '-C haswell', .. for selecting
+            # the CPU architecture (on top of the job queues)
+            # From Cori's user guide:
+            #   short:       -C feature
+            #   long:        --constraint=feature
+            #   default:     none
+            #   description: Always specify what type of nodes to run. set to "haswell" for
+            #                Haswell nodes, and set "knl,quad,cache" (or other modes) for KNL.
+            if cpu_arch: slurm_script += "#SBATCH -C %s\n" % cpu_arch
 
         if cwd:             slurm_script += "#SBATCH --workdir %s\n"     % cwd 
         if output:          slurm_script += "#SBATCH --output %s\n"      % output 
