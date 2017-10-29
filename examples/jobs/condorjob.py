@@ -37,8 +37,8 @@ def main():
         # environment, executable & arguments. We use '/bin/sleep' to simulate
         # a job that runs for $RUNTIME seconds.
         jd.name            = 'testjob'
-        jd.project         = 'TG-CCR140028'
-        jd.environment     = {'RUNTIME': '30'}
+        jd.project         = 'TG-MCB090174'
+        jd.environment     = {'RUNTIME': '0'}
         jd.wall_time_limit = 2 # minutes
 
         jd.executable = '/bin/sleep'

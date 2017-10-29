@@ -28,7 +28,7 @@ import time
 import saga
 
 URL = "condor+gsissh://xd-login.opensciencegrid.org"
-URL = "fork://locahost/'
+URL = "fork://locahost/"
 
 def main():
 

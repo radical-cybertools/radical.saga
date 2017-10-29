@@ -303,11 +303,11 @@ class PTYShell (object) :
                 # a versatile prompt pattern to account for the custom shell case.
                 try :
                     # set and register new prompt
-                    self.run_async  ( " unset PROMPT_COMMAND;"
-                                    + " set HISTFILE=$HOME/.saga_history;"
+                    self.run_async  ( " set HISTFILE=$HOME/.saga_history;"
                                     + " PS1='PROMPT-$?->';"
                                     + " PS2='';"
-                                    + " export PS1 PS2 2>&1 >/dev/null;"
+                                    + " PROMPT_COMMAND='';"
+                                    + " export PS1 PS2 PROMPT_COMMAND 2>&1 >/dev/null;"
                                     + " cd $HOME 2>&1 >/dev/null\n")
                     self.set_prompt (new_prompt="PROMPT-(\d+)->$")
 
