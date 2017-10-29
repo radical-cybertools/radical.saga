@@ -307,7 +307,7 @@ class PTYShell (object) :
                                     + " PS1='PROMPT-$?->';"
                                     + " PS2='';"
                                     + " PROMPT_COMMAND='';"
-                                    + " export PS1 PS2 2>&1 >/dev/null;"
+                                    + " export PS1 PS2 PROMPT_COMMAND 2>&1 >/dev/null;"
                                     + " cd $HOME 2>&1 >/dev/null\n")
                     self.set_prompt (new_prompt="PROMPT-(\d+)->$")
 
