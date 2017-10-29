@@ -338,9 +338,9 @@ class Service (sb.Base, sasync.Async) :
         # FIXME: split should be more clever and respect POSIX shell syntax. 
         args = cmd.split()
 
-        jd = desc.Description()
+        jd = descr.Description()
         jd.executable = args[0]
-        js.arguments  = args[1:]
+        jd.arguments  = args[1:]
 
         job = self.create_job(jd)
         job.run()
