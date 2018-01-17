@@ -74,6 +74,8 @@ PROCESSES_PER_HOST    = 'ProcessesPerHost';    """ :todo: docstring """
 THREADS_PER_PROCESS   = 'ThreadsPerProcess';   """ :todo: docstring """ 
 JOB_CONTACT           = 'JobContact';          """ :todo: docstring """
 NAME                  = 'Name';                """ The name of your job """ # non-GFD.90
+GENERIC_RESOURCES     = 'GenericResources';    """ The generic consumable 
+                                                   resources to be scheduled """
 
 
 ################################################################################

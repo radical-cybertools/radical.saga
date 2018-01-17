@@ -70,6 +70,7 @@ _ADAPTOR_CAPABILITIES  = {
                           saga.job.WALL_TIME_LIMIT,
                           saga.job.TOTAL_PHYSICAL_MEMORY,
                           saga.job.CPU_ARCHITECTURE,
+                          saga.job.GENERIC_RESOURCES,
                           #saga.job.OPERATING_SYSTEM_TYPE,
                           saga.job.CANDIDATE_HOSTS,
                           saga.job.QUEUE,
@@ -412,6 +413,7 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         cpu_arch            = jd.as_dict().get(saga.job.CPU_ARCHITECTURE)
         job_contact         = jd.as_dict().get(saga.job.JOB_CONTACT)
         candidate_hosts     = jd.as_dict().get(saga.job.CANDIDATE_HOSTS)
+        generic_resources   = jd.as_dict().get(saga.job.GENERIC_RESOURCES)
 
         # check to see what's available in our job description
         # to override defaults
@@ -483,18 +485,19 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
             #                Haswell nodes, and set "knl,quad,cache" (or other modes) for KNL.
             if cpu_arch: slurm_script += "#SBATCH -C %s\n" % cpu_arch
 
-        if cwd:             slurm_script += "#SBATCH --workdir %s\n"     % cwd 
-        if output:          slurm_script += "#SBATCH --output %s\n"      % output 
-        if error:           slurm_script += "#SBATCH --error %s\n"       % error 
-        if queue:           slurm_script += "#SBATCH --partition %s\n"   % queue
-        if job_name:        slurm_script += '#SBATCH -J "%s"\n'          % job_name
-        if job_memory:      slurm_script += "#SBATCH --mem=%s\n"         % job_memory 
-        if candidate_hosts: slurm_script += "#SBATCH --nodelist=%s\n"    % candidate_hosts 
-        if job_contact:     slurm_script += "#SBATCH --mail-user=%s\n"   % job_contact
-        if account:         slurm_script += "#SBATCH --account %s\n"     % account
-        if reservation:     slurm_script += "#SBATCH --reservation %s\n" % reservation
-        if wall_time_limit: slurm_script += "#SBATCH --time %02d:%02d:00\n" \
+        if cwd:               slurm_script += "#SBATCH --workdir %s\n"      % cwd
+        if output:            slurm_script += "#SBATCH --output %s\n"       % output
+        if error:             slurm_script += "#SBATCH --error %s\n"        % error
+        if queue:             slurm_script += "#SBATCH --partition %s\n"    % queue
+        if job_name:          slurm_script += '#SBATCH -J "%s"\n'           % job_name
+        if job_memory:        slurm_script += "#SBATCH --mem=%s\n"          % job_memory
+        if candidate_hosts:   slurm_script += "#SBATCH --nodelist=%s\n"     % candidate_hosts
+        if job_contact:       slurm_script += "#SBATCH --mail-user=%s\n"    % job_contact
+        if account:           slurm_script += "#SBATCH --account %s\n"      % account
+        if reservation:       slurm_script += "#SBATCH --reservation %s\n"  % reservation
+        if wall_time_limit:   slurm_script += "#SBATCH --time %02d:%02d:00\n" \
                                           % (wall_time_limit/60,wall_time_limit%60)
+        if generic_resources: slurm_script += "#SBATCH --gres=%s\n"         % generic_resources
         if env:
             slurm_script += "\n## ENVIRONMENT\n"
             for key,val in env.iteritems():

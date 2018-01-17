@@ -288,7 +288,7 @@ SAGA defines the following constants as valid job description attributes:
 .. autodata:: OPERATING_SYSTEM_TYPE
 .. data:: operating_system_type 
 
-   (Property) Same as attribute :data:`~saga.job.OPERATIN_SYSTEM_TYPE`.
+   (Property) Same as attribute :data:`~saga.job.OPERATING_SYSTEM_TYPE`.
 
 .. autodata:: CANDIDATE_HOSTS
 .. data:: candidate_hosts 
@@ -299,6 +299,11 @@ SAGA defines the following constants as valid job description attributes:
 .. data:: job_contact 
 
    (Property) Same as attribute :data:`~saga.job.JOB_CONTACT`.
+
+.. autodata:: GENERIC_RESOURCES
+.. data:: generic_resources 
+
+   (Property) Same as attribute :data:`~saga.job.GENERIC_RESOURCES`.
 
 
 .. _job_job:
