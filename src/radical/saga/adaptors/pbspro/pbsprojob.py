@@ -6,15 +6,6 @@ __license__   = "MIT"
 """ PBSPro job adaptor implementation
 """
 
-import radical.utils as ru
-
-import threading
-
-import saga.utils.pty_shell as sups
-import saga.adaptors.base
-import saga.adaptors.cpi.job
-
-from saga.job.constants import *
 
 import re
 import os 
@@ -23,8 +14,18 @@ import threading
 
 from cgi  import parse_qs
 
-SYNC_CALL  = saga.adaptors.cpi.decorators.SYNC_CALL
-ASYNC_CALL = saga.adaptors.cpi.decorators.ASYNC_CALL
+import radical.utils as ru
+
+from ...utils         import pty_shell  as rsups
+from ...              import job        as api_job
+from ...adaptors      import base       as a_base
+from ...adaptors.cpi  import job        as cpi_job
+from ...adaptors.cpi  import decorators as cpi_decs
+from ...job.constants import *
+
+
+SYNC_CALL  = cpi_decs.SYNC_CALL
+ASYNC_CALL = cpi_decs.ASYNC_CALL
 
 SYNC_WAIT_UPDATE_INTERVAL =  1  # seconds
 MONITOR_UPDATE_INTERVAL   = 60  # seconds
@@ -68,7 +69,7 @@ class _job_state_monitor(threading.Thread):
                     # we only need to monitor jobs that are not in a
                     # terminal state, so we can skip the ones that are 
                     # either done, failed or canceled
-                    if  job_info['state'] not in [saga.job.DONE, saga.job.FAILED, saga.job.CANCELED] :
+                    if  job_info['state'] not in [DONE, FAILED, CANCELED] :
 
                         # Store the current state since the current state 
                         # variable is updated when _job_get_info is called
@@ -134,17 +135,17 @@ def _pbs_to_saga_jobstate(pbsjs, logger=None):
 
     ret = None
 
-    if   pbsjs == 'C': ret = saga.job.DONE
-    elif pbsjs == 'F': ret = saga.job.DONE
-    elif pbsjs == 'H': ret = saga.job.PENDING
-    elif pbsjs == 'Q': ret = saga.job.PENDING
-    elif pbsjs == 'S': ret = saga.job.PENDING
-    elif pbsjs == 'W': ret = saga.job.PENDING
-    elif pbsjs == 'R': ret = saga.job.RUNNING
-    elif pbsjs == 'E': ret = saga.job.RUNNING
-    elif pbsjs == 'T': ret = saga.job.RUNNING
-    elif pbsjs == 'X': ret = saga.job.CANCELED
-    else             : ret = saga.job.UNKNOWN
+    if   pbsjs == 'C': ret = DONE
+    elif pbsjs == 'F': ret = DONE
+    elif pbsjs == 'H': ret = PENDING
+    elif pbsjs == 'Q': ret = PENDING
+    elif pbsjs == 'S': ret = PENDING
+    elif pbsjs == 'W': ret = PENDING
+    elif pbsjs == 'R': ret = RUNNING
+    elif pbsjs == 'E': ret = RUNNING
+    elif pbsjs == 'T': ret = RUNNING
+    elif pbsjs == 'X': ret = CANCELED
+    else             : ret = UNKNOWN
 
     logger.debug('check state: %s', pbsjs)
     logger.debug('use   state: %s', ret)
@@ -277,7 +278,7 @@ def _pbscript_generator(url, logger, jd, ppn, gres, pbs_version, is_cray=False, 
         if 'BIG_FLASH' in jd.candidate_hosts:
             node_properties.append('bigflash')
         else:
-            raise saga.NotImplemented("This type of 'candidate_hosts' not implemented: '%s'" % jd.candidate_hosts)
+            raise NotImplemented("This type of 'candidate_hosts' not implemented: '%s'" % jd.candidate_hosts)
 
     if is_cray is not "":
         # Special cases for PBS/TORQUE on Cray. Different PBSes,
@@ -347,7 +348,7 @@ _PTY_TIMEOUT = 2.0
 # --------------------------------------------------------------------
 # the adaptor name
 #
-_ADAPTOR_NAME          = "saga.adaptor.pbsprojob"
+_ADAPTOR_NAME          = "radical.saga.adaptors.pbsprojob"
 _ADAPTOR_SCHEMAS       = ["pbspro", "pbspro+ssh", "pbspro+gsissh"]
 _ADAPTOR_OPTIONS       = []
 
@@ -355,29 +356,29 @@ _ADAPTOR_OPTIONS       = []
 # the adaptor capabilities & supported attributes
 #
 _ADAPTOR_CAPABILITIES = {
-    "jdes_attributes":   [saga.job.NAME,
-                          saga.job.EXECUTABLE,
-                          saga.job.ARGUMENTS,
-                          saga.job.CANDIDATE_HOSTS,
-                          saga.job.ENVIRONMENT,
-                          saga.job.INPUT,
-                          saga.job.OUTPUT,
-                          saga.job.ERROR,
-                          saga.job.QUEUE,
-                          saga.job.PROJECT,
-                          saga.job.WALL_TIME_LIMIT,
-                          saga.job.WORKING_DIRECTORY,
-                          saga.job.WALL_TIME_LIMIT,
-                          saga.job.SPMD_VARIATION, # TODO: 'hot'-fix for BigJob
-                          saga.job.PROCESSES_PER_HOST,
-                          saga.job.TOTAL_CPU_COUNT],
-    "job_attributes":    [saga.job.EXIT_CODE,
-                          saga.job.EXECUTION_HOSTS,
-                          saga.job.CREATED,
-                          saga.job.STARTED,
-                          saga.job.FINISHED],
-    "metrics":           [saga.job.STATE],
-    "callbacks":         [saga.job.STATE],
+    "jdes_attributes":   [NAME,
+                          EXECUTABLE,
+                          ARGUMENTS,
+                          CANDIDATE_HOSTS,
+                          ENVIRONMENT,
+                          INPUT,
+                          OUTPUT,
+                          ERROR,
+                          QUEUE,
+                          PROJECT,
+                          WALL_TIME_LIMIT,
+                          WORKING_DIRECTORY,
+                          WALL_TIME_LIMIT,
+                          SPMD_VARIATION, # TODO: 'hot'-fix for BigJob
+                          PROCESSES_PER_HOST,
+                          TOTAL_CPU_COUNT],
+    "job_attributes":    [EXIT_CODE,
+                          EXECUTION_HOSTS,
+                          CREATED,
+                          STARTED,
+                          FINISHED],
+    "metrics":           [STATE],
+    "callbacks":         [STATE],
     "contexts":          {"ssh": "SSH public/private keypair",
                           "x509": "GSISSH X509 proxy context",
                           "userpass": "username/password pair (ssh)"}
@@ -423,7 +424,7 @@ _ADAPTOR_INFO = {
 
 ###############################################################################
 # The adaptor class
-class Adaptor (saga.adaptors.base.Base):
+class Adaptor (a_base.Base):
     """ this is the actual adaptor class, which gets loaded by SAGA (i.e. by 
         the SAGA engine), and which registers the CPI implementation classes 
         which provide the adaptor's functionality.
@@ -433,10 +434,9 @@ class Adaptor (saga.adaptors.base.Base):
     #
     def __init__(self):
 
-        saga.adaptors.base.Base.__init__(self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
+        a_base.Base.__init__(self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
 
         self.id_re = re.compile('^\[(.*)\]-\[(.*?)\]$')
-        self.opts  = self.get_config (_ADAPTOR_NAME)
 
     # ----------------------------------------------------------------
     #
@@ -452,14 +452,14 @@ class Adaptor (saga.adaptors.base.Base):
         match = self.id_re.match(id)
 
         if not match or len(match.groups()) != 2:
-            raise saga.BadParameter("Cannot parse job id '%s'" % id)
+            raise BadParameter("Cannot parse job id '%s'" % id)
 
         return (match.group(1), match.group(2))
 
 
 ###############################################################################
 #
-class PBSProJobService (saga.adaptors.cpi.job.Service):
+class PBSProJobService (cpi_job.Service):
     """ implements saga.adaptors.cpi.job.Service
     """
 
@@ -556,7 +556,7 @@ class PBSProJobService (saga.adaptors.cpi.job.Service):
                           'qsub':     None,
                           'qdel':     None}
 
-        self.shell = sups.PTYShell(pty_url, self.session)
+        self.shell = rsups.PTYShell(pty_url, self.session)
 
       # self.shell.set_initialize_hook(self.initialize)
       # self.shell.set_finalize_hook(self.finalize)
@@ -1043,8 +1043,8 @@ class PBSProJobService (saga.adaptors.cpi.job.Service):
                          }
 
         # create and return a new job object
-        return saga.job.Job(_adaptor=self._adaptor,
-                            _adaptor_state=adaptor_state)
+        return api_job.Job(_adaptor=self._adaptor,
+                           _adaptor_state=adaptor_state)
 
     # ----------------------------------------------------------------
     #
@@ -1072,8 +1072,8 @@ class PBSProJobService (saga.adaptors.cpi.job.Service):
                          "reconnect_jobid": job_id
                          }
 
-        job_obj = saga.job.Job(_adaptor=self._adaptor,
-                               _adaptor_state=adaptor_state)
+        job_obj = apijob.Job(_adaptor=self._adaptor,
+                             _adaptor_state=adaptor_state)
 
         # throw it into our job dictionary.
         job_info['obj']   = job_obj
@@ -1145,7 +1145,7 @@ class PBSProJobService (saga.adaptors.cpi.job.Service):
 
 ###############################################################################
 #
-class PBSProJob (saga.adaptors.cpi.job.Job):
+class PBSProJob (cpi_job.Job):
     """ implements saga.adaptors.cpi.job.Job
     """
 

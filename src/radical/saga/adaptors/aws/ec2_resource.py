@@ -6,11 +6,13 @@ __license__   = "MIT"
 
 """ libcloud based EC2 resource adaptor """
 
-import saga.adaptors.cpi.base
-import saga.adaptors.cpi.context
-import saga.adaptors.cpi.resource
+from ...   import base as a_base
+from ..cpi import context  as cpi_context
+from ..cpi import resource as cpi_resource
 
-from   saga.resource.constants import *
+import saga as rs
+
+from   ,,,,resource.constants import *
 ANY = COMPUTE | STORAGE
 
 import re
@@ -98,7 +100,7 @@ _ADAPTOR_INFO          = {
 ###############################################################################
 # The adaptor class
 
-class Adaptor (saga.adaptors.base.Base):
+class Adaptor (a_base.Base):
     """
 
     **Known Limitations, Notes**
@@ -190,7 +192,7 @@ class Adaptor (saga.adaptors.base.Base):
                 return []
 
             # ok, lets pick up a default context from the EC2 default env vars
-            ctx = saga.Context ('ec2')
+            ctx = rs.Context ('ec2')
 
             if self._EC2_URL        : ctx.server   = self._EC2_URL
             if self._EC2_ACCESS_KEY : ctx.user_id  = self._EC2_ACCESS_KEY
@@ -294,7 +296,7 @@ class Adaptor (saga.adaptors.base.Base):
 
 ###############################################################################
 #
-class EC2Keypair (saga.adaptors.cpi.context.Context) :
+class EC2Keypair (cpi_context.Context) :
 
     """ 
     This context points to an EC2 keypair which is used to contextualize VM
@@ -409,7 +411,7 @@ class EC2Keypair (saga.adaptors.cpi.context.Context) :
 
         # we first attempt to create an ssh context from the keypair
         # context -- this will take care of all eventual key checks etc.
-        ssh_context = saga.Context ('ssh')
+        ssh_context = rs.Context ('ssh')
 
         ssh_context.user_id   = self._api ().user_id
         ssh_context.user_key  = self._api ().user_key

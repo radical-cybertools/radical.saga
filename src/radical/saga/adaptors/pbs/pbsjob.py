@@ -119,29 +119,17 @@ def log_error_and_raise(message, exception, logger):
 def _pbs_to_saga_jobstate(pbsjs):
     """ translates a pbs one-letter state to saga
     """
-    if pbsjs == 'C': # Torque "Job is completed after having run."
-        return saga.job.DONE
-    elif pbsjs == 'F': # PBS Pro "Job is finished."
-        return saga.job.DONE
-    elif pbsjs == 'H': # PBS Pro and TORQUE "Job is held."
-        return saga.job.PENDING
-    elif pbsjs == 'Q': # PBS Pro and TORQUE "Job is queued(, eligible to run or routed.)
-        return saga.job.PENDING
-    elif pbsjs == 'S': # PBS Pro and TORQUE "Job is suspended."
-        return saga.job.PENDING
-    elif pbsjs == 'W': # PBS Pro and TORQUE "Job is waiting for its execution time to be reached."
-        return saga.job.PENDING
-    elif pbsjs == 'R': # PBS Pro and TORQUE "Job is running."
-        return saga.job.RUNNING
-    elif pbsjs == 'E': # PBS Pro and TORQUE "Job is exiting after having run"
-        return saga.job.RUNNING
-    elif pbsjs == 'T': # PBS Pro and TORQUE "Job is being moved to new location."
-        # TODO: PENDING?
-        return saga.job.RUNNING
-    elif pbsjs == 'X': # PBS Pro "Subjob has completed execution or has been deleted."
-        return saga.job.CANCELED
-    else:
-        return saga.job.UNKNOWN
+    if   pbsjs == 'C': return DONE     # Torque "Job is completed after having run."
+    elif pbsjs == 'F': return DONE     # PBS Pro "Job is finished."
+    elif pbsjs == 'H': return PENDIN   # PBS Pro and TORQUE "Job is held."G
+    elif pbsjs == 'Q': return PENDING  # PBS Pro and TORQUE "Job is queued(, eligible to run or routed.)
+    elif pbsjs == 'S': return PENDING  # PBS Pro and TORQUE "Job is suspended."
+    elif pbsjs == 'W': return PENDING  # PBS Pro and TORQUE "Job is waiting for its execution time to be reached."
+    elif pbsjs == 'R': return RUNNING  # PBS Pro and TORQUE "Job is running."
+    elif pbsjs == 'E': return RUNNING  # PBS Pro and TORQUE "Job is exiting after having run"
+    elif pbsjs == 'T': return RUNNING  # PBS Pro and TORQUE "Job is being moved to new location."
+    elif pbsjs == 'X': return CANCELED # PBS Pro "Subjob has completed execution or has been deleted."
+    else             : return UNKNOWN
 
 
 # --------------------------------------------------------------------

@@ -38,7 +38,7 @@ class _ContextList (list) :
         if  session : 
             self._logger  = session._logger
         else :
-            self._logger  = ru.get_logger ('radical.saga')
+            self._logger  = ru.get_logger('radical.saga')
 
         base_list = super  (_ContextList, self)
         base_list.__init__ (*args, **kwargs)

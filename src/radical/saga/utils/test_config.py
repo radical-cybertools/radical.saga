@@ -9,9 +9,7 @@ import copy
 import radical.utils.testing  as rut
 import radical.utils.logger   as rul
 
-import saga.exceptions        as se
-
-import saga
+import radical.saga           as rs
 
 # ------------------------------------------------------------------------------
 #
@@ -38,18 +36,18 @@ class TestConfig (rut.TestConfig):
     # 
     def __init__ (self, cfg_file):
 
-        # initialize configuration.  We only use the 'saga.tests' category from
+        # initialize configuration.  We only use the 'rs.tests' category from
         # the config file.
-        rut.TestConfig.__init__ (self, cfg_file, 'saga.tests')
+        rut.TestConfig.__init__ (self, cfg_file, 'radical.saga.tests')
 
         # setup a saga session for the tests
         # don't populate session with default contexts...
-        self.session = saga.Session (default=False) 
+        self.session = rs.Session (default=False) 
 
         # attempt to create a context from the test config
         if  self.context_type :
 
-            c = saga.Context (self.context_type)
+            c = rs.Context (self.context_type)
 
             c.user_id    = self.context_user_id
             c.user_pass  = self.context_user_pass
