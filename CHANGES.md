@@ -6,6 +6,15 @@
     https://github.com/radical-cybertools/saga-python/issues?q=is%3Aissue+is%3Aopen+
 
 
+Version 0.47                                                          2017-11-19
+--------------------------------------------------------------------------------
+
+  - avoid use of `condor_history` if so configured
+  - cleaner recovery for `condor_hist` when its used
+  - be more resilient against `sacct` errors 
+  - one more `PROMPT_COMMAND` setting 
+
+
 Version 0.46                                                          2017-08-23
 --------------------------------------------------------------------------------
 
@@ -744,5 +753,4 @@ Version 0.1.7 released 2011-11-09
 
 
 --------------------------------------------------------------------------------
-
 
