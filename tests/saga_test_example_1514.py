@@ -50,8 +50,8 @@ def main():
         #jd = saga.job.Description()
 
         # create a working directory in /scratch
-        dirname = '%s/mydir/' % (REMOTE_FILE_ENDPOINT)
-        workdir = saga.filesystem.Directory(dirname, saga.filesystem.CREATE, 
+        dirname = '%s/mydir' % (REMOTE_FILE_ENDPOINT)
+        workdir = saga.filesystem.Directory(dirname, saga.filesystem.CREATE_PARENTS,
                                             session=session)
 
         ## create a dummy file
