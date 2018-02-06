@@ -35,7 +35,7 @@ def main():
     try:
 
         # Your ssh identity on the remote machine
-        ctx = saga.Context("ssh")
+        #ctx = saga.Context("ssh")
         #ctx.user_id = "localhost"
         session = saga.Session()
         #session.add_context(ctx)
@@ -44,14 +44,14 @@ def main():
         # The keyword 'fork://' in the url scheme triggers the 'shell' adaptor
         # which can execute jobs on the local machine as well as on a remote
         # machine via "ssh://hostname".
-        js = saga.job.Service("ssh://localhost")
+        #js = saga.job.Service("ssh://localhost")
 
         # describe our job
-        jd = saga.job.Description()
+        #jd = saga.job.Description()
 
         # create a working directory in /scratch
         dirname = '%s/mydir/' % (REMOTE_FILE_ENDPOINT)
-        workdir = saga.filesystem.Directory(dirname, saga.filesystem.CREATE, #TODO: Create??
+        workdir = saga.filesystem.Directory(dirname, saga.filesystem.CREATE, 
                                             session=session)
 
         ## create a dummy file
