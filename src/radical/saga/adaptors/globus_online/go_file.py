@@ -6,15 +6,26 @@ __license__   = "MIT"
 
 """ (GSI)SSH based Globus Online Adaptor """
 
-import os
+import os 
 import threading
-import saga.utils.pty_shell as sups
-import saga.utils.misc as sumisc
 
-import saga.adaptors.base
-import saga.adaptors.cpi.filesystem
+from cgi  import parse_qs
 
-from saga.adaptors.cpi.decorators import SYNC_CALL
+import radical.utils as ru
+
+from ...              import utils      as rsu
+from ...utils         import pty_shell  as rsups
+from ...utils         import misc       as rsumisc
+from ...              import filesystem as api_fs
+from ...adaptors      import base       as a_base
+from ...adaptors.cpi  import filesystem as cpi_fs
+from ...adaptors.cpi  import decorators as cpi_decs
+from ...job.constants import *
+
+
+SYNC_CALL  = cpi_decs.SYNC_CALL
+ASYNC_CALL = cpi_decs.ASYNC_CALL
+
 
 # TODO: We could make this configurable,
 # so people without gsissh can still perform some operations,
@@ -27,13 +38,13 @@ GO_DEFAULT_URL = "gsissh://cli.globusonline.org/"
 # --------------------------------------------------------------------
 # the adaptor name
 #
-_ADAPTOR_NAME          = "saga.adaptor.globus_online_file"
+_ADAPTOR_NAME          = "radical.saga.adaptors.globus_online_file"
 _ADAPTOR_SCHEMAS       = ["go"] # TODO: also allow file:// ??
 _ADAPTOR_OPTIONS       = [
     { 
     # fuck our config system!  I don't want these to be strings!  And its not
     # even using isinstance! :/
-    'category'         : 'saga.adaptor.globus_online_file',
+    'category'         : 'radical.saga.adaptors.globus_online_file',
     'name'             : 'enable_notifications', 
     'type'             : str, 
     'default'          : 'None',
@@ -47,7 +58,7 @@ _ADAPTOR_OPTIONS       = [
     { 
     # fuck our config system!  I don't want these to be strings!  And its not
     # even using isinstance! :/
-    'category'         : 'saga.adaptor.globus_online_file',
+    'category'         : 'radical.saga.adaptors.globus_online_file',
     'name'             : 'failure_mode', 
     'type'             : str, 
     'default'          : 'report',
@@ -63,7 +74,7 @@ _ADAPTOR_OPTIONS       = [
     },
     # Set a GO specific prompt on the PTYShell
     {
-        'category'      : 'saga.adaptor.globus_online_file',
+        'category'      : 'radical.saga.adaptors.globus_online_file',
         'name'          : 'prompt_pattern',
         'type'          : str,
         'default'       : '\$ $',
@@ -72,7 +83,7 @@ _ADAPTOR_OPTIONS       = [
     },
     # Allow to specify which endpoint to use for "localhost"
     {
-        'category'      : 'saga.adaptor.globus_online_file',
+        'category'      : 'radical.saga.adaptors.globus_online_file',
         'name'          : 'localhost_endpoint',
         'type'          : str,
         'default'       : 'None',
@@ -118,19 +129,19 @@ _ADAPTOR_INFO          = {
     "schemas"          : _ADAPTOR_SCHEMAS,
     "cpis"             : [
         { 
-        "type"         : "saga.namespace.Directory",
+        "type"         : "radical.saga.namespace.Directory",
         "class"        : "GODirectory"
         }, 
         { 
-        "type"         : "saga.namespace.Entry",
+        "type"         : "radical.saga.namespace.Entry",
         "class"        : "GOFile"
         },
         { 
-        "type"         : "saga.filesystem.Directory",
+        "type"         : "radical.saga.filesystem.Directory",
         "class"        : "GODirectory"
         }, 
         { 
-        "type"         : "saga.filesystem.File",
+        "type"         : "radical.saga.filesystem.File",
         "class"        : "GOFile"
         }
     ]
@@ -139,7 +150,7 @@ _ADAPTOR_INFO          = {
 ################################################################################
 # The adaptor class
 
-class Adaptor(saga.adaptors.base.Base):
+class Adaptor(a_base.Base):
     """ 
     This is the actual adaptor class, which gets loaded by SAGA (i.e. by the
     SAGA engine), and which registers the CPI implementation classes which
@@ -150,13 +161,14 @@ class Adaptor(saga.adaptors.base.Base):
     #
     def __init__(self):
 
-        saga.adaptors.base.Base.__init__(self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
+        a_base.Base.__init__(self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
 
-        self.opts = self.get_config(_ADAPTOR_NAME)
-        self.notify = self.opts['enable_notifications'].get_value()
-        self.f_mode = self.opts['failure_mode'].get_value()
-        self.prompt = self.opts['prompt_pattern'].get_value()
-        self.localhost_ep = self.opts['localhost_endpoint'].get_value()
+        # FIXME: RADICAL
+      # self.opts = self.get_config(_ADAPTOR_NAME)
+      # self.notify = self.opts['enable_notifications'].get_value()
+      # self.f_mode = self.opts['failure_mode'].get_value()
+      # self.prompt = self.opts['prompt_pattern'].get_value()
+      # self.localhost_ep = self.opts['localhost_endpoint'].get_value()
         self.shells = {}  # keep go shells for each session
 
         #
@@ -206,13 +218,13 @@ class Adaptor(saga.adaptors.base.Base):
             if create:
 
                 # deep copy URL (because of?)
-                new_url = saga.Url(go_url)
+                new_url = rsu.Url(go_url)
 
                 # GO specific prompt pattern
                 opts = {'prompt_pattern': self.prompt}
 
                 # create the shell.
-                shell = sups.PTYShell(new_url, session=session, logger=self._logger, opts=opts, posix=False)
+                shell = rsups.PTYShell(new_url, session=session, logger=self._logger, opts=opts, posix=False)
                 self.shells[sid]['shell'] = shell
 
                 # For this fresh shell, we get the list of public endpoints.
@@ -232,7 +244,7 @@ class Adaptor(saga.adaptors.base.Base):
                         self._logger.debug("using account '%s'" % self.shells[sid]['user'])
                         break
                 if not self.shells[sid]['user']:
-                    raise saga.NoSuccess("Could not confirm user id")
+                    raise NoSuccess("Could not confirm user id")
 
                 # Toggle notification
                 if self.notify == 'True':
@@ -260,9 +272,9 @@ class Adaptor(saga.adaptors.base.Base):
         sid = session._id
 
         if not sid in self.shells:
-            raise saga.IncorrectState("GO shell disconnected")
+            raise IncorrectState("GO shell disconnected")
 
-        ep_url = saga.Url()
+        ep_url = rsu.Url()
         ep_url.schema = url.schema
         ep_url.port = url.port
 
@@ -280,7 +292,7 @@ class Adaptor(saga.adaptors.base.Base):
                 # TODO: could add more heuristics, like:
                 # - looking for a "username#localhost"
                 # - looking for special type of entries in the endpoint-list
-                raise saga.BadParameter("localhost endpoint not configured")
+                raise BadParameter("localhost endpoint not configured")
         else:
             # Create an EP based on the username and hostname
             ep_name = "%s#%s" % (self.shells[sid]['user'], url.host)
@@ -298,16 +310,16 @@ class Adaptor(saga.adaptors.base.Base):
         sid = session._id
 
         if not sid in self.shells:
-            raise saga.IncorrectState("GO shell disconnected")
+            raise IncorrectState("GO shell disconnected")
 
         shell = self.shells[sid]['shell']
-        url   = saga.Url(url)
+        url   = rsu.Url(url)
 
         if not path:
             path = url.path
 
         if not cwd_url:
-            cwd_url = saga.Url(url)
+            cwd_url = rsu.Url(url)
 
             if not cwd_path:
                 cwd_path = '.'
@@ -321,9 +333,9 @@ class Adaptor(saga.adaptors.base.Base):
             url.schema = cwd_url.schema
 
         if not url.host:
-            raise saga.BadParameter('need host for GO ops')
+            raise BadParameter('need host for GO ops')
         if not url.schema:
-            raise saga.BadParameter('need schema for GO ops')
+            raise BadParameter('need schema for GO ops')
 
         ep_name, ep_url = self.get_go_endpoint_ids(session, url)
 
@@ -332,7 +344,7 @@ class Adaptor(saga.adaptors.base.Base):
         # Otherwise it is left to the unmodified path.
         ps_path = path
         # TODO: should the check be on cwd_url / url or on ep_url?
-        if sumisc.url_is_compatible(cwd_url, url) and not path.startswith('/'):
+        if rsumisc.url_is_compatible(cwd_url, url) and not path.startswith('/'):
             if cwd_path and path:
                 ps_path = os.path.join(cwd_path, path)
             elif cwd_path:
@@ -365,7 +377,7 @@ class Adaptor(saga.adaptors.base.Base):
                 # Don't try to create endpoints that are supposed to be there
                 # (plus, we can't!)
                 if '#' in url.host:
-                    raise saga.NoSuccess("# in hostname, not going to create!")
+                    raise NoSuccess("# in hostname, not going to create!")
 
                 # if not, create it, activate it, and refresh all entries
                 shell.run_sync("endpoint-add %s -p %s" % (ep_name, ep_url))
@@ -375,7 +387,7 @@ class Adaptor(saga.adaptors.base.Base):
 
                 if not ep:
                     # something above must have failed ...
-                    raise saga.NoSuccess("endpoint initialization failed")
+                    raise NoSuccess("endpoint initialization failed")
 
         # we have the endpoint now, for sure -- make sure its activated
         if not ep['Credential Status'] == 'ACTIVE':
@@ -399,7 +411,7 @@ class Adaptor(saga.adaptors.base.Base):
             ep = self.get_go_endpoint_list(session, shell, ep_name, fetch=True)
 
             if not ep['Credential Status'] == 'ACTIVE':
-                raise saga.AuthorizationFailed("endpoint activation failed")
+                raise AuthorizationFailed("endpoint activation failed")
 
         return ep
         
@@ -459,7 +471,7 @@ class Adaptor(saga.adaptors.base.Base):
                         try:
                             endpoints[name][key] = val
                         except:
-                            raise saga.NoSuccess("No entry to operate on for: %s[%s]" % (key,val))
+                            raise NoSuccess("No entry to operate on for: %s[%s]" % (key,val))
 
                 # replace the ep info dist with the new one, to clean out old entries.
                 # TODO: merge and not replace(?)
@@ -503,13 +515,13 @@ class Adaptor(saga.adaptors.base.Base):
                 if lines[3].startswith('Message:'):
                     cause = lines[3].split(':')[1].strip()
                     if cause == 'No such file or directory':
-                        raise saga.DoesNotExist(cause)
+                        raise DoesNotExist(cause)
                     elif cause == 'Could not connect to server':
-                        raise saga.BadParameter(cause)
+                        raise BadParameter(cause)
                     else:
-                        raise saga.NoSuccess('Unknown error: %s' % cause)
+                        raise NoSuccess('Unknown error: %s' % cause)
                 else:
-                    raise saga.NoSuccess('Could not find find message in error: %s' % err)
+                    raise NoSuccess('Could not find find message in error: %s' % err)
 
                 # TODO: Handle GO access to directories that are not allowed
                 # TODO: by Globus Personal by default (e.g. /var/ , /tmp)
@@ -567,7 +579,7 @@ class Adaptor(saga.adaptors.base.Base):
                     if self.f_mode == 'raise':
                         # TODO: a 'translate_exception' call would be useful here...
                         # TODO: We can use the exceptions from run_go_cmd?
-                        raise saga.NoSuccess("Could not make dir hierarchy: %s" % str(error))
+                        raise NoSuccess("Could not make dir hierarchy: %s" % str(error))
 
                     if self.f_mode == 'report':
                         self._logger.error("Could not make dir hierarchy: %s" % str(error))
@@ -585,10 +597,10 @@ class Adaptor(saga.adaptors.base.Base):
         sync_level = 0
 
         # Create parents
-        if flags & saga.filesystem.CREATE_PARENTS:
+        if flags & api_fs.CREATE_PARENTS:
             self.mkparents(shell, os.path.dirname(target))
 
-        #if flags & saga.filesystem.OVERWRITE:
+        #if flags & api_fs.OVERWRITE:
             # 1: Copy files if the size of the destination does not match the
             #    size of the source
             # 2: Copy files if the timestamp of the destination is older than
@@ -598,7 +610,7 @@ class Adaptor(saga.adaptors.base.Base):
 
         # Set recursive flag
         cmd_flags = ""
-        if flags & saga.filesystem.RECURSIVE:
+        if flags & api_fs.RECURSIVE:
             cmd_flags += "-r"
 
         # Initiate background copy
@@ -659,7 +671,7 @@ class Adaptor(saga.adaptors.base.Base):
         elif mode == 'l':
             mode = 'link'
         else:
-            raise saga.NoSuccess("stat() unknown mode: '%s' (%s)" % (mode, out))
+            raise NoSuccess("stat() unknown mode: '%s' (%s)" % (mode, out))
 
         size = int(out.split('\n')[0].split()[3])
 
@@ -671,8 +683,8 @@ class Adaptor(saga.adaptors.base.Base):
 
 ################################################################################
 #
-class GODirectory(saga.adaptors.cpi.filesystem.Directory):
-    """ Implements saga.adaptors.cpi.filesystem.Directory """
+class GODirectory(cpi_fs.Directory):
+    """ Implements cpi_fs.Directory """
 
     # ----------------------------------------------------------------
     #
@@ -686,7 +698,7 @@ class GODirectory(saga.adaptors.cpi.filesystem.Directory):
     def _is_valid(self):
 
         if not self.valid:
-            raise saga.IncorrectState("this instance was closed or removed")
+            raise IncorrectState("this instance was closed or removed")
 
     # ----------------------------------------------------------------
     #
@@ -698,8 +710,8 @@ class GODirectory(saga.adaptors.cpi.filesystem.Directory):
         if flags == None:
             flags = 0
 
-        self.orig     = saga.Url(url) # deep copy
-        self.url      = saga.Url(url) # deep copy
+        self.orig     = rsu.Url(url) # deep copy
+        self.url      = rsu.Url(url) # deep copy
         self.path     = url.path       # keep path separate
         self.url.path = None
 
@@ -724,12 +736,12 @@ class GODirectory(saga.adaptors.cpi.filesystem.Directory):
         ps = self.get_path_spec()
 
         if not self.ep:
-            raise saga.BadParameter("invalid dir '%s'" % ps)
+            raise BadParameter("invalid dir '%s'" % ps)
 
-        if self.flags & saga.filesystem.CREATE_PARENTS:
+        if self.flags & api_fs.CREATE_PARENTS:
             self._adaptor.mkparents(self.shell, ps)
 
-        elif self.flags & saga.filesystem.CREATE:
+        elif self.flags & api_fs.CREATE:
             # TODO: check for errors?
             self._adaptor.run_go_cmd(self.shell, "mkdir '%s'" % ps)
 
@@ -737,7 +749,7 @@ class GODirectory(saga.adaptors.cpi.filesystem.Directory):
             stat = self._adaptor.stat(self.shell, ps)
             if stat['mode'] not in ['dir', 'link']:
                 # TODO: if link, check the target
-                raise saga.IncorrectState('Is not a directory')
+                raise IncorrectState('Is not a directory')
 
         self._logger.debug("Initialized directory %s/%s" % (self.url, self.path))
 
@@ -771,14 +783,14 @@ class GODirectory(saga.adaptors.cpi.filesystem.Directory):
         self._is_valid()
 
         adaptor_state = { "from_open" : True,
-                          "url"       : saga.Url(self.url),   # deep copy
+                          "url"       : rsu.Url(self.url),   # deep copy
                           "path"      : self.path}
 
-        if sumisc.url_is_relative(url):
-            url = sumisc.url_make_absolute(self.get_url(), url)
+        if rsumisc.url_is_relative(url):
+            url = rsumisc.url_make_absolute(self.get_url(), url)
 
-        return saga.filesystem.File(url=url, flags=flags, session=self.session,
-                                     _adaptor=self._adaptor, _adaptor_state=adaptor_state)
+        return api_fs.File(url=url, flags=flags, session=self.session,
+                           _adaptor=self._adaptor, _adaptor_state=adaptor_state)
 
     # ----------------------------------------------------------------
     #
@@ -788,13 +800,13 @@ class GODirectory(saga.adaptors.cpi.filesystem.Directory):
         self._is_valid()
 
         adaptor_state = {"from_open": True,
-                         "url"      : saga.Url(self.url),   # deep copy
+                         "url"      : rsu.Url(self.url),   # deep copy
                          "path"     : self.path}
 
-        if sumisc.url_is_relative(url):
-            url = sumisc.url_make_absolute(self.get_url(), url)
+        if rsumisc.url_is_relative(url):
+            url = rsumisc.url_make_absolute(self.get_url(), url)
 
-        return saga.filesystem.Directory(url=url, flags=flags, session=self.session,
+        return api_fs.Directory(url=url, flags=flags, session=self.session,
                 _adaptor=self._adaptor, _adaptor_state=adaptor_state)
 
     # ----------------------------------------------------------------
@@ -802,20 +814,20 @@ class GODirectory(saga.adaptors.cpi.filesystem.Directory):
     @SYNC_CALL
     def change_dir(self, tgt, flags):
 
-        tgt_url = saga.Url(tgt)
+        tgt_url = rsu.Url(tgt)
 
         # TODO: attempt to get new EP
-        if not sumisc.url_is_compatible(self.url, tgt_url):
-            raise saga.BadParameter("Target dir outside of namespace '%s': %s" \
+        if not rsumisc.url_is_compatible(self.url, tgt_url):
+            raise BadParameter("Target dir outside of namespace '%s': %s" \
                                   % (self.url, tgt_url))
 
-        if sumisc.url_is_relative(tgt_url):
+        if rsumisc.url_is_relative(tgt_url):
 
             self.path      = tgt_url.path
             self.orig.path = self.path
 
         else:
-            self.orig      = saga.Url(tgt_url)
+            self.orig      = rsu.Url(tgt_url)
             self.url       = tgt_url
             self.path      = self.url.path
             self.url.path  = None
@@ -830,7 +842,7 @@ class GODirectory(saga.adaptors.cpi.filesystem.Directory):
     def close(self, timeout=None):
 
         if timeout:
-            raise saga.BadParameter("timeout for close not supported")
+            raise BadParameter("timeout for close not supported")
 
         self.finalize(kill=True)
 
@@ -840,7 +852,7 @@ class GODirectory(saga.adaptors.cpi.filesystem.Directory):
 
         self._is_valid()
 
-        return saga.Url(self.orig) # deep copy
+        return rsu.Url(self.orig) # deep copy
 
     # ----------------------------------------------------------------
     #
@@ -857,7 +869,7 @@ class GODirectory(saga.adaptors.cpi.filesystem.Directory):
 
         self.entries = []
         for line in lines:
-            self.entries.append(saga.Url(line.strip()))
+            self.entries.append(rsu.Url(line.strip()))
 
         return self.entries
    
@@ -942,7 +954,7 @@ class GODirectory(saga.adaptors.cpi.filesystem.Directory):
         tgt_ps = self.get_path_spec(url=tgt_in)
 
         cmd_flags = ""
-        if flags & saga.filesystem.RECURSIVE:
+        if flags & api_fs.RECURSIVE:
             cmd_flags += "-r"
 
         # TODO: check for errors
@@ -968,7 +980,7 @@ class GODirectory(saga.adaptors.cpi.filesystem.Directory):
 
         # TODO: check for errors
 
-        if flags & saga.filesystem.CREATE_PARENTS:
+        if flags & api_fs.CREATE_PARENTS:
             self._adaptor.mkparents(self.shell, tgt_ps)
 
         else:
@@ -1083,7 +1095,7 @@ class GODirectory(saga.adaptors.cpi.filesystem.Directory):
 
         try:
             self._adaptor.stat(self.shell, tgt_ps)
-        except saga.DoesNotExist:
+        except DoesNotExist:
             return False
 
         return True
@@ -1091,8 +1103,8 @@ class GODirectory(saga.adaptors.cpi.filesystem.Directory):
 
 ###############################################################################
 #
-class GOFile(saga.adaptors.cpi.filesystem.File):
-    """ Implements saga.adaptors.cpi.filesystem.File
+class GOFile(cpi_fs.File):
+    """ Implements cpi_fs.File
     """
     # ----------------------------------------------------------------
     #
@@ -1106,7 +1118,7 @@ class GOFile(saga.adaptors.cpi.filesystem.File):
     def _is_valid(self):
 
         if not self.valid:
-            raise saga.IncorrectState("this instance was closed or removed")
+            raise IncorrectState("this instance was closed or removed")
 
     # ----------------------------------------------------------------
     #
@@ -1118,10 +1130,10 @@ class GOFile(saga.adaptors.cpi.filesystem.File):
         if flags == None:
             flags = 0
 
-        self.orig     = saga.Url(url) # deep copy
-        self.url      = saga.Url(url) # deep copy
+        self.orig     = rsu.Url(url) # deep copy
+        self.url      = rsu.Url(url) # deep copy
         self.path     = url.path       # keep path separate
-        self.cwd      = sumisc.url_get_dirname(self.url)
+        self.cwd      = rsumisc.url_get_dirname(self.url)
         self.url.path = None
 
         self.flags    = flags
@@ -1145,19 +1157,19 @@ class GOFile(saga.adaptors.cpi.filesystem.File):
         cwd_ps     = self.get_path_spec(path=self.cwd)
 
         if not self.ep:
-            raise saga.BadParameter("invalid file '%s'" % ps)
+            raise BadParameter("invalid file '%s'" % ps)
 
-        if self.flags & saga.filesystem.CREATE_PARENTS:
+        if self.flags & api_fs.CREATE_PARENTS:
             self._adaptor.mkparents(self.shell, cwd_ps)
 
-        elif self.flags & saga.filesystem.CREATE:
+        elif self.flags & api_fs.CREATE:
             self._logger.error("CREATE not supported for files via globus online")
 
         else:
             stat = self._adaptor.stat(self.shell, ps)
             if stat['mode'] not in ['file', 'link']:
                 # TODO: if link, check the target
-                raise saga.IncorrectState('Is not a (regular) file')
+                raise IncorrectState('Is not a (regular) file')
 
         self._logger.debug("Initialized file %s/%s" % (self.url, self.path))
 
@@ -1191,7 +1203,7 @@ class GOFile(saga.adaptors.cpi.filesystem.File):
     def close(self, timeout=None):
 
         if timeout:
-            raise saga.BadParameter("timeout for close not supported")
+            raise BadParameter("timeout for close not supported")
 
         self.finalize(kill=True)
 
@@ -1202,7 +1214,7 @@ class GOFile(saga.adaptors.cpi.filesystem.File):
 
         self._is_valid()
 
-        return saga.Url(self.orig) # deep copy
+        return rsu.Url(self.orig) # deep copy
 
     # ----------------------------------------------------------------
     #
@@ -1255,7 +1267,7 @@ class GOFile(saga.adaptors.cpi.filesystem.File):
         self._is_valid()
 
         cmd_flags = ""
-        if flags & saga.filesystem.RECURSIVE:
+        if flags & api_fs.RECURSIVE:
             cmd_flags += "-r"
 
         # TODO: check for errors

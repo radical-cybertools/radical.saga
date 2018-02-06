@@ -132,9 +132,9 @@ class Engine(object):
         self._adaptor_registry = dict()
 
         # get angine, adaptor and pty configs
-        self._cfg      = ru.get_config('radical.saga.engine')
-        self._pty_cfg  = ru.get_config('radical.saga.pty')
-        self._registry = ru.get_config('radical.saga.registry')
+        self._cfg      = ru.Config('radical.saga', 'engine')
+        self._pty_cfg  = ru.Config('radical.saga', 'pty')
+        self._registry = ru.Config('radical.saga', 'registry')
 
         # Initialize the logging, and log version (this is a singleton!)
         self._logger = ru.get_logger('radical.saga')
@@ -182,12 +182,11 @@ class Engine(object):
             # first, import the module
             adaptor_module = None
             try :
-                adaptor_module = __import__ (module_name, fromlist=['Adaptor'])
+                adaptor_module = ru.import_module(module_name)
 
             except Exception as e:
                 self._logger.exception ("Skipping adaptor %s: module import failed: %s" % (module_name, e))
                 continue # skip to next adaptor
-
 
             # we expect the module to have an 'Adaptor' class
             # implemented, which, on calling 'register()', returns
@@ -254,13 +253,15 @@ class Engine(object):
 
 
             # get the 'enabled' option in the adaptor's config
-            # section (radical.saga.cpi.base ensures that the option exists,
+            # section (radical.saga.cpi.base) ensures that the option exists,
             # if it is initialized correctly in the adaptor class.
             adaptor_config  = None
             adaptor_enabled = False
 
             try :
-                adaptor_config  = ru.get_config('%s' % adaptor_name)
+                # FIXME RADICAL
+                print 'get config for adaptor %s' % adaptor_name
+                adaptor_config  = ru.Config('radical.saga', name=adaptor_name)
                 if adaptor_config.get('enabled', True) in [0, False, 'False']:
                     adaptor_enabled = False
                 else:
@@ -376,7 +377,7 @@ class Engine(object):
                 cpi_type_modname = None
               # print cpi_type_modname_1
               # print cpi_type_modname_2
-                pprint.pprint(sys.modules)
+              # pprint.pprint(sys.modules)
 
                 if  cpi_type_modname_1 in sys.modules :
                     cpi_type_modname = cpi_type_modname_1
@@ -575,6 +576,8 @@ class Engine(object):
     #-----------------------------------------------------------------
     #
     def _dump (self) :
+
+        print 'adaptors'
         import pprint
         pprint.pprint (self._adaptor_registry)
 

@@ -155,7 +155,7 @@ class PTYShellFactory (object) :
 
     # --------------------------------------------------------------------------
     #
-    def initialize (self, url, session=None, prompt=None, logger=None,
+    def initialize (self, url, session=None, prompt=None, logger=None, cfg=None,
             posix=True, interactive=True) :
 
         with self.rlock :
@@ -171,7 +171,7 @@ class PTYShellFactory (object) :
 
             # collect all information we have/need about the requested master
             # connection
-            info = self._create_master_entry (url, session, prompt, logger,
+            info = self._create_master_entry (url, session, prompt, logger, cfg,
                     posix, interactive)
 
             # we got master info - register the master, and create the instance!
@@ -190,14 +190,14 @@ class PTYShellFactory (object) :
                 logger.debug ("open master pty for [%s] [%s] %s: %s'" \
                                 % (type_s, host_s, user_s, m_cmd))
 
-                info['pty'] = supp.PTYProcess (m_cmd, logger=logger)
+                info['pty'] = supp.PTYProcess (m_cmd, cfg, logger=logger)
                 if not info['pty'].alive () :
                     raise NoSuccess._log (logger, \
                           "Shell not connected to %s" % info['host_str'])
 
                 # authorization, prompt setup, etc.  Initialize as shell if not
                 # explicitly marked as non-posix shell
-                self._initialize_pty (info['pty'], info)
+                self._initialize_pty(info['pty'], info)
 
                 # master was created - register it
                 self.registry[host_s][user_s][type_s] = info
@@ -466,13 +466,12 @@ class PTYShellFactory (object) :
 
     # --------------------------------------------------------------------------
     #
-    def _create_master_entry (self, url, session, prompt, logger, posix,
+    def _create_master_entry (self, url, session, prompt, logger, cfg, posix,
             interactive) :
         # FIXME: cache 'which' results, etc
         # FIXME: check 'which' results
 
         with self.rlock :
-
 
             info = {'posix' : posix}
 
@@ -480,10 +479,9 @@ class PTYShellFactory (object) :
             if  not session :
                 session = Session (default=True)
 
-            session_cfg = session.get_config ('saga.utils.pty')
-            info['ssh_copy_mode']  = session_cfg['ssh_copy_mode'].get_value ()
-            info['ssh_share_mode'] = session_cfg['ssh_share_mode'].get_value ()
-            info['ssh_timeout']    = session_cfg['ssh_timeout'].get_value ()
+            info['ssh_copy_mode']  = cfg['ssh_copy_mode']
+            info['ssh_share_mode'] = cfg['ssh_share_mode']
+            info['ssh_timeout']    = cfg['ssh_timeout']
 
             logger.info ("ssh copy  mode set to '%s'" % info['ssh_copy_mode' ])
             logger.info ("ssh share mode set to '%s'" % info['ssh_share_mode'])

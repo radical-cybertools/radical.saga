@@ -198,10 +198,11 @@ class Adaptor (base.Base):
         base.Base.__init__(self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
 
         self.id_re = re.compile('^\[(.*)\]-\[(.*?)\]$')
-        self.opts = self.get_config(_ADAPTOR_NAME)
-
-        self.purge_on_start = self.opts['purge_on_start'].get_value()
-        self.purge_older_than = self.opts['purge_older_than'].get_value()
+      # # FIXME: RADICAL
+      # self.opts = self.get_config(_ADAPTOR_NAME)
+      #
+      # self.purge_on_start = self.opts['purge_on_start'].get_value()
+      # self.purge_older_than = self.opts['purge_older_than'].get_value()
 
     # ----------------------------------------------------------------
     #

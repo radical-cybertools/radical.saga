@@ -6,25 +6,27 @@ __license__   = "MIT"
 
 """ Redis advert adaptor implementation """
 
-import traceback
+import radical.utils as ru
 
-import saga.url
-import saga.adaptors.base
-import saga.adaptors.cpi.advert
-import saga.exceptions as se
-import saga.utils.misc as sumisc
+from ...                 import utils      as rsu
+from ...utils            import pty_shell  as rsups
+from ...utils            import misc       as rsumisc
+from ...                 import advert     as api_advert
+from ...adaptors         import base       as a_base
+from ...adaptors.cpi     import advert     as cpi_advert
+from ...adaptors.cpi     import decorators as cpi_decs
+from ...advert.constants import *
 
-import redis_namespace as rns
 
-SYNC_CALL  = saga.adaptors.cpi.decorators.SYNC_CALL
-ASYNC_CALL = saga.adaptors.cpi.decorators.ASYNC_CALL
+SYNC_CALL  = cpi_decs.SYNC_CALL
+ASYNC_CALL = cpi_decs.ASYNC_CALL
 
 
 ###############################################################################
 # adaptor info
 #
 
-_ADAPTOR_NAME          = 'saga.adaptors.advert.redis'
+_ADAPTOR_NAME          = 'radical.saga.adaptors.advert.redis'
 _ADAPTOR_SCHEMAS       = ['redis']
 _ADAPTOR_OPTIONS       = []
 _ADAPTOR_CAPABILITIES  = {}
@@ -44,11 +46,11 @@ _ADAPTOR_INFO          = {
     'version'          : 'v0.2.beta',
     'schemas'          : _ADAPTOR_SCHEMAS,
     'cpis'             : [{
-        'type'         : 'saga.advert.Directory',
+        'type'         : 'radical.saga.advert.Directory',
         'class'        : 'RedisDirectory'
         }, 
         {
-        'type'         : 'saga.advert.Entry',
+        'type'         : 'radical.saga.advert.Entry',
         'class'        : 'RedisEntry'
         }
     ]
@@ -58,7 +60,7 @@ _ADAPTOR_INFO          = {
 ###############################################################################
 # The adaptor class
 
-class Adaptor (saga.adaptors.base.Base):
+class Adaptor (a_base.Base):
     """ 
     This is the actual adaptor class, which gets loaded by SAGA (i.e. by the
     SAGA engine), and which registers the CPI implementation classes which
@@ -69,7 +71,7 @@ class Adaptor (saga.adaptors.base.Base):
     #
     def __init__ (self) :
 
-        saga.adaptors.base.Base.__init__ (self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
+        a_base.Base.__init__ (self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
 
         # the adaptor *singleton* creates a (single) instance of a bulk handler
         # (BulkDirectory), which implements container_* bulk methods.
@@ -119,7 +121,7 @@ class Adaptor (saga.adaptors.base.Base):
 
 ###############################################################################
 #
-class BulkDirectory (saga.adaptors.cpi.advert.Directory) :
+class BulkDirectory (cpi_advert.Directory) :
     """
     Well, this implementation can handle bulks, but cannot optimize them.
     We leave that code here anyway, for demonstration -- but those methods
@@ -172,7 +174,7 @@ class BulkDirectory (saga.adaptors.cpi.advert.Directory) :
 
 ###############################################################################
 #
-class RedisDirectory (saga.adaptors.cpi.advert.Directory) :
+class RedisDirectory (cpi_advert.Directory) :
 
     # ----------------------------------------------------------------
     #
@@ -280,7 +282,7 @@ class RedisDirectory (saga.adaptors.cpi.advert.Directory) :
     def is_dir (self, name) :
 
         try :
-            saga.advert.Directory (sumisc.url_make_absolute (self._url, name))
+            api_advert.Directory (sumisc.url_make_absolute (self._url, name))
         except Exception as e:
             return False
 
@@ -303,12 +305,12 @@ class RedisDirectory (saga.adaptors.cpi.advert.Directory) :
             ret = self._nsdir.list ()
 
 
-        elif flags == saga.advert.RECURSIVE :
+        elif flags == RECURSIVE :
 
             # ------------------------------------------------------------------
             def get_kids (path) :
 
-                d    = saga.advert.Directory (path)
+                d    = api_advert.Directory (path)
                 kids = d.list ()
 
                 for kid in kids :
@@ -360,9 +362,9 @@ class RedisDirectory (saga.adaptors.cpi.advert.Directory) :
     def open (self, url, flags) :
 
         if not url.scheme and not url.host : 
-            url = saga.url.Url (str(self._url) + '/' + str(url))
+            url = rsurl.Url (str(self._url) + '/' + str(url))
 
-        return saga.advert.Entry (url, flags, self._session, _adaptor=self._adaptor)
+        return api_advert.Entry (url, flags, self._session, _adaptor=self._adaptor)
 
 
     # ----------------------------------------------------------------
@@ -371,9 +373,9 @@ class RedisDirectory (saga.adaptors.cpi.advert.Directory) :
     def open_dir (self, url, flags) :
 
         if not url.scheme and not url.host : 
-            url = saga.url.Url (str(self._url) + '/' + str(url))
+            url = rsurl.Url (str(self._url) + '/' + str(url))
 
-        return saga.advert.Directory (url, flags, self._session, _adaptor=self._adaptor)
+        return api_advert.Directory (url, flags, self._session, _adaptor=self._adaptor)
 
 
   # ##################################################################
@@ -382,9 +384,9 @@ class RedisDirectory (saga.adaptors.cpi.advert.Directory) :
   # def copy (self, source, target, flags) :
   #     return
   # 
-  #     src_url = saga.url.Url (source)
+  #     src_url = rsurl.Url (source)
   #     src     = src_url.path
-  #     tgt_url = saga.url.Url (target)
+  #     tgt_url = rsurl.Url (target)
   #     tgt     = tgt_url.path
   # 
   # 
@@ -411,7 +413,7 @@ class RedisDirectory (saga.adaptors.cpi.advert.Directory) :
   #           'tgt'     : tgt,
   #           'flags'   : flags }
   # 
-  #     return saga.task.Task (self, 'copy', c, ttype)
+  #     return apip_task.Task (self, 'copy', c, ttype)
   # 
   # 
   # 
@@ -425,7 +427,7 @@ class RedisDirectory (saga.adaptors.cpi.advert.Directory) :
 #
 # entry adaptor class
 #
-class RedisEntry (saga.adaptors.cpi.advert.Entry) :
+class RedisEntry (cpi_advert.Entry) :
 
     # ----------------------------------------------------------------
     #
@@ -513,7 +515,7 @@ class RedisEntry (saga.adaptors.cpi.advert.Entry) :
   # @SYNC_CALL
   # def copy_self (self, target, flags) :
   # 
-  #     tgt_url = saga.url.Url (target)
+  #     tgt_url = rsurl.Url (target)
   #     tgt     = tgt_url.path
   #     src     = self._url.path
   # 

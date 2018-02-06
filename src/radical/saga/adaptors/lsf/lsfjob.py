@@ -307,7 +307,7 @@ class Adaptor (base.Base):
         base.Base.__init__(self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
 
         self.id_re = re.compile('^\[(.*)\]-\[(.*?)\]$')
-        self.opts  = self.get_config (_ADAPTOR_NAME)
+      # self.opts  = self.get_config (_ADAPTOR_NAME)  #  FIXME RADICAL
 
     # ----------------------------------------------------------------
     #

@@ -142,11 +142,11 @@ def _decode (data) :
 # --------------------------------------------------------------------
 # the adaptor name
 #
-_ADAPTOR_NAME          = "saga.adaptor.shell_job"
+_ADAPTOR_NAME          = "radical.saga.adaptors.shell_job"
 _ADAPTOR_SCHEMAS       = ["fork", "local", "ssh", "gsissh"]
 _ADAPTOR_OPTIONS       = [
     { 
-    'category'         : 'saga.adaptor.shell_job',
+    'category'         : 'radical.saga.adaptors.shell_job',
     'name'             : 'enable_notifications', 
     'type'             : bool, 
     'default'          : False,
@@ -161,7 +161,7 @@ _ADAPTOR_OPTIONS       = [
     'env_variable'     : None
     },
     {
-    'category'         : 'saga.adaptor.shell_job',
+    'category'         : 'radical.saga.adaptors.shell_job',
     'name'             : 'purge_on_start',
     'type'             : bool,
     'default'          : True,
@@ -174,7 +174,7 @@ _ADAPTOR_OPTIONS       = [
     'env_variable'     : None
     },
     {
-    'category'         : 'saga.adaptor.shell_job',
+    'category'         : 'radical.saga.adaptors.shell_job',
     'name'             : 'base_workdir',
     'type'             : str,
     'default'          : ".saga/adaptors/shell_job/",
@@ -231,7 +231,7 @@ _ADAPTOR_DOC           = {
         login shell on the target host to be POSIX compliant.  However, one can
         also specify a custom POSIX shell via the resource manager URL, like::
 
-          js = saga.job.Service ("ssh://remote.host.net/bin/sh")
+          js = rs.job.Service ("ssh://remote.host.net/bin/sh")
 
         Note that custom shells in many cases will find a different environment
         than the users default login shell!
@@ -249,7 +249,7 @@ _ADAPTOR_DOC           = {
 
               NoSuccess: pty_allocation or process creation failed (ENOENT: no more ptys)
 
-            This limitation comes from saga.utils.pty_process.  On Linux
+            This limitation comes from rs.utils.pty_process.  On Linux
             systems, the utilization of pty's can be monitored::
 
                echo "allocated pty's: `cat /proc/sys/kernel/pty/nr`"
@@ -337,11 +337,11 @@ _ADAPTOR_INFO          = {
     "capabilities"     : _ADAPTOR_CAPABILITIES,
     "cpis"             : [
         { 
-        "type"         : "saga.job.Service",
+        "type"         : "radical.saga.job.Service",
         "class"        : "ShellJobService"
         }, 
         { 
-        "type"         : "saga.job.Job",
+        "type"         : "radical.saga.job.Job",
         "class"        : "ShellJob"
         }
     ]
@@ -365,11 +365,11 @@ class Adaptor (base.Base):
         base.Base.__init__ (self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
 
         self.id_re = re.compile ('^\[(.*)\]-\[(.*?)\]$')
-        self.opts  = self.get_config (_ADAPTOR_NAME)
+      # self.opts  = self.get_config (_ADAPTOR_NAME)  # FIXME RADICAL
 
-        self.notifications  = self.opts['enable_notifications'].get_value ()
-        self.purge_on_start = self.opts['purge_on_start'      ].get_value ()
-        self.base_workdir   = self.opts['base_workdir'        ].get_value ()
+      # self.notifications  = self.opts['enable_notifications'].get_value ()
+      # self.purge_on_start = self.opts['purge_on_start'      ].get_value ()
+      # self.base_workdir   = self.opts['base_workdir'        ].get_value ()
 
 
     # ----------------------------------------------------------------
@@ -424,7 +424,7 @@ class Adaptor (base.Base):
             td = TransferDirectives (jd.file_transfer)
 
             if  td.in_append or td.out_append:
-                raise saga.BadParameter('FileTransfer append (<</>>) not supported')
+                raise BadParameter('FileTransfer append (<</>>) not supported')
 
             if  td.in_overwrite:
                 for (local, remote) in td.in_overwrite:
@@ -445,7 +445,7 @@ class Adaptor (base.Base):
             td = TransferDirectives (jd.file_transfer)
 
             if  td.out_append:
-                raise saga.BadParameter('FileTransfer append (<</>>) not supported')
+                raise BadParameter('FileTransfer append (<</>>) not supported')
 
             if  td.out_overwrite:
                 for (local, remote) in td.out_overwrite_dict.iteritems():
@@ -458,7 +458,6 @@ class Adaptor (base.Base):
 ###############################################################################
 #
 class ShellJobService (cpi.Service) :
-    """ Implements saga.adaptors.cpi.job.Service """
 
     # ----------------------------------------------------------------
     #
@@ -935,8 +934,6 @@ class ShellJobService (cpi.Service) :
     #
     @SYNC_CALL
     def create_job (self, jd) :
-        """ Implements saga.adaptors.cpi.job.Service.create_job()
-        """
         
         # this dict is passed on to the job adaptor class -- use it to pass any
         # state information you need there.
@@ -950,8 +947,7 @@ class ShellJobService (cpi.Service) :
     # ----------------------------------------------------------------
     @SYNC_CALL
     def get_url (self) :
-        """ Implements saga.adaptors.cpi.job.Service.get_url()
-        """
+
         return self.rm
 
 
@@ -994,8 +990,6 @@ class ShellJobService (cpi.Service) :
     #
     @SYNC_CALL
     def get_job (self, job_id, no_reconnect=False):
-        """ Implements saga.adaptors.cpi.job.Service.get_url()
-        """
 
         if  job_id in self.jobs :
             # no need to reconnect
@@ -1301,8 +1295,8 @@ class ShellJobService (cpi.Service) :
 ###############################################################################
 #
 class ShellJob (cpi.Job) :
-    """ Implements saga.adaptors.cpi.job.Job
-    """
+
+
     # ----------------------------------------------------------------
     #
     def __init__ (self, api, adaptor) :
@@ -1315,8 +1309,6 @@ class ShellJob (cpi.Job) :
     #
     @SYNC_CALL
     def init_instance (self, job_info):
-        """ Implements saga.adaptors.cpi.job.Job.init_instance()
-        """
 
         if  'job_description' in job_info :
             # comes from job.service.create_job()
@@ -1616,28 +1608,25 @@ class ShellJob (cpi.Job) :
     #
     @SYNC_CALL
     def get_id (self) :
-        """ Implements saga.adaptors.cpi.job.Job.get_id() """        
+
         return self._id
    
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
     def get_name (self):
-        """ Implements saga.adaptors.cpi.job.Job.get_name() """        
+
         return self._name
 
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
     def get_exit_code (self) :
-        """ Implements saga.adaptors.cpi.job.Job.get_exit_code() """
 
         if  self._exit_code != None :
             return self._exit_code
 
-        if  self.get_state () not in [api.DONE, 
-                                      api.FAILED, 
-                                      api.CANCELED] :
+        if  self.get_state () not in [DONE, FAILED, CANCELED] :
             raise IncorrectState ("Cannot get exit code, job is not in final state")
 
         self._exit_code = self.js._job_get_exit_code (self._id)
@@ -1650,8 +1639,7 @@ class ShellJob (cpi.Job) :
     #
     @SYNC_CALL
     def get_execution_hosts (self) :
-        """ Implements saga.adaptors.cpi.job.Job.get_execution_hosts()
-        """        
+
         self._logger.debug ("this is the shell adaptor, reporting execution hosts")
         return [self.js.get_url ().host]
    

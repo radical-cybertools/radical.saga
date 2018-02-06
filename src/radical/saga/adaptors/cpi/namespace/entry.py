@@ -4,14 +4,15 @@ __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
 
-import saga.adaptors.cpi.decorators as cpi_dec
-import saga.adaptors.cpi.base       as cpi_base
-import saga.adaptors.cpi.async      as cpi_async
+from .. import decorators as cpi_dec
+from .. import base       as cpi_base
+from .. import async      as cpi_async
 
 SYNC  = cpi_dec.CPI_SYNC_CALL
 ASYNC = cpi_dec.CPI_ASYNC_CALL
 
 
+# ------------------------------------------------------------------------------
 # keep order of inheritance!  super() below uses MRO
 class Entry (cpi_base.CPIBase, cpi_async.Async) :
 
@@ -95,5 +96,5 @@ class Entry (cpi_base.CPIBase, cpi_async.Async) :
     def remove_self_async    (self, flags, ttype)             : pass
 
 
-
+# ------------------------------------------------------------------------------
 

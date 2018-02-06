@@ -196,9 +196,6 @@ class PTYShell (object) :
         if session: self.session = session
         else      : self.session = ss.Session(default=True)
 
-        if opts   : self.options = opts   
-        else      : self.options = dict()
-
         self.logger.debug ("PTYShell init %s" % self)
 
         self.url         = url         # describes the shell to run
@@ -212,17 +209,18 @@ class PTYShell (object) :
         self.pty_id       = PTYShell._pty_id
         PTYShell._pty_id += 1
 
-        self.cfg = self.session.get_config('saga.utils.pty')
+        self.cfg = ru.Config('radical.saga', 'utils')['pty']
 
-        # get prompt pattern from options, config, or use default
-        if 'prompt_pattern' in self.options:
-            self.prompt = self.options['prompt_pattern']
-        elif 'prompt_pattern' in self.cfg:
-            self.prompt = self.cfg['prompt_pattern'].get_value ()
-        else:
-            self.prompt = DEFAULT_PROMPT
+        # opts passed on construction overwrite file config
+        if opts:
+            self.cfg = ru.dict_merge(self.cfg, opts, policy='overwrite')
 
-        self.prompt_re = re.compile ("^(.*?)%s" % self.prompt, re.DOTALL)
+        import pprint
+        pprint.pprint(self.cfg)
+
+        # get prompt pattern from config, or use default
+        self.prompt    = self.cfg.get('prompt_pattern', DEFAULT_PROMPT)
+        self.prompt_re = re.compile ("^(.*?)%s"    % self.prompt, re.DOTALL)
         self.logger.info ("PTY prompt pattern: %s" % self.prompt)
 
         # we need a local dir for file staging caches.  At this point we use
@@ -241,8 +239,8 @@ class PTYShell (object) :
         
         self.factory    = supsf.PTYShellFactory   ()
         self.pty_info   = self.factory.initialize (self.url,    self.session, 
-                                                   self.prompt, self.logger, 
-                                                   posix=self.posix,
+                                                   self.prompt, self.logger,
+                                                   self.cfg,    self.posix,
                                                    interactive=self.interactive)
         self.pty_shell  = self.factory.run_shell  (self.pty_info)
 
@@ -286,8 +284,8 @@ class PTYShell (object) :
                 command_shell = "exec /bin/sh -i"
 
                 # use custom shell if so requested
-                if  'shell' in self.options and self.options['shell'] :
-                    command_shell = "exec %s" % self.options['shell']
+                if  self.cfg.get('shell'):
+                    command_shell = "exec %s" % self.cfg['shell']
                     self.logger.info ("custom  command shell: %s" % command_shell)
 
 

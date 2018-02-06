@@ -17,7 +17,7 @@ from ...exceptions import *
 #
 # adaptor meta data
 #
-_ADAPTOR_NAME          = 'saga.adaptor.ssh'
+_ADAPTOR_NAME          = 'radical.saga.adaptors.ssh'
 _ADAPTOR_SCHEMAS       = ['ssh']
 _ADAPTOR_OPTIONS       = []
 
@@ -36,10 +36,10 @@ _ADAPTOR_DOC           = {
     'capabilities'     : _ADAPTOR_CAPABILITIES,
     'description'      : """ 
     
-This SSH :class:`saga.Context` adaptor points to an ssh keypair and a user_id
-to be used for ssh based backend connections.  For example, an ssh context can
-be used to start jobs (:class:`saga.job.Job`) via ssh, to copy files
-(:class:`saga.filesystem.File`) via sftp, etc.
+This SSH :class:`radical.saga.Context` adaptor points to an ssh keypair and
+a user_id to be used for ssh based backend connections.  For example, an ssh
+context can be used to start jobs (:class:`radical.saga.job.Job`) via ssh, to
+copy files (:class:`radical.saga.filesystem.File`) via sftp, etc.
 
 Not all supported attributes have to be defined when using an ssh context
 adaptor -- unspecified attributes will have sensible default values.  For
@@ -62,7 +62,7 @@ _ADAPTOR_INFO          = {
     'version'          : 'v0.1',
     'schemas'          : _ADAPTOR_SCHEMAS,
     'cpis'             : [{ 
-        'type'         : 'saga.Context',
+        'type'         : 'radical.saga.Context',
         'class'        : 'ContextSSH'
         }
     ]

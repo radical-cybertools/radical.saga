@@ -7,24 +7,28 @@ __license__   = "MIT"
 """ file adaptor implementation on top tof the HTTP protocol
 """
 
-import os.path
+import os
 import urllib
 
-import saga.adaptors.base
-import saga.adaptors.cpi.filesystem
-import saga.utils.misc as sumisc
+import radical.utils as ru
 
+from ...                     import url        as rsurl
+from ...utils                import pty_shell  as rsups
+from ...utils                import misc       as rsumisc
+from ...                     import filesystem as api_fs
+from ...filesystem.constants import *
+from ..                      import base       as a_base
+from ..cpi                   import filesystem as cpi_fs
+from ..cpi                   import decorators as cpi_decs
 
-from saga.filesystem.constants import *
-
-SYNC_CALL = saga.adaptors.cpi.decorators.SYNC_CALL
-ASYNC_CALL = saga.adaptors.cpi.decorators.ASYNC_CALL
+SYNC_CALL  = cpi_decs.SYNC_CALL
+ASYNC_CALL = cpi_decs.ASYNC_CALL
 
 
 # --------------------------------------------------------------------
 # the adaptor name
 #
-_ADAPTOR_NAME          = "saga.adaptor.http_file"
+_ADAPTOR_NAME          = "radical.saga.adaptors.http_file"
 _ADAPTOR_SCHEMAS       = ["http", "https"]
 _ADAPTOR_OPTIONS       = []
 
@@ -58,11 +62,11 @@ _ADAPTOR_INFO = {
     "schemas": _ADAPTOR_SCHEMAS,
     "cpis": [
         {
-            "type": "saga.namespace.Entry",
+            "type": "radical.saga.namespace.Entry",
             "class": "HTTPFile"
         },
         {
-            "type": "saga.filesystem.File",
+            "type": "radical.saga.filesystem.File",
             "class": "HTTPFile"
         }
     ]
@@ -71,7 +75,7 @@ _ADAPTOR_INFO = {
 
 ###############################################################################
 # The adaptor class
-class Adaptor (saga.adaptors.base.Base):
+class Adaptor (a_base.Base):
     """
     This is the actual adaptor class, which gets loaded by SAGA (i.e. by the
     SAGA engine), and which registers the CPI implementation classes which
@@ -82,7 +86,7 @@ class Adaptor (saga.adaptors.base.Base):
     #
     def __init__(self):
 
-        saga.adaptors.base.Base.__init__(self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
+        a_base.Base.__init__(self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
 
     # ----------------------------------------------------------------
     #
@@ -92,8 +96,8 @@ class Adaptor (saga.adaptors.base.Base):
 
 ###############################################################################
 #
-class HTTPFile (saga.adaptors.cpi.filesystem.File):
-    """ Implements saga.adaptors.cpi.filesystem.File
+class HTTPFile (cpi_fs.File):
+    """ Implements radical.saga.adaptors.cpi.filesystem.File
     """
     # ----------------------------------------------------------------
     #
@@ -117,27 +121,27 @@ class HTTPFile (saga.adaptors.cpi.filesystem.File):
         self._logger.info("init_instance %s" % url)
 
         if 'from_open' in adaptor_state and adaptor_state['from_open']:
-            self.url = saga.Url(url)  # deep copy
+            self.url = rsurl.Url(url)  # deep copy
             self.flags = flags
             self.session = session
             self.valid = False  # will be set by initialize
-            self.cwdurl = saga.Url(adaptor_state["cwd"])
+            self.cwdurl = rsurl.Url(adaptor_state["cwd"])
             self.cwd = self.cwdurl.path
 
-            if sumisc.url_is_relative(self.url):
-                self.url = sumisc.url_make_absolute(self.cwd, self.url)
+            if rsumisc.url_is_relative(self.url):
+                self.url = rsumisc.url_make_absolute(self.cwd, self.url)
 
         else:
-            if sumisc.url_is_relative(url):
-                raise saga.BadParameter("cannot interprete relative URL in this context ('%s')" % url)
+            if rsumisc.url_is_relative(url):
+                raise BadParameter("cannot interprete relative URL in this context ('%s')" % url)
 
             self.url = url
             self.flags = flags
             self.session = session
             self.valid = False  # will be set by initialize
-            self.cwd = sumisc.url_get_dirname(url)
+            self.cwd = rsumisc.url_get_dirname(url)
 
-            self.cwdurl = saga.Url(url)  # deep copy
+            self.cwdurl = rsurl.Url(url)  # deep copy
             self.cwdurl.path = self.cwd
 
         self.initialize()
@@ -147,16 +151,16 @@ class HTTPFile (saga.adaptors.cpi.filesystem.File):
     #
     def initialize(self):
 
-        if self.flags & saga.filesystem.CREATE_PARENTS:
-            raise saga.BadParameter("File creation operations are not supported via HTTP(S)")
+        if self.flags & CREATE_PARENTS:
+            raise BadParameter("File creation not supported via HTTP(S)")
 
-        elif self.flags & saga.filesystem.CREATE:
-            raise saga.BadParameter("File creation operations are not supported via HTTP(S)")
+        elif self.flags & CREATE:
+            raise BadParameter("File creation not supported via HTTP(S)")
 
-        elif self.flags & saga.filesystem.WRITE:
-            raise saga.BadParameter("File write operations are not supported via HTTP(S)")
+        elif self.flags & WRITE:
+            raise BadParameter("File write not supported via HTTP(S)")
 
-        elif self.flags & saga.filesystem.READ:
+        elif self.flags & READ:
             pass
 
         self.valid = True
@@ -171,24 +175,24 @@ class HTTPFile (saga.adaptors.cpi.filesystem.File):
     #
     @SYNC_CALL
     def get_url(self):
-        return saga.Url(self.url)  # deep copy
+        return rsurl.Url(self.url)  # deep copy
 
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
     def copy_self(self, tgt_in, flags):
 
-        src = saga.Url(self.url)  # deep copy
-        tgt = saga.Url(tgt_in)  # deep copy
+        src = rsurl.Url(self.url)  # deep copy
+        tgt = rsurl.Url(tgt_in)  # deep copy
 
         if tgt.scheme != 'file':
-            raise saga.BadParameter("Only file://localhost URLs are supported as copy targets.")
+            raise BadParameter("Only file://localhost URLs are supported as copy targets.")
 
         if tgt.host != 'localhost':
-            raise saga.BadParameter("Only file://localhost URLs are supported as copy targets.")
+            raise BadParameter("Only file://localhost URLs are supported as copy targets.")
 
-        #if sumisc.url_is_relative (src) : src = sumisc.url_make_absolute (cwdurl, src)
-        #if sumisc.url_is_relative (tgt) : tgt = sumisc.url_make_absolute (cwdurl, tgt)
+        #if rsumisc.url_is_relative (src) : src = rsumisc.url_make_absolute (cwdurl, src)
+        #if rsumisc.url_is_relative (tgt) : tgt = rsumisc.url_make_absolute (cwdurl, tgt)
 
         target = ""
 
@@ -197,23 +201,23 @@ class HTTPFile (saga.adaptors.cpi.filesystem.File):
         if os.path.exists(tgt.path):
             if os.path.isfile(tgt.path):
                 # fail if overwtrite flag is not set, otherwise copy
-                if flags & saga.filesystem.OVERWRITE:
+                if flags & OVERWRITE:
                     target = local_path
                 else:
-                    raise saga.BadParameter("Local file '%s' exists." % local_path)
+                    raise BadParameter("Local file '%s' exists." % local_path)
 
             elif os.path.isdir(tgt.path):
                 # add source filename to target path
                 target = os.path.join(local_path, src_filename)
 
                 if os.path.exists(target):
-                    if not flags & saga.filesystem.OVERWRITE:
-                        raise saga.BadParameter("Local file '%s' exists." % target)
+                    if not flags & OVERWRITE:
+                        raise BadParameter("Local file '%s' exists." % target)
 
         try:
             urllib.urlretrieve(str(src), target)
         except Exception, e:
-            raise saga.BadParameter("Couldn't copy %s to %s: %s" %
+            raise BadParameter("Couldn't copy %s to %s: %s" %
                                     (str(src), target, str(e)))
 
     # ----------------------------------------------------------------

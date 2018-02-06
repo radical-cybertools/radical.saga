@@ -17,7 +17,7 @@ from ...exceptions import *
 #
 # adaptor meta data
 #
-_ADAPTOR_NAME          = 'saga.adaptor.x509'
+_ADAPTOR_NAME          = 'radical.saga.adaptor.x509'
 _ADAPTOR_SCHEMAS       = ['X509']
 _ADAPTOR_OPTIONS       = []
 
@@ -43,7 +43,7 @@ _ADAPTOR_INFO          = {
     'version'          : 'v0.1',
     'schemas'          : _ADAPTOR_SCHEMAS,
     'cpis'             : [{ 
-        'type'         : 'saga.Context',
+        'type'         : 'radical.saga.Context',
         'class'        : 'ContextX509'
         }
     ]

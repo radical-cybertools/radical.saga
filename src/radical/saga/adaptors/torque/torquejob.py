@@ -434,7 +434,7 @@ class Adaptor (a_base.Base):
 ###############################################################################
 #
 class TORQUEJobService (cpi_job.Service):
-    """ implements saga.adaptors.cpi.job.Service
+    """ implements cpi_job.Service
     """
 
     # ----------------------------------------------------------------
@@ -954,7 +954,7 @@ class TORQUEJobService (cpi_job.Service):
     #
     @SYNC_CALL
     def create_job(self, jd):
-        """ implements saga.adaptors.cpi.job.Service.get_url()
+        """ implements cpi_job.Service.get_url()
         """
         # this dict is passed on to the job adaptor class -- use it to pass any
         # state information you need there.
@@ -972,7 +972,7 @@ class TORQUEJobService (cpi_job.Service):
     #
     @SYNC_CALL
     def get_job(self, job_id):
-        """ Implements saga.adaptors.cpi.job.Service.get_job()
+        """ Implements cpi_job.Service.get_job()
 
             Re-create job instance from a job-id.
         """
@@ -1007,7 +1007,7 @@ class TORQUEJobService (cpi_job.Service):
     #
     @SYNC_CALL
     def get_url(self):
-        """ implements saga.adaptors.cpi.job.Service.get_url()
+        """ implements cpi_job.Service.get_url()
         """
         return self.rm
 
@@ -1015,7 +1015,7 @@ class TORQUEJobService (cpi_job.Service):
     #
     @SYNC_CALL
     def list(self):
-        """ implements saga.adaptors.cpi.job.Service.list()
+        """ implements cpi_job.Service.list()
         """
         ids = []
 
@@ -1077,7 +1077,7 @@ class TORQUEJobService (cpi_job.Service):
 ###############################################################################
 #
 class TORQUEJob (cpi_job.Job):
-    """ implements saga.adaptors.cpi.job.Job
+    """ implements cpi_job.Job
     """
 
     def __init__(self, api, adaptor):
@@ -1091,7 +1091,7 @@ class TORQUEJob (cpi_job.Job):
 
     @SYNC_CALL
     def init_instance(self, job_info):
-        """ implements saga.adaptors.cpi.job.Job.init_instance()
+        """ implements cpi_job.Job.init_instance()
         """
         # init_instance is called for every new api_job.Job object
         # that is created
@@ -1117,7 +1117,7 @@ class TORQUEJob (cpi_job.Job):
     #
     @SYNC_CALL
     def get_state(self):
-        """ implements saga.adaptors.cpi.job.Job.get_state()
+        """ implements cpi_job.Job.get_state()
         """
         if  self._started is False:
             return NEW
@@ -1128,7 +1128,7 @@ class TORQUEJob (cpi_job.Job):
     #
     @SYNC_CALL
     def wait(self, timeout):
-        """ implements saga.adaptors.cpi.job.Job.wait()
+        """ implements cpi_job.Job.wait()
         """
         if self._started is False:
             log_error_and_raise("Can't wait for job that hasn't been started",
@@ -1140,7 +1140,7 @@ class TORQUEJob (cpi_job.Job):
     #
     @SYNC_CALL
     def cancel(self, timeout):
-        """ implements saga.adaptors.cpi.job.Job.cancel()
+        """ implements cpi_job.Job.cancel()
         """
         if self._started is False:
             log_error_and_raise("Can't wait for job that hasn't been started",
@@ -1152,7 +1152,7 @@ class TORQUEJob (cpi_job.Job):
     #
     @SYNC_CALL
     def run(self):
-        """ implements saga.adaptors.cpi.job.Job.run()
+        """ implements cpi_job.Job.run()
         """
         self._id = self.js._job_run(self._api())
         self._started = True
@@ -1161,7 +1161,7 @@ class TORQUEJob (cpi_job.Job):
     #
     @SYNC_CALL
     def get_service_url(self):
-        """ implements saga.adaptors.cpi.job.Job.get_service_url()
+        """ implements cpi_job.Job.get_service_url()
         """
         return self.js.rm
 
@@ -1169,7 +1169,7 @@ class TORQUEJob (cpi_job.Job):
     #
     @SYNC_CALL
     def get_id(self):
-        """ implements saga.adaptors.cpi.job.Job.get_id()
+        """ implements cpi_job.Job.get_id()
         """
         return self._id
 
@@ -1177,7 +1177,7 @@ class TORQUEJob (cpi_job.Job):
     #
     @SYNC_CALL
     def get_name (self):
-        """ Implements saga.adaptors.cpi.job.Job.get_name() """        
+        """ Implements cpi_job.Job.get_name() """        
         self._logger.info('get job name 1: %s', self._name)
         return self._name
 
@@ -1185,7 +1185,7 @@ class TORQUEJob (cpi_job.Job):
     #
     @SYNC_CALL
     def get_exit_code(self):
-        """ implements saga.adaptors.cpi.job.Job.get_exit_code()
+        """ implements cpi_job.Job.get_exit_code()
         """
         if self._started is False:
             return None
@@ -1196,7 +1196,7 @@ class TORQUEJob (cpi_job.Job):
     #
     @SYNC_CALL
     def get_created(self):
-        """ implements saga.adaptors.cpi.job.Job.get_created()
+        """ implements cpi_job.Job.get_created()
         """
         if self._started is False:
             return None
@@ -1207,7 +1207,7 @@ class TORQUEJob (cpi_job.Job):
     #
     @SYNC_CALL
     def get_started(self):
-        """ implements saga.adaptors.cpi.job.Job.get_started()
+        """ implements cpi_job.Job.get_started()
         """
         if self._started is False:
             return None
@@ -1218,7 +1218,7 @@ class TORQUEJob (cpi_job.Job):
     #
     @SYNC_CALL
     def get_finished(self):
-        """ implements saga.adaptors.cpi.job.Job.get_finished()
+        """ implements cpi_job.Job.get_finished()
         """
         if self._started is False:
             return None
@@ -1229,7 +1229,7 @@ class TORQUEJob (cpi_job.Job):
     #
     @SYNC_CALL
     def get_execution_hosts(self):
-        """ implements saga.adaptors.cpi.job.Job.get_execution_hosts()
+        """ implements cpi_job.Job.get_execution_hosts()
         """
         if self._started is False:
             return None
@@ -1240,7 +1240,7 @@ class TORQUEJob (cpi_job.Job):
     #
     @SYNC_CALL
     def get_description(self):
-        """ implements saga.adaptors.cpi.job.Job.get_execution_hosts()
+        """ implements cpi_job.Job.get_execution_hosts()
         """
         return self.jd
 

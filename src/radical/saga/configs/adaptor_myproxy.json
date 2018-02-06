@@ -6,3 +6,4 @@
     # resource.  This parameter specified what location should be used.
     "base_workdir" : "$env{$HOME:.}/.saga/adaptors/proxies/"
 }
+

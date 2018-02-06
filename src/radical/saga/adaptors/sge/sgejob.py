@@ -8,24 +8,30 @@ __license__   = "MIT"
 """ SGE job adaptor implementation
 """
 
-import radical.utils as ru
-
-import saga.utils.pty_shell
-
-import saga.adaptors.base
-import saga.adaptors.cpi.job
-
-from saga.job.constants import *
-
-import os
 import re
+import os 
 import time
-from cgi import parse_qs
+import threading
+
+from cgi      import parse_qs
 from StringIO import StringIO
 from datetime import datetime
 
-SYNC_CALL = saga.adaptors.cpi.decorators.SYNC_CALL
-ASYNC_CALL = saga.adaptors.cpi.decorators.ASYNC_CALL
+import radical.utils as ru
+
+from ...              import utils      as rsu
+from ...utils         import pty_shell  as rsups
+from ...utils         import misc       as rsumisc
+from ...              import job        as api_job
+from ...adaptors      import base       as a_base
+from ...adaptors.cpi  import job        as cpi_job
+from ...adaptors.cpi  import decorators as cpi_decs
+from ...job.constants import *
+
+
+SYNC_CALL  = cpi_decs.SYNC_CALL
+ASYNC_CALL = cpi_decs.ASYNC_CALL
+
 
 _QSTAT_JOB_STATE_RE = re.compile(r"^([^ ]+) ([0-9]{2}/[0-9]{2}/[0-9]{4} [0-9]{2}:[0-9]{2}:[0-9]{2}) (.+)$")
 
@@ -112,11 +118,11 @@ _PTY_TIMEOUT = 2.0
 # --------------------------------------------------------------------
 # the adaptor name
 #
-_ADAPTOR_NAME          = "saga.adaptor.sgejob"
+_ADAPTOR_NAME          = "radical.saga.adaptors.sgejob"
 _ADAPTOR_SCHEMAS       = ["sge", "sge+ssh", "sge+gsissh"]
 _ADAPTOR_OPTIONS       = [
     { 
-    'category'         : 'saga.adaptor.sgejob',
+    'category'         : 'radical.saga.adaptors.sgejob',
     'name'             : 'purge_on_start', 
     'type'             : bool,
     'default'          : True,
@@ -127,7 +133,7 @@ _ADAPTOR_OPTIONS       = [
     'env_variable'     : None
     },
     {
-    'category'         : 'saga.adaptor.sgejob',
+    'category'         : 'radical.saga.adaptors.sgejob',
     'name'             : 'purge_older_than',
     'type'             : int,
     'default'          : 30,
@@ -137,7 +143,7 @@ _ADAPTOR_OPTIONS       = [
     'env_variable'     : None
     },
     {
-    'category'         : 'saga.adaptor.sgejob',
+    'category'         : 'radical.saga.adaptors.sgejob',
     'name'             : 'base_workdir',
     'type'             : str,
     'default'          : "$HOME/.saga/adaptors/sge_job/",
@@ -151,28 +157,28 @@ _ADAPTOR_OPTIONS       = [
 # the adaptor capabilities & supported attributes
 #
 _ADAPTOR_CAPABILITIES = {
-    "jdes_attributes":   [saga.job.NAME,
-                          saga.job.EXECUTABLE,
-                          saga.job.ARGUMENTS,
-                          saga.job.ENVIRONMENT,
-                          saga.job.INPUT,
-                          saga.job.OUTPUT,
-                          saga.job.ERROR,
-                          saga.job.QUEUE,
-                          saga.job.PROJECT,
-                          saga.job.WALL_TIME_LIMIT,
-                          saga.job.WORKING_DIRECTORY,
-                          saga.job.SPMD_VARIATION,
-                          saga.job.TOTAL_CPU_COUNT,
-                          saga.job.PROCESSES_PER_HOST,
-                          saga.job.CANDIDATE_HOSTS,
-                          saga.job.TOTAL_PHYSICAL_MEMORY],
-    "job_attributes":    [saga.job.EXIT_CODE,
-                          saga.job.EXECUTION_HOSTS,
-                          saga.job.CREATED,
-                          saga.job.STARTED,
-                          saga.job.FINISHED],
-    "metrics":           [saga.job.STATE],
+    "jdes_attributes":   [NAME,
+                          EXECUTABLE,
+                          ARGUMENTS,
+                          ENVIRONMENT,
+                          INPUT,
+                          OUTPUT,
+                          ERROR,
+                          QUEUE,
+                          PROJECT,
+                          WALL_TIME_LIMIT,
+                          WORKING_DIRECTORY,
+                          SPMD_VARIATION,
+                          TOTAL_CPU_COUNT,
+                          PROCESSES_PER_HOST,
+                          CANDIDATE_HOSTS,
+                          TOTAL_PHYSICAL_MEMORY],
+    "job_attributes":    [EXIT_CODE,
+                          EXECUTION_HOSTS,
+                          CREATED,
+                          STARTED,
+                          FINISHED],
+    "metrics":           [STATE],
     "contexts":          {"ssh": "SSH public/private keypair",
                           "x509": "GSISSH X509 proxy context",
                           "userpass": "username/password pair (ssh)"}
@@ -205,11 +211,11 @@ _ADAPTOR_INFO = {
     "capabilities" : _ADAPTOR_CAPABILITIES,
     "cpis": [
         {
-        "type": "saga.job.Service",
+        "type": "radical.saga.job.Service",
         "class": "SGEJobService"
         },
         {
-        "type": "saga.job.Job",
+        "type": "radical.saga.job.Job",
         "class": "SGEJob"
         }
     ]
@@ -218,7 +224,7 @@ _ADAPTOR_INFO = {
 
 ###############################################################################
 # The adaptor class
-class Adaptor (saga.adaptors.base.Base):
+class Adaptor (a_base.Base):
     """ this is the actual adaptor class, which gets loaded by SAGA (i.e. by
         the SAGA engine), and which registers the CPI implementation classes
         which provide the adaptor's functionality.
@@ -228,14 +234,14 @@ class Adaptor (saga.adaptors.base.Base):
     #
     def __init__(self):
 
-        saga.adaptors.base.Base.__init__(self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
+        a_base.Base.__init__(self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
 
         self.id_re = re.compile('^\[(.*)\]-\[(.*?)\]$')
-        self.opts  = self.get_config (_ADAPTOR_NAME)
+      # self.opts  = self.get_config (_ADAPTOR_NAME)  # FIXME RADICAL
 
-        self.purge_on_start = self.opts['purge_on_start'].get_value()
-        self.purge_older_than = self.opts['purge_older_than'].get_value()
-        self.base_workdir = self.opts['base_workdir'].get_value()
+      # self.purge_on_start   = self.opts['purge_on_start'].get_value()
+      # self.purge_older_than = self.opts['purge_older_than'].get_value()
+      # self.base_workdir     = self.opts['base_workdir'].get_value()
 
     # ----------------------------------------------------------------
     #
@@ -258,8 +264,8 @@ class Adaptor (saga.adaptors.base.Base):
 
 ###############################################################################
 #
-class SGEJobService (saga.adaptors.cpi.job.Service):
-    """ implements saga.adaptors.cpi.job.Service
+class SGEJobService (cpi_job.Service):
+    """ implements cpi_job.Service
     """
 
     # ----------------------------------------------------------------
@@ -327,7 +333,7 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
                           'qconf': None,
                           'qacct': None}
 
-        self.shell = saga.utils.pty_shell.PTYShell(pty_url, self.session)
+        self.shell = rsups.PTYShell(pty_url, self.session)
 
       # self.shell.set_initialize_hook(self.initialize)
       # self.shell.set_finalize_hook(self.finalize)
@@ -469,19 +475,19 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
                 sge_state = sge_state[1:]
 
             return {
-                'c'   : saga.job.DONE,
-                'E'   : saga.job.RUNNING,
-                'H'   : saga.job.PENDING,
-                'qw'  : saga.job.PENDING,
-                'r'   : saga.job.RUNNING,
-                't'   : saga.job.RUNNING,
-                'w'   : saga.job.PENDING,
-                's'   : saga.job.PENDING,
-                'X'   : saga.job.CANCELED,
-                'Eqw' : saga.job.FAILED
+                'c'   : DONE,
+                'E'   : RUNNING,
+                'H'   : PENDING,
+                'qw'  : PENDING,
+                'r'   : RUNNING,
+                't'   : RUNNING,
+                'w'   : PENDING,
+                's'   : PENDING,
+                'X'   : CANCELED,
+                'Eqw' : FAILED
             }[sge_state]
         except:
-            return saga.job.UNKNOWN
+            return UNKNOWN
 
     def __parse_memreqs(self, s):
         """
@@ -565,7 +571,7 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
                 # failed       0
                 # exit_status  0
                 job_info = dict(
-                    state=saga.job.DONE if qres.get("failed") == "0" else saga.job.FAILED,
+                    state=DONE if qres.get("failed") == "0" else FAILED,
                     name=qres.get("jobname"),
                     exec_hosts=qres.get("hostname"),
                     returncode=int(qres.get("exit_status", -1)),
@@ -614,12 +620,9 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
 
         qres = SgeKeyValueParser(out, key_suffix=":").as_dict()
 
-        if "signal" in qres:
-            state = saga.job.CANCELED
-        elif "exit_status" in qres:
-            state = saga.job.DONE
-        else:
-            state = saga.job.RUNNING
+        if   "signal"      in qres: state = CANCELED
+        elif "exit_status" in qres: state = DONE
+        else                      : state = RUNNING
 
         job_info = dict(
                     state=state,
@@ -849,7 +852,7 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
 
         # add job to internal list of known jobs.
         self.jobs[job_id] = {
-            'state':        saga.job.PENDING,
+            'state':        PENDING,
             'name':         jd.name,
             'exec_hosts':   None,
             'returncode':   None,
@@ -969,7 +972,7 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
             return prev_info
 
         # if the job is in a terminal state don't expect it to change anymore
-        if prev_info["state"] in [saga.job.CANCELED, saga.job.FAILED, saga.job.DONE]:
+        if prev_info["state"] in [CANCELED, FAILED, DONE]:
             return prev_info
 
         # retrieve updated job information
@@ -988,9 +991,7 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
         """ get the job's state
         """
         # check if we have already reach a terminal state
-        if self.jobs[job_id]['state'] == saga.job.CANCELED \
-        or self.jobs[job_id]['state'] == saga.job.FAILED \
-        or self.jobs[job_id]['state'] == saga.job.DONE:
+        if self.jobs[job_id]['state'] in [DONE, FAILED, CANCELED]:
             return self.jobs[job_id]['state']
 
         # check if we can / should update
@@ -1080,7 +1081,7 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
         self.__clean_remote_job_info(pid)
 
         # assume the job was succesfully canceld
-        self.jobs[job_id]['state'] = saga.job.CANCELED
+        self.jobs[job_id]['state'] = CANCELED
 
     # ----------------------------------------------------------------
     #
@@ -1095,14 +1096,12 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
         while True:
             state = self._job_get_state(job_id=job_id)
 
-            if state == saga.job.UNKNOWN :
+            if state == UNKNOWN :
                 log_error_and_raise("cannot get job state", saga.IncorrectState, self._logger)
 
-            if state == saga.job.DONE or \
-               state == saga.job.FAILED or \
-               state == saga.job.CANCELED:
-                    self.__clean_remote_job_info(pid)
-                    return True
+            if state in [DONE, FAILED, CANCELED]:
+                self.__clean_remote_job_info(pid)
+                return True
             # avoid busy poll
             time.sleep(0.5)
 
@@ -1116,7 +1115,7 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
     #
     @SYNC_CALL
     def create_job(self, jd):
-        """ implements saga.adaptors.cpi.job.Service.get_url()
+        """ implements cpi_job.Service.get_url()
         """
         # this dict is passed on to the job adaptor class -- use it to pass any
         # state information you need there.
@@ -1126,14 +1125,14 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
                          "reconnect":       False
                         }
 
-        return saga.job.Job(_adaptor=self._adaptor,
+        return api_job.Job(_adaptor=self._adaptor,
                             _adaptor_state=adaptor_state)
 
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
     def get_job(self, jobid):
-        """ Implements saga.adaptors.cpi.job.Service.get_job()
+        """ Implements cpi_job.Service.get_job()
         """
 
         # try to get some information about this job
@@ -1146,20 +1145,20 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
         # state information you need there.
         adaptor_state = {"job_service":     self,
                          # TODO: fill job description
-                         "job_description": saga.job.Description(),
+                         "job_description": api_job.Description(),
                          "job_schema":      self.rm.schema,
                          "reconnect":       True,
                          "reconnect_jobid": jobid
                         }
 
-        return saga.job.Job(_adaptor=self._adaptor,
+        return api_job.Job(_adaptor=self._adaptor,
                             _adaptor_state=adaptor_state)
 
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
     def get_url(self):
-        """ implements saga.adaptors.cpi.job.Service.get_url()
+        """ implements cpi_job.Service.get_url()
         """
         return self.rm
 
@@ -1167,7 +1166,7 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
     #
     @SYNC_CALL
     def list(self):
-        """ implements saga.adaptors.cpi.job.Service.list()
+        """ implements cpi_job.Service.list()
         """
         ids = []
 
@@ -1214,8 +1213,8 @@ class SGEJobService (saga.adaptors.cpi.job.Service):
 
 ###############################################################################
 #
-class SGEJob (saga.adaptors.cpi.job.Job):
-    """ implements saga.adaptors.cpi.job.Job
+class SGEJob (cpi_job.Job):
+    """ implements cpi_job.Job
     """
 
     def __init__(self, api, adaptor):
@@ -1226,9 +1225,9 @@ class SGEJob (saga.adaptors.cpi.job.Job):
 
     @SYNC_CALL
     def init_instance(self, job_info):
-        """ implements saga.adaptors.cpi.job.Job.init_instance()
+        """ implements cpi_job.Job.init_instance()
         """
-        # init_instance is called for every new saga.job.Job object
+        # init_instance is called for every new api_job.Job object
         # that is created
         self.jd = job_info["job_description"]
         self.js = job_info["job_service"]
@@ -1254,11 +1253,11 @@ class SGEJob (saga.adaptors.cpi.job.Job):
     #
     @SYNC_CALL
     def get_state(self):
-        """ implements saga.adaptors.cpi.job.Job.get_state()
+        """ implements cpi_job.Job.get_state()
         """
         if self._started is False:
             # jobs that are not started are always in 'NEW' state
-            return saga.job.NEW
+            return NEW
         else:
             return self.js._job_get_state(self._id)
 
@@ -1266,7 +1265,7 @@ class SGEJob (saga.adaptors.cpi.job.Job):
     #
     @SYNC_CALL
     def wait(self, timeout):
-        """ implements saga.adaptors.cpi.job.Job.wait()
+        """ implements cpi_job.Job.wait()
         """
         if self._started is False:
             log_error_and_raise("Can't wait for job that hasn't been started",
@@ -1278,7 +1277,7 @@ class SGEJob (saga.adaptors.cpi.job.Job):
     #
     @SYNC_CALL
     def cancel(self, timeout):
-        """ implements saga.adaptors.cpi.job.Job.cancel()
+        """ implements cpi_job.Job.cancel()
         """
         if self._started is False:
             log_error_and_raise("Can't wait for job that hasn't been started",
@@ -1290,7 +1289,7 @@ class SGEJob (saga.adaptors.cpi.job.Job):
     #
     @SYNC_CALL
     def run(self):
-        """ implements saga.adaptors.cpi.job.Job.run()
+        """ implements cpi_job.Job.run()
         """
         self._id = self.js._job_run(self.jd)
         self._started = True
@@ -1299,7 +1298,7 @@ class SGEJob (saga.adaptors.cpi.job.Job):
     #
     @SYNC_CALL
     def get_service_url(self):
-        """ implements saga.adaptors.cpi.job.Job.get_service_url()
+        """ implements cpi_job.Job.get_service_url()
         """
         return self.js.rm
 
@@ -1307,7 +1306,7 @@ class SGEJob (saga.adaptors.cpi.job.Job):
     #
     @SYNC_CALL
     def get_id(self):
-        """ implements saga.adaptors.cpi.job.Job.get_id()
+        """ implements cpi_job.Job.get_id()
         """
         return self._id
 
@@ -1315,14 +1314,14 @@ class SGEJob (saga.adaptors.cpi.job.Job):
     #
     @SYNC_CALL
     def get_name (self):
-        """ Implements saga.adaptors.cpi.job.Job.get_name() """
+        """ Implements cpi_job.Job.get_name() """
         return self._name
 
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
     def get_exit_code(self):
-        """ implements saga.adaptors.cpi.job.Job.get_exit_code()
+        """ implements cpi_job.Job.get_exit_code()
         """
         if self._started is False:
             return None
@@ -1333,7 +1332,7 @@ class SGEJob (saga.adaptors.cpi.job.Job):
     #
     @SYNC_CALL
     def get_created(self):
-        """ implements saga.adaptors.cpi.job.Job.get_created()
+        """ implements cpi_job.Job.get_created()
         """
         if self._started is False:
             return None
@@ -1344,7 +1343,7 @@ class SGEJob (saga.adaptors.cpi.job.Job):
     #
     @SYNC_CALL
     def get_started(self):
-        """ implements saga.adaptors.cpi.job.Job.get_started()
+        """ implements cpi_job.Job.get_started()
         """
         if self._started is False:
             return None
@@ -1355,7 +1354,7 @@ class SGEJob (saga.adaptors.cpi.job.Job):
     #
     @SYNC_CALL
     def get_finished(self):
-        """ implements saga.adaptors.cpi.job.Job.get_finished()
+        """ implements cpi_job.Job.get_finished()
         """
         if self._started is False:
             return None
@@ -1366,7 +1365,7 @@ class SGEJob (saga.adaptors.cpi.job.Job):
     #
     @SYNC_CALL
     def get_execution_hosts(self):
-        """ implements saga.adaptors.cpi.job.Job.get_execution_hosts()
+        """ implements cpi_job.Job.get_execution_hosts()
         """
         if self._started is False:
             return None

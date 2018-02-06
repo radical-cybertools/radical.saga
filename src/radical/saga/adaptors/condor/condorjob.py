@@ -348,8 +348,9 @@ class Adaptor (base.Base):
         base.Base.__init__(self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
 
         self.id_re    = re.compile('^\[(.*)\]-\[(.*?)\]$')
-        self.opts     = self.get_config (_ADAPTOR_NAME)
-        self.use_hist = self.opts['use_history'].get_value()
+      # self.opts     = self.get_config (_ADAPTOR_NAME)  # FIXME RADICAL
+      # self.use_hist = self.opts['use_history'].get_value())
+        self.use_hist = True
         self._logger.info("use condor_history: %s", self.use_hist)
 
 
@@ -1430,7 +1431,6 @@ class CondorJobService (cpi.job.Service):
 
         elif ret != 0 and len(out) == 0:
             pass
-        if ret != 0:
 
         else:
 

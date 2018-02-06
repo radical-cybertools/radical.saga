@@ -4,13 +4,18 @@ __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
 
-import saga.adaptors.cpi.decorators as cpi_dec
-import entry
+from .. import decorators as cpi_dec
+from .. import base       as cpi_base
+from .. import async      as cpi_async
+
+from .  import entry
+
 
 SYNC  = cpi_dec.CPI_SYNC_CALL
 ASYNC = cpi_dec.CPI_ASYNC_CALL
 
 
+# ------------------------------------------------------------------------------
 # keep order of inheritance!  super() below uses MRO
 class Directory (entry.Entry) :
 
@@ -110,5 +115,5 @@ class Directory (entry.Entry) :
     def make_dir_async          (self, tgt, flags, ttype)      : pass
 
 
-
+# ------------------------------------------------------------------------------
 

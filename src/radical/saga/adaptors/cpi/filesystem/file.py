@@ -4,8 +4,8 @@ __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
 
-import saga.adaptors.cpi.decorators as cpi_dec
-import saga.adaptors.cpi.namespace  as cpi_ns
+from .. import decorators as cpi_dec
+from .. import namespace  as cpi_ns
 
 SYNC  = cpi_dec.CPI_SYNC_CALL
 ASYNC = cpi_dec.CPI_ASYNC_CALL

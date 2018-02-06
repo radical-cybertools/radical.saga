@@ -194,11 +194,11 @@ class Session (base.SimpleBase) :
             # Howevwer, the pty layer is the main user of the lease manager,
             # and we thus keep the lease manager options in the pty subsection.  
             # So here we are, in the session, evaluating the pty config options...
-            config = ru.get_config('radical.saga.pty')
+            self._cfg = self.get_config()
             self._lease_manager = ru.LeaseManager (
-                    max_pool_size = config.get('connection_pool_size'),
-                    max_pool_wait = config.get('connection_pool_wait'),
-                    max_obj_age   = config.get('connection_pool_ttl')
+                    max_pool_size = self._cfg.get('connection_pool_size'),
+                    max_pool_wait = self._cfg.get('connection_pool_wait'),
+                    max_obj_age   = self._cfg.get('connection_pool_ttl')
                     )
 
 
@@ -262,6 +262,13 @@ class Session (base.SimpleBase) :
         return self.contexts
 
 
+    # --------------------------------------------------------------------------
+    #
+    def get_config(self, name=None):
+
+        return ru.Config(module='radical.saga', name=name)
+
+
 
 # ------------------------------------------------------------------------------
 #
@@ -284,8 +291,9 @@ class DefaultSession(Session):
         super(DefaultSession, self).__init__(default=False)
 
         _engine = engine.engine.Engine()
-        import pprint
-        pprint.pprint(_engine._adaptor_registry)
+      # import pprint
+      # pprint.pprint(_engine._adaptor_registry)
+        print _engine._adaptor_registry.keys().sort()
 
         if not 'saga.Context' in _engine._adaptor_registry :
             self._logger.warn ("no context adaptors found")

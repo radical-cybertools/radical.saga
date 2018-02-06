@@ -6,25 +6,28 @@ __license__   = "MIT"
 
 """ SLURM job adaptor implementation """
 
-#TODO: Throw errors if a user does not specify the MINIMUM number of
-#      attributes required for SLURM in a job description
-
-import radical.utils as ru
-
-import saga.utils.pty_shell
-
-import saga.adaptors.base
-import saga.adaptors.cpi.job
+# TODO: Throw errors if a user does not specify the MINIMUM number of
+#       attributes required for SLURM in a job description
 
 import re
 import os
 import time
-import textwrap
-import string
 import tempfile
 
-SYNC_CALL  = saga.adaptors.cpi.decorators.SYNC_CALL
-ASYNC_CALL = saga.adaptors.cpi.decorators.ASYNC_CALL
+import radical.utils as ru
+
+from ...              import url        as rsurl
+from ...utils         import pty_shell  as rsups
+from ...utils         import misc       as rsumisc
+from ...              import job        as api_job
+from ...job.constants import *
+from ..               import base       as a_base
+from ..cpi            import job        as cpi_job
+from ..cpi            import decorators as cpi_decs
+
+SYNC_CALL  = cpi_decs.SYNC_CALL
+ASYNC_CALL = cpi_decs.ASYNC_CALL
+
 
 # ------------------------------------------------------------------------------
 #
@@ -40,7 +43,7 @@ _PTY_TIMEOUT = 2.0
 # ------------------------------------------------------------------------------
 # the adaptor name
 #
-_ADAPTOR_NAME          = "saga.adaptor.slurm_job"
+_ADAPTOR_NAME          = "radical.saga.adaptors.slurm_job"
 _ADAPTOR_SCHEMAS       = ["slurm", "slurm+ssh", "slurm+gsissh"]
 _ADAPTOR_OPTIONS       = []
 
@@ -49,41 +52,41 @@ _ADAPTOR_OPTIONS       = []
 #
 # TODO: FILL ALL IN FOR SLURM
 _ADAPTOR_CAPABILITIES  = {
-    "jdes_attributes"  : [saga.job.NAME,
-                          saga.job.EXECUTABLE,
-                          saga.job.PRE_EXEC,
-                          saga.job.POST_EXEC,
-                          saga.job.ARGUMENTS,
-                          saga.job.ENVIRONMENT,
-                          saga.job.SPMD_VARIATION, #implement later, somehow
-                          saga.job.TOTAL_CPU_COUNT,
-                          saga.job.NUMBER_OF_PROCESSES,
-                          saga.job.PROCESSES_PER_HOST,
-                          saga.job.THREADS_PER_PROCESS,
-                          saga.job.WORKING_DIRECTORY,
-                          #saga.job.INTERACTIVE,
-                          saga.job.INPUT,
-                          saga.job.OUTPUT,
-                          saga.job.ERROR,
-                          saga.job.FILE_TRANSFER,
-                          saga.job.CLEANUP,
-                          saga.job.JOB_START_TIME,
-                          saga.job.WALL_TIME_LIMIT,
-                          saga.job.TOTAL_PHYSICAL_MEMORY,
-                          saga.job.CPU_ARCHITECTURE,
-                          #saga.job.OPERATING_SYSTEM_TYPE,
-                          saga.job.CANDIDATE_HOSTS,
-                          saga.job.QUEUE,
-                          saga.job.PROJECT,
-                          saga.job.JOB_CONTACT],
+    "jdes_attributes"  : [NAME,
+                          EXECUTABLE,
+                          PRE_EXEC,
+                          POST_EXEC,
+                          ARGUMENTS,
+                          ENVIRONMENT,
+                          SPMD_VARIATION, #implement later, somehow
+                          TOTAL_CPU_COUNT,
+                          NUMBER_OF_PROCESSES,
+                          PROCESSES_PER_HOST,
+                          THREADS_PER_PROCESS,
+                          WORKING_DIRECTORY,
+                        # INTERACTIVE,
+                          INPUT,
+                          OUTPUT,
+                          ERROR,
+                          FILE_TRANSFER,
+                          CLEANUP,
+                          JOB_START_TIME,
+                          WALL_TIME_LIMIT,
+                          TOTAL_PHYSICAL_MEMORY,
+                          CPU_ARCHITECTURE,
+                        # OPERATING_SYSTEM_TYPE,
+                          CANDIDATE_HOSTS,
+                          QUEUE,
+                          PROJECT,
+                          JOB_CONTACT],
 
-    "job_attributes"   : [saga.job.EXIT_CODE,
-                          saga.job.EXECUTION_HOSTS,
-                          saga.job.CREATED,
-                          saga.job.STARTED,
-                          saga.job.FINISHED],
-    "metrics"          : [saga.job.STATE,
-                          saga.job.STATE_DETAIL],
+    "job_attributes"   : [EXIT_CODE,
+                          EXECUTION_HOSTS,
+                          CREATED,
+                          STARTED,
+                          FINISHED],
+    "metrics"          : [STATE,
+                          STATE_DETAIL],
     "contexts"         : {"ssh"      : "public/private keypair",
                           "x509"     : "X509 proxy for gsissh",
                           "userpass" : "username/password pair for simple ssh"}
@@ -194,11 +197,11 @@ _ADAPTOR_INFO          = {
     "capabilities"     : _ADAPTOR_CAPABILITIES,
     "cpis"             : [
         {
-        "type"         : "saga.job.Service",
+        "type"         : "radical.saga.job.Service",
         "class"        : "SLURMJobService"
         },
         {
-        "type"         : "saga.job.Job",
+        "type"         : "radical.saga.job.Job",
         "class"        : "SLURMJob"
         }
     ]
@@ -207,7 +210,7 @@ _ADAPTOR_INFO          = {
 ###############################################################################
 # The adaptor class
 
-class Adaptor (saga.adaptors.base.Base):
+class Adaptor (a_base.Base):
     """
     This is the actual adaptor class, which gets loaded by SAGA (i.e. by the
     SAGA engine), and which registers the CPI implementation classes which
@@ -219,7 +222,7 @@ class Adaptor (saga.adaptors.base.Base):
     #
     def __init__ (self) :
 
-        saga.adaptors.base.Base.__init__ (self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
+        a_base.Base.__init__ (self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
 
         self.id_re = re.compile ('^\[(.*)\]-\[(.*?)\]$')
 
@@ -235,15 +238,15 @@ class Adaptor (saga.adaptors.base.Base):
         match = self.id_re.match (id)
 
         if  not match or len (match.groups()) != 2 :
-            raise saga.BadParameter ("Cannot parse job id '%s'" % id)
+            raise BadParameter ("Cannot parse job id '%s'" % id)
 
         return (match.group(1), match.group (2))
 
 
 ###############################################################################
 #
-class SLURMJobService (saga.adaptors.cpi.job.Service) :
-    """ Implements saga.adaptors.cpi.job.Service """
+class SLURMJobService (cpi_job.Service) :
+    """ Implements cpi_job.Service """
 
     # --------------------------------------------------------------------------
     #
@@ -316,7 +319,7 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         elif self.rm.schema == "slurm+gsissh":
             shell_schema = "gsissh://"
         else:
-            raise saga.IncorrectURL("Schema %s not supported by SLURM adaptor."
+            raise IncorrectURL("Schema %s not supported by SLURM adaptor."
                                     % self.rm.schema)
 
         #<scheme>://<user>:<pass>@<host>:<port>/<path>?<query>#<fragment>
@@ -342,9 +345,7 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
 
         # establish shell connection
         self._logger.debug("Opening shell of type: %s" % shell_url)
-        self.shell = saga.utils.pty_shell.PTYShell (shell_url,
-                                                    self.session,
-                                                    self._logger)
+        self.shell = rsups.PTYShell (shell_url, self.session, self._logger)
 
         # verify our SLURM environment contains the commands we need for this
         # adaptor to work properly
@@ -357,7 +358,7 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
                           "Is SLURM installed on that machine? " \
                           "If so, is your remote SLURM environment "\
                           "configured properly? " % (cmd, self.rm, out)
-                raise saga.NoSuccess._log (self._logger, message)
+                raise NoSuccess._log (self._logger, message)
 
         self._logger.debug ("got cmd prompt (%s)(%s)" % (ret, out))
 
@@ -393,26 +394,26 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
 
         #define a bunch of default args
         exe                 = jd.executable
-        pre                 = jd.as_dict().get(saga.job.PRE_EXEC)
-        post                = jd.as_dict().get(saga.job.POST_EXEC)
-        args                = jd.as_dict().get(saga.job.ARGUMENTS, [])
-        env                 = jd.as_dict().get(saga.job.ENVIRONMENT, dict())
-        cwd                 = jd.as_dict().get(saga.job.WORKING_DIRECTORY)
-        job_name            = jd.as_dict().get(saga.job.NAME)
-        spmd_variation      = jd.as_dict().get(saga.job.SPMD_VARIATION)
-        total_cpu_count     = jd.as_dict().get(saga.job.TOTAL_CPU_COUNT)
-        number_of_processes = jd.as_dict().get(saga.job.NUMBER_OF_PROCESSES)
-        processes_per_host  = jd.as_dict().get(saga.job.PROCESSES_PER_HOST)
-        output              = jd.as_dict().get(saga.job.OUTPUT, "radical.saga.default.out")
-        error               = jd.as_dict().get(saga.job.ERROR)
-        file_transfer       = jd.as_dict().get(saga.job.FILE_TRANSFER)
-        wall_time_limit     = jd.as_dict().get(saga.job.WALL_TIME_LIMIT)
-        queue               = jd.as_dict().get(saga.job.QUEUE)
-        project             = jd.as_dict().get(saga.job.PROJECT)
-        job_memory          = jd.as_dict().get(saga.job.TOTAL_PHYSICAL_MEMORY)
-        cpu_arch            = jd.as_dict().get(saga.job.CPU_ARCHITECTURE)
-        job_contact         = jd.as_dict().get(saga.job.JOB_CONTACT)
-        candidate_hosts     = jd.as_dict().get(saga.job.CANDIDATE_HOSTS)
+        pre                 = jd.as_dict().get(PRE_EXEC)
+        post                = jd.as_dict().get(POST_EXEC)
+        args                = jd.as_dict().get(ARGUMENTS, [])
+        env                 = jd.as_dict().get(ENVIRONMENT, dict())
+        cwd                 = jd.as_dict().get(WORKING_DIRECTORY)
+        job_name            = jd.as_dict().get(NAME)
+        spmd_variation      = jd.as_dict().get(SPMD_VARIATION)
+        total_cpu_count     = jd.as_dict().get(TOTAL_CPU_COUNT)
+        number_of_processes = jd.as_dict().get(NUMBER_OF_PROCESSES)
+        processes_per_host  = jd.as_dict().get(PROCESSES_PER_HOST)
+        output              = jd.as_dict().get(OUTPUT, "radical.saga.default.out")
+        error               = jd.as_dict().get(ERROR)
+        file_transfer       = jd.as_dict().get(FILE_TRANSFER)
+        wall_time_limit     = jd.as_dict().get(WALL_TIME_LIMIT)
+        queue               = jd.as_dict().get(QUEUE)
+        project             = jd.as_dict().get(PROJECT)
+        job_memory          = jd.as_dict().get(TOTAL_PHYSICAL_MEMORY)
+        cpu_arch            = jd.as_dict().get(CPU_ARCHITECTURE)
+        job_contact         = jd.as_dict().get(JOB_CONTACT)
+        candidate_hosts     = jd.as_dict().get(CANDIDATE_HOSTS)
 
         # check to see what's available in our job description
         # to override defaults
@@ -426,7 +427,7 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
              if ret:
                  # something went wrong
                  message = "Couldn't create working directory - %s" % (out)
-                 log_error_and_raise(message, saga.NoSuccess, self._logger)
+                 log_error_and_raise(message, NoSuccess, self._logger)
 
 
         if isinstance(candidate_hosts, list):
@@ -452,7 +453,7 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
 
         if spmd_variation:
             if spmd_variation.lower() not in 'mpi':
-                raise saga.BadParameter("Slurm cannot handle spmd variation '%s'" % spmd_variation)
+                raise BadParameter("Slurm cannot handle spmd variation '%s'" % spmd_variation)
             mpi_cmd = 'mpirun -n %d ' % number_of_processes
 
         else:
@@ -536,7 +537,7 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
 
         # if we have no job ID, there's a failure...
         if not self.job_id:
-            raise saga.NoSuccess._log(self._logger,
+            raise NoSuccess._log(self._logger,
                              "Couldn't get job id from submitted job!"
                               " sbatch output:\n%s" % out)
 
@@ -545,7 +546,7 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
 
         # create local jobs dictionary entry
         self.jobs[self.job_id] = {
-                'state'      : saga.job.PENDING,
+                'state'      : PENDING,
                 'create_time': None,
                 'start_time' : None,
                 'end_time'   : None,
@@ -590,18 +591,18 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         translates a slurm one-letter state to saga
         """
 
-        if   slurmjs in ['CA', "CANCELLED"  ]: return saga.job.CANCELED
-        elif slurmjs in ['CD', "COMPLETED"  ]: return saga.job.DONE
-        elif slurmjs in ['CF', "CONFIGURING"]: return saga.job.PENDING
-        elif slurmjs in ['CG', "COMPLETING" ]: return saga.job.RUNNING
-        elif slurmjs in ['F' , "FAILED"     ]: return saga.job.FAILED
-        elif slurmjs in ['NF', "NODE_FAIL"  ]: return saga.job.FAILED
-        elif slurmjs in ['PD', "PENDING"    ]: return saga.job.PENDING
-        elif slurmjs in ['PR', "PREEMPTED"  ]: return saga.job.CANCELED
-        elif slurmjs in ['R' , "RUNNING"    ]: return saga.job.RUNNING
-        elif slurmjs in ['S' , "SUSPENDED"  ]: return saga.job.SUSPENDED
-        elif slurmjs in ['TO', "TIMEOUT"    ]: return saga.job.CANCELED
-        else                                 : return saga.job.UNKNOWN
+        if   slurmjs in ['CA', "CANCELLED"  ]: return CANCELED
+        elif slurmjs in ['CD', "COMPLETED"  ]: return DONE
+        elif slurmjs in ['CF', "CONFIGURING"]: return PENDING
+        elif slurmjs in ['CG', "COMPLETING" ]: return RUNNING
+        elif slurmjs in ['F' , "FAILED"     ]: return FAILED
+        elif slurmjs in ['NF', "NODE_FAIL"  ]: return FAILED
+        elif slurmjs in ['PD', "PENDING"    ]: return PENDING
+        elif slurmjs in ['PR', "PREEMPTED"  ]: return CANCELED
+        elif slurmjs in ['R' , "RUNNING"    ]: return RUNNING
+        elif slurmjs in ['S' , "SUSPENDED"  ]: return SUSPENDED
+        elif slurmjs in ['TO', "TIMEOUT"    ]: return CANCELED
+        else                                 : return UNKNOWN
 
 
     # --------------------------------------------------------------------------
@@ -612,27 +613,27 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         scancel.  Raises exception when unsuccessful.
         """
 
-        if job._state in [saga.job.DONE, saga.job.FAILED, saga.job.CANCELED]:
+        if job._state in [DONE, FAILED, CANCELED]:
             # job is already final - nothing to do
             return
 
-        if job._state in [saga.job.NEW]:
+        if job._state in [NEW]:
             # job is not yet submitted - nothing to do
-            job._state = saga.job.CANCELED
+            job._state = CANCELED
 
         if not job._id:
             # uh oh - what to do?
-            raise saga.NoSuccess._log(self._logger,
+            raise NoSuccess._log(self._logger,
                     "Could not cancel job: no job ID")
 
         rm,  pid    = self._adaptor.parse_id(job._id)
         ret, out, _ = self.shell.run_sync("scancel %s" % pid)
 
         if ret != 0:
-            raise saga.NoSuccess._log(self._logger,
+            raise NoSuccess._log(self._logger,
                     "Could not cancel job %s because: %s" % (pid, out))
 
-        job._state = saga.job.CANCELED
+        job._state = CANCELED
 
 
     # --------------------------------------------------------------------------
@@ -643,10 +644,8 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         exception when unsuccessful.
         """
 
-        if job._state in [saga.job.DONE,     saga.job.FAILED,
-                          saga.job.CANCELED, saga.job.NEW,
-                          saga.job.SUSPENDED]:
-            raise saga.IncorrectState._log(self._logger,
+        if job._state in [DONE, FAILED, CANCELED, NEW, SUSPENDED]:
+            raise IncorrectState._log(self._logger,
                     "Could not suspend job %s in state %s" % (job._id, job._state))
 
 
@@ -658,12 +657,12 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
 
         # check to see if the error was a permission error
         elif "Access/permission denied" in out:
-            raise saga.PermissionDenied._log(self._logger,
+            raise PermissionDenied._log(self._logger,
                                       "Could not suspend job %s because: %s" % (pid, out))
 
         # it's some other error
         else:
-            raise saga.NoSuccess._log(self._logger,
+            raise NoSuccess._log(self._logger,
                                       "Could not suspend job %s because: %s" % (pid, out))
 
     # --------------------------------------------------------------------------
@@ -674,10 +673,8 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         exception when unsuccessful.
         """
 
-        if job._state in [saga.job.DONE,     saga.job.FAILED,
-                          saga.job.CANCELED, saga.job.NEW,
-                          saga.job.RUNNING]:
-            raise saga.IncorrectState._log(self._logger,
+        if job._state in [DONE, FAILED, CANCELED, NEW, RUNNING]:
+            raise IncorrectState._log(self._logger,
                     "Could not resume job %s in state %s" % (job._id, job._state))
 
 
@@ -689,12 +686,12 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
 
         # check to see if the error was a permission error
         elif "Access/permission denied" in out:
-            raise saga.PermissionDenied._log(self._logger,
+            raise PermissionDenied._log(self._logger,
                                       "Could not suspend job %s because: %s" % (pid, out))
 
         # it's some other error
         else:
-            raise saga.NoSuccess._log(self._logger,
+            raise NoSuccess._log(self._logger,
                                       "Could not resume job %s because: %s" % (pid, out))
 
 
@@ -702,7 +699,7 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
     #
     @SYNC_CALL
     def create_job (self, jd) :
-        """ Implements saga.adaptors.cpi.job.Service.create_job()
+        """ Implements cpi_job.Service.create_job()
         """
 
         # this dict is passed on to the job adaptor class -- use it to pass any
@@ -712,14 +709,14 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
                           "job_schema"      : self.rm.schema,
                           "reconnect"       : False}
 
-        return saga.job.Job (_adaptor=self._adaptor,
+        return api_job.Job (_adaptor=self._adaptor,
                              _adaptor_state=adaptor_state)
 
     # --------------------------------------------------------------------------
     #
     @SYNC_CALL
     def get_url (self) :
-        """ Implements saga.adaptors.cpi.job.Service.get_url()
+        """ Implements cpi_job.Service.get_url()
         """
         return self.rm
 
@@ -755,12 +752,12 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         # state information you need there.  The job adaptor will run 'scontrol
         # show job $jobid' to complement the information.
         adaptor_state = {"job_service"    : self,
-                         "job_description": saga.job.Description(),
+                         "job_description": api_job.Description(),
                          "job_schema"     : self.rm.schema,
                          "reconnect"      : True,
                          "reconnect_jobid": jobid
                         }
-        return saga.job.Job(_adaptor=self._adaptor,
+        return api_job.Job(_adaptor=self._adaptor,
                             _adaptor_state=adaptor_state)
         
 
@@ -805,10 +802,7 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
 
 # ------------------------------------------------------------------------------
 #
-class SLURMJob(saga.adaptors.cpi.job.Job):
-    """
-    Implements saga.adaptors.cpi.job.Job
-    """
+class SLURMJob(cpi_job.Job):
 
     # --------------------------------------------------------------------------
     #
@@ -822,9 +816,6 @@ class SLURMJob(saga.adaptors.cpi.job.Job):
     #
     @SYNC_CALL
     def init_instance(self, job_info):
-        """
-        Implements saga.adaptors.cpi.job.Job.init_instance()
-        """
 
         self.jd = job_info["job_description"]
         self.js = job_info["job_service"]
@@ -836,8 +827,8 @@ class SLURMJob(saga.adaptors.cpi.job.Job):
 
         # initialize job attribute values
         self._id              = None
-        self._name            = self.jd.as_dict().get(saga.job.NAME, 'saga')
-        self._state           = saga.job.NEW
+        self._name            = self.jd.as_dict().get(NAME, 'saga')
+        self._state           = NEW
         self._exit_code       = None
         self._exception       = None
         self._started         = None
@@ -971,12 +962,12 @@ class SLURMJob(saga.adaptors.cpi.job.Job):
 
         # if the state is NEW and we haven't sent out a run command, keep
         # it listed as NEW
-        if self._state == saga.job.NEW and not self._started:
-            return saga.job.NEW
+        if self._state == NEW and not self._started:
+            return NEW
 
         # if the state is DONE, CANCELED or FAILED, it is considered
         # final and we don't need to query the backend again
-        if self._state in [saga.job.CANCELED, saga.job.FAILED, saga.job.DONE]:
+        if self._state in [CANCELED, FAILED, DONE]:
             return self._state
 
         rm, pid = self._adaptor.parse_id (job_id)
@@ -994,16 +985,16 @@ class SLURMJob(saga.adaptors.cpi.job.Job):
                 slurm_state = self._sacct_jobstate_match(pid)
                 if not slurm_state:
                     # no jobstate found in slurm
-                    return saga.job.UNKNOWN
+                    return UNKNOWN
 
             return self.js._slurm_to_saga_jobstate(slurm_state)
 
         except Exception, ex:
             self._logger.exception('failed to get job state')
-            raise saga.NoSuccess("Error getting the job state for "
+            raise NoSuccess("Error getting the job state for "
                                  "job %s:\n%s"%(pid,ex))
 
-        raise saga.NoSuccess._log (self._logger,
+        raise NoSuccess._log (self._logger,
                                    "Internal SLURM adaptor error"
                                    " in _job_get_state")
 
@@ -1040,8 +1031,6 @@ class SLURMJob(saga.adaptors.cpi.job.Job):
     #
     @SYNC_CALL
     def get_state(self):
-        """ Implements saga.adaptors.cpi.job.Job.get_state()
-        """
         self._state = self._job_get_state (self._id)
         return self._state
 
@@ -1057,8 +1046,6 @@ class SLURMJob(saga.adaptors.cpi.job.Job):
     #
     @SYNC_CALL
     def get_service_url(self):
-        """ implements saga.adaptors.cpi.job.Job.get_service_url()
-        """
         return self.js.rm
 
 
@@ -1075,11 +1062,11 @@ class SLURMJob(saga.adaptors.cpi.job.Job):
             state = self._job_get_state(self._id)
             self._logger.debug("wait() state for job id %s:%s"%(self._id, state))
 
-            if state == saga.job.UNKNOWN :
+            if state == UNKNOWN :
                 log_error_and_raise("cannot get job state",
-                                    saga.IncorrectState, self._logger)
+                                    IncorrectState, self._logger)
 
-            if state in [saga.job.DONE, saga.job.FAILED, saga.job.CANCELED]:
+            if state in [DONE, FAILED, CANCELED]:
                 return True
 
             # check if we hit timeout
@@ -1105,9 +1092,7 @@ class SLURMJob(saga.adaptors.cpi.job.Job):
     #
     @SYNC_CALL
     def get_id (self) :
-        """
-        Implements saga.adaptors.cpi.job.Job.get_id()
-        """
+
         return self._id
 
 
@@ -1115,9 +1100,7 @@ class SLURMJob(saga.adaptors.cpi.job.Job):
     #
     @SYNC_CALL
     def get_name (self):
-        """
-        Implements saga.adaptors.cpi.job.Job.get_name()
-        """
+
         if not self._name:
             self._name = self._job_get_info()['job_name']
         return self._name
@@ -1127,9 +1110,7 @@ class SLURMJob(saga.adaptors.cpi.job.Job):
     #
     @SYNC_CALL
     def get_exit_code(self) :
-        """
-        Implements saga.adaptors.cpi.job.Job.get_exit_code()
-        """
+
         # FIXME: use cache
         return self._job_get_info()['exit_code']
 
@@ -1138,18 +1119,14 @@ class SLURMJob(saga.adaptors.cpi.job.Job):
     #
     @SYNC_CALL
     def suspend(self) :
-        """
-        Implements saga.adaptors.cpi.job.Job.get_exit_code()
-        """
+
         return self.js._job_suspend(self)
 
 
     # --------------------------------------------------------------------------
     @SYNC_CALL
     def resume(self) :
-        """
-        Implements saga.adaptors.cpi.job.Job.get_exit_code()
-        """
+
         return self.js._job_resume(self)
 
 
@@ -1157,9 +1134,7 @@ class SLURMJob(saga.adaptors.cpi.job.Job):
     #
     @SYNC_CALL
     def get_created(self) :
-        """
-        Implements saga.adaptors.cpi.job.Job.get_created()
-        """
+
         # FIXME: use cache
         return self._job_get_info()['create_time']
 
@@ -1168,9 +1143,7 @@ class SLURMJob(saga.adaptors.cpi.job.Job):
     #
     @SYNC_CALL
     def get_started(self) :
-        """
-        Implements saga.adaptors.cpi.job.Job.get_started()
-        """
+
         # FIXME: use cache
         return self._job_get_info()['start_time']
 
@@ -1179,9 +1152,7 @@ class SLURMJob(saga.adaptors.cpi.job.Job):
     #
     @SYNC_CALL
     def get_finished(self) :
-        """
-        Implements saga.adaptors.cpi.job.Job.get_finished()
-        """
+
         # FIXME: use cache
         return self._job_get_info()['end_time']
 
@@ -1190,9 +1161,7 @@ class SLURMJob(saga.adaptors.cpi.job.Job):
     #
     @SYNC_CALL
     def get_execution_hosts(self) :
-        """
-        Implements saga.adaptors.cpi.job.Job.get_execution_hosts()
-        """
+
         # FIXME: use cache
         return self._job_get_info()['exec_hosts']
 
@@ -1201,9 +1170,7 @@ class SLURMJob(saga.adaptors.cpi.job.Job):
     #
     @SYNC_CALL
     def cancel(self, timeout):
-        """
-        Implements saga.adaptors.cpi.job.Job.cancel()
-        """
+
         self.js._job_cancel(self)
 
 
@@ -1211,9 +1178,7 @@ class SLURMJob(saga.adaptors.cpi.job.Job):
     #
     @SYNC_CALL
     def run(self):
-        """
-        Implements saga.adaptors.cpi.job.Job.run()
-        """
+
         self._id      = self.js._job_run(self.jd)
         self._started = True
 

@@ -15,7 +15,7 @@ from ...exceptions import *
 #
 # adaptor meta data
 #
-_ADAPTOR_NAME          = 'saga.adaptor.userpass'
+_ADAPTOR_NAME          = 'radical.saga.adaptors.userpass'
 _ADAPTOR_SCHEMAS       = ['UserPass']
 _ADAPTOR_OPTIONS       = []
 
@@ -39,7 +39,7 @@ _ADAPTOR_INFO          = {
     'version'          : 'v0.1',
     'schemas'          : _ADAPTOR_SCHEMAS,
     'cpis'             : [{ 
-        'type'         : 'saga.Context',
+        'type'         : 'radical.saga.Context',
         'class'        : 'ContextUserPass'
         }
     ]
