@@ -259,13 +259,8 @@ class Engine(object):
             adaptor_enabled = False
 
             try :
-                # FIXME RADICAL
-                print 'get config for adaptor %s' % adaptor_name
                 adaptor_config  = ru.Config('radical.saga', name=adaptor_name)
-                if adaptor_config.get('enabled', True) in [0, False, 'False']:
-                    adaptor_enabled = False
-                else:
-                    adaptor_enabled = True
+                adaptor_enabled = adaptor_config.get('enabled', True)
 
             except SagaException as e:
                 self._logger.exception ("Skipping adaptor %s: init failed: %s" \
@@ -278,7 +273,7 @@ class Engine(object):
 
 
             # only load adaptor if it is not disabled via config files
-            if adaptor_enabled == False :
+            if not adaptor_enabled:
                 self._logger.info ("Skipping adaptor %s: adaptor not enabled:" \
                                 % (module_name))
                 continue # skip to next adaptor

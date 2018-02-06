@@ -40,60 +40,6 @@ GO_DEFAULT_URL = "gsissh://cli.globusonline.org/"
 #
 _ADAPTOR_NAME          = "radical.saga.adaptors.globus_online_file"
 _ADAPTOR_SCHEMAS       = ["go"] # TODO: also allow file:// ??
-_ADAPTOR_OPTIONS       = [
-    { 
-    # fuck our config system!  I don't want these to be strings!  And its not
-    # even using isinstance! :/
-    'category'         : 'radical.saga.adaptors.globus_online_file',
-    'name'             : 'enable_notifications', 
-    'type'             : str, 
-    'default'          : 'None',
-    'valid_options'    : ['True', 'False', 'None'],
-    'documentation'    : '''Enable email notifications for all file transfers.
-                            Note that 'True' and 'False' will result in
-                            permanent changes to your GO notification settings.
-                            'None' will leave your profile's settings upchanged.''',
-    'env_variable'     : None
-    },
-    { 
-    # fuck our config system!  I don't want these to be strings!  And its not
-    # even using isinstance! :/
-    'category'         : 'radical.saga.adaptors.globus_online_file',
-    'name'             : 'failure_mode', 
-    'type'             : str, 
-    'default'          : 'report',
-    'valid_options'    : ['raise', 'report', 'ignore'],
-    'documentation'    : '''Globus-Online seems to behave eratically.  This flag
-                            defines how the adaptor should deal with intermittent
-                            and fatal errors.  'raise' will cause exceptions on
-                            all errors, 'report' will print error messages, but
-                            otherwise continue, and 'ignore' will (duh!) ignore
-                            errors.  'report' is the default, you should only use
-                            'ignore' when you know what you are doing!''',
-    'env_variable'     : None
-    },
-    # Set a GO specific prompt on the PTYShell
-    {
-        'category'      : 'radical.saga.adaptors.globus_online_file',
-        'name'          : 'prompt_pattern',
-        'type'          : str,
-        'default'       : '\$ $',
-        'documentation' : 'GO always has a "$ " prompt',
-        'env_variable'  : None
-    },
-    # Allow to specify which endpoint to use for "localhost"
-    {
-        'category'      : 'radical.saga.adaptors.globus_online_file',
-        'name'          : 'localhost_endpoint',
-        'type'          : str,
-        'default'       : 'None',
-        'documentation' : '''Setting this value to the GO endpoint name of your
-                             laptop/desktop/etc., allows you to refer to it by
-                             "localhost" in your code. This enables consistency
-                             with using your code with other adaptors.''',
-        'env_variable'  : "SAGA_GLOBUS_ONLINE_LOCALHOST_ENDPOINT"
-    }
-]
 
 # --------------------------------------------------------------------
 # the adaptor capabilities & supported attributes
@@ -109,7 +55,6 @@ _ADAPTOR_CAPABILITIES  = {
 #
 _ADAPTOR_DOC           = {
     "name"             : _ADAPTOR_NAME,
-    "cfg_options"      : _ADAPTOR_OPTIONS, 
     "capabilities"     : _ADAPTOR_CAPABILITIES,
     "description"      : """ 
         The globusonline file adaptor. This adaptor uses the GO file transfer
@@ -161,7 +106,7 @@ class Adaptor(a_base.Base):
     #
     def __init__(self):
 
-        a_base.Base.__init__(self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
+        a_base.Base.__init__(self, _ADAPTOR_INFO)
 
         # FIXME: RADICAL
       # self.opts = self.get_config(_ADAPTOR_NAME)

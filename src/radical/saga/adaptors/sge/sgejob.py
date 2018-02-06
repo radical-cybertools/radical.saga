@@ -120,39 +120,7 @@ _PTY_TIMEOUT = 2.0
 #
 _ADAPTOR_NAME          = "radical.saga.adaptors.sgejob"
 _ADAPTOR_SCHEMAS       = ["sge", "sge+ssh", "sge+gsissh"]
-_ADAPTOR_OPTIONS       = [
-    { 
-    'category'         : 'radical.saga.adaptors.sgejob',
-    'name'             : 'purge_on_start', 
-    'type'             : bool,
-    'default'          : True,
-    'valid_options'    : [True, False],
-    'documentation'    : '''Purge temporary job information for all
-                          jobs which are older than a number of days.
-                          The number of days can be configured with <purge_older_than>.''',
-    'env_variable'     : None
-    },
-    {
-    'category'         : 'radical.saga.adaptors.sgejob',
-    'name'             : 'purge_older_than',
-    'type'             : int,
-    'default'          : 30,
-    #'valid_options'    : [True, False],
-    'documentation'    : '''When <purge_on_start> is enabled this specifies the number
-                            of days to consider a temporary file older enough to be deleted.''',
-    'env_variable'     : None
-    },
-    {
-    'category'         : 'radical.saga.adaptors.sgejob',
-    'name'             : 'base_workdir',
-    'type'             : str,
-    'default'          : "$HOME/.saga/adaptors/sge_job/",
-    'documentation'    : '''The adaptor stores job state information on the
-                          filesystem on the target resource.  This parameter
-                          specified what location should be used.''',
-    'env_variable'     : None
-    }
-]
+
 # --------------------------------------------------------------------
 # the adaptor capabilities & supported attributes
 #
@@ -189,7 +157,6 @@ _ADAPTOR_CAPABILITIES = {
 #
 _ADAPTOR_DOC = {
     "name":          _ADAPTOR_NAME,
-    "cfg_options":   _ADAPTOR_OPTIONS,
     "capabilities":  _ADAPTOR_CAPABILITIES,
     "description":  """
 The SGE (Sun/Oracle Grid Engine) adaptor allows to run and manage jobs on
@@ -234,14 +201,14 @@ class Adaptor (a_base.Base):
     #
     def __init__(self):
 
-        a_base.Base.__init__(self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
+        a_base.Base.__init__(self, _ADAPTOR_INFO)
 
         self.id_re = re.compile('^\[(.*)\]-\[(.*?)\]$')
-      # self.opts  = self.get_config (_ADAPTOR_NAME)  # FIXME RADICAL
 
-      # self.purge_on_start   = self.opts['purge_on_start'].get_value()
-      # self.purge_older_than = self.opts['purge_older_than'].get_value()
-      # self.base_workdir     = self.opts['base_workdir'].get_value()
+        self.purge_on_start   = self._cfg['purge_on_start']
+        self.purge_older_than = self._cfg['purge_older_than']
+        self.base_workdir     = self._cfg['base_workdir']
+
 
     # ----------------------------------------------------------------
     #

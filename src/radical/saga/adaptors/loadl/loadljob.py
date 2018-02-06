@@ -89,30 +89,6 @@ _PTY_TIMEOUT = 2.0
 #
 _ADAPTOR_NAME          = "radical.saga.adaptors.loadljob"
 _ADAPTOR_SCHEMAS       = ["loadl", "loadl+ssh", "loadl+gsissh"]
-_ADAPTOR_OPTIONS       = [
-    {
-    'category'         : 'radical.saga.adaptors.loadljob',
-    'name'             : 'purge_on_start',
-    'type'             : bool,
-    'default'          : True,
-    'valid_options'    : [True, False],
-    'documentation'    : '''Purge temporary job information for all
-                          jobs which are older than a number of days.
-                          The number of days can be configured with <purge_older_than>.''',
-    'env_variable'     : None
-    },
-    {
-    'category'         : 'radical.saga.adaptors.loadljob',
-    'name'             : 'purge_older_than',
-    'type'             : int,
-    'default'          : 30,
-    #'valid_options'    : [True, False],
-    'documentation'    : '''When <purge_on_start> is enabled this specifies the number
-                            of days to consider a temporary file older enough to be deleted.''',
-    'env_variable'     : None
-    },
-]
-
 
 # --------------------------------------------------------------------
 # the adaptor capabilities & supported attributes
@@ -150,7 +126,6 @@ _ADAPTOR_CAPABILITIES = {
 #
 _ADAPTOR_DOC = {
     "name":          _ADAPTOR_NAME,
-    "cfg_options":   _ADAPTOR_OPTIONS,
     "capabilities":  _ADAPTOR_CAPABILITIES,
     "description":  """
 The LoadLeveler adaptor allows to run and manage jobs on ` IBM LoadLeveler<http://www-03.ibm.com/systems/software/loadleveler/>`_
@@ -195,7 +170,7 @@ class Adaptor (base.Base):
     #
     def __init__(self):
 
-        base.Base.__init__(self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
+        base.Base.__init__(self, _ADAPTOR_INFO)
 
         self.id_re = re.compile('^\[(.*)\]-\[(.*?)\]$')
       # # FIXME: RADICAL

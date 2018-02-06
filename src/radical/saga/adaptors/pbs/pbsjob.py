@@ -327,7 +327,6 @@ _PTY_TIMEOUT = 2.0
 #
 _ADAPTOR_NAME          = "radical.saga.adaptors.pbsjob"
 _ADAPTOR_SCHEMAS       = ["pbs", "pbs+ssh", "pbs+gsissh"]
-_ADAPTOR_OPTIONS       = []
 
 # --------------------------------------------------------------------
 # the adaptor capabilities & supported attributes
@@ -366,7 +365,6 @@ _ADAPTOR_CAPABILITIES = {
 #
 _ADAPTOR_DOC = {
     "name":          _ADAPTOR_NAME,
-    "cfg_options":   _ADAPTOR_OPTIONS,
     "capabilities":  _ADAPTOR_CAPABILITIES,
     "description":  """
 The PBS adaptor allows to run and manage jobs on `PBS <http://www.pbsworks.com/>`_
@@ -412,10 +410,9 @@ class Adaptor (a_base.Base):
     #
     def __init__(self):
 
-        a_base.Base.__init__(self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
+        a_base.Base.__init__(self, _ADAPTOR_INFO)
 
         self.id_re = re.compile('^\[(.*)\]-\[(.*?)\]$')
-      # self.opts  = self.get_config (_ADAPTOR_NAME)  # FIXME RADICAL
 
     # ----------------------------------------------------------------
     #

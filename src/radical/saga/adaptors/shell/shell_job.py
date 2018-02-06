@@ -144,46 +144,8 @@ def _decode (data) :
 #
 _ADAPTOR_NAME          = "radical.saga.adaptors.shell_job"
 _ADAPTOR_SCHEMAS       = ["fork", "local", "ssh", "gsissh"]
-_ADAPTOR_OPTIONS       = [
-    { 
-    'category'         : 'radical.saga.adaptors.shell_job',
-    'name'             : 'enable_notifications', 
-    'type'             : bool, 
-    'default'          : False,
-    'valid_options'    : [True, False],
-    'documentation'    : '''Enable support for job state notifications.  Note that
-                          enabling this option will create a local thread, a remote 
-                          shell process, and an additional network connection.
-                          In particular for ssh/gsissh where the number of
-                          concurrent connections is limited to 10, this
-                          effectively halfs the number of available job service
-                          instances per remote host.''',
-    'env_variable'     : None
-    },
-    {
-    'category'         : 'radical.saga.adaptors.shell_job',
-    'name'             : 'purge_on_start',
-    'type'             : bool,
-    'default'          : True,
-    'valid_options'    : [True, False],
-    'documentation'    : '''Purge job information (state, stdio, ...) for all
-                          jobs which are in final state when starting the job
-                          service instance. Note that this will purge *all*
-                          suitable jobs, including the ones managed by another,
-                          live job service instance.''',
-    'env_variable'     : None
-    },
-    {
-    'category'         : 'radical.saga.adaptors.shell_job',
-    'name'             : 'base_workdir',
-    'type'             : str,
-    'default'          : ".saga/adaptors/shell_job/",
-    'documentation'    : '''The adaptor stores job state information on the
-                          filesystem on the target resource.  This parameter
-                          specified what location should be used.''',
-    'env_variable'     : None
-    }
-]
+
+
 
 # --------------------------------------------------------------------
 # the adaptor capabilities & supported attributes
@@ -223,7 +185,6 @@ _ADAPTOR_CAPABILITIES  = {
 #
 _ADAPTOR_DOC           = {
     "name"             : _ADAPTOR_NAME,
-    "cfg_options"      : _ADAPTOR_OPTIONS, 
     "capabilities"     : _ADAPTOR_CAPABILITIES,
     "description"      : """ 
         The Shell job adaptor. This adaptor uses the sh command line tools (sh,
@@ -362,14 +323,13 @@ class Adaptor (base.Base):
     #
     def __init__ (self) :
 
-        base.Base.__init__ (self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
+        base.Base.__init__ (self, _ADAPTOR_INFO)
 
         self.id_re = re.compile ('^\[(.*)\]-\[(.*?)\]$')
-      # self.opts  = self.get_config (_ADAPTOR_NAME)  # FIXME RADICAL
 
-      # self.notifications  = self.opts['enable_notifications'].get_value ()
-      # self.purge_on_start = self.opts['purge_on_start'      ].get_value ()
-      # self.base_workdir   = self.opts['base_workdir'        ].get_value ()
+        self.notifications  = self._cfg['enable_notifications']
+        self.purge_on_start = self._cfg['purge_on_start']
+        self.base_workdir   = self._cfg['base_workdir']
 
 
     # ----------------------------------------------------------------

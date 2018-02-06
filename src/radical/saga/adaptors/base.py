@@ -38,14 +38,10 @@ class Base(object):
 
         self._lock    = ru.RLock      (self._name)
         self._logger  = ru.get_logger('radical.saga.api')
+
         self._cfg     = ru.Config(module='radical.saga', name=self._name)
 
         if 'enabled' not in self._cfg:
-            self._cfg['enabled'] = True
-
-        if  self._cfg['enabled'] in [0, 'False', False]:
-            self._cfg['enabled'] = False
-        else:
             self._cfg['enabled'] = True
 
 
@@ -77,21 +73,23 @@ class Base(object):
     # --------------------------------------------------------------------------
     #
     def get_name (self) :
+
         return self._name
 
 
     # --------------------------------------------------------------------------
     #
     def get_schemas (self) :
+
         return self._schemas
 
 
     # --------------------------------------------------------------------------
     #
     def get_info (self) :
+
         return self._info
 
 
-
-
+# ------------------------------------------------------------------------------
 

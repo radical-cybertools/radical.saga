@@ -252,16 +252,6 @@ _CACHE_TIMEOUT = 5.0
 #
 _ADAPTOR_NAME          = "radical.saga.adaptors.condorjob"
 _ADAPTOR_SCHEMAS       = ["condor", "condor+ssh", "condor+gsissh"]
-_ADAPTOR_OPTIONS       = [{
-        'category'      : 'saga.adaptor.condorjob',
-        'name'          : 'use_history',
-        'type'          : bool,
-        'default'       : False,
-        'valid_options' : [True, False],
-        'documentation' : '''Enable condor_history for state checks (slow)''',
-        'env_variable'  : 'SAGA_CONDOR_USE_HISTORY'
-        },
-]
 
 # --------------------------------------------------------------------
 # the adaptor capabilities & supported attributes
@@ -300,7 +290,6 @@ _ADAPTOR_CAPABILITIES = {
 #
 _ADAPTOR_DOC = {
     "name":          _ADAPTOR_NAME,
-    "cfg_options":   _ADAPTOR_OPTIONS,
     "capabilities":  _ADAPTOR_CAPABILITIES,
     "description":  """
 The (HT)Condor(-G) adaptor allows to run and manage jobs on a 
@@ -345,12 +334,10 @@ class Adaptor (base.Base):
     #
     def __init__(self):
 
-        base.Base.__init__(self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
+        base.Base.__init__(self, _ADAPTOR_INFO)
 
         self.id_re    = re.compile('^\[(.*)\]-\[(.*?)\]$')
-      # self.opts     = self.get_config (_ADAPTOR_NAME)  # FIXME RADICAL
-      # self.use_hist = self.opts['use_history'].get_value())
-        self.use_hist = True
+        self.use_hist = self._cfg.get('use_history', False)
         self._logger.info("use condor_history: %s", self.use_hist)
 
 
