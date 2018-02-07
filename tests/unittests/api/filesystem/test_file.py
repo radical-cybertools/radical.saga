@@ -205,5 +205,6 @@ class TestFile(unittest.TestCase):
             assert d.get_session() == session, 'Failed setting the session'
 
         except saga.SagaException as ex:
-            assert False, "Unexpected exception: %s" % ex
+            assert False, "Unexpected exception: %s [%s]" % (ex,
+                    tc.filesystem_url)
 

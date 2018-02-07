@@ -328,9 +328,6 @@ class Adaptor (base.Base):
 
         self.id_re = re.compile ('^\[(.*)\]-\[(.*?)\]$')
 
-        import pprint
-        pprint.pprint(self._cfg)
-
         self.notifications  = self._cfg['enable_notifications']
         self.purge_on_start = self._cfg['purge_on_start']
         self.base_workdir   = self._cfg['base_workdir']

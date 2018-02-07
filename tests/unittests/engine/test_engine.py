@@ -61,14 +61,12 @@ def test_load_adaptor():
 
     Engine()._load_adaptors(["mockadaptor_enabled"])
     # make sure the adapor is in the list
-    assert len(Engine().loaded_adaptors()['saga.job.Job']['mock']) == 1
+    assert(len(Engine().loaded_adaptors()['radical.saga.job.Job']['mock']) == 1), \
+            pprint.pformat(Engine().loaded_adaptors())
 
     # make sure the configuration gets passed through
     cpis         = Engine().loaded_adaptors()
-    adaptor      = cpis['saga.job.Job']['mock'][0]['adaptor_instance']
-    cfg          = adaptor.cfg
-    foo_dict     = cfg["foo"].as_dict()
-    assert foo_dict == {'foo': 'bar'}
+    adaptor      = cpis['radical.saga.job.Job']['mock'][0]['adaptor_instance']
 
     # restore sys.path
     sys.path = old_sys_path
@@ -82,15 +80,12 @@ def test_load_adaptor_twice():
 
     Engine()._load_adaptors(["mockadaptor_enabled", "mockadaptor_enabled"])
     cpis  = Engine().loaded_adaptors()
-    mocks = cpis['saga.job.Job']['mock']
+    mocks = cpis['radical.saga.job.Job']['mock']
     assert len(mocks) == 1
 
     # make sure the configuration gets passed through
     cpis         = Engine().loaded_adaptors()
-    adaptor      = cpis['saga.job.Job']['mock'][0]['adaptor_instance']
-    cfg          = adaptor.cfg
-    foo_dict     = cfg["foo"].as_dict()
-    assert foo_dict == {'foo': 'bar'}
+    adaptor      = cpis['radical.saga.job.Job']['mock'][0]['adaptor_instance']
 
     # restore sys.path
     sys.path = old_sys_path

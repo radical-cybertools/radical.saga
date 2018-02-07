@@ -7,7 +7,7 @@ __license__   = "MIT"
 """ Unit tests for saga.engine.config.py
 """
 
-from radical.saga.utils.config import *
+# from radical.saga.utils.config import *
 
 import radical.utils as ru
 

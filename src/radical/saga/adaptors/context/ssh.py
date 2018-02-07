@@ -11,6 +11,7 @@ from ..            import base
 from ..cpi         import SYNC_CALL, ASYNC_CALL
 from ..cpi         import context as cpi
 from ...           import context as api
+from ...constants  import *
 from ...exceptions import *
 
 
@@ -24,11 +25,11 @@ _ADAPTOR_OPTIONS       = []
 
 # FIXME: complete attribute list
 _ADAPTOR_CAPABILITIES  = {
-     'ctx_attributes'   : {api.TYPE      : "This MUST be set to ssh",
-                           api.USER_ID   : "user name on target machine",
-                           api.USER_KEY  : "maps to public ssh key",
-                           api.USER_CERT : "maps to private ssh key",
-                           api.USER_PASS : "passphrase for encrypted keys"}
+     'ctx_attributes'   : {TYPE      : "This MUST be set to ssh",
+                           USER_ID   : "user name on target machine",
+                           USER_KEY  : "maps to public ssh key",
+                           USER_CERT : "maps to private ssh key",
+                           USER_PASS : "passphrase for encrypted keys"}
 }
 
 _ADAPTOR_DOC           = {
@@ -215,13 +216,12 @@ class ContextSSH (cpi.Context) :
         unexpanded_pub = None
         pwd = None
 
-        
-        if api.attribute_exists(api.USER_KEY ) :
-            unexpanded_key = api.get_attribute(api.USER_KEY )
-        if api.attribute_exists(api.USER_CERT) :
-            unexpanded_pub = api.get_attribute(api.USER_CERT)
-        if api.attribute_exists(api.USER_PASS) :
-            pwd  = api.get_attribute(api.USER_PASS)
+        if api.attribute_exists(USER_KEY ) :
+            unexpanded_key = api.get_attribute(USER_KEY )
+        if api.attribute_exists(USER_CERT) :
+            unexpanded_pub = api.get_attribute(USER_CERT)
+        if api.attribute_exists(USER_PASS) :
+            pwd  = api.get_attribute(USER_PASS)
 
         # Expand any environment variables in the key/pub paths
         if unexpanded_key:
@@ -257,8 +257,8 @@ class ContextSSH (cpi.Context) :
                 pub = key+'.pub'
 
         # update the context with these setting
-        api.set_attribute (api.USER_KEY , key)
-        api.set_attribute (api.USER_CERT, pub)
+        api.set_attribute (USER_KEY , key)
+        api.set_attribute (USER_CERT, pub)
 
 
         # the private and public keys must exist

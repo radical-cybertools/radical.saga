@@ -14,46 +14,37 @@ import radical.saga.adaptors.cpi.job
 import radical.utils as ru
 
 
-_ADAPTOR_NAME        = 'saga.adaptor.mock'
+_ADAPTOR_NAME        = 'radical.saga.adaptors.mock'
 _ADAPTOR_SCHEMAS     = ['mock']
 _ADAPTOR_DOC         = {}
 _ADAPTOR_CAPABILITES = {}
-_ADAPTOR_OPTIONS     = [{
-    'category'       : 'saga.adaptor.mock',
-    'name'           : 'foo',
-    'type'           : str,
-    'default'        : 'bar',
-    'documentation'  : 'dummy config option for unit test.',
-    'env_variable'   : None
-    }
-]
 
 _ADAPTOR_INFO        = {
     'name'           : _ADAPTOR_NAME,
     'version'        : '1.0',
     'schemas'        : _ADAPTOR_SCHEMAS,
     'cpis'           : [{ 
-        'type'       : 'saga.job.Job',
+        'type'       : 'radical.saga.job.Job',
         'class'      : 'MockJob'
         }
     ]
 }
 
 
-class Adaptor (saga.adaptors.base.Base):
+class Adaptor (radical.saga.adaptors.base.Base):
 
     __metaclass__ = Singleton
 
     def __init__ (self) :
 
-        saga.adaptors.base.Base.__init__ (self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS) 
+        radical.saga.adaptors.base.Base.__init__ (self, _ADAPTOR_INFO) 
 
 
     def sanity_check (self) :
         pass
 
 
-class MockJob(saga.adaptors.cpi.job.Job):
+class MockJob(radical.saga.adaptors.cpi.job.Job):
 
     def __init__ (self, api, adaptor) :
 

@@ -4,8 +4,8 @@ __copyright__ = "Copyright 2013, The SAGA Project"
 __license__   = "MIT"
 
 
-import radical.saga as saga
-import radical.utils.testing  as testing
+import radical.saga                   as saga
+import radical.utils.testing          as testing
 import radical.saga.utils.test_config as sutc
 
 
@@ -82,8 +82,8 @@ def test_get_url():
     try:
         tc = testing.get_test_config ()
         js = saga.job.Service(tc.job_service_url, tc.session)
-        assert str(js.get_url()) == str(tc.job_service_url)
-        assert str(js.url) == str(tc.job_service_url)
+        assert(str(js.get_url()) == str(tc.job_service_url)), 'expected %s [%s]' % (str(js.get_url()) == str(tc.job_service_url))
+        assert(str(js.url)       == str(tc.job_service_url)), 'expected %s [%s]' % (str(js.get_url()) == str(tc.job_service_url))
 
     except saga.NotImplemented as ni:
             assert tc.notimpl_warn_only, "%s " % ni

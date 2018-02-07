@@ -4,6 +4,6 @@
     "adaptor_path"       : "$env{RADICAL_SAGA_ADAPTOR_PATH}",
 
     # load adaptors which are marked as beta (i.e. not released)
-    "load_beta_adaptors" : "$env{RADICAL_SAGA_ENABLE_BETA:False}"
+    "load_beta_adaptors" : "$env{RADICAL_SAGA_ENABLE_BETA}"
 }
 
