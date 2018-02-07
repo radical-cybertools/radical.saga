@@ -166,14 +166,14 @@ class Session (base.SimpleBase) :
     @rus.takes   ('Session', 
                   rus.optional(bool))
     @rus.returns (rus.nothing)
-    def __init__ (self, default=True):
+    def __init__ (self, default=True, uid=None):
         """
         default: bool
         ret:     None
         """
 
         simple_base = super  (Session, self)
-        simple_base.__init__ ()
+        simple_base.__init__ (uid=uid)
 
         self._logger = ru.get_logger ('radical.saga')
 
