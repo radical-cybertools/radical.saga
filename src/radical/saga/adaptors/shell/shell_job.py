@@ -7,6 +7,7 @@ __license__   = "MIT"
 """ shell based job adaptor implementation """
 
 
+from ...exceptions     import *
 from ..                import base
 from ..cpi             import SYNC_CALL, ASYNC_CALL
 from ..cpi             import job as cpi

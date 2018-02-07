@@ -6,7 +6,7 @@ __license__   = "MIT"
 
 import os
 import sys
-import saga
+import radical.saga as saga
 
 os.system ("ls -la /tmp > /tmp/tmp.txt")
 

@@ -8,6 +8,7 @@ __license__   = "MIT"
 
 import radical.utils as ru
 
+from ...exceptions       import *
 from ...                 import utils      as rsu
 from ...utils            import pty_shell  as rsups
 from ...utils            import misc       as rsumisc

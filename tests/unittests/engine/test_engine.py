@@ -8,7 +8,7 @@ __license__   = "MIT"
 """
 
 import os, sys
-from   saga.engine.engine import Engine
+from   radical.saga.engine.engine import Engine
 
 import radical.utils as ru
 
@@ -27,7 +27,7 @@ def test_configurable():
     """ Test the object's Configurable interface
     """
     # make sure singleton works
-    assert Engine().get_config()['load_beta_adaptors'].get_value() == False
+    assert(not Engine()._cfg['load_beta_adaptors'])
 
 def test_emtpy_registry():
     """ Test that an empty adaptor registry is handled properly
@@ -66,7 +66,7 @@ def test_load_adaptor():
     # make sure the configuration gets passed through
     cpis         = Engine().loaded_adaptors()
     adaptor      = cpis['saga.job.Job']['mock'][0]['adaptor_instance']
-    cfg          = adaptor.get_config()
+    cfg          = adaptor.cfg
     foo_dict     = cfg["foo"].as_dict()
     assert foo_dict == {'foo': 'bar'}
 
@@ -88,7 +88,7 @@ def test_load_adaptor_twice():
     # make sure the configuration gets passed through
     cpis         = Engine().loaded_adaptors()
     adaptor      = cpis['saga.job.Job']['mock'][0]['adaptor_instance']
-    cfg          = adaptor.get_config()
+    cfg          = adaptor.cfg
     foo_dict     = cfg["foo"].as_dict()
     assert foo_dict == {'foo': 'bar'}
 

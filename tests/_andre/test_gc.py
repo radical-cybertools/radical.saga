@@ -6,7 +6,7 @@ __license__   = "MIT"
 
 import gc
 import sys
-import saga
+import radical.saga as saga
 import time
 import objgraph as checks
 from   pprint import pprint as pp

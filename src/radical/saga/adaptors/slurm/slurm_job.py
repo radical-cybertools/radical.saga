@@ -16,6 +16,7 @@ import tempfile
 
 import radical.utils as ru
 
+from ...exceptions    import *
 from ...              import url        as rsurl
 from ...utils         import pty_shell  as rsups
 from ...utils         import misc       as rsumisc

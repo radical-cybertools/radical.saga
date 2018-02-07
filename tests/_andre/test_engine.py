@@ -6,7 +6,7 @@ __license__   = "MIT"
 
 import sys
 import random
-import saga
+import radical.saga as saga
 import time
 
 from   saga.engine.engine import Engine

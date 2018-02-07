@@ -9,7 +9,7 @@ __license__   = "MIT"
 import os
 import sys
 import time
-import saga
+import radical.saga as saga
 import pprint
 import cProfile
 

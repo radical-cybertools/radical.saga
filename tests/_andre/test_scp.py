@@ -6,8 +6,8 @@ __license__   = "MIT"
 
 import re
 import time
-import saga
-import saga.utils.pty_shell as sups
+import radical.saga as saga
+import radical.saga.utils.pty_shell as sups
 
 try :
     shell = sups.PTYShell (saga.Url ("fork://localhost"), [])

@@ -4,9 +4,9 @@ __copyright__ = "Copyright 2013, The SAGA Project"
 __license__   = "MIT"
 
 
-import saga
+import radical.saga as saga
 import radical.utils.testing  as testing
-import saga.utils.test_config as sutc
+import radical.saga.utils.test_config as sutc
 
 
 # ------------------------------------------------------------------------------

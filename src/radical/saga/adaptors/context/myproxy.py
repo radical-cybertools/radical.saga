@@ -7,6 +7,7 @@ __license__   = "MIT"
 import os
 import subprocess
 
+from ...exceptions import *
 from ..            import base
 from ..cpi         import SYNC_CALL, ASYNC_CALL
 from ..cpi         import context as cpi

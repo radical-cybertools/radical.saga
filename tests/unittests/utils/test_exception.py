@@ -7,7 +7,7 @@ __license__   = "MIT"
 """ Unit tests for saga.utils.exception.py
 """
 
-import saga
+import radical.saga as saga
 
 import radical.utils as ru
 

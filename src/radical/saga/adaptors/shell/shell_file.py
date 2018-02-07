@@ -15,6 +15,7 @@ import shell_wrapper
 
 import radical.utils as ru
 
+from ...exceptions           import *
 from ...                     import utils      as rsu
 from ...                     import url        as rsurl
 from ...utils                import pty_shell  as rsups

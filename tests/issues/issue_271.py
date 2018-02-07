@@ -1,7 +1,7 @@
 
 import os
 import sys
-import saga
+import radical.saga as saga
 
 def main():
     """This code fails consistently after 16 copy opertaions:

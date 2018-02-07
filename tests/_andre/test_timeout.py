@@ -5,7 +5,7 @@ __license__   = "MIT"
 
 
 import time
-import saga.utils.timeout_gc as togc
+import radical.saga.utils.timeout_gc as togc
 
 class WatchedClass () :
 

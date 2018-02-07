@@ -151,6 +151,7 @@ class PTYShellFactory (object) :
         self.logger     = ru.get_logger ('radical.saga.pty')
         self.registry   = {}
         self.rlock      = ru.RLock ('pty shell factory')
+        self.cfg        = ru.Config('radical.saga', 'utils')['pty']
 
 
     # --------------------------------------------------------------------------
@@ -168,6 +169,7 @@ class PTYShellFactory (object) :
 
             if  not logger :
                 logger = self.logger
+
 
             # collect all information we have/need about the requested master
             # connection
@@ -190,7 +192,7 @@ class PTYShellFactory (object) :
                 logger.debug ("open master pty for [%s] [%s] %s: %s'" \
                                 % (type_s, host_s, user_s, m_cmd))
 
-                info['pty'] = supp.PTYProcess (m_cmd, cfg, logger=logger)
+                info['pty'] = supp.PTYProcess (m_cmd, cfg, logger)
                 if not info['pty'].alive () :
                     raise NoSuccess._log (logger, \
                           "Shell not connected to %s" % info['host_str'])
@@ -426,7 +428,7 @@ class PTYShellFactory (object) :
 
           # print '> -- new cp  shell to %s' % s_cmd
 
-            cp_slave = supp.PTYProcess (s_cmd, info['logger'])
+            cp_slave = supp.PTYProcess (s_cmd, self.cfg, info['logger'])
             self._initialize_pty (cp_slave, info, posix)
 
             return cp_slave
@@ -446,7 +448,7 @@ class PTYShellFactory (object) :
             s_cmd = info['scripts'][info['shell_type']]['shell'] % info
 
             # at this point, we do have a valid, living master
-            sh_slave = supp.PTYProcess (s_cmd, info['logger'])
+            sh_slave = supp.PTYProcess (s_cmd, self.cfg, info['logger'])
 
             # authorization, prompt setup, etc
             self._initialize_pty (sh_slave, info)

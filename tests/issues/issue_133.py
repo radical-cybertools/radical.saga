@@ -9,7 +9,7 @@ __license__   = "MIT"
 
 import os
 import sys
-import saga
+import radical.saga as saga
 
 print os.environ['PS1']
 

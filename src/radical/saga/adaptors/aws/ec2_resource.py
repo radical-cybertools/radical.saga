@@ -10,6 +10,7 @@ import re
 import os
 import time
 
+from ...exceptions         import *
 from ...                   import url        as rs_url
 from ...                   import session    as rs_session
 from ...                   import context    as api_context

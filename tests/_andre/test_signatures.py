@@ -1,9 +1,9 @@
 
-import saga.utils.signatures          as sus
-import saga.adaptors.base             as sab
-import saga.adaptors.shell.shell_file as sasf
+import radical.saga.utils.signatures          as sus
+import radical.saga.adaptors.base             as sab
+import radical.saga.adaptors.shell.shell_file as sasf
 
-import saga
+import radical.saga as saga
 js = saga.job.Service ('ssh://localhost/')
 j  = js.run_job ("/bin/date")
 

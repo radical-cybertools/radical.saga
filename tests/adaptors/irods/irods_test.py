@@ -17,7 +17,7 @@ __copyright__ = "Copyright 2012, Ashley Zebrowski"
 __license__   = "MIT"
 
 import sys, time
-import saga
+import radical.saga as saga
 import os
 
 FILE_SIZE = 1 # in megs, approx

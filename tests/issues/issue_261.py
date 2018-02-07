@@ -1,5 +1,5 @@
 
-import saga
+import radical.saga as saga
 import os
 
 remote_tmp = saga.filesystem.Directory ("sftp://india.futuregrid.org/tmp/copy_test", saga.filesystem.CREATE_PARENTS)

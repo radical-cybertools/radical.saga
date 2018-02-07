@@ -1,7 +1,7 @@
 
 import sys
 import time
-import saga
+import radical.saga as saga
 
 
 # ------------------------------------------------------------------------------

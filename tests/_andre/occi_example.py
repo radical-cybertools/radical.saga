@@ -10,7 +10,7 @@
 #   - map code snippets to SAGA calls below
 #
 
-import saga
+import radical.saga as saga
 import pprint
 
 # connect to EGI endpoint, also connects to EGI marketplace.

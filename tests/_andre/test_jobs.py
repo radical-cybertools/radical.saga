@@ -5,7 +5,7 @@ __license__   = "MIT"
 
 
 import time
-import saga
+import radical.saga as saga
 
 def my_cb (a, b, c) :
     print " ----- callback: [%s, %s, %s]" % (a, b, c)

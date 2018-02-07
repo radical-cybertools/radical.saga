@@ -7,9 +7,9 @@ __license__   = "MIT"
 """ Unit test mock adaptor for saga.engine.engine.py
 """
 
-from saga.utils.singleton import Singleton
-import saga.adaptors.cpi.base
-import saga.adaptors.cpi.job
+from   radical.utils import Singleton
+import radical.saga.adaptors.cpi.base
+import radical.saga.adaptors.cpi.job
 
 import radical.utils as ru
 

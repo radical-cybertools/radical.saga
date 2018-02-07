@@ -215,9 +215,6 @@ class PTYShell (object) :
         if opts:
             self.cfg = ru.dict_merge(self.cfg, opts, policy='overwrite')
 
-        import pprint
-        pprint.pprint(self.cfg)
-
         # get prompt pattern from config, or use default
         self.prompt    = self.cfg.get('prompt_pattern', DEFAULT_PROMPT)
         self.prompt_re = re.compile ("^(.*?)%s"    % self.prompt, re.DOTALL)
@@ -958,7 +955,7 @@ class PTYShell (object) :
                 # command.  We do not have a list of transferred files though,
                 # yet -- that should be parsed from the proc output.
 
-                cp_proc = supp.PTYProcess (s_cmd)
+                cp_proc = supp.PTYProcess (s_cmd, cfg=self.cfg)
                 out = cp_proc.wait ()
                 if  cp_proc.exit_code :
                     raise ptye.translate_exception (NoSuccess ("file copy failed: %s" % out))
@@ -1081,7 +1078,7 @@ class PTYShell (object) :
                 # do not use the chached cp_slave in this case, but just run the
                 # command.  We do not have a list of transferred files though,
                 # yet -- that should be parsed from the proc output.
-                cp_proc = supp.PTYProcess (s_cmd)
+                cp_proc = supp.PTYProcess (s_cmd, cfg=self.cfg)
                 cp_proc.wait ()
                 if  cp_proc.exit_code :
                     raise ptye.translate_exception (NoSuccess ("file copy failed: exit code %s" % cp_proc.exit_code))

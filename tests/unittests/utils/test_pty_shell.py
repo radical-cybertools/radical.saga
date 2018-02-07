@@ -7,9 +7,9 @@ __license__   = "MIT"
 import os
 import time
 import signal
-import saga
-import saga.utils.pty_shell   as sups
-import saga.utils.test_config as sutc
+import radical.saga as saga
+import radical.saga.utils.pty_shell   as sups
+import radical.saga.utils.test_config as sutc
 
 import radical.utils.testing as rut
 

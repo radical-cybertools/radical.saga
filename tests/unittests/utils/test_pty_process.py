@@ -7,7 +7,7 @@ __license__   = "MIT"
 import os
 import time
 import signal
-import saga.utils.pty_process as supp
+import radical.saga.utils.pty_process as supp
 
 import radical.utils as ru
 

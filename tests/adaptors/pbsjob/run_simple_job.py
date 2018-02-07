@@ -8,7 +8,7 @@ __license__   = "MIT"
 """
 
 import sys
-import saga
+import radical.saga as saga
 
 
 def main():

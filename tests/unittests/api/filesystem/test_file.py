@@ -5,7 +5,7 @@ __license__   = "MIT"
 
 
 import os
-import saga
+import radical.saga as saga
 import unittest
 
 from copy import deepcopy
@@ -206,3 +206,4 @@ class TestFile(unittest.TestCase):
 
         except saga.SagaException as ex:
             assert False, "Unexpected exception: %s" % ex
+

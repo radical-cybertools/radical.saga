@@ -291,9 +291,6 @@ class DefaultSession(Session):
         super(DefaultSession, self).__init__(default=False)
 
         _engine = engine.engine.Engine()
-      # import pprint
-      # pprint.pprint(_engine._adaptor_registry)
-        print _engine._adaptor_registry.keys().sort()
 
         if not 'saga.Context' in _engine._adaptor_registry :
             self._logger.warn ("no context adaptors found")

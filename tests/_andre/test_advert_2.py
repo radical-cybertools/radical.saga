@@ -1,6 +1,6 @@
 
 import sys
-import saga
+import radical.saga as saga
 
 start = False
 stop  = False

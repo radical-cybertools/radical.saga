@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import saga.attributes as sa
+import radical,saga.attributes as sa
 import time
 import resource
 

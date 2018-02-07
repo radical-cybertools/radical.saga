@@ -4,6 +4,7 @@ __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
 
+from ...exceptions import *
 from ..            import base
 from ..cpi         import SYNC_CALL, ASYNC_CALL
 from ..cpi         import context as cpi

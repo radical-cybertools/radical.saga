@@ -19,6 +19,7 @@ import radical.utils as ru
 from .. import base
 from .. import cpi
 
+from ...exceptions    import *
 from ...job.constants import *
 from ...exceptions    import *
 from ...              import job        as sj

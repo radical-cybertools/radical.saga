@@ -35,6 +35,7 @@ import time
 import string
 import errno
 
+from ...exceptions           import *
 import saga.url
 import saga.adaptors.base
 import saga.adaptors.cpi.replica

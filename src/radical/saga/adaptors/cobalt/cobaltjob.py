@@ -17,6 +17,7 @@ from cgi  import parse_qs
 
 import radical.utils as ru
 
+from ...exceptions    import *
 from ...utils         import pty_shell  as rsups
 from ...              import job        as api_job
 from ...job.constants import *

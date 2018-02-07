@@ -170,8 +170,7 @@ class Engine(object):
         # so, we reset cpi infos from the earlier singleton creation.
         if inject_registry != None :
             self._adaptor_registry = dict()
-            self._registry = inject_registry
-
+            self._registry = {'adaptor_registry' : inject_registry}
 
         # attempt to load all registered modules
         for module_name in self._registry.get('adaptor_registry', []):
