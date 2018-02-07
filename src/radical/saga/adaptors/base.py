@@ -39,6 +39,7 @@ class Base(object):
         self._lock    = ru.RLock      (self._name)
         self._logger  = ru.get_logger('radical.saga.api')
 
+        print self._name
         self._cfg     = ru.Config(module='radical.saga', name=self._name)
 
         if 'enabled' not in self._cfg:
