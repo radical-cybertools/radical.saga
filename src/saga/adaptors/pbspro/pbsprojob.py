@@ -312,11 +312,12 @@ def _pbscript_generator(url, logger, jd, ppn, gres, pbs_version, is_cray=False, 
     elif 'PBSPro_13' in pbs_version:
         logger.info("Using PBSPro 13 notation '#PBS -l select=XX' ")
         pbs_params += "#PBS -l select=%d\n" % (nnodes)
-    #elif '14.2.4' in pbs_version:
-    elif 'cheyenne' in url.host or 'cheyenne' in os.uname()[1]
+    elif '14.2' in pbs_version:
         logger.info("Using PBSPro 14 notation '#PBS -l select=XX:ncpus=XX' ")
-        pbs_params += "#PBS -l select=%d:ncpus=%d\n"%(nnodes, ppn/2)    # Not sure why but SAGA_PPN gets 
-                                                                        # the value 72 instead of 36
+        pbs_params += "#PBS -l select=%d:ncpus=%d\n"%(nnodes, ppn)
+    elif 'cheyenne' in url.host or 'cheyenne' in os.uname()[1]:                 # Not sure why but SAGA_PPN gets 
+        logger.info("Using PBSPro 14 notation '#PBS -l select=XX:ncpus=XX' ")   # the value 72 instead of 36 on cheyenne
+        pbs_params += "#PBS -l select=%d:ncpus=%d\n"%(nnodes, ppn/2)                                                                          
     else:
         # Default case, i.e, standard HPC cluster (non-Cray)
 
@@ -831,7 +832,7 @@ class PBSProJobService (saga.adaptors.cpi.job.Service):
 
         # run the PBS 'qstat' command to get some infos about our job
         # TODO: create a PBSPRO/TORQUE flag once
-        if 'PBSPro_1' in self._commands['qstat']['version'] or '14.2.4' in self._commands['qstat']['version']:
+        if 'PBSPro_1' in self._commands['qstat']['version'] or '14.2' in self._commands['qstat']['version']:
             qstat_flag = '-fx'
         else:
             qstat_flag ='-f1'
