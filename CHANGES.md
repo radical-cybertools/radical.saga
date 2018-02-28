@@ -6,6 +6,13 @@
     https://github.com/radical-cybertools/saga-python/issues?q=is%3Aissue+is%3Aopen+
 
 
+Version 0.47.2                                                        2018-02-28
+--------------------------------------------------------------------------------
+
+  - accept SID settings from upper layers (RP) (#654) 
+  - fix task container get_state reval 
+
+
 Version 0.47                                                          2017-11-19
 --------------------------------------------------------------------------------
 
