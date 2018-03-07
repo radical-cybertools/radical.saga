@@ -231,7 +231,12 @@ def _torquescript_generator(url, logger, jd, ppn, gres, torque_version, is_cray=
         pbs_params += "#PBS -q %s \n" % queue
 
     if jd.project:
-        pbs_params += "#PBS -A %s \n" % str(jd.project)
+        if '@' in jd.project:
+            user, group = jd.project.split('@', 1)
+            pbs_params += "#PBS -A %s \n"            % user
+            pbs_params += "#PBS -W group_list:%s \n" % group
+        else:
+            pbs_params += "#PBS -A %s \n" % jd.project
 
     if jd.job_contact:
         pbs_params += "#PBS -m abe \n"
