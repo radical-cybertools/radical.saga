@@ -1,3 +1,4 @@
+
 language: python
 services:
 python:
@@ -12,3 +13,6 @@ notifications:
       - andre@merzky.net
     on_success: change
     on_failure: always
+after_success:
+  - codecov
+
