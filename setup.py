@@ -147,6 +147,7 @@ class our_test(Command):
         testdir = "%s/tests/" % os.path.dirname(os.path.realpath(__file__))
         retval  = sp.call(['coverage',
                            'run',
+                           '--include="src/*"',
                            '%s/run_tests.py'          % testdir,
                            '%s/configs/basetests.cfg' % testdir])
         raise SystemExit(retval)
