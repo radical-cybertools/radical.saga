@@ -6,7 +6,7 @@ python:
 install:
   - pip install .
 script:
-  - pip install nose coverage
+  - pip install nose coverage codecov
   - python setup.py test
 notifications:
   email:
