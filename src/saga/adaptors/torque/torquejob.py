@@ -321,8 +321,10 @@ def _torquescript_generator(url, logger, jd, ppn, gpn, gres, torque_version,
             logger.info("Using Edison@NERSC (Cray XC30) specific '#PBS -l mppwidth=xx' parameter.")
             pbs_params += "#PBS -l mppwidth=%s \n" % jd.total_cpu_count
         elif 'bw.ncsa.illinois.edu' in url.host:
+            if gpu_nnodes: gpu_flag = ':xk'
+            else         : gpu_flag = ''
             logger.info("Using Blue Waters (Cray XE6/XK7) specific '#PBS -l nodes=xx:ppn=yy'")
-            pbs_params += "#PBS -l nodes=%d:ppn=%d\n" % (nnodes, ppn)
+            pbs_params += "#PBS -l nodes=%d:ppn=%d%s\n" % (nnodes, ppn, gpu_flag)
         elif 'Version: 5.' in torque_version:
             # What would removing this catchall break?
             logger.info("Using TORQUE 5.x notation '#PBS -l procs=XX' ")
@@ -399,7 +401,8 @@ _ADAPTOR_CAPABILITIES = {
                           saga.job.PROCESSES_PER_HOST,
                           saga.job.SPMD_VARIATION,
                           saga.job.TOTAL_CPU_COUNT,
-                          saga.job.TOTAL_GPU_COUNT],
+                          saga.job.TOTAL_GPU_COUNT,
+                          ],
     "job_attributes":    [saga.job.EXIT_CODE,
                           saga.job.EXECUTION_HOSTS,
                           saga.job.CREATED,
