@@ -157,20 +157,16 @@ def _torquescript_generator(url, logger, jd, ppn, gpn, gres, torque_version,
     """
     pbs_params  = str()
     exec_n_args = str()
-
-    if jd.processes_per_host:
-        logger.info("Overriding the detected ppn (%d) with the user specified processes_per_host (%d)" % (ppn, jd.processes_per_host))
-        ppn = jd.processes_per_host
-
-    exec_n_args += 'export SAGA_PPN=%d\n' % ppn
-    exec_n_args += 'export SAGA_GPN=%d\n' % gpn
-
     if jd.executable:
         exec_n_args += "%s " % (jd.executable)
 
     if jd.arguments:
         for arg in jd.arguments:
             exec_n_args += "%s " % (arg)
+
+    if jd.processes_per_host:
+        logger.info("Overriding the detected ppn (%d) with the user specified processes_per_host (%d)" % (ppn, jd.processes_per_host))
+        ppn = jd.processes_per_host
 
     if jd.name:
         pbs_params += "#PBS -N %s \n" % jd.name
@@ -323,6 +319,7 @@ def _torquescript_generator(url, logger, jd, ppn, gpn, gres, torque_version,
         elif 'bw.ncsa.illinois.edu' in url.host:
             if gpu_nnodes: gpu_flag = ':xk'
             else         : gpu_flag = ''
+            if gpu_flag and ppn > 16: ppn = 16
             logger.info("Using Blue Waters (Cray XE6/XK7) specific '#PBS -l nodes=xx:ppn=yy'")
             pbs_params += "#PBS -l nodes=%d:ppn=%d%s\n" % (nnodes, ppn, gpu_flag)
         elif 'Version: 5.' in torque_version:
@@ -355,6 +352,9 @@ def _torquescript_generator(url, logger, jd, ppn, gpn, gres, torque_version,
     # Process Generic Resource specification request
     if gres:
         pbs_params += "#PBS -l gres=%s\n" % gres
+
+    exec_n_args += 'export SAGA_PPN=%d\n' % ppn
+    exec_n_args += 'export SAGA_GPN=%d\n' % gpn
 
     # escape all double quotes and dollarsigns, otherwise 'echo |'
     # further down won't work
