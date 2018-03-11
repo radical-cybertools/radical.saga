@@ -265,8 +265,10 @@ def _torquescript_generator(url, logger, jd, ppn, gres, torque_version, is_cray=
     if is_cray is not "":
         # Special cases for PBS/TORQUE on Cray. Different PBSes,
         # different flags. A complete nightmare...
-        if  '5.1.0.h1'   in torque_version or \
-            '6.1.1.1.h2' in torque_version:
+        if  'titan'      in url.host       or \
+            '5.1.0.h1'   in torque_version or \
+            '6.1.1.1.h2' in torque_version or \
+            '4.2.6-snap' in torque_version :
             # Can't really use hostname as we run also from the headnode
             logger.info("Using Titan (Cray XP) specific '#PBS -l nodes=xx'")
             pbs_params += "#PBS -l nodes=%d\n" % nnodes
@@ -547,37 +549,25 @@ class TORQUEJobService (saga.adaptors.cpi.job.Service):
     # ----------------------------------------------------------------
     #
     def initialize(self):
+
         # check if all required pbs tools are available
+        ret, out, _ = self.shell.run_sync("qstat --version")
+        if ret:
+            message = "Error finding PBS tools: %s" % out
+            log_error_and_raise(message, saga.NoSuccess, self._logger)
+        version = out.strip()
+        self._logger.info("Found PBS version: %s" % version)
+
         for cmd in self._commands.keys():
             ret, out, _ = self.shell.run_sync("which %s " % cmd)
-            if ret != 0:
-                message = "Error finding PBS tools: %s" % out
+            if ret:
+                message = "Error finding PBS tools: %s (version: %s)" % (out, version)
                 log_error_and_raise(message, saga.NoSuccess, self._logger)
-            else:
-                path = out.strip()  # strip removes newline
-                if cmd == 'qdel':  # qdel doesn't support --version!
-                    self._commands[cmd] = {"path":    path,
-                                           "version": "?"}
-                elif cmd == 'qsub':  # qsub doesn't always support --version!
-                    self._commands[cmd] = {"path":    path,
-                                           "version": "?"}
-                else:
-                    ret, out, _ = self.shell.run_sync("%s --version" % cmd)
-                    if ret != 0:
-                        message = "Error finding PBS tools: %s" % out
-                        log_error_and_raise(message, saga.NoSuccess,
-                            self._logger)
-                    else:
-                        # version is reported as: "version: x.y.z"
-                        version = out#.strip().split()[1]
+            self._commands[cmd] = {"path"   : out.strip(), 
+                                   "version": version}
+            self._logger.info("Found PBS %s: %s" % (cmd, out.strip()))
 
-                        # add path and version to the command dictionary
-                        self._commands[cmd] = {"path":    path,
-                                               "version": version}
 
-        self._logger.info("Found PBS tools: %s" % self._commands)
-
-        #
         # TODO: Get rid of this, as I dont think there is any justification that Cray's are special
         #
         # let's try to figure out if we're working on a Cray machine.
