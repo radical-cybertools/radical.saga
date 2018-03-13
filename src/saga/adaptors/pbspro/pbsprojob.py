@@ -18,6 +18,7 @@ from saga.job.constants import *
 import re
 import os 
 import time
+import datetime
 import threading
 
 from cgi  import parse_qs
@@ -436,12 +437,15 @@ class Adaptor (saga.adaptors.base.Base):
 
         self.id_re = re.compile('^\[(.*)\]-\[(.*?)\]$')
         self.opts  = self.get_config (_ADAPTOR_NAME)
+        self.epoch = datetime.datetime(1970,1,1)
+
 
     # ----------------------------------------------------------------
     #
     def sanity_check(self):
         # FIXME: also check for gsissh
         pass
+
 
     # ----------------------------------------------------------------
     #
@@ -901,7 +905,7 @@ class PBSProJobService (saga.adaptors.cpi.job.Service):
                     elif key in ['start_time', # TORQUE
                                  'stime'       # PBS Pro
                                 ]:
-                        job_info['start_time'] = val
+                        job_info['start_time'] = val  # FIXME: convert to EPOCH
 
                     # Time job ended.
                     #
@@ -952,7 +956,7 @@ class PBSProJobService (saga.adaptors.cpi.job.Service):
         ret = self.jobs[job_id]['returncode']
 
         # FIXME: 'None' should cause an exception
-        if ret == None : return None
+        if ret is None : return None
         else           : return int(ret)
 
     # ----------------------------------------------------------------
@@ -967,6 +971,7 @@ class PBSProJobService (saga.adaptors.cpi.job.Service):
     def _job_get_create_time(self, job_id):
         """ get the job's creation time
         """
+        # FIXME: convert to EOPCH
         return self.jobs[job_id]['create_time']
 
     # ----------------------------------------------------------------
@@ -974,6 +979,7 @@ class PBSProJobService (saga.adaptors.cpi.job.Service):
     def _job_get_start_time(self, job_id):
         """ get the job's start time
         """
+        # FIXME: convert to EOPCH
         return self.jobs[job_id]['start_time']
 
     # ----------------------------------------------------------------
@@ -981,6 +987,7 @@ class PBSProJobService (saga.adaptors.cpi.job.Service):
     def _job_get_end_time(self, job_id):
         """ get the job's end time
         """
+        # FIXME: convert to EOPCH
         return self.jobs[job_id]['end_time']
 
     # ----------------------------------------------------------------

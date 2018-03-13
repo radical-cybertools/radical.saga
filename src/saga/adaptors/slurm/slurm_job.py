@@ -18,9 +18,10 @@ import saga.adaptors.cpi.job
 import re
 import os
 import time
-import textwrap
 import string
+import datetime
 import tempfile
+import textwrap
 
 SYNC_CALL  = saga.adaptors.cpi.decorators.SYNC_CALL
 ASYNC_CALL = saga.adaptors.cpi.decorators.ASYNC_CALL
@@ -66,7 +67,6 @@ _ADAPTOR_CAPABILITIES  = {
                           saga.job.ERROR,
                           saga.job.FILE_TRANSFER,
                           saga.job.CLEANUP,
-                          saga.job.JOB_START_TIME,
                           saga.job.WALL_TIME_LIMIT,
                           saga.job.TOTAL_PHYSICAL_MEMORY,
                           saga.job.CPU_ARCHITECTURE,
@@ -221,6 +221,8 @@ class Adaptor (saga.adaptors.base.Base):
         saga.adaptors.base.Base.__init__ (self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
 
         self.id_re = re.compile ('^\[(.*)\]-\[(.*?)\]$')
+        self.epoch = datetime.datetime(1970,1,1)
+
 
     # --------------------------------------------------------------------------
     #
@@ -1160,6 +1162,7 @@ class SLURMJob(saga.adaptors.cpi.job.Job):
         Implements saga.adaptors.cpi.job.Job.get_created()
         """
         # FIXME: use cache
+        # FIXME: convert to EOPCH
         return self._job_get_info()['create_time']
 
 
@@ -1171,6 +1174,7 @@ class SLURMJob(saga.adaptors.cpi.job.Job):
         Implements saga.adaptors.cpi.job.Job.get_started()
         """
         # FIXME: use cache
+        # FIXME: convert to EPOCH
         return self._job_get_info()['start_time']
 
 
@@ -1182,6 +1186,7 @@ class SLURMJob(saga.adaptors.cpi.job.Job):
         Implements saga.adaptors.cpi.job.Job.get_finished()
         """
         # FIXME: use cache
+        # FIXME: convert to EPOCH
         return self._job_get_info()['end_time']
 
 

@@ -19,9 +19,10 @@ from saga.job.constants import *
 import re
 import os 
 import time
+import datetime
 import threading
 
-from cgi  import parse_qs
+from cgi import parse_qs
 
 SYNC_CALL  = saga.adaptors.cpi.decorators.SYNC_CALL
 ASYNC_CALL = saga.adaptors.cpi.decorators.ASYNC_CALL
@@ -419,12 +420,15 @@ class Adaptor (saga.adaptors.base.Base):
 
         self.id_re = re.compile('^\[(.*)\]-\[(.*?)\]$')
         self.opts  = self.get_config (_ADAPTOR_NAME)
+        self.epoch = datetime.datetime(1970,1,1)
+
 
     # ----------------------------------------------------------------
     #
     def sanity_check(self):
         # FIXME: also check for gsissh
         pass
+
 
     # ----------------------------------------------------------------
     #
@@ -900,6 +904,7 @@ class TORQUEJobService (saga.adaptors.cpi.job.Service):
     def _job_get_create_time(self, job_id):
         """ get the job's creation time
         """
+        # FIXME: convert to EPOCH
         return self.jobs[job_id]['create_time']
 
     # ----------------------------------------------------------------
@@ -907,6 +912,7 @@ class TORQUEJobService (saga.adaptors.cpi.job.Service):
     def _job_get_start_time(self, job_id):
         """ get the job's start time
         """
+        # FIXME: convert to EPOCH
         return self.jobs[job_id]['start_time']
 
     # ----------------------------------------------------------------
@@ -914,6 +920,7 @@ class TORQUEJobService (saga.adaptors.cpi.job.Service):
     def _job_get_end_time(self, job_id):
         """ get the job's end time
         """
+        # FIXME: convert to EPOCH
         return self.jobs[job_id]['end_time']
 
     # ----------------------------------------------------------------
@@ -1222,6 +1229,7 @@ class TORQUEJob (saga.adaptors.cpi.job.Job):
         if self._started is False:
             return None
         else:
+            # FIXME: convert to EPOCH
             return self.js._job_get_start_time(self._id)
 
     # ----------------------------------------------------------------
@@ -1233,6 +1241,7 @@ class TORQUEJob (saga.adaptors.cpi.job.Job):
         if self._started is False:
             return None
         else:
+            # FIXME: convert to EPOCH
             return self.js._job_get_end_time(self._id)
 
     # ----------------------------------------------------------------
