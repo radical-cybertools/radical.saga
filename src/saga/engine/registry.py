@@ -27,7 +27,6 @@ adaptor_registry = [
                     "saga.adaptors.shell.shell_resource",
                     "saga.adaptors.redis.redis_advert",
                     "saga.adaptors.sge.sgejob",
-                    "saga.adaptors.pbs.pbsjob",
                     "saga.adaptors.lsf.lsfjob",
                   # "saga.adaptors.irods.irods_replica",
                     "saga.adaptors.condor.condorjob",
