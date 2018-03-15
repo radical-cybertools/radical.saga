@@ -32,7 +32,7 @@ CANCELED              = 'Canceled';  """ The job has been canceled either by the
                                          user or by job service.  
                                          This state is final.  """ 
 
-# FINAL                 = DONE | FAILED | CANCELED
+FINAL                 = [DONE, FAILED, CANCELED]
 
 ################################################################################
 #

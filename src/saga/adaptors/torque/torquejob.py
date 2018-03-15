@@ -45,6 +45,7 @@ class _job_state_monitor(threading.Thread):
         super(_job_state_monitor, self).__init__()
         self.setDaemon(True)
 
+
     def stop(self):
         self._stop.set()
 
@@ -69,8 +70,8 @@ class _job_state_monitor(threading.Thread):
                     # we only need to monitor jobs that are not in a
                     # terminal state, so we can skip the ones that are 
                     # either done, failed or canceled
-                    if  job_info['state'] not in [saga.job.DONE, saga.job.FAILED, saga.job.CANCELED] :
-                        
+                    if  job_info['state'] not in saga.job.FINAL:
+
                         # Store the current state since the current state 
                         # variable is updated when _job_get_info is called
                         pre_update_state = job_info['state']
@@ -83,7 +84,9 @@ class _job_state_monitor(threading.Thread):
                         # fire job state callback if 'state' has changed
                         if  new_job_info['state'] != pre_update_state:
                             job_obj = job_info['obj']
-                            job_obj._attributes_i_set('state', new_job_info['state'], job_obj._UP, True)
+                            job_obj._attributes_i_set('state', 
+                                                      new_job_info['state'], 
+                                                      job_obj._UP, True)
 
                         # update job info
                         jobs[job_id] = new_job_info
@@ -101,7 +104,7 @@ class _job_state_monitor(threading.Thread):
                 else :
                     error_type_count[error_type] += 1
                     if  error_type_count[error_type] >= 3 :
-                        self.logger.error("too many monitoring errors -- stopping job monitoring thread")
+                        self.logger.error("too many monitoring errors -- stop")
                         return
 
             finally :
@@ -119,26 +122,29 @@ def log_error_and_raise(message, exception, logger):
 
 # --------------------------------------------------------------------
 #
-def _torque_to_saga_jobstate(torquejs):
+def _torque_to_saga_jobstate(job_state, retcode):
     """ translates a torque one-letter state to saga
     """
-    if torquejs == 'H': #  "Job is held."
-        return saga.job.PENDING
-    elif torquejs == 'Q': # "Job is queued(, eligible to run or routed.)
-        return saga.job.PENDING
-    elif torquejs == 'S': # "Job is suspended."
-        return saga.job.PENDING
-    elif torquejs == 'W': # "Job is waiting for its execution time to be reached."
-        return saga.job.PENDING
-    elif torquejs == 'R': # "Job is running."
-        return saga.job.RUNNING
-    elif torquejs == 'E': # "Job is exiting after having run"
-        return saga.job.RUNNING
-    elif torquejs == 'T': # "Job is being moved to new location."
-        # TODO: PENDING?
-        return saga.job.RUNNING
-    else:
-        return saga.job.UNKNOWN
+    # H: Job is held.
+    # Q: Job is queued (eligible to run or routed.)
+    # S: Job is suspended.
+    # W: Job is waiting for its execution time to be reached.
+    # R: Job is running.
+    # E: Job is exiting after having run
+    # T: Job is being moved to new location.
+    # C: Job is completed after having run.
+
+    if   job_state == 'H': return saga.job.PENDING
+    elif job_state == 'Q': return saga.job.PENDING
+    elif job_state == 'S': return saga.job.PENDING
+    elif job_state == 'W': return saga.job.PENDING
+    elif job_state == 'R': return saga.job.RUNNING
+    elif job_state == 'E': return saga.job.RUNNING
+    elif job_state == 'T': return saga.job.RUNNING
+    elif job_state == 'C': 
+        if retcode == 0  : return saga.job.DONE
+        else             : return saga.job.FAILED
+    else                 : return saga.job.UNKNOWN
 
 
 # --------------------------------------------------------------------
@@ -671,7 +677,12 @@ class TORQUEJobService (saga.adaptors.cpi.job.Service):
         # (1) we create a temporary file with 'mktemp' and write the contents of 
         #     the generated PBS script into it
         # (2) we call 'qsub <tmpfile>' to submit the script to the queueing system
-        cmdline = """SCRIPTFILE=`mktemp -t SAGA-Python-TORQUEJobScript.XXXXXX` &&  echo "%s" > $SCRIPTFILE && %s $SCRIPTFILE && rm -f $SCRIPTFILE""" %  (script, self._commands['qsub']['path'])
+        cmdline = """
+        SCRIPTFILE=`mktemp -t SAGA-Python-TORQUEJobScript.XXXXXX` \\
+            &&  echo "%s" > $SCRIPTFILE \\
+            &&  %s $SCRIPTFILE \\
+            &&  rm -f $SCRIPTFILE
+            """ %  (script, self._commands['qsub']['path'])
         ret, out, _ = self.shell.run_sync(cmdline)
 
         if ret != 0:
@@ -689,11 +700,7 @@ class TORQUEJobService (saga.adaptors.cpi.job.Service):
             if len(lines) > 1:
                 self._logger.warning('qsub: %s' % ''.join(lines[:-2]))
 
-            # we asssume job id is in the last line
-            #print cmdline
-            #print out
-
-            job_id = "[%s]-[%s]" % (self.rm, lines[-1].strip().split('.')[0])
+            job_id  = "[%s]-[%s]" % (self.rm, lines[-1].strip().split('.')[0])
             self._logger.info("Submitted PBS job with id: %s" % job_id)
 
             state = saga.job.PENDING
@@ -705,13 +712,13 @@ class TORQUEJobService (saga.adaptors.cpi.job.Service):
                                  'state'       : state,
                                  'exec_hosts'  : None,
                                  'returncode'  : None,
-                                 'create_time' : None,
+                                 'create_time' : time.time(),
                                  'start_time'  : None,
                                  'end_time'    : None,
                                  'gone'        : False
                                  }
 
-            self._logger.info ("Assign job id  %s / %s / %s to watch list (%s)" \
+            self._logger.info ("Assign job id  %s / %s / %s to watch list (%s)"
                             % (job_name, job_id, job_obj, self.jobs.keys()))
 
             # set status to 'pending' and manually trigger callback
@@ -759,11 +766,12 @@ class TORQUEJobService (saga.adaptors.cpi.job.Service):
         rm, pid = self._adaptor.parse_id(job_id)
 
         qstat_flag ='-f1'
-            
+
         ret, out, _ = self.shell.run_sync("unset GREP_OPTIONS; %s %s %s | "
                 "grep -E -i '(job_state)|(Job_Name)|(exec_host)|(exit_status)|"
                  "(ctime)|(start_time)|(stime)|(mtime)'"
                 % (self._commands['qstat']['path'], qstat_flag, pid))
+
 
         if ret != 0:
 
@@ -782,10 +790,19 @@ class TORQUEJobService (saga.adaptors.cpi.job.Service):
                         "information about finished jobs. Setting state to 'DONE'.")
 
                 if job_info['state'] in [saga.job.RUNNING, saga.job.PENDING]:
-                    job_info['state'] = saga.job.DONE
+                    job_info['state']      = saga.job.DONE
+                    job_info['returncode'] = 0  # we are guessing here...
                 else:
-                    # TODO: This is an uneducated guess?
-                    job_info['state'] = saga.job.FAILED
+                    job_info['state'] = saga.job.UNKNOWN
+
+                if not job_info['start_time']:
+                    # inaccurate guess, but better than nothing
+                    job_info['start_time'] = time.time()
+
+                if not job_info['end_time']:
+                    # inaccurate guess, but better than nothing
+                    job_info['end_time'] = time.time()
+
             else:
                 # something went wrong
                 message = "Error retrieving job info via 'qstat': %s" % out
@@ -804,70 +821,63 @@ class TORQUEJobService (saga.adaptors.cpi.job.Service):
             results = out.split('\n')
             for line in results:
 
-                if len(line.split('=')) == 2:
+                if line.count('=') == 1:
+
                     key, val = line.split('=')
                     key = key.strip()
                     val = val.strip()
 
-                    # The ubiquitous job state
-                    if key in ['job_state']:
-                        job_state = val
+                    if   key in ['job_state'  ]: job_state = val 
+                    elif key in ['job_name'   ]: job_info['name'] = val
+                    elif key in ['exit_status']: job_info['returncode' ] = int(val)
+                    elif key in ['exec_host'  ]: job_info['exec_hosts' ] = val.split('+')
+                                                 # format i73/7+i73/6+...
 
-                    # The job name
-                    if key in ['job_name']:
-                        job_info['name'] = val
 
-                    # Hosts where the job ran
-                    elif key in ['exec_host']: # PBS Pro and TORQUE
-                        job_info['exec_hosts'] = val.split('+')  # format i73/7+i73/6+...
+                  # FIXME: qstat will not tell us time zones, so we cannot convert to
+                  #        EPOCH (which is UTC).  We thus take times ourself.
+                  #        A proper solution would be to either do the time
+                  #        conversion on the target host, or to inspect time
+                  #        zone settings on the host.
+                  #
+                  # # PBS Pro doesn't provide "end time", but
+                  # # "resources_used.walltime" could be added up to the start
+                  # # time.  Alternatively, we can use mtime, (latest
+                  # # modification time) which is generally also end time.
+                  # # TORQUE has an "comp_time" (completion? time), that is
+                  # # generally the same as mtime.
+                  # #
+                  # # For now we  use mtime for both TORQUE and PBS Pro.
+                  #
+                  # elif key in ['start_time', # TORQUE / PBS Pro
+                  #              'stime'      ]: job_info['start_time' ] = val
+                  # elif key in ['ctime'      ]: job_info['create_time'] = val
+                  # elif key in ['mtime'      ]: job_info['end_time'   ] = val
 
-                    # Exit code of the job
-                    elif key in ['exit_status']:
-                        job_info['returncode'] = int(val)
-
-                    # Time job got created in the queue
-                    elif key in ['ctime']: # PBS Pro and TORQUE
-                        job_info['create_time'] = val
-
-                    # Time job started to run
-                    elif key in ['start_time', # TORQUE
-                                 'stime'       # PBS Pro
-                                ]:
-                        job_info['start_time'] = val
-
-                    # Time job ended.
-                    #
-                    # PBS Pro doesn't have an "end time" field.
-                    # It has an "resources_used.walltime" though,
-                    # which could be added up to the start time.
-                    # We will not do that arithmetic now though.
-                    #
-                    # Alternatively, we can use mtime, as the latest
-                    # modification time will generally also be the end time.
-                    #
-                    # TORQUE has an "comp_time" (completion? time) field,
-                    # that is generally the same as mtime at the finish.
-                    #
-                    # For the time being we will use mtime as end time for
-                    # both TORQUE and PBS Pro.
-                    #
-                    if key in ['mtime']: # PBS Pro and TORQUE
-                        job_info['end_time'] = val
 
             # TORQUE doesn't allow us to distinguish DONE/FAILED on final state alone,
             # we need to consider the exit_status.
-            # TODO: move this logic into _torque_to_saga_jobstate in a future life
-            if job_state == 'C': # "Job is completed after having run."
-                if job_info['returncode'] == 0:
-                    job_info['state'] = saga.job.DONE
-                else:
-                    job_info['state'] = saga.job.FAILED
-            else:
-                job_info['state'] = _torque_to_saga_jobstate(job_state)
+            retcode = job_info.get('returncode', -1)
+            job_info['state'] = _torque_to_saga_jobstate(job_state, retcode)
+
+            # FIXME: workaround for time zone problem described above
+            if job_info['state'] in [saga.job.RUNNING] + saga.job.FINAL \
+                and not job_info['start_time']:
+                job_info['start_time'] = time.time()
+
+            if job_info['state'] in saga.job.FINAL \
+                and not job_info['end_time']:
+                job_info['end_time'] = time.time()
 
         # return the updated job info
+        import pprint
+        pprint.pprint(job_info)
+        print
         return job_info
 
+
+    # ----------------------------------------------------------------
+    #
     def _parse_qstat(self, haystack, job_info):
 
 
@@ -879,6 +889,7 @@ class TORQUEJobService (saga.adaptors.cpi.job.Service):
     def _job_get_state(self, job_id):
         """ get the job's state
         """
+        self._logger.debug ("=====  get state")
         return self.jobs[job_id]['state']
 
     # ----------------------------------------------------------------
@@ -887,9 +898,9 @@ class TORQUEJobService (saga.adaptors.cpi.job.Service):
         """ get the job's exit code
         """
         ret = self.jobs[job_id]['returncode']
+        self._logger.debug ("=====  get retcode")
 
-        # FIXME: 'None' should cause an exception
-        if ret == None : return None
+        if ret is None : return None
         else           : return int(ret)
 
     # ----------------------------------------------------------------
@@ -904,7 +915,6 @@ class TORQUEJobService (saga.adaptors.cpi.job.Service):
     def _job_get_create_time(self, job_id):
         """ get the job's creation time
         """
-        # FIXME: convert to EPOCH
         return self.jobs[job_id]['create_time']
 
     # ----------------------------------------------------------------
@@ -912,7 +922,6 @@ class TORQUEJobService (saga.adaptors.cpi.job.Service):
     def _job_get_start_time(self, job_id):
         """ get the job's start time
         """
-        # FIXME: convert to EPOCH
         return self.jobs[job_id]['start_time']
 
     # ----------------------------------------------------------------
@@ -920,7 +929,6 @@ class TORQUEJobService (saga.adaptors.cpi.job.Service):
     def _job_get_end_time(self, job_id):
         """ get the job's end time
         """
-        # FIXME: convert to EPOCH
         return self.jobs[job_id]['end_time']
 
     # ----------------------------------------------------------------
@@ -940,6 +948,9 @@ class TORQUEJobService (saga.adaptors.cpi.job.Service):
         # assume the job was succesfully canceled
         self.jobs[job_id]['state'] = saga.job.CANCELED
 
+        if not self.jobs[job_id]['end_time']:
+            self.jobs[job_id]['end_time'] = time.time()
+
 
     # ----------------------------------------------------------------
     #
@@ -953,10 +964,8 @@ class TORQUEJobService (saga.adaptors.cpi.job.Service):
         while True:
             state = self.jobs[job_id]['state']  # this gets updated in the bg.
 
-            if state == saga.job.DONE or \
-               state == saga.job.FAILED or \
-               state == saga.job.CANCELED:
-                    return True
+            if state in saga.job.FINAL:
+                return True
 
             # avoid busy poll
             time.sleep(SYNC_WAIT_UPDATE_INTERVAL)
@@ -1229,7 +1238,6 @@ class TORQUEJob (saga.adaptors.cpi.job.Job):
         if self._started is False:
             return None
         else:
-            # FIXME: convert to EPOCH
             return self.js._job_get_start_time(self._id)
 
     # ----------------------------------------------------------------
