@@ -53,20 +53,20 @@ def main():
 
         # Create a new job from the job description. The initial state of 
         # the job is 'New'.
-        touchjob = js.create_job(jd)
+        job = js.create_job(jd)
 
         # Register our callback. We want it to 'fire' on job state change
-        touchjob.add_callback(saga.STATE, job_state_change_cb)
+        job.add_callback(saga.STATE, job_state_change_cb)
 
         # Check our job's id and state
-        print "Job ID      : %s" % (touchjob.id)
-        print "Job State   : %s" % (touchjob.state)
+        print "Job ID      : %s" % (job.id)
+        print "Job State   : %s" % (job.state)
 
         # Now we can start our job.
         print "\n...starting job...\n"
-        touchjob.run()
+        job.run()
 
-        print "Job ID      : %s" % (touchjob.id)
+        print "Job ID      : %s" % (job.id)
 
         # List all jobs that are known by the adaptor.
         # This should show our job as well.
@@ -76,14 +76,14 @@ def main():
 
         # wait for our job to complete
         print "\n...waiting for job...\n"
-        touchjob.wait()
+        job.wait()
 
-        print "Job State   : %s" % (touchjob.state)
-        print "Exitcode    : %s" % (touchjob.exit_code)
-        print "Exec. hosts : %s" % (touchjob.execution_hosts)
-        print "Create time : %d" % (touchjob.created)
-        print "Start time  : %d" % (touchjob.started)
-        print "End time    : %d" % (touchjob.finished)
+        print "Job State   : %s" % job.state
+        print "Exitcode    : %s" % job.exit_code
+        print "Exec. hosts : %s" % job.execution_hosts
+        print "Create time : %d" % job.created
+        print "Start time  : %d" % job.started
+        print "End time    : %d" % job.finished
 
         js.close()
         return 0
@@ -96,5 +96,11 @@ def main():
         print " \n*** Backtrace:\n %s" % ex.traceback
         return -1
 
+
+# ------------------------------------------------------------------------------
+#
 if __name__ == "__main__":
     sys.exit(main())
+
+# ------------------------------------------------------------------------------
+

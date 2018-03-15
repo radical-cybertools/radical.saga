@@ -522,7 +522,7 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         self.shell.write_to_remote (src=slurm_script, tgt=tgt)
 
         # submit the job
-        ret, out, _ = self.shell.run_sync ("sbatch '%s'; rm -vf '%s'" % (tgt, tgt))
+        ret, out, _ = self.shell.run_sync ("sbatch '%s'; rm -f '%s'" % (tgt, tgt))
 
         self._logger.debug ("staged/submit SLURM script (%s) (%s)" % (tgt, ret))
 
@@ -530,9 +530,11 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         # TODO: Could make this more efficient
         self.job_id = None
         for line in out.split("\n"):
+            print 'line: %s' % line
             if "Submitted batch job" in line:
                 self.job_id = "[%s]-[%s]" % \
                     (self.rm, int(line.split()[-1:][0]))
+                print 'match: %s' % self.job_id
                 break
 
         # if we have no job ID, there's a failure...
@@ -891,6 +893,16 @@ class SLURMJob(saga.adaptors.cpi.job.Job):
             curr_info['comp_time'  ] = prev_info.get('comp_time'  )
             curr_info['exec_hosts' ] = prev_info.get('exec_hosts' )
             curr_info['gone'       ] = prev_info.get('gone'       )
+        else:
+            curr_info['job_id'     ] = None
+            curr_info['job_name'   ] = None
+            curr_info['state'      ] = None
+            curr_info['create_time'] = None
+            curr_info['start_time' ] = None
+            curr_info['end_time'   ] = None
+            curr_info['comp_time'  ] = None
+            curr_info['exec_hosts' ] = None
+            curr_info['gone'       ] = None
 
         rm, pid = self._adaptor.parse_id(self._id)
 
@@ -943,7 +955,6 @@ class SLURMJob(saga.adaptors.cpi.job.Job):
                 val = None
             data[key] = val
 
-        # update state
         if data.get('JobState'):
             curr_info['state'] = self.js._slurm_to_saga_jobstate(data['JobState'])
         else:
@@ -956,11 +967,22 @@ class SLURMJob(saga.adaptors.cpi.job.Job):
             curr_info['exit_code'] = self._job_get_state(self._id)
 
         curr_info['job_name'   ] = data.get('JobName')
-        curr_info['create_time'] = data.get('SubmitTime')
-        curr_info['start_time' ] = data.get('StartTime')
-        curr_info['end_time'   ] = data.get('EndTime')
+      # curr_info['create_time'] = data.get('SubmitTime')
+      # curr_info['start_time' ] = data.get('StartTime')
+      # curr_info['end_time'   ] = data.get('EndTime')
         curr_info['comp_time'  ] = data.get('RunTime')
         curr_info['exec_hosts' ] = data.get('NodeList')
+
+        # Alas, time stamps are not in EPOCH, and do not contain time zone info,
+        # so we set approximate values here
+        now = time.time()
+        if not curr_info['create_time']: curr_info['create_time'] = now
+
+        if curr_info['state'] in [saga.job.RUNNING] + saga.job.FINAL:
+            if not curr_info['start_time' ]: curr_info['start_time' ] = now
+
+        if curr_info['state'] in saga.job.FINAL:
+            if not curr_info['end_time' ]: curr_info['end_time' ] = now
 
         return curr_info
 
