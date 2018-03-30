@@ -117,46 +117,50 @@ def log_error_and_raise(message, exception, logger):
 
 # --------------------------------------------------------------------
 #
-def _pbs_to_saga_jobstate(pbsjs, logger=None):
+def _pbs_to_saga_jobstate(job_state, logger=None):
     """ translates a pbs one-letter state to saga
     """
-    # 'C' Torque "Job is completed after having run."
-    # 'F' PBS Pro "Job is finished."
-    # 'H' PBS Pro and TORQUE "Job is held."
-    # 'Q' PBS Pro and TORQUE "Job is queued(, eligible to run or routed.)
-    # 'S' PBS Pro and TORQUE "Job is suspended."
-    # 'W' PBS Pro and TORQUE "Job is waiting for its execution time to be reached."
-    # 'R' PBS Pro and TORQUE "Job is running."
-    # 'E' PBS Pro and TORQUE "Job is exiting after having run"
-    # 'T' PBS Pro and TORQUE "Job is being moved to new location."
-    # 'X' PBS Pro "Subjob has completed execution or has been deleted."
+    # 'C' Torque            : Job is completed after having run
+    # 'F' PBS Pro           : Job is finished
+    # 'H' PBS Pro and TORQUE: Job is held
+    # 'Q' PBS Pro and TORQUE: Job is queued, eligible to run or routed
+    # 'S' PBS Pro and TORQUE: Job is suspended."
+    # 'W' PBS Pro and TORQUE: Job is waiting for its execution time to be reached
+    # 'R' PBS Pro and TORQUE: Job is running
+    # 'E' PBS Pro and TORQUE: Job is exiting after having run
+    # 'T' PBS Pro and TORQUE: Job is being moved to new location
+    # 'X' PBS Pro           : Subjob has completed execution or has been deleted
 
     ret = None
 
-    if   pbsjs == 'C': ret = saga.job.DONE
-    elif pbsjs == 'F': ret = saga.job.DONE
-    elif pbsjs == 'H': ret = saga.job.PENDING
-    elif pbsjs == 'Q': ret = saga.job.PENDING
-    elif pbsjs == 'S': ret = saga.job.PENDING
-    elif pbsjs == 'W': ret = saga.job.PENDING
-    elif pbsjs == 'R': ret = saga.job.RUNNING
-    elif pbsjs == 'E': ret = saga.job.RUNNING
-    elif pbsjs == 'T': ret = saga.job.RUNNING
-    elif pbsjs == 'X': ret = saga.job.CANCELED
-    else             : ret = saga.job.UNKNOWN
+    if   job_state == 'F': ret = saga.job.DONE
+    elif job_state == 'H': ret = saga.job.PENDING
+    elif job_state == 'Q': ret = saga.job.PENDING
+    elif job_state == 'S': ret = saga.job.PENDING
+    elif job_state == 'W': ret = saga.job.PENDING
+    elif job_state == 'R': ret = saga.job.RUNNING
+    elif job_state == 'E': ret = saga.job.RUNNING
+    elif job_state == 'T': ret = saga.job.RUNNING
+    elif job_state == 'X': ret = saga.job.CANCELED
+    else                 : ret = saga.job.UNKNOWN
 
-    logger.debug('check state: %s', pbsjs)
+    logger.debug('check state: %s', job_state)
     logger.debug('use   state: %s', ret)
     return ret
 
 
 # --------------------------------------------------------------------
 #
-def _pbscript_generator(url, logger, jd, ppn, gres, pbs_version, is_cray=False, queue=None, ):
+def _pbscript_generator(url, logger, jd, ppn, gres, pbs_version, is_cray=False,
+                        queue=None):
     """ generates a PBS Pro script from a SAGA job description
     """
     pbs_params  = str()
     exec_n_args = str()
+
+    if jd.processes_per_host:
+        logger.info("Overriding the detected ppn (%d) with the user specified processes_per_host (%d)" % (ppn, jd.processes_per_host))
+        ppn = jd.processes_per_host
 
     exec_n_args += 'export SAGA_PPN=%d\n' % ppn
     if jd.executable:
@@ -231,12 +235,41 @@ def _pbscript_generator(url, logger, jd, ppn, gres, pbs_version, is_cray=False, 
         pbs_params += "#PBS -l walltime=%s:%s:00 \n" \
             % (str(hours), str(minutes))
 
-    if jd.queue and queue:
-        pbs_params += "#PBS -q %s \n" % queue
-    elif jd.queue and not queue:
-        pbs_params += "#PBS -q %s \n" % jd.queue
-    elif queue and not jd.queue:
-        pbs_params += "#PBS -q %s \n" % queue
+    # see https://gist.github.com/nobias/5b2373258e595e5242d5
+    # The parameter to '-q' can have the following forms:
+    #
+    #   queue
+    #   queue@server
+    #   @server
+    #
+    # where 'server' is the target resource which can be *different* than the
+    # submission host.  We interpret 'jd.candidate_hosts[0]' as such a target
+    # resource - but only if exactly one `candidate_host` is given.
+
+    # We haqve to take care to filter out special cases where we abise
+    # `candidate_hosts` for node properties (those are appended to the nodes
+    # argument in the resource_list).  This is currently only implemented for
+    # "bigflash" on Gordon@SDSC
+    #
+    # https://github.com/radical-cybertools/saga-python/issues/406
+
+    queue_spec      = ''
+    node_properties = []
+
+    if      queue: queue_spec =    queue
+    elif jd.queue: queue_spec = jd.queue
+
+    if jd.candidate_hosts:
+        if 'BIG_FLASH' in jd.candidate_hosts:
+            node_properties.append('bigflash')
+        elif len(jd.candidate_hosts) == 1:
+            queue_spec += '@%s' % jd.candidate_hosts[0]
+        else:
+            raise saga.NotImplemented("unsupported candidate_hosts [%s]"
+                                      % jd.candidate_hosts)
+
+    if queue_spec:
+        pbs_params += "#PBS -q %s\n" % queue_spec
 
     if jd.project:
         if 'PBSPro_1' in pbs_version:
@@ -264,19 +297,6 @@ def _pbscript_generator(url, logger, jd, ppn, gres, pbs_version, is_cray=False, 
     # We use the ncpus value for systems that need to specify ncpus as multiple of PPN
     ncpus = nnodes * ppn
 
-    # Node properties are appended to the nodes argument in the resource_list.
-    node_properties = []
-
-    # Parse candidate_hosts
-    #
-    # Currently only implemented for "bigflash" on Gordon@SDSC
-    # https://github.com/radical-cybertools/saga-python/issues/406
-    #
-    if jd.candidate_hosts:
-        if 'BIG_FLASH' in jd.candidate_hosts:
-            node_properties.append('bigflash')
-        else:
-            raise saga.NotImplemented("This type of 'candidate_hosts' not implemented: '%s'" % jd.candidate_hosts)
 
     # TODO: The more we add, the more it screams for a refactoring
     if is_cray is not "":
@@ -365,11 +385,12 @@ _ADAPTOR_CAPABILITIES = {
                           saga.job.ERROR,
                           saga.job.QUEUE,
                           saga.job.PROJECT,
+                          saga.job.FILE_TRANSFER,
                           saga.job.WALL_TIME_LIMIT,
                           saga.job.WORKING_DIRECTORY,
                           saga.job.WALL_TIME_LIMIT,
-                          saga.job.SPMD_VARIATION, # TODO: 'hot'-fix for BigJob
                           saga.job.PROCESSES_PER_HOST,
+                          saga.job.SPMD_VARIATION,
                           saga.job.TOTAL_CPU_COUNT],
     "job_attributes":    [saga.job.EXIT_CODE,
                           saga.job.EXECUTION_HOSTS,
@@ -661,7 +682,8 @@ class PBSProJobService (saga.adaptors.cpi.job.Service):
         """
 
         # get the job description
-        jd = job_obj.get_description()
+        jd       = job_obj.get_description()
+        job_name = jd.name
 
         # normalize working directory path
         if  jd.working_directory :
@@ -678,7 +700,7 @@ class PBSProJobService (saga.adaptors.cpi.job.Service):
             script = _pbscript_generator(url=self.rm, logger=self._logger,
                                          jd=jd, ppn=self.ppn, gres=self.gres,
                                          pbs_version=self._commands['qstat']['version'],
-                                         is_cray=self.is_cray, queue=self.queue,
+                                         is_cray=self.is_cray, queue=self.queue
                                          )
 
             self._logger.info("Generated PBS script: %s" % script)
@@ -730,6 +752,7 @@ class PBSProJobService (saga.adaptors.cpi.job.Service):
             # populate job info dict
             self.jobs[job_id] = {'obj'         : job_obj,
                                  'job_id'      : job_id,
+                                 'name'        : job_name,
                                  'state'       : state,
                                  'exec_hosts'  : None,
                                  'returncode'  : None,
@@ -740,7 +763,7 @@ class PBSProJobService (saga.adaptors.cpi.job.Service):
                                  }
 
             self._logger.info ("assign job id  %s / %s / %s to watch list (%s)" \
-                            % (None, job_id, job_obj, self.jobs.keys()))
+                            % (job_name, job_id, job_obj, self.jobs.keys()))
 
             # set status to 'pending' and manually trigger callback
             job_obj._attributes_i_set('state', state, job_obj._UP, True)
@@ -815,6 +838,7 @@ class PBSProJobService (saga.adaptors.cpi.job.Service):
             job_info = {
                 'job_id':       job_id,
                 'state':        saga.job.UNKNOWN,
+                'name':         None,
                 'exec_hosts':   None,
                 'returncode':   None,
                 'create_time':  None,
@@ -833,7 +857,7 @@ class PBSProJobService (saga.adaptors.cpi.job.Service):
             qstat_flag ='-f1'
             
         ret, out, _ = self.shell.run_sync("unset GREP_OPTIONS; %s %s %s | "
-                "grep -E -i '(job_state)|(exec_host)|(exit_status)|"
+                "grep -E -i '(job_state)|(Job_Name)|(exec_host)|(exit_status)|"
                  "(ctime)|(start_time)|(stime)|(mtime)'"
                 % (self._commands['qstat']['path'], qstat_flag, pid))
 
@@ -875,6 +899,7 @@ class PBSProJobService (saga.adaptors.cpi.job.Service):
             #     exit_status = 0
             results = out.split('\n')
             for line in results:
+
                 if len(line.split('=')) == 2:
                     key, val = line.split('=')
                     key = key.strip()
@@ -883,6 +908,10 @@ class PBSProJobService (saga.adaptors.cpi.job.Service):
                     # The ubiquitous job state
                     if key in ['job_state']: # PBS Pro and TORQUE
                         job_info['state'] = _pbs_to_saga_jobstate(val, self._logger)
+
+                    # The job name
+                    if key in ['Job_Name']:
+                        job_info['name'] = val
 
                     # Hosts where the job ran
                     elif key in ['exec_host']: # PBS Pro and TORQUE
@@ -1118,29 +1147,38 @@ class PBSProJobService (saga.adaptors.cpi.job.Service):
         return ids
 
 
-  # # ----------------------------------------------------------------
-  # #
-  # def container_run (self, jobs) :
-  #     self._logger.debug ("container run: %s"  %  str(jobs))
-  #     # TODO: this is not optimized yet
-  #     for job in jobs:
-  #         job.run ()
-  #
-  #
-  # # ----------------------------------------------------------------
-  # #
-  # def container_wait (self, jobs, mode, timeout) :
-  #     self._logger.debug ("container wait: %s"  %  str(jobs))
-  #     # TODO: this is not optimized yet
-  #     for job in jobs:
-  #         job.wait ()
-  #
-  #
-  # # ----------------------------------------------------------------
-  # #
-  # def container_cancel (self, jobs, timeout) :
-  #     self._logger.debug ("container cancel: %s"  %  str(jobs))
-  #     raise saga.NoSuccess ("Not Implemented");
+    # ----------------------------------------------------------------
+    #
+    def container_run (self, jobs) :
+
+        self._logger.debug ("container run: %s"  %  str(jobs))
+
+        # TODO: this is not optimized yet
+        for job in jobs:
+            job.run ()
+   
+   
+    # ----------------------------------------------------------------
+    #
+    def container_wait (self, jobs, mode, timeout) :
+
+        self._logger.debug ("container wait: %s"  %  str(jobs))
+
+        # TODO: this is not optimized yet
+        for job in jobs:
+            job.wait ()
+   
+   
+    # ----------------------------------------------------------------
+    #
+    def container_cancel (self, jobs, timeout) :
+
+        self._logger.debug ("container cancel: %s"  %  str(jobs))
+
+        # TODO: this is not optimized yet
+        for job in jobs:
+            job.cancel (timeout)
+
 
 
 ###############################################################################
