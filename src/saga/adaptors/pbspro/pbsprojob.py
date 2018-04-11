@@ -858,11 +858,13 @@ class PBSProJobService (saga.adaptors.cpi.job.Service):
 
         # run the PBS 'qstat' command to get some infos about our job
         # TODO: create a PBSPRO/TORQUE flag once
-        if 'PBSPro_1' in self._commands['qstat']['version'] or '14.2' in self._commands['qstat']['version']:
-            qstat_flag = '-fx'
-        else:
-            qstat_flag ='-f1'
-            
+
+        pbs_version = self._commands['qstat']['version'],
+        if   'version: 14.2.5' in pbs_version: qstat_flag = '-f'  # Cheyenne
+        elif 'PBSPro_1'        in pbs_version: qstat_flag = '-fx'
+        elif '14.2'            in pbs_version: qstat_flag = '-fx'
+        else                                 : qstat_flag = '-f1'
+
         ret, out, _ = self.shell.run_sync("unset GREP_OPTIONS; %s %s %s | "
                 "grep -E -i '(job_state)|(Job_Name)|(exec_host)|(exit_status)|"
                  "(ctime)|(start_time)|(stime)|(mtime)'"
