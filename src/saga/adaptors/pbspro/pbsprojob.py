@@ -831,10 +831,14 @@ class PBSProJobService (saga.adaptors.cpi.job.Service):
             results = out.split('\n')
             for line in results:
 
+                print 'line: %s' % line.strip()
+
                 if len(line.split('=')) == 2:
                     key, val = line.split('=')
                     key = key.strip()
                     val = val.strip()
+                
+                    print '      %s - %s' % (key, val)
 
                     # The ubiquitous job state
                     if key in ['job_state']:  # PBS Pro and TORQUE
@@ -842,6 +846,7 @@ class PBSProJobService (saga.adaptors.cpi.job.Service):
 
                     # The job name
                     if key in ['Job_Name']:
+                        print '      %s - %s' % ("NAME", val)
                         job_info['name'] = val
 
                     # Hosts where the job ran
@@ -1018,9 +1023,14 @@ class PBSProJobService (saga.adaptors.cpi.job.Service):
 
         # this dict is passed on to the job adaptor class -- use it to pass any
         # state information you need there.
+        jd = saga.job.Description()
+        for k,v in job_info.get("description",{}).iteritems():
+            jd[k] = v
+        jd.name = job_info.get('name')
+        print 'ji get: %s' % jd.name
         adaptor_state = {"job_service":     self,
                          # TODO: fill job description
-                         "job_description": saga.job.Description(),
+                         "job_description": jd,
                          "job_schema":      self.rm.schema,
                          "reconnect":       True,
                          "reconnect_jobid": job_id
@@ -1130,15 +1140,22 @@ class PBSProJob (saga.adaptors.cpi.job.Job):
         self.jd = job_info["job_description"]
         self.js = job_info["job_service"]
 
+        import pprint
+        pprint.pprint(job_info)
+        pprint.pprint(self.jd.as_dict())
+        print '----' 
         if job_info['reconnect'] is True:
             self._id      = job_info['reconnect_jobid']
             self._name    = self.jd.get(saga.job.NAME)
+            print 'set from reconnect: %s' % self._name
             self._started = True
         else:
             self._id      = None
-            self._name    = self.jd.get(saga.job.NAME)
+            self._name    = self.jd.as_dict().get('Name')
+            print 'set from new: %s' % self._name
             self._started = False
 
+        print 'instance name: %s' % self._name
         return self.get_api()
 
     # ----------------------------------------------------------------
