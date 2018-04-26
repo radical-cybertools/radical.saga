@@ -146,7 +146,7 @@ class PTYShellFactory (object) :
     #
     def __init__ (self) :
 
-        self.logger     = ru.get_logger ('radical.saga.pty')
+        self.logger     = ru.Logger('radical.saga.pty')
         self.registry   = {}
         self.rlock      = ru.RLock ('pty shell factory')
 

@@ -192,7 +192,7 @@ class PTYShell (object) :
             interactive=True):
 
         if logger : self.logger  = logger
-        else      : self.logger  = ru.get_logger('radical.saga.pty') 
+        else      : self.logger  = ru.Logger('radical.saga.pty') 
 
         if session: self.session = session
         else      : self.session = ss.Session(default=True)
