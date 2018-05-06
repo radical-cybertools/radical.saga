@@ -297,6 +297,8 @@ def _pbscript_generator(url, logger, jd, ppn, gres, pbs_version, is_cray=False,
     # We use the ncpus value for systems that need to specify ncpus as multiple of PPN
     ncpus = nnodes * ppn
 
+
+    # TODO: The more we add, the more it screams for a refactoring
     if is_cray is not "":
         # Special cases for PBS/TORQUE on Cray. Different PBSes,
         # different flags. A complete nightmare...
@@ -318,10 +320,10 @@ def _pbscript_generator(url, logger, jd, ppn, gres, pbs_version, is_cray=False,
         else:
             logger.info("Using Cray XT (e.g. Kraken, Jaguar) specific '#PBS -l size=xx' flags (TORQUE).")
             pbs_params += "#PBS -l size=%s\n" % jd.total_cpu_count
-    elif 'version: 2.3.13' in pbs_version:
-        # e.g. Blacklight
-        # TODO: The more we add, the more it screams for a refactoring
+    elif 'version: 2.3.13' in pbs_version: # Blacklight
         pbs_params += "#PBS -l ncpus=%d\n" % ncpus
+    elif 'version: 14.2.5' in pbs_version: # Cheyenne
+        pbs_params += "#PBS -l select=%d\n" % nnodes
     elif '4.2.7' in pbs_version:
         logger.info("Using Cray XT @ NERSC (e.g. Hopper) specific '#PBS -l mppwidth=xx' flags (PBSPro_10).")
         pbs_params += "#PBS -l mppwidth=%s \n" % jd.total_cpu_count
