@@ -1400,10 +1400,9 @@ class ShellFile(saga.adaptors.cpi.filesystem.File):
         else:
             ret, out, _ = self._run_sync(" wc -c '%s' | xargs | cut -f 1 -d ' '\n"
                                            % self.url.path)
-
-            if  ret:
-            raise saga.NoSuccess("get size for (%s) failed (%s): (%s)"
-                               % (self.url, ret, out))
+            if ret:
+                raise saga.NoSuccess("get size for (%s) failed (%s): (%s)"
+                                   % (self.url, ret, out))
 
         try:
             size = int(out) * size_mult
