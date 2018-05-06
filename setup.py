@@ -145,9 +145,11 @@ class our_test(Command):
     def finalize_options   (self) : pass
     def run (self) :
         testdir = "%s/tests/" % os.path.dirname(os.path.realpath(__file__))
-        retval  = sp.call([sys.executable,
-                          '%s/run_tests.py'               % testdir,
-                          '%s/configs/basetests.cfg'      % testdir])
+        retval  = sp.call(['coverage',
+                           'run',
+                           '--include="./src/*"',
+                           '%s/run_tests.py'          % testdir,
+                           '%s/configs/basetests.cfg' % testdir])
         raise SystemExit(retval)
 
 
@@ -277,7 +279,7 @@ setup_args = {
     'install_requires'   : ['apache-libcloud', 
                             'radical.utils',
                             'parse'],
-    'tests_require'      : [],
+    'tests_require'      : ['nose', 'coverage'],
     'test_suite'         : 'saga.tests',
     'zip_safe'           : False,
 #   'build_sphinx'       : {

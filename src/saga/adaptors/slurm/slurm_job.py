@@ -54,13 +54,14 @@ _ADAPTOR_CAPABILITIES  = {
                           saga.job.POST_EXEC,
                           saga.job.ARGUMENTS,
                           saga.job.ENVIRONMENT,
-                          saga.job.SPMD_VARIATION, #implement later, somehow
+                          saga.job.SPMD_VARIATION,
                           saga.job.TOTAL_CPU_COUNT,
+                          saga.job.TOTAL_GPU_COUNT,
                           saga.job.NUMBER_OF_PROCESSES,
                           saga.job.PROCESSES_PER_HOST,
                           saga.job.THREADS_PER_PROCESS,
                           saga.job.WORKING_DIRECTORY,
-                          #saga.job.INTERACTIVE,
+                         #saga.job.INTERACTIVE,
                           saga.job.INPUT,
                           saga.job.OUTPUT,
                           saga.job.ERROR,
@@ -70,12 +71,11 @@ _ADAPTOR_CAPABILITIES  = {
                           saga.job.WALL_TIME_LIMIT,
                           saga.job.TOTAL_PHYSICAL_MEMORY,
                           saga.job.CPU_ARCHITECTURE,
-                          #saga.job.OPERATING_SYSTEM_TYPE,
+                         #saga.job.OPERATING_SYSTEM_TYPE,
                           saga.job.CANDIDATE_HOSTS,
                           saga.job.QUEUE,
                           saga.job.PROJECT,
                           saga.job.JOB_CONTACT],
-
     "job_attributes"   : [saga.job.EXIT_CODE,
                           saga.job.EXECUTION_HOSTS,
                           saga.job.CREATED,
@@ -400,6 +400,7 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         job_name            = jd.as_dict().get(saga.job.NAME)
         spmd_variation      = jd.as_dict().get(saga.job.SPMD_VARIATION)
         total_cpu_count     = jd.as_dict().get(saga.job.TOTAL_CPU_COUNT)
+        total_gpu_count     = jd.as_dict().get(saga.job.TOTAL_GPU_COUNT)
         number_of_processes = jd.as_dict().get(saga.job.NUMBER_OF_PROCESSES)
         processes_per_host  = jd.as_dict().get(saga.job.PROCESSES_PER_HOST)
         output              = jd.as_dict().get(saga.job.OUTPUT, "radical.saga.default.out")
@@ -495,6 +496,11 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         if reservation:     slurm_script += "#SBATCH --reservation %s\n" % reservation
         if wall_time_limit: slurm_script += "#SBATCH --time %02d:%02d:00\n" \
                                           % (wall_time_limit/60,wall_time_limit%60)
+        if total_gpu_count: slurm_script += "#SBATCH --gpus=%s\n"        % total_gpu_count
+
+        # TODO: right now we only support the `--gpus=[n]` variant.  That is
+        #       likely insufficient.
+
         if env:
             slurm_script += "\n## ENVIRONMENT\n"
             for key,val in env.iteritems():
