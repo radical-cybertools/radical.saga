@@ -257,7 +257,7 @@ class PTYShell (object) :
     def _trace (self, msg) :
 
       # print " === %5d : %s : %s" % (self._pty_id, self.pty_shell, msg)
-        self.logger.debug(" === %5d : %s : %s", self._pty_id, self.pty_shell, msg)
+      # self.logger.debug(" === %5d : %s : %s", self._pty_id, self.pty_shell, msg)
         pass
 
 

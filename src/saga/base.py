@@ -28,13 +28,16 @@ class SimpleBase (object) :
     #
     @rus.takes   ('SimpleBase')
     @rus.returns (rus.nothing)
-    def __init__  (self) :
+    def __init__  (self, uid=None):
 
         if  not hasattr (self, '_apitype') :
             self._apitype = self._get_apitype ()
 
         self._logger = ru.get_logger  ('radical.saga')
-        self._id     = ru.generate_id (self._get_apitype (), mode=ru.ID_SIMPLE)
+        if uid:
+            self._id = uid
+        else:
+            self._id = ru.generate_id (self._get_apitype (), mode=ru.ID_SIMPLE)
 
       # self._logger.debug ("[saga.Base] %s.__init__()" % self._apitype)
 
