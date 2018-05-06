@@ -6,7 +6,6 @@ __license__   = "MIT"
 
 
 import os
-import sys
 import saga.filesystem as sfs
 
 # we  try to copy a file
@@ -28,4 +27,5 @@ assert(os.path.isdir ('/tmp/tgt'))
 assert(os.path.isfile('/tmp/tgt/foo'))
 assert(os.path.isdir ('/tmp/tgt/bar'))
 assert(os.path.isfile('/tmp/tgt/bar/baz'))
+
 
