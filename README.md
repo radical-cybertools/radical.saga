@@ -1,3 +1,6 @@
+
+[![Build Status](https://travis-ci.org/radical-cybertools/saga-python.svg?branch=devel)](https://travis-ci.org/radical-cybertools/saga-python)
+
 saga-python
 ===========
 
@@ -14,5 +17,6 @@ The unit tests for saga-python can be found in the tests/ subdirectory.
 Instructions how to tun the tests are in tests/README.md.
  
 SAGA-Python requires Python version 2.x, specifically version 2.5 or newer.
+
 
 

@@ -33,11 +33,11 @@ def main():
         session.add_context(ctx)
 
         # open home directory on a remote machine
-        remote_dir = saga.filesystem.Directory('sftp://stampede.tacc.xsede.org/etc/',
+        remote_dir = saga.filesystem.Directory('sftp://localhost/',
                                                session=session)
 
         # copy .bash_history to /tmp/ on the local machine
-        remote_dir.copy('hosts', 'file://localhost/tmp/')
+        remote_dir.copy('/etc/hosts', 'file://localhost/tmp/')
 
         # list 'h*' in local /tmp/ directory
         local_dir = saga.filesystem.Directory('file://localhost/tmp/')
