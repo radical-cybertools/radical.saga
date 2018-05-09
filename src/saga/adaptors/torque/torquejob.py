@@ -265,7 +265,6 @@ def _torquescript_generator(url, logger, jd, ppn, gpn, gres, torque_version,
         else:
             raise saga.NotImplemented("unsupported candidate_hosts [%s]"
                                       % jd.candidate_hosts)
-
     if queue_spec:
         pbs_params += "#PBS -q %s\n" % queue_spec
 
@@ -323,7 +322,8 @@ def _torquescript_generator(url, logger, jd, ppn, gpn, gres, torque_version,
         elif 'edison' in url.host:
             logger.info("Using Edison@NERSC (Cray XC30) specific '#PBS -l mppwidth=xx' parameter.")
             pbs_params += "#PBS -l mppwidth=%s \n" % jd.total_cpu_count
-        elif 'bw.ncsa.illinois.edu' in url.host:
+        elif 'bw.ncsa.illinois.edu' in url.host   or \
+             'Version: 6.0.4'       in torque_version:
             if gpu_nnodes: gpu_flag = ':xk'
             else         : gpu_flag = ''
             if gpu_flag and ppn > 16: ppn = 16
