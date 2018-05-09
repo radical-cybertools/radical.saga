@@ -155,6 +155,7 @@ def _torquescript_generator(url, logger, jd, ppn, gres, torque_version, is_cray=
     exec_n_args += 'export SAGA_PPN=%d\n' % ppn
     if jd.executable:
         exec_n_args += "%s " % (jd.executable)
+
     if jd.arguments:
         for arg in jd.arguments:
             exec_n_args += "%s " % (arg)
@@ -223,12 +224,8 @@ def _torquescript_generator(url, logger, jd, ppn, gres, torque_version, is_cray=
         pbs_params += "#PBS -l walltime=%s:%s:00 \n" \
             % (str(hours), str(minutes))
 
-    if jd.queue and queue:
-        pbs_params += "#PBS -q %s \n" % queue
-    elif jd.queue and not queue:
-        pbs_params += "#PBS -q %s \n" % jd.queue
-    elif queue and not jd.queue:
-        pbs_params += "#PBS -q %s \n" % queue
+    if   queue:    pbs_params += "#PBS -q %s \n" % queue
+    elif jd.queue: pbs_params += "#PBS -q %s \n" % jd.queue
 
     if jd.project:
         pbs_params += "#PBS -A %s \n" % str(jd.project)
@@ -275,7 +272,8 @@ def _torquescript_generator(url, logger, jd, ppn, gres, torque_version, is_cray=
         elif 'edison' in url.host:
             logger.info("Using Edison@NERSC (Cray XC30) specific '#PBS -l mppwidth=xx' parameter.")
             pbs_params += "#PBS -l mppwidth=%s \n" % jd.total_cpu_count
-        elif 'bw.ncsa.illinois.edu' in url.host:
+        elif 'bw.ncsa.illinois.edu' in url.host   or \
+             'Version: 6.0.4'       in torque_version:
             logger.info("Using Blue Waters (Cray XE6/XK7) specific '#PBS -l nodes=xx:ppn=yy'")
             pbs_params += "#PBS -l nodes=%d:ppn=%d\n" % (nnodes, ppn)
         elif 'Version: 5.' in torque_version:
