@@ -6,6 +6,12 @@
     https://github.com/radical-cybertools/saga-python/issues?q=is%3Aissue+is%3Aopen+
 
 
+Version 0.47.4                                                        2018-04-09
+--------------------------------------------------------------------------------
+
+  - trigger BW syntax based on version string
+
+
 Version 0.47.3                                                        2018-03-20
 --------------------------------------------------------------------------------
 
