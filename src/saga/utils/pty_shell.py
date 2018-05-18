@@ -898,6 +898,7 @@ class PTYShell (object) :
         except Exception as e :
             raise ptye.translate_exception (e)
 
+
     # ----------------------------------------------------------------
     #
     def stage_from_remote (self, src, tgt, cp_flags="") :
@@ -937,6 +938,9 @@ class PTYShell (object) :
         so, we first create the target before the copy.  Worse, for wildcards we
         have to do a local expansion, and then to do the same for each entry...
         """
+
+        if cp_flags is None:
+            cp_flags = ''
 
         with self.pty_shell.rlock :
 
@@ -1011,7 +1015,6 @@ class PTYShell (object) :
 
             if 'Invalid flag' in out :
                 raise se.NoSuccess._log (info['logger'], "sftp version not supported (%s)" % str(out))
-
             if 'No such file or directory' in out :
                 raise se.DoesNotExist._log (info['logger'], "file copy failed: %s" % str(out))
 
