@@ -374,7 +374,6 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         _, out, _ = self.shell.run_sync('scontrol --version')
         self._version = out.split()[1].strip()
         self._logger.info('slurm version: %s' % self._version)
-        print self._version
 
         ppn_pat   = '\'s/.*\\(CPUTot=[0-9]*\\).*/\\1/g\'' 
         ppn_cmd   = 'scontrol show nodes ' + \
@@ -389,7 +388,6 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         assert(len(ppn_vals) == 1), 'heterogeneous cluster'
         self._ppn = int(ppn_vals[0])
         self._logger.info(" === ppn: %d", self._ppn)
-        print self._ppn
 
 
     # --------------------------------------------------------------------------
@@ -465,10 +463,6 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
 
         number_of_nodes = int(math.ceil(float(total_cpu_count) / self._ppn))
 
-        print 0, self._ppn
-        print 1, total_cpu_count
-        print 2, number_of_nodes
-
         # make sure we have something for number_of_processes
         if not number_of_processes:
             number_of_processes = total_cpu_count
@@ -482,8 +476,12 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         else:
             # we start N independent processes
             mpi_cmd = ''
-            slurm_script += "#SBATCH -N %d --ntasks=%s\n" % (number_of_nodes, 
-                                                             number_of_processes)
+
+            if self._version == '17.11.5':
+                slurm_script += "#SBATCH -N %d --ntasks=%s\n" % (number_of_nodes, 
+                                                                 number_of_processes)
+            else:
+                slurm_script += "#SBATCH --ntasks=%s\n" % (number_of_processes)
 
             if not processes_per_host:
                 slurm_script += "#SBATCH --cpus-per-task=%s\n" \
