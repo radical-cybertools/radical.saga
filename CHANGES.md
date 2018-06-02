@@ -6,6 +6,12 @@
     https://github.com/radical-cybertools/saga-python/issues?q=is%3Aissue+is%3Aopen+
 
 
+Version 0.47.6                                                        2018-06-02
+--------------------------------------------------------------------------------
+
+  - catch up with  RU log, rep and prof settings
+
+
 Version 0.47.5                                                        2018-04-20
 --------------------------------------------------------------------------------
 
