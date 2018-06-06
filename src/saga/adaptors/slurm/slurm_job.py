@@ -486,7 +486,9 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         if 'bridges' in self.rm.host.lower():
 
             if total_gpu_count: 
-                slurm_script += "#SBATCH --gres=gpu:p100:%s\n" % total_gpu_count
+                if cpu_arch: gpu_arch = cpu_arch.lower()
+                else       : gpu_arch = 'p100'
+                slurm_script += "#SBATCH --gres=gpu:%s:%s\n" % (gpu_arch, total_gpu_count)
 
             # use '-C EGRESS' to enable outbound network
             slurm_script += "#SBATCH -C EGRESS\n"
