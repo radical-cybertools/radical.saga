@@ -385,9 +385,10 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
                     '| xargs echo'
         _, out, _ = self.shell.run_sync(ppn_cmd)
         ppn_vals  = [o.strip() for o in out.split() if o.strip()]
-        assert(len(ppn_vals) == 1), 'heterogeneous cluster'
-        self._ppn = int(ppn_vals[0])
-        self._logger.info(" === ppn: %d", self._ppn)
+        if len(ppn_vals) == 1: self._ppn = int(ppn_vals[0])
+        else                 : self._ppn = None
+
+        self._logger.info(" === ppn: %s", self._ppn)
 
 
     # --------------------------------------------------------------------------
@@ -462,8 +463,6 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         if not total_cpu_count:
             total_cpu_count = 1
 
-        number_of_nodes = int(math.ceil(float(total_cpu_count) / self._ppn))
-
         # make sure we have something for number_of_processes
         if not number_of_processes:
             number_of_processes = total_cpu_count
@@ -479,6 +478,9 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
             mpi_cmd = ''
 
             if self._version == '17.11.5':
+        
+                assert(self._ppn), 'need unique number of cores per node'
+                number_of_nodes = int(math.ceil(float(total_cpu_count) / self._ppn))
                 slurm_script += "#SBATCH -N %d --ntasks=%s\n" % (number_of_nodes, 
                                                                  number_of_processes)
             else:
