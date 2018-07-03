@@ -42,7 +42,7 @@ class _job_state_monitor(threading.Thread):
 
         self.logger = job_service._logger
         self.js = job_service
-        self._stop = sut.Event()
+        self._stop = threading.Event()
 
         super(_job_state_monitor, self).__init__()
         self.setDaemon(True)

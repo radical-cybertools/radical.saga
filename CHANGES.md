@@ -6,6 +6,41 @@
     https://github.com/radical-cybertools/saga-python/issues?q=is%3Aissue+is%3Aopen+
 
 
+Version 0.47.6                                                        2018-06-02
+--------------------------------------------------------------------------------
+
+  - catch up with  RU log, rep and prof settings
+
+
+Version 0.47.5                                                        2018-04-20
+--------------------------------------------------------------------------------
+
+  - slurm uses '-N' on wrangler now.
+
+
+Version 0.47.4                                                        2018-04-09
+--------------------------------------------------------------------------------
+
+  - trigger BW syntax based on version string
+
+
+Version 0.47.3                                                        2018-03-20
+--------------------------------------------------------------------------------
+
+  - accept SID settings from upper layers (RP) (#654) 
+  - add travis tests, badge
+  - cheyenne fix to pbspro 
+  - get titan back to work (#664) 
+  - fix task container get_state reval 
+
+
+Version 0.47.2                                                        2018-02-28
+--------------------------------------------------------------------------------
+
+  - accept SID settings from upper layers (RP) (#654) 
+  - fix task container get_state reval 
+
+
 Version 0.47                                                          2017-11-19
 --------------------------------------------------------------------------------
 

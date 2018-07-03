@@ -37,6 +37,7 @@ class Description (saga.Attributes) :
         self._attributes_register  (saga.job.ARGUMENTS            , None, sa.STRING, sa.VECTOR, sa.WRITEABLE)
         self._attributes_register  (saga.job.ENVIRONMENT          , None, sa.STRING, sa.DICT,   sa.WRITEABLE)
         self._attributes_register  (saga.job.TOTAL_CPU_COUNT      , None, sa.INT,    sa.SCALAR, sa.WRITEABLE)
+        self._attributes_register  (saga.job.TOTAL_GPU_COUNT      , None, sa.INT,    sa.SCALAR, sa.WRITEABLE)
         self._attributes_register  (saga.job.NUMBER_OF_PROCESSES  , None, sa.INT,    sa.SCALAR, sa.WRITEABLE)
         self._attributes_register  (saga.job.PROCESSES_PER_HOST   , None, sa.INT,    sa.SCALAR, sa.WRITEABLE)
         self._attributes_register  (saga.job.THREADS_PER_PROCESS  , None, sa.INT,    sa.SCALAR, sa.WRITEABLE)

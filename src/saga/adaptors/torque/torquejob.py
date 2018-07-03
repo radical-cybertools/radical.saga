@@ -122,6 +122,7 @@ def log_error_and_raise(message, exception, logger):
 
 # --------------------------------------------------------------------
 #
+<<<<<<< HEAD
 def _to_saga_jobstate(job_state, retcode, logger=None):
     """ translates one-letter batch system state to saga
     """
@@ -147,10 +148,10 @@ def _to_saga_jobstate(job_state, retcode, logger=None):
     elif job_state == 'T': ret = saga.job.RUNNING
     elif job_state == 'X': ret = saga.job.CANCELED   # PBSPro
     elif job_state == 'F':                           # PBSPro
-        if retcode == 0  : ret = saga.job.DONE
+        if retcode ==  0 : ret = saga.job.DONE
         else             : ret = saga.job.FAILED
     elif job_state == 'C':                           # Torque
-        if retcode == 0  : ret = saga.job.DONE
+        if retcode ==  0 : ret = saga.job.DONE
         else             : ret = saga.job.FAILED
     else                 : ret = saga.job.UNKNOWN
 
@@ -162,23 +163,25 @@ def _to_saga_jobstate(job_state, retcode, logger=None):
 
 # --------------------------------------------------------------------
 #
-def _script_generator(url, logger, jd, ppn, gres, version, is_cray=False,
-                      queue=None):
-    """ generates a batch script from a SAGA job description
-    """
+def _script_generator(url, logger, jd, ppn, gpn, gres, version,
+                      is_cray=False, queue=None):
+    '''
+    generates a Torque script from a SAGA job description
+    '''
+
     pbs_params  = str()
     exec_n_args = str()
+
+    if jd.executable:
+        exec_n_args += "%s " % (jd.executable)
+
+    if jd.arguments:
+        for arg in jd.arguments:
+            exec_n_args += "%s " % (arg)
 
     if jd.processes_per_host:
         logger.info("Overriding the detected ppn (%d) with the user specified processes_per_host (%d)" % (ppn, jd.processes_per_host))
         ppn = jd.processes_per_host
-
-    exec_n_args += 'export SAGA_PPN=%d\n' % ppn
-    if jd.executable:
-        exec_n_args += "%s " % (jd.executable)
-    if jd.arguments:
-        for arg in jd.arguments:
-            exec_n_args += "%s " % (arg)
 
     if jd.name:
         pbs_params += "#PBS -N %s \n" % jd.name
@@ -198,8 +201,9 @@ def _script_generator(url, logger, jd, ppn, gres, version, is_cray=False,
                            for k,v in jd.environment.iteritems()])
 
     # apparently this doesn't work with older PBS installations
-    #    if jd.working_directory:
-    #        pbs_params += "#PBS -d %s \n" % jd.working_directory
+    #
+    #   if jd.working_directory:
+    #       pbs_params += "#PBS -d %s \n" % jd.working_directory
     #
     # a workaround is to do an explicit 'cd'
     if jd.working_directory:
@@ -246,20 +250,55 @@ def _script_generator(url, logger, jd, ppn, gres, version, is_cray=False,
         pbs_params += "#PBS -l walltime=%s:%s:00 \n" \
             % (str(hours), str(minutes))
 
-    if jd.queue and queue:
-        pbs_params += "#PBS -q %s \n" % queue
-    elif jd.queue and not queue:
-        pbs_params += "#PBS -q %s \n" % jd.queue
-    elif queue and not jd.queue:
-        pbs_params += "#PBS -q %s \n" % queue
+    # see https://gist.github.com/nobias/5b2373258e595e5242d5
+    # The parameter to '-q' can have the following forms:
+    #
+    #   queue
+    #   queue@server
+    #   @server
+    #
+    # where 'server' is the target resource which can be *different* than the
+    # submission host.  We interpret 'jd.candidate_hosts[0]' as such a target
+    # resource - but only if exactly one `candidate_host` is given.
+
+    # We haqve to take care to filter out special cases where we abise
+    # `candidate_hosts` for node properties (those are appended to the nodes
+    # argument in the resource_list).  This is currently only implemented for
+    # "bigflash" on Gordon@SDSC
+    #
+    # https://github.com/radical-cybertools/saga-python/issues/406
+
+    queue_spec      = ''
+    node_properties = []
+
+    if      queue: queue_spec =    queue
+    elif jd.queue: queue_spec = jd.queue
+
+    if jd.candidate_hosts:
+        if 'BIG_FLASH' in jd.candidate_hosts:
+            node_properties.append('bigflash')
+        elif len(jd.candidate_hosts) == 1:
+            queue_spec += '@%s' % jd.candidate_hosts[0]
+        else:
+            raise saga.NotImplemented("unsupported candidate_hosts [%s]"
+                                      % jd.candidate_hosts)
+    if queue_spec:
+        pbs_params += "#PBS -q %s\n" % queue_spec
 
     if jd.project:
-        if 'PBSPro_1' in version:
+
+        if '@' in jd.project:
+            user, group = jd.project.split('@', 1)
+            pbs_params += "#PBS -A %s \n"            % user
+            pbs_params += "#PBS -W group_list:%s \n" % group
+
+        elif 'PBSPro_1' in version:
             # On PBS Pro we set both -P(roject) and -A(accounting),
             # as we don't know what the admins decided, and just
             # pray that this doesn't create problems.
             pbs_params += "#PBS -P %s \n" % str(jd.project)
             pbs_params += "#PBS -A %s \n" % str(jd.project)
+
         else:
             # Torque
             pbs_params += "#PBS -A %s \n" % str(jd.project)
@@ -267,46 +306,57 @@ def _script_generator(url, logger, jd, ppn, gres, version, is_cray=False,
     if jd.job_contact:
         pbs_params += "#PBS -m abe \n"
 
-    # if total_cpu_count is not defined, we assume 1
+    # if total_cpu_count is not defined, we assume 0
     if not jd.total_cpu_count:
-        jd.total_cpu_count = 1
+        jd.total_cpu_count = 0
+
+    # if total_gpu_count is not defined, we assume 0
+    if not jd.total_gpu_count:
+        jd.total_gpu_count = 0
+
+    # make sure we want CPUs or GPUs
+    assert(jd.total_cpu_count + jd.total_gpu_count > 0)
 
     # Request enough nodes to cater for the number of cores requested
-    nnodes = jd.total_cpu_count / ppn
-    if jd.total_cpu_count % ppn > 0:
-        nnodes += 1
+    cpu_nnodes = 0
+    if jd.total_cpu_count:
+        cpu_nnodes = jd.total_cpu_count / ppn
+        if jd.total_cpu_count % ppn > 0:
+            cpu_nnodes += 1
 
-    # We use the ncpus value for systems that need to specify ncpus as multiple of PPN
+    # Request enough nodes to cater for the number of cores requested
+    gpu_nnodes = 0
+    if jd.total_gpu_count:
+        gpu_nnodes = jd.total_gpu_count / gpn
+        if jd.total_gpu_count % gpn > 0:
+            gpu_nnodes += 1
+
+    nnodes = max([cpu_nnodes, gpu_nnodes])
+
+    # use the ncpus for systems that need to specify ncpus as multiple of PPN
     ncpus = nnodes * ppn
-
-    # Node properties are appended to the nodes argument in the resource_list.
-    node_properties = []
-
-    # Parse candidate_hosts
-    #
-    # Currently only implemented for "bigflash" on Gordon@SDSC
-    # https://github.com/radical-cybertools/saga-python/issues/406
-    #
-    if jd.candidate_hosts:
-        if 'BIG_FLASH' in jd.candidate_hosts:
-            node_properties.append('bigflash')
-        else:
-            raise saga.NotImplemented("This type of 'candidate_hosts' not implemented: '%s'" % jd.candidate_hosts)
 
     if is_cray:
         # Special cases for PBS/TORQUE on Cray. Different PBSes,
         # different flags. A complete nightmare...
-        if  '5.1.0.h1'   in version or \
-            '6.1.1.1.h2' in version:
+        if  'titan'      in url.host       or \
+            '5.1.0.h1'   in version or \
+            '6.1.1.1.h2' in version or \
+            '4.2.6-snap' in version :
             # Can't really use hostname as we run also from the headnode
             logger.info("Using Titan (Cray XP) specific '#PBS -l nodes=xx'")
             pbs_params += "#PBS -l nodes=%d\n" % nnodes
         elif 'edison' in url.host:
+
             logger.info("Using Edison@NERSC (Cray XC30) specific '#PBS -l mppwidth=xx' parameter.")
             pbs_params += "#PBS -l mppwidth=%s \n" % jd.total_cpu_count
-        elif 'bw.ncsa.illinois.edu' in url.host:
+        elif 'bw.ncsa.illinois.edu' in url.host   or \
+             'Version: 6.0.4'       in version:
+            if gpu_nnodes: gpu_flag = ':xk'
+            else         : gpu_flag = ''
+            if gpu_flag and ppn > 16: ppn = 16
             logger.info("Using Blue Waters (Cray XE6/XK7) specific '#PBS -l nodes=xx:ppn=yy'")
-            pbs_params += "#PBS -l nodes=%d:ppn=%d\n" % (nnodes, ppn)
+            pbs_params += "#PBS -l nodes=%d:ppn=%d%s\n" % (nnodes, ppn, gpu_flag)
         elif 'Version: 5.' in version:
             # What would removing this catchall break?
             logger.info("Using TORQUE 5.x notation '#PBS -l procs=XX' ")
@@ -337,6 +387,9 @@ def _script_generator(url, logger, jd, ppn, gres, version, is_cray=False,
     # Process Generic Resource specification request
     if gres:
         pbs_params += "#PBS -l gres=%s\n" % gres
+
+    exec_n_args += 'export SAGA_PPN=%d\n' % ppn
+    exec_n_args += 'export SAGA_GPN=%d\n' % gpn
 
     # escape all double quotes and dollarsigns, otherwise 'echo |'
     # further down won't work
@@ -379,9 +432,11 @@ _ADAPTOR_CAPABILITIES = {
                           saga.job.WALL_TIME_LIMIT,
                           saga.job.WORKING_DIRECTORY,
                           saga.job.WALL_TIME_LIMIT,
-                          saga.job.SPMD_VARIATION, # TODO: 'hot'-fix for BigJob
                           saga.job.PROCESSES_PER_HOST,
-                          saga.job.TOTAL_CPU_COUNT],
+                          saga.job.SPMD_VARIATION,
+                          saga.job.TOTAL_CPU_COUNT,
+                          saga.job.TOTAL_GPU_COUNT,
+                          ],
     "job_attributes":    [saga.job.EXIT_CODE,
                           saga.job.EXECUTION_HOSTS,
                           saga.job.CREATED,
@@ -525,6 +580,7 @@ class TORQUEJobService (saga.adaptors.cpi.job.Service):
         self.rm      = rm_url
         self.session = session
         self.ppn     = None
+        self.gpn     = 1   # gpus per node  # FIXME: inspect system
         self.is_cray = False
         self.queue   = None
         self.shell   = None
@@ -563,10 +619,10 @@ class TORQUEJobService (saga.adaptors.cpi.job.Service):
         # these are the commands that we need in order to interact with PBS.
         # the adaptor will try to find them during initialize(self) and bail
         # out in case they are note available.
-        self._commands = {'pbsnodes': None,
-                          'qstat':    None,
-                          'qsub':     None,
-                          'qdel':     None}
+        self._commands = {'pbsnodes': dict(),
+                          'qstat':    dict(),
+                          'qsub':     dict(),
+                          'qdel':     dict()}
 
         self.shell = sups.PTYShell(pty_url, self.session)
 
@@ -580,37 +636,25 @@ class TORQUEJobService (saga.adaptors.cpi.job.Service):
     # ----------------------------------------------------------------
     #
     def initialize(self):
+
         # check if all required pbs tools are available
+        ret, out, _ = self.shell.run_sync("qstat --version")
+        if ret:
+            message = "Error finding PBS tools: %s" % out
+            log_error_and_raise(message, saga.NoSuccess, self._logger)
+        version = out.strip()
+        self._logger.info("Found PBS version: %s" % version)
+
         for cmd in self._commands.keys():
             ret, out, _ = self.shell.run_sync("which %s " % cmd)
-            if ret != 0:
-                message = "Error finding PBS tools: %s" % out
+            if ret:
+                message = "Error finding PBS tools: %s (version: %s)" % (out, version)
                 log_error_and_raise(message, saga.NoSuccess, self._logger)
-            else:
-                path = out.strip()  # strip removes newline
-                if cmd == 'qdel':  # qdel doesn't support --version!
-                    self._commands[cmd] = {"path":    path,
-                                           "version": "?"}
-                elif cmd == 'qsub':  # qsub doesn't always support --version!
-                    self._commands[cmd] = {"path":    path,
-                                           "version": "?"}
-                else:
-                    ret, out, _ = self.shell.run_sync("%s --version" % cmd)
-                    if ret != 0:
-                        message = "Error finding PBS tools: %s" % out
-                        log_error_and_raise(message, saga.NoSuccess,
-                            self._logger)
-                    else:
-                        # version is reported as: "version: x.y.z"
-                        version = out#.strip().split()[1]
+            self._commands[cmd] = {"path"   : out.strip(), 
+                                   "version": version}
+            self._logger.info("Found PBS %s: %s" % (cmd, out.strip()))
 
-                        # add path and version to the command dictionary
-                        self._commands[cmd] = {"path":    path,
-                                               "version": version}
 
-        self._logger.info("Found PBS tools: %s" % self._commands)
-
-        #
         # TODO: Get rid of this, as I dont think there is any justification that Cray's are special
         #
         # let's try to figure out if we're working on a Cray machine.
@@ -637,10 +681,10 @@ class TORQUEJobService (saga.adaptors.cpi.job.Service):
         # TODO: this is quite a hack. however, it *seems* to work quite
         #       well in practice.
         if any(ver in self._commands['qstat']['version'] for ver in ('PBSPro_13', 'PBSPro_12', 'PBSPro_11.3')):
-            ret, out, _ = self.shell.run_sync('unset GREP_OPTIONS; %s -a | grep -E "resources_available.ncpus"' % \
+            ret, out, _ = self.shell.run_sync('unset GREP_OPTIONS; %s -a | grep -E "resources_available.ncpus"' %
                                                self._commands['pbsnodes']['path'])
         else:
-            ret, out, _ = self.shell.run_sync('unset GREP_OPTIONS; %s -a | grep -E "(np|pcpu|pcpus)[[:blank:]]*=" ' % \
+            ret, out, _ = self.shell.run_sync('unset GREP_OPTIONS; %s -a | grep -E "(np|pcpu|pcpus)[[:blank:]]*=" ' %
                                                self._commands['pbsnodes']['path'])
 
         if ret != 0:
@@ -690,9 +734,10 @@ class TORQUEJobService (saga.adaptors.cpi.job.Service):
         try:
             # create a PBS job script from SAGA job description
             script = _script_generator(url=self.rm, logger=self._logger,
-                                         jd=jd, ppn=self.ppn, gres=self.gres,
+                                         jd=jd, ppn=self.ppn, gpn=self.gpn, 
+                                         gres=self.gres,
                                          version=self._commands['qstat']['version'],
-                                         is_cray=self.is_cray, queue=self.queue,
+                                         is_cray=self.is_cray, queue=self.queue
                                          )
 
             self._logger.info("Generated PBS script: %s" % script)
@@ -890,12 +935,11 @@ class TORQUEJobService (saga.adaptors.cpi.job.Service):
                   # # generally the same as mtime.
                   # #
                   # # For now we  use mtime for both TORQUE and PBS Pro.
-                  #
-                  # elif key in ['start_time', # TORQUE / PBS Pro
-                  #              'stime'      ]: job_info['start_time' ] = val
-                  # elif key in ['ctime'      ]: job_info['create_time'] = val
-                  # elif key in ['mtime'      ]: job_info['end_time'   ] = val
-
+                   
+                    elif key in ['start_time', # TORQUE / PBS Pro
+                                 'stime'      ]: job_info['start_time' ] = val
+                    elif key in ['ctime'      ]: job_info['create_time'] = val
+                    elif key in ['mtime'      ]: job_info['end_time'   ] = val
 
             # TORQUE doesn't allow us to distinguish DONE/FAILED on final state alone,
             # we need to consider the exit_status.
@@ -1047,11 +1091,15 @@ class TORQUEJobService (saga.adaptors.cpi.job.Service):
         # Try to get some initial information about this job (again)
         job_info = self._job_get_info(job_id, reconnect=True)
 
+        # create job description from queue info
+        # FIXME: incomplete
+        jd = saga.job.Description()
+        jd.name = job_info['name']
+
         # this dict is passed on to the job adaptor class -- use it to pass any
         # state information you need there.
         adaptor_state = {"job_service":     self,
-                         # TODO: fill job description
-                         "job_description": saga.job.Description(),
+                         "job_description": jd,
                          "job_schema":      self.rm.schema,
                          "reconnect":       True,
                          "reconnect_jobid": job_id

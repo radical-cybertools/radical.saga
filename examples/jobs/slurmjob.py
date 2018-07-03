@@ -34,13 +34,13 @@ def start():
         jd = saga.job.Description()
         jd.environment       = {'FILENAME': 'testfile'}
         jd.wall_time_limit   = 1  # minutes
-        
+
         jd.executable        = '/bin/touch'
         jd.arguments         = ['$FILENAME']
 
         jd.name              = "examplejob"
-        jd.queue             = "development"
-        jd.project           = "TG-MCB090174"
+        jd.queue             = "normal"
+        jd.project           = "TG-MCB090174" 
 
         jd.working_directory = ".saga/test"
         jd.output            = "examplejob.out"
