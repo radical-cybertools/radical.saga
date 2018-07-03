@@ -122,7 +122,6 @@ def log_error_and_raise(message, exception, logger):
 
 # --------------------------------------------------------------------
 #
-<<<<<<< HEAD
 def _to_saga_jobstate(job_state, retcode, logger=None):
     """ translates one-letter batch system state to saga
     """
