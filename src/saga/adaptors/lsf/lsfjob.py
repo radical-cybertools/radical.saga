@@ -187,8 +187,13 @@ def _lsfcript_generator(url, logger, jd, ppn, lsf_version, queue, span):
     elif (jd.queue is None) and (queue is not None):
         lsf_params += "#BSUB -q %s \n" % queue
 
-    if jd.project is not None:
+    if jd.project is not None and ':' in jd.project:
+        account, reservation = jd.project.split(':',1)
+        lsf_params += "#BSUB -P %s \n" % str(account)
+        lsf_params += "#BSUB -U %s \n" % str(reservation)
+    elif jd.project is not None:
         lsf_params += "#BSUB -P %s \n" % str(jd.project)
+
     if jd.job_contact is not None:
         lsf_params += "#BSUB -u %s \n" % str(jd.job_contact)
 
@@ -197,6 +202,14 @@ def _lsfcript_generator(url, logger, jd, ppn, lsf_version, queue, span):
         jd.total_cpu_count = 1
 
     lsf_params += "#BSUB -n %s \n" % str(jd.total_cpu_count)
+
+    if jd.total_node_count is None:
+        jd.total_node_count = 1
+
+    lsf_params += "#BSUB -nnodes %s \n" %str(jd.total_node_count)
+
+    if jd.alloc_flags is not None:
+        lsf_params += "#BSUB -alloc_flags %s \n" % [' '.join(jd.alloc_flags)]
 
     # span parameter allows us to influence core spread over nodes
     if span:
@@ -243,7 +256,9 @@ _ADAPTOR_CAPABILITIES = {
                           saga.job.WORKING_DIRECTORY,
                           saga.job.SPMD_VARIATION, # TODO: 'hot'-fix for BigJob
                           saga.job.PROCESSES_PER_HOST,
-                          saga.job.TOTAL_CPU_COUNT],
+                          saga.job.TOTAL_CPU_COUNT,
+                          saga.job.TOTAL_NODE_COUNT,
+                          saga.job.ALLOC_FLAGS],
     "job_attributes":    [saga.job.EXIT_CODE,
                           saga.job.EXECUTION_HOSTS,
                           saga.job.CREATED,
