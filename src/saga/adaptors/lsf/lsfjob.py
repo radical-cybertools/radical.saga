@@ -117,7 +117,7 @@ def _lsf_to_saga_jobstate(lsfjs):
 
 # --------------------------------------------------------------------
 #
-def _lsfcript_generator(url, logger, jd, ppn, lsf_version, queue, span):
+def _lsfscript_generator(url, logger, jd, ppn, lsf_version, queue, span):
     """ generates an LSF script from a SAGA job description
     """
     lsf_params = str()
@@ -209,7 +209,7 @@ def _lsfcript_generator(url, logger, jd, ppn, lsf_version, queue, span):
     lsf_params += "#BSUB -nnodes %s \n" %str(jd.total_node_count)
 
     if jd.alloc_flags is not None:
-        lsf_params += "#BSUB -alloc_flags %s \n" % [' '.join(jd.alloc_flags)]
+        lsf_params += "#BSUB -alloc_flags %s \n" % ', '.join(jd.alloc_flags)
 
     # span parameter allows us to influence core spread over nodes
     if span:
@@ -519,7 +519,7 @@ class LSFJobService (saga.adaptors.cpi.job.Service):
 
         try:
             # create an LSF job script from SAGA job description
-            script = _lsfcript_generator(url=self.rm, logger=self._logger,
+            script = _lsfscript_generator(url=self.rm, logger=self._logger,
                                          jd=jd, ppn=self.ppn,
                                          lsf_version=self._commands['bjobs']['version'],
                                          queue=self.queue, span=self.span)
