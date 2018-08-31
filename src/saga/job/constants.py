@@ -69,9 +69,6 @@ SPMD_VARIATION        = 'SPMDVariation';       """ The type of parallelism
                                                    required by this job """ 
 TOTAL_CPU_COUNT       = 'TotalCPUCount';       """ The number of CPUs required 
                                                    by this job """
-TOTAL_NODE_COUNT      = 'TotalNodeCount';      """ The number of nodes required 
-                                                   by this job """
-
 TOTAL_GPU_COUNT       = 'TotalGPUCount';       """ The number of GPUs required 
                                                    by this job """
 NUMBER_OF_PROCESSES   = 'NumberOfProcesses';   """ Number of instances of """ 

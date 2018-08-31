@@ -44,7 +44,7 @@ class TestGenerator(unittest.TestCase):
                          "#BSUB -P TestProject \n" +\
                          "#BSUB -n 24 \n" +\
                          "#BSUB -nnodes 2 \n" +\
-                         "#BSUB -alloc_flags gpumps, smt4 \n\n" +\
+                         "#BSUB -alloc_flags "gpumps smt4" \n\n" +\
                          "export  test_env=15 \n" +\
                          "/bin/sleep 60 "
 

@@ -199,17 +199,21 @@ def _lsfscript_generator(url, logger, jd, ppn, lsf_version, queue, span):
 
     # if total_cpu_count is not defined, we assume 1
     if jd.total_cpu_count is None:
-        jd.total_cpu_count = 1
+        total_cpu_count = 1
+    else:
+        total_cpu_count = jd.total_cpu_count
 
     lsf_params += "#BSUB -n %s \n" % str(jd.total_cpu_count)
 
-    if jd.total_node_count is None:
-        jd.total_node_count = 1
+    # Request enough nodes to cater for the number of cores requested
+    number_of_nodes = int(total_cpu_count / ppn)
+    if total_cpu_count % ppn > 0:
+        number_of_nodes += 1
 
-    lsf_params += "#BSUB -nnodes %s \n" %str(jd.total_node_count)
+    lsf_params += "#BSUB -nnodes %s \n" %str(number_of_nodes)
 
     if jd.alloc_flags is not None:
-        lsf_params += "#BSUB -alloc_flags %s \n" % ', '.join(jd.alloc_flags)
+        lsf_params += '#BSUB -alloc_flags "%s" \n' % ' '.join(jd.alloc_flags)
 
     # span parameter allows us to influence core spread over nodes
     if span:
