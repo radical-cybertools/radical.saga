@@ -206,20 +206,21 @@ def _lsfscript_generator(url, logger, jd, ppn, lsf_version, queue, span):
     lsf_params += "#BSUB -n %s \n" % str(jd.total_cpu_count)
 
     # Request enough nodes to cater for the number of cores requested
-    number_of_nodes = int(total_cpu_count / ppn)
-    if total_cpu_count % ppn > 0:
-        number_of_nodes += 1
-
-    lsf_params += "#BSUB -nnodes %s \n" %str(number_of_nodes)
+    if 'summit' in url.host:
+        ppn = 42
+        number_of_nodes = int(total_cpu_count / ppn)
+        if total_cpu_count % ppn > 0:
+            number_of_nodes += 1
+        lsf_params += "#BSUB -nnodes %s \n" %str(number_of_nodes)
 
     if jd.alloc_flags is not None:
-        lsf_params += '#BSUB -alloc_flags "%s" \n' % ' '.join(jd.alloc_flags)
+        lsf_params += "#BSUB -alloc_flags '%s' \n" % ' '.join(jd.alloc_flags)
 
     # span parameter allows us to influence core spread over nodes
     if span:
         lsf_params += '#BSUB -R "span[%s]"\n' % span
 
-    # escape all double quotes and dollarsigns, otherwise 'echo |'
+    # escape all double quotes and dollar signs, otherwise 'echo |'
     # further down won't work
     # only escape '$' in args and exe. not in the params
     #exec_n_args = workdir_directives exec_n_args
@@ -261,7 +262,6 @@ _ADAPTOR_CAPABILITIES = {
                           saga.job.SPMD_VARIATION, # TODO: 'hot'-fix for BigJob
                           saga.job.PROCESSES_PER_HOST,
                           saga.job.TOTAL_CPU_COUNT,
-                          saga.job.TOTAL_NODE_COUNT,
                           saga.job.ALLOC_FLAGS],
     "job_attributes":    [saga.job.EXIT_CODE,
                           saga.job.EXECUTION_HOSTS,

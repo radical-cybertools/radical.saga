@@ -10,6 +10,7 @@ __license__ = "MIT"
 import unittest
 import sys
 from saga.adaptors.lsf.lsfjob import _lsfscript_generator
+import saga.url as surl
 import saga
 
 try:
@@ -21,6 +22,7 @@ except ImportError:
 class TestGenerator(unittest.TestCase):
 
     def setUp(self):
+        self._url = surl.Url('gsissh://summit.ccs.ornl.gov')
         self._jd = saga.job.Description()
         self._jd.name = 'Test'
         self._jd.executable = '/bin/sleep'
@@ -31,8 +33,7 @@ class TestGenerator(unittest.TestCase):
         self._jd.queue = 'normal-queue'
         self._jd.project = 'TestProject'
         self._jd.wall_time_limit = 70
-        self._jd.total_cpu_count = 24
-        self._jd.total_node_count = 2
+        self._jd.total_cpu_count = 65
         self._jd.alloc_flags = ['gpumps', 'smt4']
         
         self._script = "\n#!/bin/bash \n" +\
@@ -42,16 +43,16 @@ class TestGenerator(unittest.TestCase):
                          "#BSUB -W 1:10 \n" +\
                          "#BSUB -q normal-queue \n" +\
                          "#BSUB -P TestProject \n" +\
-                         "#BSUB -n 24 \n" +\
+                         "#BSUB -n 65 \n" +\
                          "#BSUB -nnodes 2 \n" +\
-                         "#BSUB -alloc_flags "gpumps smt4" \n\n" +\
+                         "#BSUB -alloc_flags 'gpumps smt4' \n\n" +\
                          "export  test_env=15 \n" +\
                          "/bin/sleep 60 "
 
     def test_lsfscript_generator(self):
-        script = _lsfscript_generator(url=None, logger=None, jd=self._jd, ppn=None,
+        script = _lsfscript_generator(url=self._url, logger=None, jd=self._jd, ppn=None,
                                       lsf_version=None, queue=None, span=None)
-        print self._script
+
         self.assertTrue(script == self._script)
 
 if __name__ == "__main__":
