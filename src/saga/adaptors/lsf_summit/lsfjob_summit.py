@@ -1,10 +1,10 @@
 
-__author__    = "Ole Weidner"
-__copyright__ = "Copyright 2012-2013, The SAGA Project"
+__author__    = "Ioannis Paraskevakos"
+__copyright__ = "Copyright 2018-2019, The SAGA Project"
 __license__   = "MIT"
 
 
-""" LSF job adaptor implementation
+""" LSF job adaptor implementation for Summit
 """
 
 import radical.utils.which
@@ -197,14 +197,20 @@ def _lsfscript_generator(url, logger, jd, ppn, lsf_version, queue, span):
     if jd.job_contact is not None:
         lsf_params += "#BSUB -u %s \n" % str(jd.job_contact)
 
-    # if total_cpu_count is not defined, we assume 1
+    # Request enough nodes to cater for the number of cores requested
     if jd.total_cpu_count is None:
         total_cpu_count = 1
     else:
         total_cpu_count = jd.total_cpu_count
 
-    lsf_params += "#BSUB -n %s \n" % str(jd.total_cpu_count)
-    
+    ppn = 42
+    number_of_nodes = int(total_cpu_count / ppn)
+    if total_cpu_count % ppn > 0:
+        number_of_nodes += 1
+    lsf_params += "#BSUB -nnodes %s \n" %str(number_of_nodes)
+
+    lsf_params += "#BSUB -alloc_flags 'gpumps smt4' \n"
+
     # span parameter allows us to influence core spread over nodes
     if span:
         lsf_params += '#BSUB -R "span[%s]"\n' % span
@@ -229,7 +235,7 @@ _PTY_TIMEOUT = 2.0
 # --------------------------------------------------------------------
 # the adaptor name
 #
-_ADAPTOR_NAME          = "saga.adaptor.lsfjob"
+_ADAPTOR_NAME          = "saga.adaptor.lsfjob_summit"
 _ADAPTOR_SCHEMAS       = ["lsf", "lsf+ssh", "lsf+gsissh"]
 _ADAPTOR_OPTIONS       = []
 
@@ -272,7 +278,7 @@ _ADAPTOR_DOC = {
     "capabilities":  _ADAPTOR_CAPABILITIES,
     "description":  """
 The LSF adaptor allows to run and manage jobs on `LSF <https://en.wikipedia.org/wiki/Platform_LSF>`_
-controlled HPC clusters.
+controlled Summit HPC.
 """,
     "example": "examples/jobs/lsfjob.py",
     "schemas": {"lsf":        "connect to a local cluster",
@@ -285,17 +291,17 @@ controlled HPC clusters.
 #
 _ADAPTOR_INFO = {
     "name"        :    _ADAPTOR_NAME,
-    "version"     : "v0.2",
+    "version"     : "v0.1",
     "schemas"     : _ADAPTOR_SCHEMAS,
-    "capabilities":  _ADAPTOR_CAPABILITIES,
+    "capabilities": _ADAPTOR_CAPABILITIES,
     "cpis": [
         {
         "type": "saga.job.Service",
-        "class": "LSFJobService"
+        "class": "LSFJobSummitService"
         },
         {
         "type": "saga.job.Job",
-        "class": "LSFJob"
+        "class": "LSFJob_Summit"
         }
     ]
 }
@@ -339,7 +345,7 @@ class Adaptor (saga.adaptors.base.Base):
 
 ###############################################################################
 #
-class LSFJobService (saga.adaptors.cpi.job.Service):
+class LSFJobSummitService (saga.adaptors.cpi.job.Service):
     """ implements saga.adaptors.cpi.job.Service
     """
 
@@ -348,7 +354,7 @@ class LSFJobService (saga.adaptors.cpi.job.Service):
     def __init__(self, api, adaptor):
 
         self._mt  = None
-        _cpi_base = super(LSFJobService, self)
+        _cpi_base = super(LSFJobSummitService, self)
         _cpi_base.__init__(api, adaptor)
 
         self._adaptor = adaptor
@@ -909,14 +915,14 @@ class LSFJobService (saga.adaptors.cpi.job.Service):
 
 ###############################################################################
 #
-class LSFJob (saga.adaptors.cpi.job.Job):
+class LSFJob_Summit (saga.adaptors.cpi.job.Job):
     """ implements saga.adaptors.cpi.job.Job
     """
 
     def __init__(self, api, adaptor):
 
         # initialize parent class
-        _cpi_base = super(LSFJob, self)
+        _cpi_base = super(LSFJob_Summit, self)
         _cpi_base.__init__(api, adaptor)
 
     def _get_impl(self):

@@ -9,7 +9,7 @@ __license__ = "MIT"
 """
 import unittest
 import sys
-from saga.adaptors.lsf.lsfjob import _lsfscript_generator
+from saga.adaptors.lsf_summit.lsfjob_summit import _lsfscript_generator
 import saga.url as surl
 import saga
 
@@ -43,7 +43,6 @@ class TestGenerator(unittest.TestCase):
                          "#BSUB -W 1:10 \n" +\
                          "#BSUB -q normal-queue \n" +\
                          "#BSUB -P TestProject \n" +\
-                         "#BSUB -n 65 \n" +\
                          "#BSUB -nnodes 2 \n" +\
                          "#BSUB -alloc_flags 'gpumps smt4' \n\n" +\
                          "export  test_env=15 \n" +\
