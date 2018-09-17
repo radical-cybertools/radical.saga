@@ -236,7 +236,7 @@ _PTY_TIMEOUT = 2.0
 # the adaptor name
 #
 _ADAPTOR_NAME          = "saga.adaptor.lsfjob_summit"
-_ADAPTOR_SCHEMAS       = ["lsf", "lsf+ssh", "lsf+gsissh"]
+_ADAPTOR_SCHEMAS       = ["lsf_summit", "lsf_summit+ssh", "lsf_summit+gsissh"]
 _ADAPTOR_OPTIONS       = []
 
 # --------------------------------------------------------------------
