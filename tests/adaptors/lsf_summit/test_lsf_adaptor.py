@@ -9,7 +9,7 @@ __license__ = "MIT"
 """
 import unittest
 import sys
-from saga.adaptors.lsf_summit.lsfjob_summit import _lsfscript_generator
+from saga.adaptors.lsfsummit.lsfjobsummit import _lsfscript_generator
 import saga.url as surl
 import saga
 
