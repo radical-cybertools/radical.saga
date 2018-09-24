@@ -34,7 +34,6 @@ class TestGenerator(unittest.TestCase):
         self._jd.project = 'TestProject'
         self._jd.wall_time_limit = 70
         self._jd.total_cpu_count = 65
-        self._jd.alloc_flags = ['gpumps', 'smt4']
         
         self._script = "\n#!/bin/bash \n" +\
                          "#BSUB -J Test \n" +\
