@@ -29,7 +29,7 @@ adaptor_registry = [
                     "saga.adaptors.sge.sgejob",
                     "saga.adaptors.pbs.pbsjob",
                     "saga.adaptors.lsf.lsfjob",
-                    "saga.adaptors.lsf_summit.lsfjob_summit",
+                    "saga.adaptors.lsfsummit.lsfjobsummit",
                     # "saga.adaptors.irods.irods_replica",
                     "saga.adaptors.condor.condorjob",
                     "saga.adaptors.slurm.slurm_job",

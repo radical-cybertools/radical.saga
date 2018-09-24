@@ -235,8 +235,8 @@ _PTY_TIMEOUT = 2.0
 # --------------------------------------------------------------------
 # the adaptor name
 #
-_ADAPTOR_NAME          = "saga.adaptor.lsfjob_summit"
-_ADAPTOR_SCHEMAS       = ["lsf_summit", "lsf_summit+ssh", "lsf_summit+gsissh"]
+_ADAPTOR_NAME          = "saga.adaptor.lsfjobsummit"
+_ADAPTOR_SCHEMAS       = ["lsfsummit", "lsfsummit+ssh", "lsfsummit+gsissh"]
 _ADAPTOR_OPTIONS       = []
 
 # --------------------------------------------------------------------
@@ -281,9 +281,9 @@ The LSF adaptor allows to run and manage jobs on `LSF <https://en.wikipedia.org/
 controlled Summit HPC.
 """,
     "example": "examples/jobs/lsfjob.py",
-    "schemas": {"lsf":        "connect to a local cluster",
-                "lsf+ssh":    "conenct to a remote cluster via SSH",
-                "lsf+gsissh": "connect to a remote cluster via GSISSH"}
+    "schemas": {"lsf_summit":        "connect to a local cluster",
+                "lsf_summit+ssh":    "conenct to a remote cluster via SSH",
+                "lsf_summit+gsissh": "connect to a remote cluster via GSISSH"}
 }
 
 # --------------------------------------------------------------------
@@ -421,11 +421,11 @@ class LSFJobSummitService (saga.adaptors.cpi.job.Service):
         # we need to extrac the scheme for PTYShell. That's basically the
         # job.Serivce Url withou the lsf+ part. We use the PTYShell to execute
         # lsf commands either locally or via gsissh or ssh.
-        if rm_scheme == "lsf":
+        if rm_scheme == "lsfsummit":
             pty_url.scheme = "fork"
-        elif rm_scheme == "lsf+ssh":
+        elif rm_scheme == "lsfsummit+ssh":
             pty_url.scheme = "ssh"
-        elif rm_scheme == "lsf+gsissh":
+        elif rm_scheme == "lsfsummit+gsissh":
             pty_url.scheme = "gsissh"
 
         # these are the commands that we need in order to interact with LSF.
