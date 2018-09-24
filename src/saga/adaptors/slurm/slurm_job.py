@@ -483,6 +483,12 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
                 number_of_nodes = int(math.ceil(float(total_cpu_count) / self._ppn))
                 slurm_script += "#SBATCH -N %d --ntasks=%s\n" % (number_of_nodes, 
                                                                  number_of_processes)
+            elif self._version == '18.08.0':
+        
+                assert(self._ppn), 'need unique number of cores per node'
+                number_of_nodes = int(math.ceil(float(total_cpu_count) / self._ppn))
+                slurm_script += "#SBATCH -N %d --ntasks=%s\n" % (number_of_nodes, 
+                                                                 number_of_processes)
             else:
                 slurm_script += "#SBATCH --ntasks=%s\n" % (number_of_processes)
 
