@@ -42,7 +42,7 @@ def main():
         # Create a job service object that represent a remote pbs cluster.
         # The keyword 'pbs' in the url scheme triggers the PBS adaptors
         # and '+ssh' enables PBS remote access via SSH.
-        js = saga.job.Service("pbs+ssh://india.futuregrid.org",
+        js = saga.job.Service("ssh://localhost",
                               session=session)
 
         # Next, we describe the job we want to run. A complete set of job
@@ -57,8 +57,8 @@ def main():
         #jd.total_cpu_count   = 12 # for lonestar this has to be a multiple of 12
         #jd.spmd_variation    = '12way' # translates to the qsub -pe flag
 
-        jd.queue             = "batch"
-        #jd.project           = "TG-MCB090174"
+      # jd.queue             = "batch"
+      # jd.project           = "TG-MCB090174"
 
         jd.working_directory = "$HOME/A/B/C"
         jd.output            = "examplejob.out"

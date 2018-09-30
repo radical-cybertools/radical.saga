@@ -157,20 +157,16 @@ def _torquescript_generator(url, logger, jd, ppn, gpn, gres, torque_version,
     """
     pbs_params  = str()
     exec_n_args = str()
-
-    if jd.processes_per_host:
-        logger.info("Overriding the detected ppn (%d) with the user specified processes_per_host (%d)" % (ppn, jd.processes_per_host))
-        ppn = jd.processes_per_host
-
-    exec_n_args += 'export SAGA_PPN=%d\n' % ppn
-    exec_n_args += 'export SAGA_GPN=%d\n' % gpn
-
     if jd.executable:
         exec_n_args += "%s " % (jd.executable)
 
     if jd.arguments:
         for arg in jd.arguments:
             exec_n_args += "%s " % (arg)
+
+    if jd.processes_per_host:
+        logger.info("Overriding the detected ppn (%d) with the user specified processes_per_host (%d)" % (ppn, jd.processes_per_host))
+        ppn = jd.processes_per_host
 
     if jd.name:
         pbs_params += "#PBS -N %s \n" % jd.name
@@ -269,12 +265,16 @@ def _torquescript_generator(url, logger, jd, ppn, gpn, gres, torque_version,
         else:
             raise saga.NotImplemented("unsupported candidate_hosts [%s]"
                                       % jd.candidate_hosts)
-
     if queue_spec:
         pbs_params += "#PBS -q %s\n" % queue_spec
 
     if jd.project:
-        pbs_params += "#PBS -A %s \n" % str(jd.project)
+        if '@' in jd.project:
+            user, group = jd.project.split('@', 1)
+            pbs_params += "#PBS -A %s \n"            % user
+            pbs_params += "#PBS -W group_list:%s \n" % group
+        else:
+            pbs_params += "#PBS -A %s \n" % jd.project
 
     if jd.job_contact:
         pbs_params += "#PBS -m abe \n"
@@ -322,9 +322,13 @@ def _torquescript_generator(url, logger, jd, ppn, gpn, gres, torque_version,
         elif 'edison' in url.host:
             logger.info("Using Edison@NERSC (Cray XC30) specific '#PBS -l mppwidth=xx' parameter.")
             pbs_params += "#PBS -l mppwidth=%s \n" % jd.total_cpu_count
-        elif 'bw.ncsa.illinois.edu' in url.host:
+        elif 'bw.ncsa.illinois.edu' in url.host   or \
+             'Version: 6.0.4'       in torque_version:
+            if gpu_nnodes: gpu_flag = ':xk'
+            else         : gpu_flag = ''
+            if gpu_flag and ppn > 16: ppn = 16
             logger.info("Using Blue Waters (Cray XE6/XK7) specific '#PBS -l nodes=xx:ppn=yy'")
-            pbs_params += "#PBS -l nodes=%d:ppn=%d\n" % (nnodes, ppn)
+            pbs_params += "#PBS -l nodes=%d:ppn=%d%s\n" % (nnodes, ppn, gpu_flag)
         elif 'Version: 5.' in torque_version:
             # What would removing this catchall break?
             logger.info("Using TORQUE 5.x notation '#PBS -l procs=XX' ")
@@ -355,6 +359,9 @@ def _torquescript_generator(url, logger, jd, ppn, gpn, gres, torque_version,
     # Process Generic Resource specification request
     if gres:
         pbs_params += "#PBS -l gres=%s\n" % gres
+
+    exec_n_args += 'export SAGA_PPN=%d\n' % ppn
+    exec_n_args += 'export SAGA_GPN=%d\n' % gpn
 
     # escape all double quotes and dollarsigns, otherwise 'echo |'
     # further down won't work
@@ -401,7 +408,8 @@ _ADAPTOR_CAPABILITIES = {
                           saga.job.PROCESSES_PER_HOST,
                           saga.job.SPMD_VARIATION,
                           saga.job.TOTAL_CPU_COUNT,
-                          saga.job.TOTAL_GPU_COUNT],
+                          saga.job.TOTAL_GPU_COUNT,
+                          ],
     "job_attributes":    [saga.job.EXIT_CODE,
                           saga.job.EXECUTION_HOSTS,
                           saga.job.CREATED,

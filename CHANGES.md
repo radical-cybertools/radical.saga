@@ -6,6 +6,41 @@
     https://github.com/radical-cybertools/saga-python/issues?q=is%3Aissue+is%3Aopen+
 
 
+Version 0.50.0                                                        2018-0&-03
+--------------------------------------------------------------------------------
+
+  - partial support for heterogeneous clusters (slurm)
+  - (origin/pr/637) more thorough handling of $PROMPT_COMMAND 
+  - Fix #680 - Corrected Error on LSF: module object has no attribute Event
+  - Fix/issue 1514
+  - Fix/issue 662
+  - Fix/issue 663
+  - add gpu "support" to torque 
+  - correctly interprete candidate_hosts on pbspro 
+  - fix torque job name handling 
+  - make sure theh default session also inherits the uid (#671) 
+  - remove obsolete comment, add local GPUs 
+  - sync pbspro and torque adaptor. 
+
+
+Version 0.47.6                                                        2018-06-02
+--------------------------------------------------------------------------------
+
+  - catch up with  RU log, rep and prof settings
+
+
+Version 0.47.5                                                        2018-04-20
+--------------------------------------------------------------------------------
+
+  - slurm uses '-N' on wrangler now.
+
+
+Version 0.47.4                                                        2018-04-09
+--------------------------------------------------------------------------------
+
+  - trigger BW syntax based on version string
+
+
 Version 0.47.3                                                        2018-03-20
 --------------------------------------------------------------------------------
 
