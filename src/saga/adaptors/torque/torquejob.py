@@ -328,7 +328,8 @@ def _torquescript_generator(url, logger, jd, ppn, gpn, gres, torque_version,
             else         : gpu_flag = ''
             if gpu_flag and ppn > 16: ppn = 16
             logger.info("Using Blue Waters (Cray XE6/XK7) specific '#PBS -l nodes=xx:ppn=yy'")
-            pbs_params += "#PBS -l nodes=%d:ppn=%d%s:flags=commtransparent\n" % (nnodes, ppn, gpu_flag)
+            pbs_params += "#PBS -l nodes=%d:ppn=%d%s\n" % (nnodes, ppn, gpu_flag)
+            pbs_params += "#PBS -l flags=commtransparent\n"
         elif 'Version: 5.' in torque_version:
             # What would removing this catchall break?
             logger.info("Using TORQUE 5.x notation '#PBS -l procs=XX' ")
