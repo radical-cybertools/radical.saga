@@ -359,6 +359,7 @@ class LSFJobSummitService (saga.adaptors.cpi.job.Service):
 
         self._adaptor = adaptor
 
+
     # ----------------------------------------------------------------
     #
     def __del__(self):
@@ -589,6 +590,9 @@ class LSFJobSummitService (saga.adaptors.cpi.job.Service):
         """
         rm, pid = self._adaptor.parse_id(job_id)
 
+        # bjobs -noheader -o 'stat exec_host exit_code submit_time start_time finish_time command job_name delimiter=","' 344077
+        # EXIT,summitdev-login1:summitdev-r0c1n12:summitdev-r0c1n12:summitdev-r0c1n12:summitdev-r0c1n12:summitdev-r0c1n12:summitdev-r0c1n12:summitdev-r0c1n12:summitdev-r0c1n12:summitdev-r0c1n12:summitdev-r0c1n12:summitdev-r0c1n12:summitdev-r0c1n12:summitdev-r0c1n12:summitdev-r0c1n12:summitdev-r0c1n12:summitdev-r0c1n12:summitdev-r0c1n12:summitdev-r0c1n12:summitdev-r0c1n12:summitdev-r0c1n12,2,Oct 16 11:52,Oct 16 11:52,Oct 16 11:53 L,#!/bin/bash;#BSUB -J saga-test;#BSUB -o examplejob.out;#BSUB -e examplejob.err;#BSUB -W 0:10;#BSUB -q batch;#BSUB -P CSC190SPECFEM;#BSUB -nnodes 1;#BSUB -alloc_flags 'gpumps smt4'; export  FILENAME=testfile;/bin/touch \$FILENAME " > $SCRIPTFILE && /sw/sources/lsf-tools/bin/bsub $SCRIPTFILE && rm -f $SCRIPTFILE,saga-test
+
         ret, out, _ = self.shell.run_sync("%s -noheader -o 'stat exec_host exit_code submit_time start_time finish_time command job_name delimiter=\",\"' %s" % (self._commands['bjobs']['path'], pid))
 
         if ret != 0:
@@ -599,6 +603,7 @@ class LSFJobSummitService (saga.adaptors.cpi.job.Service):
             # the job seems to exist on the backend. let's gather some data
             job_info = {
                 'state':        saga.job.UNKNOWN,
+                'name':         self._name,
                 'exec_hosts':   None,
                 'returncode':   None,
                 'create_time':  None,
@@ -939,11 +944,11 @@ class LSFJob_Summit (saga.adaptors.cpi.job.Job):
 
         if job_info['reconnect'] is True:
             self._id      = job_info['reconnect_jobid']
-            self._name    = self.jd.get(saga.job.NAME)
+            self._name    = self.jd.name
             self._started = True
         else:
             self._id      = None
-            self._name    = self.jd.get(saga.job.NAME)
+            self._name    = self.jd.name
             self._started = False
 
         return self.get_api()
