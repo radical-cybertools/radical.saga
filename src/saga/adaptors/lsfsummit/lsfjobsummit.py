@@ -760,7 +760,7 @@ class LSFJobSummitService (saga.adaptors.cpi.job.Service):
         rm, pid = self._adaptor.parse_id(job_obj._id)
 
         ret, out, _ = self.shell.run_sync("%s %s\n" \
-            % (self._commands['qdel']['path'], pid))
+            % (self._commands['bkill']['path'], pid))
 
         if ret != 0:
             message = "Error canceling job via 'qdel': %s" % out
