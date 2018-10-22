@@ -207,7 +207,7 @@ def _lsfscript_generator(url, logger, jd, ppn, lsf_version, queue, span):
         ppn = 20
     elif 'summit' in url.host:
         ppn = 42
-        
+
     number_of_nodes = int(total_cpu_count / ppn)
     if total_cpu_count % ppn > 0:
         number_of_nodes += 1
@@ -428,6 +428,7 @@ class LSFJobSummitService (saga.adaptors.cpi.job.Service):
         # lsf commands either locally or via gsissh or ssh.
         if rm_scheme == "lsfsummit":
             pty_url.scheme = "fork"
+            pty_url.host = "localhost"
         elif rm_scheme == "lsfsummit+ssh":
             pty_url.scheme = "ssh"
         elif rm_scheme == "lsfsummit+gsissh":
@@ -594,8 +595,27 @@ class LSFJobSummitService (saga.adaptors.cpi.job.Service):
         """
         rm, pid = self._adaptor.parse_id(job_id)
 
-        # bjobs -noheader -o 'stat exec_host exit_code submit_time start_time finish_time command job_name delimiter=","' 344077
-        # EXIT,summitdev-login1:summitdev-r0c1n12:summitdev-r0c1n12:summitdev-r0c1n12:summitdev-r0c1n12:summitdev-r0c1n12:summitdev-r0c1n12:summitdev-r0c1n12:summitdev-r0c1n12:summitdev-r0c1n12:summitdev-r0c1n12:summitdev-r0c1n12:summitdev-r0c1n12:summitdev-r0c1n12:summitdev-r0c1n12:summitdev-r0c1n12:summitdev-r0c1n12:summitdev-r0c1n12:summitdev-r0c1n12:summitdev-r0c1n12:summitdev-r0c1n12,2,Oct 16 11:52,Oct 16 11:52,Oct 16 11:53 L,#!/bin/bash;#BSUB -J saga-test;#BSUB -o examplejob.out;#BSUB -e examplejob.err;#BSUB -W 0:10;#BSUB -q batch;#BSUB -P CSC190SPECFEM;#BSUB -nnodes 1;#BSUB -alloc_flags 'gpumps smt4'; export  FILENAME=testfile;/bin/touch \$FILENAME " > $SCRIPTFILE && /sw/sources/lsf-tools/bin/bsub $SCRIPTFILE && rm -f $SCRIPTFILE,saga-test
+        # bjobs -noheader -o 'stat exec_host exit_code submit_time start_time 
+        # finish_time command job_name delimiter=","' 344077
+        # EXIT,summitdev-login1:summitdev-r0c1n12:summitdev-r0c1n12:
+        # summitdev-r0c1n12:summitdev-r0c1n12:summitdev-r0c1n12:
+        # summitdev-r0c1n12:summitdev-r0c1n12:summitdev-r0c1n12:
+        # summitdev-r0c1n12:summitdev-r0c1n12:summitdev-r0c1n12:
+        # summitdev-r0c1n12:summitdev-r0c1n12:summitdev-r0c1n12:
+        # summitdev-r0c1n12:summitdev-r0c1n12:summitdev-r0c1n12:
+        # summitdev-r0c1n12:summitdev-r0c1n12:summitdev-r0c1n12,
+        # 2,Oct 16 11:52,Oct 16 11:52,Oct 16 11:53 L,#!/bin/bash;
+        # #BSUB -J saga-test;
+        # #BSUB -o examplejob.out;
+        # #BSUB -e examplejob.err;
+        # #BSUB -W 0:10;
+        # #BSUB -q batch;
+        # #BSUB -P CSC190SPECFEM;
+        # #BSUB -nnodes 1;
+        # #BSUB -alloc_flags 'gpumps smt4'; 
+        # export  FILENAME=testfile;/bin/touch \$FILENAME " > $SCRIPTFILE && 
+        # /sw/sources/lsf-tools/bin/bsub $SCRIPTFILE && rm -f $SCRIPTFILE,
+        # saga-test
 
         ret, out, _ = self.shell.run_sync("%s -noheader -o 'stat exec_host exit_code submit_time start_time finish_time command job_name delimiter=\",\"' %s" % (self._commands['bjobs']['path'], pid))
 
