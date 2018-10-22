@@ -203,7 +203,11 @@ def _lsfscript_generator(url, logger, jd, ppn, lsf_version, queue, span):
     else:
         total_cpu_count = jd.total_cpu_count
 
-    ppn = 42
+    if 'summitdev' in url.host:
+        ppn = 20
+    elif 'summit' in url.host:
+        ppn = 42
+        
     number_of_nodes = int(total_cpu_count / ppn)
     if total_cpu_count % ppn > 0:
         number_of_nodes += 1
