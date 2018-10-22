@@ -203,9 +203,10 @@ def _lsfscript_generator(url, logger, jd, ppn, lsf_version, queue, span):
     else:
         total_cpu_count = jd.total_cpu_count
 
-    if 'summitdev' in url.host:
+    hostname = os.getenv('HOSTNAME')
+    if 'summitdev' in hostname:
         ppn = 20
-    elif 'summit' in url.host:
+    elif 'summit' in hostname:
         ppn = 42
 
     number_of_nodes = int(total_cpu_count / ppn)
@@ -428,7 +429,6 @@ class LSFJobSummitService (saga.adaptors.cpi.job.Service):
         # lsf commands either locally or via gsissh or ssh.
         if rm_scheme == "lsfsummit":
             pty_url.scheme = "fork"
-            pty_url.host = "localhost"
         elif rm_scheme == "lsfsummit+ssh":
             pty_url.scheme = "ssh"
         elif rm_scheme == "lsfsummit+gsissh":
