@@ -6,6 +6,12 @@
     https://github.com/radical-cybertools/saga-python/issues?q=is%3Aissue+is%3Aopen+
 
 
+Version 0.50.3                                                        2018-11-13
+--------------------------------------------------------------------------------
+
+  - fix version check in face of git errors
+
+
 Version 0.50.2                                                        2018-11-13
 --------------------------------------------------------------------------------
 
