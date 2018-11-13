@@ -6,6 +6,12 @@
     https://github.com/radical-cybertools/saga-python/issues?q=is%3Aissue+is%3Aopen+
 
 
+Version 0.50.2                                                        2018-11-13
+--------------------------------------------------------------------------------
+
+  - fix version check for Stampede (#rp-1754) - thanks Ioannis!
+
+
 Version 0.50.1                                                        2018-10-26
 --------------------------------------------------------------------------------
 
