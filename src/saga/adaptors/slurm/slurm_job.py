@@ -387,7 +387,7 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
                     '| xargs echo'
         _, out, _ = self.shell.run_sync(ppn_cmd)
         ppn_vals  = [o.strip() for o in out.split() if o.strip()]
-        if len(ppn_vals) == 1: self._ppn = int(ppn_vals[0])
+        if len(ppn_vals) >= 1: self._ppn = int(ppn_vals[0])
         else                 : self._ppn = None
 
         self._logger.info(" === ppn: %s", self._ppn)
