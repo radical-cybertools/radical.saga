@@ -374,7 +374,7 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
                                self.rm.detected_username)
 
         _, out, _ = self.shell.run_sync('scontrol --version')
-        self._version = StrictVesrion(out.split()[1].strip())
+        self._version = StrictVersion(out.split()[1].strip())
         self._logger.info('slurm version: %s' % self._version)
 
         ppn_pat   = '\'s/.*\\(CPUTot=[0-9]*\\).*/\\1/g\'' 
@@ -387,7 +387,7 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
                     '| xargs echo'
         _, out, _ = self.shell.run_sync(ppn_cmd)
         ppn_vals  = [o.strip() for o in out.split() if o.strip()]
-        if len(ppn_vals) == 1: self._ppn = int(ppn_vals[0])
+        if len(ppn_vals) >= 1: self._ppn = int(ppn_vals[0])
         else                 : self._ppn = None
 
         self._logger.info(" === ppn: %s", self._ppn)
