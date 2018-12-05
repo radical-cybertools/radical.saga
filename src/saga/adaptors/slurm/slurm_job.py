@@ -499,6 +499,10 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
             # bridges requires '-C EGRESS' to enable outbound network
             # connections.
             # FIXME: this should be moved into a resource config file
+            if total_gpu_count:
+                if cpu_arch : gpu_arch=cpu_arch.lower()
+                else : gpu_arch = 'p100'
+                slurm_script += "#SBATCH --gres=gpu:%s:2\n" % (gpu_arch)
             slurm_script += "#SBATCH -C EGRESS\n"
 
         elif 'cori' in self.rm.host.lower():
