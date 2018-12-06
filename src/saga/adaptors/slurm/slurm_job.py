@@ -499,7 +499,6 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         # FIXME: these should be moved into resource config files
         if 'bridges' in self.rm.host.lower():
 
-            # FIXME: this should be moved into a resource config file
             if total_gpu_count: 
                 if cpu_arch: gpu_arch = cpu_arch.lower()
                 else       : gpu_arch = 'p100'
