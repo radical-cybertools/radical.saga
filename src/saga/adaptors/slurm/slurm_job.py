@@ -479,7 +479,7 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
             # we start N independent processes
             mpi_cmd = ''
 
-            if self._version >= StrictVersion('17.11.5'):
+            if self._version in [StrictVersion('17.11.5'),StrictVersion('18.08.3')]:
         
                 assert(self._ppn), 'need unique number of cores per node'
                 number_of_nodes = int(math.ceil(float(total_cpu_count) / self._ppn))
