@@ -85,8 +85,8 @@ _SCRIPTS = {
     'sftp' : {
         'copy_to'      : '%(sftp_env)s "%(sftp_exe)s" %(sftp_args)s %(s_flags)s %(host_str)s',
         'copy_from'    : '%(sftp_env)s "%(sftp_exe)s" %(sftp_args)s %(s_flags)s %(host_str)s',
-        'copy_to_in'   : 'mput "%(src)s" "%(tgt)s"',
-        'copy_from_in' : 'mget "%(src)s" "%(tgt)s"',
+        'copy_to_in'   : 'mput %(cp_flags)s "%(src)s" "%(tgt)s"',
+        'copy_from_in' : 'mget %(cp_flags)s "%(src)s" "%(tgt)s"',
         'copy_is_posix': False
     },
     'sh' : {
@@ -148,7 +148,7 @@ class PTYShellFactory (object) :
     #
     def __init__ (self) :
 
-        self.logger     = ru.get_logger ('radical.saga.pty')
+        self.logger     = ru.Logger('radical.saga.pty')
         self.registry   = {}
         self.rlock      = ru.RLock ('pty shell factory')
         self.cfg        = ru.Config('radical.saga', 'utils')['pty']

@@ -9,8 +9,14 @@ __license__   = "MIT"
 # TODO: Throw errors if a user does not specify the MINIMUM number of
 #       attributes required for SLURM in a job description
 
+import saga.utils.pty_shell
+
+import saga.adaptors.base
+import saga.adaptors.cpi.job
+
 import re
 import os
+import math
 import time
 import tempfile
 
@@ -29,12 +35,15 @@ from ..cpi            import decorators as cpi_decs
 SYNC_CALL  = cpi_decs.SYNC_CALL
 ASYNC_CALL = cpi_decs.ASYNC_CALL
 
+from distutils.version import StrictVersion
+
 
 # ------------------------------------------------------------------------------
 #
 def log_error_and_raise(message, exception, logger):
     logger.error(message)
     raise exception(message)
+
 
 # ------------------------------------------------------------------------------
 # some private defs
@@ -59,8 +68,9 @@ _ADAPTOR_CAPABILITIES  = {
                           POST_EXEC,
                           ARGUMENTS,
                           ENVIRONMENT,
-                          SPMD_VARIATION, #implement later, somehow
+                          SPMD_VARIATION,
                           TOTAL_CPU_COUNT,
+                          TOTAL_GPU_COUNT,
                           NUMBER_OF_PROCESSES,
                           PROCESSES_PER_HOST,
                           THREADS_PER_PROCESS,
@@ -80,7 +90,6 @@ _ADAPTOR_CAPABILITIES  = {
                           QUEUE,
                           PROJECT,
                           JOB_CONTACT],
-
     "job_attributes"   : [EXIT_CODE,
                           EXECUTION_HOSTS,
                           CREATED,
@@ -193,24 +202,26 @@ _ADAPTOR_DOC           = {
 
 _ADAPTOR_INFO          = {
     "name"             : _ADAPTOR_NAME,
-    "version"          : "v0.2",
+    "version"          : "v0.2.1",
     "schemas"          : _ADAPTOR_SCHEMAS,
     "capabilities"     : _ADAPTOR_CAPABILITIES,
     "cpis"             : [
         {
-        "type"         : "radical.saga.job.Service",
-        "class"        : "SLURMJobService"
+            "type"     : "radical.saga.job.Service",
+            "class"    : "SLURMJobService"
         },
         {
-        "type"         : "radical.saga.job.Job",
-        "class"        : "SLURMJob"
+            "type"     : "radical.saga.job.Job",
+            "class"    : "SLURMJob"
         }
     ]
 }
 
-###############################################################################
-# The adaptor class
 
+################################################################################
+# 
+# The adaptor class
+#
 class Adaptor (a_base.Base):
     """
     This is the actual adaptor class, which gets loaded by SAGA (i.e. by the
@@ -269,10 +280,10 @@ class SLURMJobService (cpi_job.Service) :
         # these are the commands that we need in order to interact with SLURM
         # the adaptor will try to find them when it first opens the shell
         # connection, and bails out in case they are not available.
-        self._commands = {'sbatch': None,
-                          'squeue': None,
+        self._commands = {'sbatch'  : None,
+                          'squeue'  : None,
                           'scontrol': None,
-                          'scancel': None}
+                          'scancel' : None}
 
     # --------------------------------------------------------------------------
     #
@@ -293,9 +304,9 @@ class SLURMJobService (cpi_job.Service) :
         self.session = session
 
         self.jobs = {}
-        self._open ()
+        self._open()
 
-        return self.get_api ()
+        return self.get_api()
 
 
     # --------------------------------------------------------------------------
@@ -307,23 +318,20 @@ class SLURMJobService (cpi_job.Service) :
 
     # --------------------------------------------------------------------------
     #
-    def _open (self) :
+    def _open(self):
         """
         Open our persistent shell for this job adaptor.  We use
         the pty_shell functionality for this.
         """
         # check to see what kind of connection we will want to create
-        if self.rm.schema   == "slurm":
-            shell_schema = "fork://"
-        elif self.rm.schema == "slurm+ssh":
-            shell_schema = "ssh://"
-        elif self.rm.schema == "slurm+gsissh":
-            shell_schema = "gsissh://"
+        if   self.rm.schema == "slurm":        shell_schema = "fork://"
+        elif self.rm.schema == "slurm+ssh":    shell_schema = "ssh://"
+        elif self.rm.schema == "slurm+gsissh": shell_schema = "gsissh://"
         else:
             raise IncorrectURL("Schema %s not supported by SLURM adaptor."
                                     % self.rm.schema)
 
-        #<scheme>://<user>:<pass>@<host>:<port>/<path>?<query>#<fragment>
+        # <scheme>://<user>:<pass>@<host>:<port>/<path>?<query>#<fragment>
         # build our shell URL
         shell_url = shell_schema
 
@@ -335,10 +343,10 @@ class SLURMJobService (cpi_job.Service) :
         if self.rm.username and not self.rm.password:
             shell_url += self.rm.username + "@"
 
-        #add hostname
+        # add hostname
         shell_url += self.rm.host
 
-        #add port
+        # add port
         if  self.rm.port:
             shell_url += ":" + str(self.rm.port)
 
@@ -375,7 +383,25 @@ class SLURMJobService (cpi_job.Service) :
             self._logger.debug("Username detected as: %s",
                                self.rm.detected_username)
 
-        return
+        _, out, _ = self.shell.run_sync('scontrol --version')
+        self._version = StrictVersion(out.split()[1].strip())
+        self._logger.info('slurm version: %s' % self._version)
+
+        ppn_pat   = '\'s/.*\\(CPUTot=[0-9]*\\).*/\\1/g\'' 
+        ppn_cmd   = 'scontrol show nodes ' + \
+                    '| grep CPUTot'        + \
+                    '| sed -e ' + ppn_pat  + \
+                    '| sort '              + \
+                    '| uniq -c '           + \
+                    '| cut -f 2 -d = '     + \
+                    '| xargs echo'
+        _, out, _ = self.shell.run_sync(ppn_cmd)
+        ppn_vals  = [o.strip() for o in out.split() if o.strip()]
+        if len(ppn_vals) == 1: self._ppn = int(ppn_vals[0])
+        else                 : self._ppn = None
+
+        self._logger.info(" === ppn: %s", self._ppn)
+
 
     # --------------------------------------------------------------------------
     #
@@ -393,7 +419,7 @@ class SLURMJobService (cpi_job.Service) :
     def _job_run (self, jd) :
         """ runs a job on the wrapper via pty, and returns the job id """
 
-        #define a bunch of default args
+        # define a bunch of default args
         exe                 = jd.executable
         pre                 = jd.as_dict().get(PRE_EXEC)
         post                = jd.as_dict().get(POST_EXEC)
@@ -403,11 +429,12 @@ class SLURMJobService (cpi_job.Service) :
         job_name            = jd.as_dict().get(NAME)
         spmd_variation      = jd.as_dict().get(SPMD_VARIATION)
         total_cpu_count     = jd.as_dict().get(TOTAL_CPU_COUNT)
+        total_gpu_count     = jd.as_dict().get(TOTAL_GPU_COUNT)
         number_of_processes = jd.as_dict().get(NUMBER_OF_PROCESSES)
         processes_per_host  = jd.as_dict().get(PROCESSES_PER_HOST)
         output              = jd.as_dict().get(OUTPUT, "radical.saga.default.out")
         error               = jd.as_dict().get(ERROR)
-        file_transfer       = jd.as_dict().get(FILE_TRANSFER)
+      # file_transfer       = jd.as_dict().get(FILE_TRANSFER)
         wall_time_limit     = jd.as_dict().get(WALL_TIME_LIMIT)
         queue               = jd.as_dict().get(QUEUE)
         project             = jd.as_dict().get(PROJECT)
@@ -423,12 +450,12 @@ class SLURMJobService (cpi_job.Service) :
         # NOTE: this assumes a shared filesystem between login node and
         #       comnpute nodes.
         if cwd:
-             self._logger.info("Creating working directory %s" % cwd)
-             ret, out, _ = self.shell.run_sync("mkdir -p %s"   % cwd)
-             if ret:
-                 # something went wrong
-                 message = "Couldn't create working directory - %s" % (out)
-                 log_error_and_raise(message, NoSuccess, self._logger)
+            self._logger.info("Creating working directory %s" % cwd)
+            ret, out, _ = self.shell.run_sync("mkdir -p %s"   % cwd)
+            if ret:
+                # something went wrong
+                message = "Couldn't create working directory - %s" % (out)
+                log_error_and_raise(message, NoSuccess, self._logger)
 
 
         if isinstance(candidate_hosts, list):
@@ -454,13 +481,22 @@ class SLURMJobService (cpi_job.Service) :
 
         if spmd_variation:
             if spmd_variation.lower() not in 'mpi':
-                raise BadParameter("Slurm cannot handle spmd variation '%s'" % spmd_variation)
+                raise BadParameter("Slurm cannot handle spmd variation '%s'"
+                                        % spmd_variation)
             mpi_cmd = 'mpirun -n %d ' % number_of_processes
 
         else:
             # we start N independent processes
             mpi_cmd = ''
-            slurm_script += "#SBATCH --ntasks=%s\n" % (number_of_processes)
+
+            if self._version >= StrictVersion('17.11.5'):
+
+                assert(self._ppn), 'need unique number of cores per node'
+                number_of_nodes = int(math.ceil(float(total_cpu_count) / self._ppn))
+                slurm_script += "#SBATCH -N %d\n" % (number_of_nodes)
+                slurm_script += "#SBATCH --ntasks=%s\n" % (number_of_processes)
+            else:
+                slurm_script += "#SBATCH --ntasks=%s\n" % (number_of_processes)
 
             if not processes_per_host:
                 slurm_script += "#SBATCH --cpus-per-task=%s\n" \
@@ -482,8 +518,9 @@ class SLURMJobService (cpi_job.Service) :
             #   short:       -C feature
             #   long:        --constraint=feature
             #   default:     none
-            #   description: Always specify what type of nodes to run. set to "haswell" for
-            #                Haswell nodes, and set "knl,quad,cache" (or other modes) for KNL.
+            #   description: Always specify what type of nodes to run. set to
+            #                "haswell" for Haswell nodes, and set "knl,quad,cache"
+            #                (or other modes) for KNL.
             if cpu_arch: slurm_script += "#SBATCH -C %s\n" % cpu_arch
 
         if cwd:             slurm_script += "#SBATCH --workdir %s\n"     % cwd 
@@ -497,7 +534,12 @@ class SLURMJobService (cpi_job.Service) :
         if account:         slurm_script += "#SBATCH --account %s\n"     % account
         if reservation:     slurm_script += "#SBATCH --reservation %s\n" % reservation
         if wall_time_limit: slurm_script += "#SBATCH --time %02d:%02d:00\n" \
-                                          % (wall_time_limit/60,wall_time_limit%60)
+                                          % (wall_time_limit / 60,wall_time_limit % 60)
+        if total_gpu_count: slurm_script += "#SBATCH --gpus=%s\n"        % total_gpu_count
+
+        # TODO: right now we only support the `--gpus=[n]` variant.  That is
+        #       likely insufficient.
+
         if env:
             slurm_script += "\n## ENVIRONMENT\n"
             for key,val in env.iteritems():
@@ -546,16 +588,13 @@ class SLURMJobService (cpi_job.Service) :
         self._logger.debug("Batch system output:\n%s" % out)
 
         # create local jobs dictionary entry
-        self.jobs[self.job_id] = {
-                'state'      : PENDING,
-                'create_time': None,
-                'start_time' : None,
-                'end_time'   : None,
-                'comp_time'  : None,
-                'exec_hosts' : None,
-                'gone'       : False
-            }
-
+        self.jobs[self.job_id] = {'state'      : PENDING,
+                                  'create_time': None,
+                                  'start_time' : None,
+                                  'end_time'   : None,
+                                  'comp_time'  : None,
+                                  'exec_hosts' : None,
+                                  'gone'       : False}
         return self.job_id
 
 
@@ -705,10 +744,10 @@ class SLURMJobService (cpi_job.Service) :
 
         # this dict is passed on to the job adaptor class -- use it to pass any
         # state information you need there.
-        adaptor_state = { "job_service"     : self,
-                          "job_description" : jd,
-                          "job_schema"      : self.rm.schema,
-                          "reconnect"       : False}
+        adaptor_state = {"job_service"     : self,
+                         "job_description" : jd,
+                         "job_schema"      : self.rm.schema,
+                         "reconnect"       : False}
 
         return api_job.Job (_adaptor=self._adaptor,
                              _adaptor_state=adaptor_state)
@@ -760,7 +799,6 @@ class SLURMJobService (cpi_job.Service) :
                         }
         return api_job.Job(_adaptor=self._adaptor,
                             _adaptor_state=adaptor_state)
-        
 
 
     # --------------------------------------------------------------------------
@@ -798,7 +836,6 @@ class SLURMJobService (cpi_job.Service) :
         for job in jobs:
             states.append(job.get_state())
         return states
-
 
 
 # ------------------------------------------------------------------------------
@@ -871,7 +908,7 @@ class SLURMJob(cpi_job.Job):
         # as a copy of prev_info (don't use deepcopy because there is an API
         # object in the dict -> recursion)
         curr_info = dict()
-        
+
         if prev_info:
             curr_info['job_id'     ] = prev_info.get('job_id'     )
             curr_info['job_name'   ] = prev_info.get('job_name'   )
@@ -993,7 +1030,7 @@ class SLURMJob(cpi_job.Job):
         except Exception, ex:
             self._logger.exception('failed to get job state')
             raise NoSuccess("Error getting the job state for "
-                                 "job %s:\n%s"%(pid,ex))
+                            "job %s:\n%s" % (pid,ex))
 
         raise NoSuccess._log (self._logger,
                                    "Internal SLURM adaptor error"
@@ -1022,7 +1059,7 @@ class SLURMJob(cpi_job.Job):
                 if slurm_id == pid and slurm_state:
                     return slurm_state.split()[0].strip()
 
-        except Exception as e:
+        except Exception:
             self._log.warn('cannot parse sacct output:\n%s' % sacct_out)
 
         return None
@@ -1056,12 +1093,11 @@ class SLURMJob(cpi_job.Job):
     @SYNC_CALL
     def wait(self, timeout):
         time_start = time.time()
-        time_now   = time_start
         rm, pid    = self._adaptor.parse_id(self._id)
 
         while True:
             state = self._job_get_state(self._id)
-            self._logger.debug("wait() state for job id %s:%s"%(self._id, state))
+            self._logger.debug("wait() state for job id %s:%s" % (self._id, state))
 
             if state == UNKNOWN :
                 log_error_and_raise("cannot get job state",

@@ -34,7 +34,7 @@ class SimpleBase (object) :
         if  not hasattr (self, '_apitype') :
             self._apitype = self._get_apitype ()
 
-        self._logger = ru.get_logger  ('radical.saga')
+        self._logger = ru.Logger('radical.saga')
         if uid:
             self._id = uid
         else:

@@ -164,10 +164,11 @@ _ADAPTOR_CAPABILITIES  = {
                           api.OUTPUT,
                           api.ERROR,
                           api.NAME,
-                          api.WALL_TIME_LIMIT, # TODO: 'hot'-fix for BigJob - implement properly
-                          api.TOTAL_CPU_COUNT, # TODO: 'hot'-fix for BigJob - implement properly
+                          api.WALL_TIME_LIMIT,
+                          api.TOTAL_CPU_COUNT,
+                          api.TOTAL_GPU_COUNT,
                           api.PROCESSES_PER_HOST,
-                          api.SPMD_VARIATION,  # TODO: 'hot'-fix for BigJob - implement properly
+                          api.SPMD_VARIATION,
                          ],
     "job_attributes"   : [api.EXIT_CODE,
                           api.EXECUTION_HOSTS,

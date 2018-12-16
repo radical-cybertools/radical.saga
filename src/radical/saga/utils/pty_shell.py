@@ -191,7 +191,7 @@ class PTYShell (object) :
             interactive=True):
 
         if logger : self.logger  = logger
-        else      : self.logger  = ru.get_logger('radical.saga.pty') 
+        else      : self.logger  = ru.Logger('radical.saga.pty') 
 
         if session: self.session = session
         else      : self.session = ss.Session(default=True)
@@ -251,7 +251,7 @@ class PTYShell (object) :
     def _trace (self, msg) :
 
       # print " === %5d : %s : %s" % (self._pty_id, self.pty_shell, msg)
-        self.logger.debug(" === %5d : %s : %s", self._pty_id, self.pty_shell, msg)
+      # self.logger.debug(" === %5d : %s : %s", self._pty_id, self.pty_shell, msg)
         pass
 
 
@@ -868,7 +868,7 @@ class PTYShell (object) :
 
     # ----------------------------------------------------------------
     #
-    def stage_to_remote (self, src, tgt, cp_flags="") :
+    def stage_to_remote (self, src, tgt, cp_flags=None) :
         """
         :type  src: string
         :param src: path of local source file to be stage from.
@@ -891,6 +891,7 @@ class PTYShell (object) :
 
         except Exception as e :
             raise ptye.translate_exception (e)
+
 
     # ----------------------------------------------------------------
     #
@@ -920,7 +921,7 @@ class PTYShell (object) :
 
     # --------------------------------------------------------------------------
     #
-    def run_copy_to (self, src, tgt, cp_flags="") :
+    def run_copy_to (self, src, tgt, cp_flags=None) :
         """ 
         This initiates a slave copy connection.   Src is interpreted as local
         path, tgt as path on the remote host.
@@ -929,8 +930,11 @@ class PTYShell (object) :
         wildcards, all right -- but for recursive copies, it wants the target
         dir to exist -- so, we have to check if the local src is a  dir, and if
         so, we first create the target before the copy.  Worse, for wildcards we
-        have to do a local expansion, and the to do the same for each entry...
+        have to do a local expansion, and then to do the same for each entry...
         """
+
+        if cp_flags is None:
+            cp_flags = ''
 
         with self.pty_shell.rlock :
 
@@ -940,7 +944,7 @@ class PTYShell (object) :
             info = self.pty_info
             repl = dict ({'src'      : src, 
                           'tgt'      : tgt,
-                          'cp_flags' : '' # cp_flags # TODO: needs to be "translated" for specific backend
+                          'cp_flags' : cp_flags
                           }.items () + info.items ())
 
             # at this point, we do have a valid, living master
@@ -1005,7 +1009,6 @@ class PTYShell (object) :
 
             if 'Invalid flag' in out :
                 raise NoSuccess._log (info['logger'], "sftp version not supported (%s)" % str(out))
-
             if 'No such file or directory' in out :
                 raise DoesNotExist._log (info['logger'], "file copy failed: %s" % str(out))
 

@@ -26,7 +26,7 @@ class CPIBase(object):
         self._session   = None
         self._adaptor   = adaptor
         self._cpi_cname = self.__class__.__name__
-        self._logger    = ru.get_logger('radical.saga.cpi')
+        self._logger    = ru.Logger('radical.saga.cpi')
 
         # The API object must obviously keep an adaptor instance.  If we also
         # keep an API instance ref in this adaptor base, we create a ref cycle

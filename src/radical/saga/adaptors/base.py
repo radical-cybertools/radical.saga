@@ -37,7 +37,7 @@ class Base(object):
         self._schemas = adaptor_info['schemas']
 
         self._lock    = ru.RLock      (self._name)
-        self._logger  = ru.get_logger('radical.saga.api')
+        self._logger  = ru.Logger('radical.saga.api')
 
         self._cfg     = ru.Config(module='radical.saga', name=self._name)
 

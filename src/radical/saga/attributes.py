@@ -420,11 +420,11 @@ class Attributes (_AttributesBase, ru.DictMixin) :
 
         For the given key, check if the key name is valid, and/or if it is
         aliased.  
-        
+
         If the does not yet exist, the validity check is performed, and allows
         to limit dynamically added attribute names (for 'extensible' sets).
-        
-        if the key does exist, the alias check triggers a deprecation warning,
+
+        If the key does exist, the alias check triggers a deprecation warning,
         and returns the aliased key for transparent operation.
         """
 
@@ -443,7 +443,7 @@ class Attributes (_AttributesBase, ru.DictMixin) :
             # check if we know about the given attribute
             if  d['attributes'][key]['mode'] == ALIAS :
                 alias = d['attributes'][key]['alias']
-                print "attribute key / property name '%s' is deprecated - use '%s'"  %  (key, alias)
+                print "attribute '%s' is deprecated - use '%s'"  %  (key, alias)
                 key   = alias
 
         return key

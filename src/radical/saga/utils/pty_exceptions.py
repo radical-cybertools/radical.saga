@@ -26,7 +26,7 @@ def translate_exception (e, msg=None) :
 
     import traceback
     import radical.utils as ru
-    ru.get_logger('radical.saga.pty').debug (traceback.format_exc())
+    ru.Logger('radical.saga.pty').debug (traceback.format_exc())
 
 
     cmsg = e._plain_message

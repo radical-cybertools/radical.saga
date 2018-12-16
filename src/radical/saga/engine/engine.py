@@ -137,7 +137,7 @@ class Engine(object):
         self._registry = ru.Config('radical.saga', 'registry')
 
         # Initialize the logging, and log version (this is a singleton!)
-        self._logger = ru.get_logger('radical.saga')
+        self._logger = ru.Logger('radical.saga')
 
         # load adaptors
         self._load_adaptors()
