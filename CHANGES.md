@@ -6,6 +6,12 @@
     https://github.com/radical-cybertools/saga-python/issues?q=is%3Aissue+is%3Aopen+
 
 
+Version 0.50.5                                                        2018-12-19
+--------------------------------------------------------------------------------
+
+  - fixes in Slurm and Torque adaptor
+
+
 Version 0.50.4                                                        2018-12-12
 --------------------------------------------------------------------------------
 
