@@ -36,6 +36,7 @@ from   .           import filesystem
 from   .           import replica
 from   .           import advert
 from   .           import resource
+# import saga.messages
 
 
 # ------------------------------------------------------------------------------
