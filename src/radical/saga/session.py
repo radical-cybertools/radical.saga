@@ -175,7 +175,7 @@ class Session (base.SimpleBase) :
         simple_base = super  (Session, self)
         simple_base.__init__ (uid=uid)
 
-        self._logger = ru.get_logger ('radical.saga')
+        self._logger = ru.Logger('radical.saga')
 
         # if the default session is expected, we point our context list to the
         # shared list of the default session singleton.  Otherwise, we create
@@ -194,7 +194,7 @@ class Session (base.SimpleBase) :
             # Howevwer, the pty layer is the main user of the lease manager,
             # and we thus keep the lease manager options in the pty subsection.  
             # So here we are, in the session, evaluating the pty config options...
-            self._cfg = self.get_config()
+            self._cfg = ru.Config(module='radical.saga')
             self._lease_manager = ru.LeaseManager (
                     max_pool_size = self._cfg.get('connection_pool_size'),
                     max_pool_wait = self._cfg.get('connection_pool_wait'),

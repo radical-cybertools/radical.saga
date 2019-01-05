@@ -110,7 +110,7 @@ class Adaptor(a_base.Base):
         a_base.Base.__init__(self, _ADAPTOR_INFO)
 
         # FIXME: RADICAL
-      # self.opts = self.get_config(_ADAPTOR_NAME)
+      # self.opts = ru.Config(module='radical.saga', name=_ADAPTOR_NAME)
       # self.notify = self.opts['enable_notifications'].get_value()
       # self.f_mode = self.opts['failure_mode'].get_value()
       # self.prompt = self.opts['prompt_pattern'].get_value()

@@ -190,7 +190,7 @@ class Adaptor(a_base.Base):
 
         a_base.Base.__init__(self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
 
-        self.opts  = self.get_config(_ADAPTOR_NAME)
+        self.opts  = ru.Config(module='radical.saga', name=_ADAPTOR_NAME)
 
 
     # --------------------------------------------------------------------------

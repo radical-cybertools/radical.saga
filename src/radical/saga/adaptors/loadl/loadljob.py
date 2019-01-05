@@ -174,7 +174,7 @@ class Adaptor (base.Base):
 
         self.id_re = re.compile('^\[(.*)\]-\[(.*?)\]$')
       # # FIXME: RADICAL
-      # self.opts = self.get_config(_ADAPTOR_NAME)
+      # self.opts = ru.Config(module='radical.saga', name=_ADAPTOR_NAME)
       #
       # self.purge_on_start = self.opts['purge_on_start'].get_value()
       # self.purge_older_than = self.opts['purge_older_than'].get_value()

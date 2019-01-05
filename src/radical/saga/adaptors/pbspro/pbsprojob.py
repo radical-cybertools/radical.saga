@@ -263,14 +263,20 @@ def _pbscript_generator(url, logger, jd, ppn, gres, pbs_version, is_cray=False,
     if      queue: queue_spec =    queue
     elif jd.queue: queue_spec = jd.queue
 
+    # Parse candidate_hosts
+    #
+    # Node properties are appended to the nodes argument in the resource_list.
+    #
+    # Currently only implemented for "bigflash" on Gordon@SDSC
+    # https://github.com/radical-cybertools/saga-python/issues/406
+    #
     if jd.candidate_hosts:
         if 'BIG_FLASH' in jd.candidate_hosts:
             node_properties.append('bigflash')
         elif len(jd.candidate_hosts) == 1:
             queue_spec += '@%s' % jd.candidate_hosts[0]
         else:
-            raise saga.NotImplemented("unsupported candidate_hosts [%s]"
-                                      % jd.candidate_hosts)
+            raise NotImplemented("This type of 'candidate_hosts' not implemented: '%s'" % jd.candidate_hosts)
 
     if queue_spec:
         pbs_params += "#PBS -q %s\n" % queue_spec
@@ -298,27 +304,8 @@ def _pbscript_generator(url, logger, jd, ppn, gres, pbs_version, is_cray=False,
     if jd.total_cpu_count % ppn > 0:
         nnodes += 1
 
-    # We use the ncpus value for systems that need to specify ncpus as multiple of PPN
+    # use ncpus value for systems that need to specify ncpus as multiple of PPN
     ncpus = nnodes * ppn
-
-<<<<<<< HEAD:src/radical/saga/adaptors/pbspro/pbsprojob.py
-    # Node properties are appended to the nodes argument in the resource_list.
-    node_properties = []
-
-    # Parse candidate_hosts
-    #
-    # Currently only implemented for "bigflash" on Gordon@SDSC
-    # https://github.com/radical-cybertools/saga-python/issues/406
-    #
-    if jd.candidate_hosts:
-        if 'BIG_FLASH' in jd.candidate_hosts:
-            node_properties.append('bigflash')
-        else:
-            raise NotImplemented("This type of 'candidate_hosts' not implemented: '%s'" % jd.candidate_hosts)
-
-    # If we want just a slice of one node
-    if jd.total_cpu_count < ppn:
-        ppn = jd.total_cpu_count
 
     # TODO: Special cases for PBS/TORQUE on Cray. Different PBSes,
     #       different flags. A complete nightmare...
@@ -597,7 +584,7 @@ class PBSProJobService (cpi_job.Service):
                             self._logger)
                     else:
                         # version is reported as: "version: x.y.z"
-                        version = out#.strip().split()[1]
+                        version = out  #.strip().split()[1]
 
                         # add path and version to the command dictionary
                         self._commands[cmd] = {"path":    path,
@@ -606,7 +593,8 @@ class PBSProJobService (cpi_job.Service):
         self._logger.info("Found PBS tools: %s" % self._commands)
 
         #
-        # TODO: Get rid of this, as I dont think there is any justification that Cray's are special
+        # TODO: Get rid of this, as I dont think there is any 
+        #       justification that Cray's are special
         #
         # let's try to figure out if we're working on a Cray machine.
         # naively, we assume that if we can find the 'aprun' command in the
@@ -850,7 +838,7 @@ class PBSProJobService (cpi_job.Service):
                     key, val = line.split('=')
                     key = key.strip()
                     val = val.strip()
-                
+
                     # The ubiquitous job state
                     if key in ['job_state']:  # PBS Pro and TORQUE
                         job_info['state'] = _pbs_to_saga_jobstate(val, self._logger)
@@ -960,8 +948,8 @@ class PBSProJobService (cpi_job.Service):
         """
         rm, pid = self._adaptor.parse_id(job_id)
 
-        ret, out, _ = self.shell.run_sync("%s %s\n" \
-            % (self._commands['qdel']['path'], pid))
+        ret, out, _ = self.shell.run_sync("%s %s\n"
+                    % (self._commands['qdel']['path'], pid))
 
         if ret != 0:
             message = "Error canceling job via 'qdel': %s" % out
@@ -1098,8 +1086,8 @@ class PBSProJobService (cpi_job.Service):
         # TODO: this is not optimized yet
         for job in jobs:
             job.run ()
-   
-   
+
+
     # ----------------------------------------------------------------
     #
     def container_wait (self, jobs, mode, timeout) :
@@ -1109,8 +1097,8 @@ class PBSProJobService (cpi_job.Service):
         # TODO: this is not optimized yet
         for job in jobs:
             job.wait ()
-   
-   
+
+
     # ----------------------------------------------------------------
     #
     def container_cancel (self, jobs, timeout) :
@@ -1122,7 +1110,7 @@ class PBSProJobService (cpi_job.Service):
             job.cancel (timeout)
 
 
-###############################################################################
+# ------------------------------------------------------------------------------
 #
 class PBSProJob (cpi_job.Job):
     """ implements cpi_job.Job
@@ -1167,7 +1155,8 @@ class PBSProJob (cpi_job.Job):
             return NEW
 
         return self.js._job_get_state(job_id=self._id)
-            
+
+
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
@@ -1287,4 +1276,6 @@ class PBSProJob (cpi_job.Job):
         """
         return self.jd
 
+
+# ------------------------------------------------------------------------------
 

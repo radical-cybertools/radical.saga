@@ -17,7 +17,7 @@ import traceback
 # the saga.exceptions in signatures, thus can *not* have signature checks
 # here...
 #
-# import saga.base             as sb
+# import radical.saga.base             as sb
 
 
 # ------------------------------------------------------------------------------

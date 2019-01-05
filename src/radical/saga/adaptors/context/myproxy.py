@@ -66,7 +66,7 @@ class Adaptor (base.Base):
 
         # there are no default myproxy contexts
         self._default_contexts = []
-        self.base_workdir = self._cfg['base_workdir']
+        self.base_workdir = self._cfg.get('base_workdir', os.getcwd())
 
 
     def sanity_check (self) :

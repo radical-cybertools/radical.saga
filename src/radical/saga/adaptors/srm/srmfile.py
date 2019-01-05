@@ -10,13 +10,13 @@ import errno
 import radical.utils as ru
 
 from ...exceptions    import *
-import saga.url
-import saga.adaptors.base
-import saga.adaptors.cpi.filesystem
-import saga.utils.misc
-import saga.utils.pty_shell as sups
+import radical.saga.url
+import radical.saga.adaptors.base
+import radical.saga.adaptors.cpi.filesystem
+import radical.saga.utils.misc
+import radical.saga.utils.pty_shell as sups
 
-from saga.adaptors.cpi.decorators import SYNC_CALL
+from radical,saga.adaptors.cpi.decorators import SYNC_CALL
 
 
 ###############################################################################
@@ -90,7 +90,7 @@ class Adaptor(saga.adaptors.base.Base):
     def __init__(self) :
         saga.adaptors.base.Base.__init__(self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
 
-        self.cfg = self.get_config(_ADAPTOR_NAME)
+        self.cfg = ru.Config(module='radical.saga', name=_ADAPTOR_NAME)
         self.pty_url = self.cfg['pty_url'].get_value()
 
 

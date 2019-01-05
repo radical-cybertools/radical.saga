@@ -437,7 +437,7 @@ class Adaptor (a_base.Base):
         a_base.Base.__init__(self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
 
         self.id_re = re.compile('^\[(.*)\]-\[(.*?)\]$')
-        self.opts  = self.get_config (_ADAPTOR_NAME)
+        self.opts  = ru.Config(module='radical.saga', name=_ADAPTOR_NAME)
 
         # Adaptor Options
         self.base_workdir = os.path.normpath(self.opts['base_workdir'].get_value ())

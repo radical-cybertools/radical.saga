@@ -59,10 +59,10 @@ import radical.utils.threads as rut
 
 import redis_cache
 
-from   saga.exceptions       import *
-from   saga.advert.constants import *
+from   radical.saga.exceptions       import *
+from   radical.saga.advert.constants import *
 
-import saga.utils.misc       as sumisc
+import radical.saga.utils.misc as sumisc
 
 
 TYPE   = 'type'

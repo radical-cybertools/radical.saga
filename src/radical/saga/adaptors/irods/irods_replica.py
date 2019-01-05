@@ -36,17 +36,18 @@ import string
 import errno
 
 from ...exceptions           import *
-import saga.url
-import saga.adaptors.base
-import saga.adaptors.cpi.replica
-import saga.utils.pty_shell
-import saga.utils.misc
-import shutil
-import saga.namespace as ns
-#from saga.utils.cmdlinewrapper import CommandLineWrapper
+import radical.saga.url
+import radical.saga.adaptors.base
+import radical.saga.adaptors.cpi.replica
+import radical.saga.utils.pty_shell
+import radical.saga.utils.misc
+import radical.saga.namespace as ns
 
-SYNC_CALL  = saga.adaptors.cpi.decorators.SYNC_CALL
-ASYNC_CALL = saga.adaptors.cpi.decorators.ASYNC_CALL
+import shutil
+#from radical,saga.utils.cmdlinewrapper import CommandLineWrapper
+
+SYNC_CALL  = radical.saga.adaptors.cpi.decorators.SYNC_CALL
+ASYNC_CALL = radical.saga.adaptors.cpi.decorators.ASYNC_CALL
 
 ###############################################################################
 # adaptor info
