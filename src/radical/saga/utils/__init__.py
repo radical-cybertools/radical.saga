@@ -11,5 +11,5 @@ __license__   = "MIT"
 # from   misc        import *
 
 
-
+import pty_shell
 
