@@ -203,11 +203,13 @@ def _lsfscript_generator(url, logger, jd, ppn, lsf_version, queue, span):
     else:
         total_cpu_count = jd.total_cpu_count
 
-    hostname = os.getenv('HOSTNAME')
-    if 'summitdev' in hostname:
-        ppn = 20
-    elif 'summit' in hostname:
-        ppn = 42
+    out, err, ret = ru.sh_callout('hostname -f')
+
+    if ret: hostname = os.environ.get('HOSTNAME', '')
+    else  : hostname = out.strip()
+
+    if 'summitdev' in hostname: ppn = 20
+    elif 'summit'  in hostname: ppn = 42
 
     number_of_nodes = int(total_cpu_count / ppn)
     if total_cpu_count % ppn > 0:
