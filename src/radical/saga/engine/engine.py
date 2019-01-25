@@ -132,9 +132,9 @@ class Engine(object):
         self._adaptor_registry = dict()
 
         # get angine, adaptor and pty configs
-        self._cfg      = ru.Config('radical.saga', 'engine')
-        self._pty_cfg  = ru.Config('radical.saga', 'pty')
-        self._registry = ru.Config('radical.saga', 'registry')
+        self._cfg      = ru.Config(module='radical.saga', name='engine')
+        self._pty_cfg  = ru.Config(module='radical.saga', name='pty')
+        self._registry = ru.Config(module='radical.saga', name='registry')
 
         # Initialize the logging, and log version (this is a singleton!)
         self._logger = ru.Logger('radical.saga')
@@ -184,7 +184,7 @@ class Engine(object):
                 adaptor_module = ru.import_module(module_name)
 
             except Exception as e:
-                self._logger.exception ("Skipping adaptor %s: module import failed: %s" % (module_name, e))
+                self._logger.exception ("Skipping adaptor %s: import failed: %s" % (module_name, e))
                 continue # skip to next adaptor
 
             # we expect the module to have an 'Adaptor' class
@@ -198,7 +198,7 @@ class Engine(object):
                 adaptor_info     = adaptor_instance.register ()
 
             except SagaException as e:
-                self._logger.exception ("Skipping adaptor %s: module load   failed: '%s'" % (module_name, e))
+                self._logger.exception ("Skipping adaptor %s: module load failed: '%s'" % (module_name, e))
                 continue # skip to next adaptor
 
             except Exception as e:
@@ -214,13 +214,13 @@ class Engine(object):
                 adaptor_instance.sanity_check ()
 
             except Exception as e:
-                self._logger.exception ("Skipping adaptor %s: adaptor test failed : %s" % (module_name, e))
+                self._logger.exception ("Skipping adaptor %s: test failed : %s" % (module_name, e))
                 continue # skip to next adaptor
 
 
             # check if we have a valid adaptor_info
             if adaptor_info is None :
-                self._logger.exception ("Skipping adaptor %s: adaptor data invalid" \
+                self._logger.exception ("Skipping adaptor %s: invalid adaptor data" \
                                 % module_name)
                 continue  # skip to next adaptor
 
@@ -229,7 +229,7 @@ class Engine(object):
                 not 'cpis'    in adaptor_info or \
                 not 'version' in adaptor_info or \
                 not 'schemas' in adaptor_info    :
-                self._logger.exception ("Skipping adaptor %s: adaptor data incomplete" \
+                self._logger.exception ("Skipping adaptor %s: incomplete adaptor data" \
                                 % module_name)
                 continue  # skip to next adaptor
 
@@ -246,7 +246,7 @@ class Engine(object):
                 if 'alpha' in adaptor_version.lower() or \
                    'beta'  in adaptor_version.lower()    :
 
-                    self._logger.exception ("Skipping adaptor %s: beta versions disabled (%s)" \
+                    self._logger.info ("Skipping adaptor %s: beta version disabled (%s)" \
                                     % (module_name, adaptor_version))
                     continue  # skip to next adaptor
 
@@ -280,7 +280,7 @@ class Engine(object):
 
             # check if the adaptor has anything to register
             if 0 == len (adaptor_info['cpis']) :
-                self._logger.exception ("Skipping adaptor %s: adaptor has no cpis" \
+                self._logger.warn ("Skipping adaptor %s: adaptor has no cpis" \
                                 % (module_name))
                 continue # skip to next adaptor
 
@@ -292,7 +292,7 @@ class Engine(object):
                 # check cpi information details for completeness
                 if  not 'type'    in cpi_info or \
                     not 'class'   in cpi_info    :
-                    self._logger.info ("Skipping adaptor %s cpi: cpi info detail is incomplete" \
+                    self._logger.info ("Skipping adaptor %s cpi: incomplete" \
                                     % (module_name))
                     continue # skip to next cpi info
 
@@ -308,7 +308,7 @@ class Engine(object):
                 except Exception as e:
                     # this exception likely means that the adaptor does
                     # not call the radical.saga.adaptors.Base initializer (correctly)
-                    self._logger.exception ("Skipping adaptor %s: adaptor class invalid %s: %s" \
+                    self._logger.exception ("Skipping adaptor %s: invalid %s: %s" \
                                        % (module_name, cpi_info['class'], str(e)))
                     continue # skip to next adaptor
 
@@ -342,13 +342,13 @@ class Engine(object):
 
                 if  len(cpi_type_nselems) < 3 or \
                     len(cpi_type_nselems) > 4    :
-                    self._logger.exception ("Skipping adaptor %s: cpi type not valid: '%s'" \
+                    self._logger.exception ("Skipping adaptor %s: invalid cpi: '%s'" \
                                      % (module_name, cpi_type))
                     continue # skip to next cpi info
 
                 if  cpi_type_nselems[0] != 'radical' and \
                     cpi_type_nselems[1] != 'saga'    :
-                    self._logger.exception ("Skipping adaptor %s: cpi namespace not valid: '%s'" \
+                    self._logger.exception ("Skipping adaptor %s: invalid ns: '%s'" \
                                      % (module_name, cpi_type))
                     continue # skip to next cpi info
 
@@ -380,7 +380,7 @@ class Engine(object):
                     cpi_type_modname = cpi_type_modname_2
 
              #  if  not cpi_type_modname :
-             #      self._logger.exception ("Skipping adaptor %s: cpi type not known: '%s'" \
+             #      self._logger.exception ("Skipping adaptor %s: unknown cpi: '%s'" \
              #                       % (module_name, cpi_type))
              #      sys.exit()
              #      continue # skip to next cpi info
@@ -395,7 +395,7 @@ class Engine(object):
              #              cpi_ok = True
              #
              #  if not cpi_ok :
-             #      self._logger.exception ("Skipping adaptor %s: doesn't implement cpi '%s (%s)'" \
+             #      self._logger.exception ("Skipping adaptor %s: incomplete impl '%s (%s)'" \
              #                       % (module_name, cpi_class, cpi_type))
              #      continue # skip to next cpi info
 
@@ -427,7 +427,7 @@ class Engine(object):
                     # make sure this tuple was not registered, yet
                     if info in self._adaptor_registry[cpi_type][adaptor_schema] :
 
-                        self._logger.exception ("Skipping adaptor %s: already registered '%s - %s'" \
+                        self._logger.debug ("Skipping adaptor %s: registered '%s - %s'" \
                                          % (module_name, cpi_class, adaptor_instance))
                         continue  # skip to next cpi info
 
