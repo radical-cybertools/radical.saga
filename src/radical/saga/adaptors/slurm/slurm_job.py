@@ -23,19 +23,15 @@ import tempfile
 import radical.utils as ru
 
 from ...exceptions    import *
-from ...              import url        as rsurl
-from ...utils         import pty_shell  as rsups
-from ...utils         import misc       as rsumisc
-from ...              import job        as api_job
 from ...job.constants import *
+from ...utils         import pty_shell  as rsups
+from ...              import job        as api_job
 from ..               import base       as a_base
 from ..cpi            import job        as cpi_job
 from ..cpi            import decorators as cpi_decs
 
 SYNC_CALL  = cpi_decs.SYNC_CALL
 ASYNC_CALL = cpi_decs.ASYNC_CALL
-
-from distutils.version import StrictVersion
 
 
 # ------------------------------------------------------------------------------
@@ -182,8 +178,9 @@ _ADAPTOR_DOC           = {
            (see _job_get_exit_code)
          - If scancel can't cancel a job, we raise an exception
            (see _job_cancel)
-         - If we can't suspend a job with scontrol suspend, we raise an exception
-           (see _job_suspend).  scontrol suspend NOT supported on Stampede
+         - If we can't suspend a job with scontrol suspend, we raise an
+           exception (see _job_suspend).  scontrol suspend NOT supported on
+           Stampede.
          - I started to implement a dictionary to keep track of jobs locally.
            It works to the point where the unit tests are passed, but I have
            not gone over theis extensively...
@@ -327,9 +324,8 @@ class SLURMJobService (cpi_job.Service) :
         if   self.rm.schema == "slurm":        shell_schema = "fork://"
         elif self.rm.schema == "slurm+ssh":    shell_schema = "ssh://"
         elif self.rm.schema == "slurm+gsissh": shell_schema = "gsissh://"
-        else:
-            raise IncorrectURL("Schema %s not supported by SLURM adaptor."
-                                    % self.rm.schema)
+        else: raise IncorrectURL("Schema %s not supported by SLURM adaptor."
+                                 % self.rm.schema)
 
         # <scheme>://<user>:<pass>@<host>:<port>/<path>?<query>#<fragment>
         # build our shell URL
@@ -384,7 +380,7 @@ class SLURMJobService (cpi_job.Service) :
                                self.rm.detected_username)
 
         _, out, _ = self.shell.run_sync('scontrol --version')
-        self._version = StrictVersion(out.split()[1].strip())
+        self._version = out.split()[1].strip()
         self._logger.info('slurm version: %s' % self._version)
 
         ppn_pat   = '\'s/.*\\(CPUTot=[0-9]*\\).*/\\1/g\'' 
@@ -397,7 +393,7 @@ class SLURMJobService (cpi_job.Service) :
                     '| xargs echo'
         _, out, _ = self.shell.run_sync(ppn_cmd)
         ppn_vals  = [o.strip() for o in out.split() if o.strip()]
-        if len(ppn_vals) == 1: self._ppn = int(ppn_vals[0])
+        if len(ppn_vals) >= 1: self._ppn = int(ppn_vals[0])
         else                 : self._ppn = None
 
         self._logger.info(" === ppn: %s", self._ppn)
@@ -432,7 +428,7 @@ class SLURMJobService (cpi_job.Service) :
         total_gpu_count     = jd.as_dict().get(TOTAL_GPU_COUNT)
         number_of_processes = jd.as_dict().get(NUMBER_OF_PROCESSES)
         processes_per_host  = jd.as_dict().get(PROCESSES_PER_HOST)
-        output              = jd.as_dict().get(OUTPUT, "radical.saga.default.out")
+        output              = jd.as_dict().get(OUTPUT, "radical.saga.stdout")
         error               = jd.as_dict().get(ERROR)
       # file_transfer       = jd.as_dict().get(FILE_TRANSFER)
         wall_time_limit     = jd.as_dict().get(WALL_TIME_LIMIT)
@@ -489,8 +485,7 @@ class SLURMJobService (cpi_job.Service) :
             # we start N independent processes
             mpi_cmd = ''
 
-            if self._version >= StrictVersion('17.11.5'):
-
+            if self._version in ['17.11.5','18.08.3']:
                 assert(self._ppn), 'need unique number of cores per node'
                 number_of_nodes = int(math.ceil(float(total_cpu_count) / self._ppn))
                 slurm_script += "#SBATCH -N %d\n" % (number_of_nodes)
@@ -509,6 +504,10 @@ class SLURMJobService (cpi_job.Service) :
             # bridges requires '-C EGRESS' to enable outbound network
             # connections.
             # FIXME: this should be moved into a resource config file
+            if total_gpu_count:
+                if cpu_arch : gpu_arch=cpu_arch.lower()
+                else : gpu_arch = 'p100'
+                slurm_script += "#SBATCH --gres=gpu:%s:2\n" % (gpu_arch)
             slurm_script += "#SBATCH -C EGRESS\n"
 
         elif 'cori' in self.rm.host.lower():
@@ -567,7 +566,7 @@ class SLURMJobService (cpi_job.Service) :
         # submit the job
         ret, out, _ = self.shell.run_sync ("sbatch '%s'; rm -vf '%s'" % (tgt, tgt))
 
-        self._logger.debug ("staged/submit SLURM script (%s) (%s)" % (tgt, ret))
+        self._logger.debug ("submit SLURM script (%s) (%s)" % (tgt, ret))
 
         # find out what our job ID is
         # TODO: Could make this more efficient
