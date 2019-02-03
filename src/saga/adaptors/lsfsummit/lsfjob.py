@@ -513,7 +513,7 @@ class LSFJobService(saga.adaptors.cpi.job.Service):
     # ----------------------------------------------------------------
     #
     def _job_run(self, job_obj):
-        """ runs a job via qsub
+        """ runs a job via bsub
         """
         # get the job description
         jd = job_obj.jd
@@ -553,7 +553,7 @@ class LSFJobService(saga.adaptors.cpi.job.Service):
         # Now we want to execute the script. This process consists of two steps:
         # (1) we create a temporary file with 'mktemp' and write the contents of 
         #     the generated PBS script into it
-        # (2) we call 'qsub <tmpfile>' to submit to the queueing system
+        # (2) we call 'bsub <tmpfile>' to submit to the queueing system
         cmdline = """SCRIPTFILE=`mktemp -t SAGA-Python-LSFJobScript.XXXXXX` && echo "%s" > $SCRIPTFILE && %s $SCRIPTFILE && rm -f $SCRIPTFILE""" % (script, self._commands['bsub']['path'])
         ret, out, _ = self.shell.run_sync(cmdline)
 
