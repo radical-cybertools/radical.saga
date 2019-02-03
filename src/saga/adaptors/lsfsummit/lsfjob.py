@@ -1,10 +1,10 @@
 
-__author__    = "Ioannis Paraskevakos"
-__copyright__ = "Copyright 2018-2019, The SAGA Project"
+__author__    = "RADICAL Team @ Rutgers"
+__copyright__ = "Copyright 2012-2019, The SAGA Project"
 __license__   = "MIT"
 
 
-""" LSF job adaptor implementation for Summit
+""" LSF job adaptor implementation
 """
 
 import radical.utils.which
@@ -25,6 +25,8 @@ import threading
 
 from cgi  import parse_qs
 
+import radical.utils as ru
+
 SYNC_CALL = saga.adaptors.cpi.decorators.SYNC_CALL
 ASYNC_CALL = saga.adaptors.cpi.decorators.ASYNC_CALL
 
@@ -32,7 +34,7 @@ SYNC_WAIT_UPDATE_INTERVAL = 1  # seconds
 MONITOR_UPDATE_INTERVAL = 3  # seconds
 
 
-# --------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 #
 class _job_state_monitor(threading.Thread):
     """ thread that periodically monitors job states
@@ -65,29 +67,31 @@ class _job_state_monitor(threading.Thread):
                     # if the job hasn't been started, we can't update its
                     # state. we can tell if a job has been started if it
                     # has a job id
-                    if  jobs[job].get ('job_id', None) is not None:
+                    if  jobs[job].get('job_id', None) is not None:
                         # we only need to monitor jobs that are not in a
                         # terminal state, so we can skip the ones that are 
                         # either done, failed or canceled
                         state = jobs[job]['state']
-                        if state not in [saga.job.DONE, saga.job.FAILED, saga.job.CANCELED]:
+                        if state not in [FINAL, FAILED, CANCELED]:
 
                             job_info = self.js._job_get_info(job)
-                            self.logger.info("Job monitoring thread updating Job %s (state: %s)" % (job, job_info['state']))
+                            self.logger.info("thread updates %s (state: %s)"
+                                            % (job, job_info['state']))
 
                             if job_info['state'] != state:
                                 # fire job state callback if 'state' has changed
-                                job._api()._attributes_i_set('state', job_info['state'], job._api()._UP, True)
+                                job._api()._attributes_i_set('state',
+                                        job_info['state'], job._api()._UP, True)
 
                             # update job info
                             self.js.jobs[job] = job_info
 
                 time.sleep(MONITOR_UPDATE_INTERVAL)
             except Exception as e:
-                self.logger.warning("Exception caught in job monitoring thread: %s" % e)
+                self.logger.warning("job monitoring thread error: %s" % e)
 
 
-# --------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 #
 def log_error_and_raise(message, exception, logger):
     """ loggs an 'error' message and subsequently throws an exception
@@ -96,7 +100,7 @@ def log_error_and_raise(message, exception, logger):
     raise exception(message)
 
 
-# --------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 #
 def _lsf_to_saga_jobstate(lsfjs):
     """ translates a lsf one-letter state to saga
@@ -115,7 +119,7 @@ def _lsf_to_saga_jobstate(lsfjs):
         return saga.job.UNKNOWN
 
 
-# --------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 #
 def _lsfscript_generator(url, logger, jd, ppn, lsf_version, queue, span):
     """ generates an LSF script from a SAGA job description
@@ -154,7 +158,8 @@ def _lsfscript_generator(url, logger, jd, ppn, lsf_version, queue, span):
                 # user provided a relative path for STDOUT. in this case 
                 # we prepend the working directory path before passing
                 # it on to LSF.
-                lsf_params += "#BSUB -o %s/%s \n" % (jd.working_directory, jd.output)
+                lsf_params += "#BSUB -o %s/%s \n" \
+                            % (jd.working_directory, jd.output)
         else:
             lsf_params += "#BSUB -o %s \n" % jd.output
 
@@ -169,7 +174,8 @@ def _lsfscript_generator(url, logger, jd, ppn, lsf_version, queue, span):
                 # user provided a relative path for STDERR. in this case
                 # we prepend the working directory path before passing
                 # it on to LSF.
-                lsf_params += "#BSUB -e %s/%s \n" % (jd.working_directory, jd.error)
+                lsf_params += "#BSUB -e %s/%s \n" % (jd.working_directory,
+                                                     jd.error)
         else:
             lsf_params += "#BSUB -e %s \n" % jd.error
 
@@ -180,12 +186,9 @@ def _lsfscript_generator(url, logger, jd, ppn, lsf_version, queue, span):
         lsf_params += "#BSUB -W %s:%s \n" \
             % (str(hours), str(minutes))
 
-    if (jd.queue is not None) and (queue is not None):
-        lsf_params += "#BSUB -q %s \n" % queue
-    elif (jd.queue is not None) and (queue is None):
-        lsf_params += "#BSUB -q %s \n" % jd.queue
-    elif (jd.queue is None) and (queue is not None):
-        lsf_params += "#BSUB -q %s \n" % queue
+    if       jd.queue and     queue: lsf_params += "#BSUB -q %s \n" % queue
+    elif     jd.queue and not queue: lsf_params += "#BSUB -q %s \n" % jd.queue
+    elif not jd.queue and     queue: lsf_params += "#BSUB -q %s \n" % queue
 
     if jd.project is not None and ':' in jd.project:
         account, reservation = jd.project.split(':',1)
@@ -208,15 +211,16 @@ def _lsfscript_generator(url, logger, jd, ppn, lsf_version, queue, span):
     if ret: hostname = os.environ.get('HOSTNAME', '')
     else  : hostname = out.strip()
 
-    if 'summitdev' in hostname: ppn = 20
-    elif 'summit'  in hostname: ppn = 42
+    # FIXME: use config files
+    if   'summitdev' in hostname: ppn = 20
+    elif 'summit'    in hostname: ppn = 42
 
     number_of_nodes = int(total_cpu_count / ppn)
-    if total_cpu_count % ppn > 0:
+    if total_cpu_count % ppn:
         number_of_nodes += 1
-    lsf_params += "#BSUB -nnodes %s \n" %str(number_of_nodes)
 
-    lsf_params += "#BSUB -alloc_flags 'gpumps smt1' \n"
+    lsf_params += "#BSUB -nnodes %d\n" % number_of_nodes
+    lsf_params += "#BSUB -alloc_flags 'gpumps smt1'\n"
 
     # span parameter allows us to influence core spread over nodes
     if span:
@@ -225,28 +229,29 @@ def _lsfscript_generator(url, logger, jd, ppn, lsf_version, queue, span):
     # escape all double quotes and dollar signs, otherwise 'echo |'
     # further down won't work
     # only escape '$' in args and exe. not in the params
-    #exec_n_args = workdir_directives exec_n_args
+  # exec_n_args = workdir_directives exec_n_args
     exec_n_args = exec_n_args.replace('$', '\\$')
 
-    lsfscript = "\n#!/bin/bash \n%s\n%s\n%s" % (lsf_params, env_variable_list, exec_n_args)
-
+    lsfscript = "\n#!/bin/bash \n%s\n%s\n%s" % (lsf_params, env_variable_list,
+                                                exec_n_args)
     lsfscript = lsfscript.replace('"', '\\"')
+
     return lsfscript
 
 
-# --------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # some private defs
 #
 _PTY_TIMEOUT = 2.0
 
-# --------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # the adaptor name
 #
-_ADAPTOR_NAME          = "saga.adaptor.lsfjobsummit"
-_ADAPTOR_SCHEMAS       = ["lsfsummit", "lsfsummit+ssh", "lsfsummit+gsissh"]
+_ADAPTOR_NAME          = "saga.adaptor.lsfjob"
+_ADAPTOR_SCHEMAS       = ["lsf", "lsf+ssh", "lsf+gsissh"]
 _ADAPTOR_OPTIONS       = []
 
-# --------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # the adaptor capabilities & supported attributes
 #
 _ADAPTOR_CAPABILITIES = {
@@ -261,7 +266,7 @@ _ADAPTOR_CAPABILITIES = {
                           saga.job.PROJECT,
                           saga.job.WALL_TIME_LIMIT,
                           saga.job.WORKING_DIRECTORY,
-                          saga.job.SPMD_VARIATION, # TODO: 'hot'-fix for BigJob
+                          saga.job.SPMD_VARIATION,
                           saga.job.PROCESSES_PER_HOST,
                           saga.job.TOTAL_CPU_COUNT],
     "job_attributes":    [saga.job.EXIT_CODE,
@@ -276,7 +281,7 @@ _ADAPTOR_CAPABILITIES = {
                           "userpass": "username/password pair (ssh)"}
 }
 
-# --------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # the adaptor documentation
 #
 _ADAPTOR_DOC = {
@@ -284,60 +289,63 @@ _ADAPTOR_DOC = {
     "cfg_options":   _ADAPTOR_OPTIONS,
     "capabilities":  _ADAPTOR_CAPABILITIES,
     "description":  """
-The LSF adaptor allows to run and manage jobs on `LSF <https://en.wikipedia.org/wiki/Platform_LSF>`_
-controlled Summit HPC.
+The LSF adaptor allows to run and manage jobs on
+`LSF <https://en.wikipedia.org/wiki/Platform_LSF>`_
+controlled HPC clusters.
 """,
     "example": "examples/jobs/lsfjob.py",
-    "schemas": {"lsf_summit":        "connect to a local cluster",
-                "lsf_summit+ssh":    "conenct to a remote cluster via SSH",
-                "lsf_summit+gsissh": "connect to a remote cluster via GSISSH"}
+    "schemas": {"lsf":        "connect to a local cluster",
+                "lsf+ssh":    "conenct to a remote cluster via SSH",
+                "lsf+gsissh": "connect to a remote cluster via GSISSH"}
 }
 
-# --------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # the adaptor info is used to register the adaptor with SAGA
 #
 _ADAPTOR_INFO = {
     "name"        :    _ADAPTOR_NAME,
-    "version"     : "v0.1",
+    "version"     : "v0.3",
     "schemas"     : _ADAPTOR_SCHEMAS,
     "capabilities": _ADAPTOR_CAPABILITIES,
     "cpis": [
         {
-        "type": "saga.job.Service",
-        "class": "LSFJobSummitService"
+            "type" : "saga.job.Service",
+            "class": "LSFJobService"
         },
         {
-        "type": "saga.job.Job",
-        "class": "LSFJob_Summit"
+            "type" : "saga.job.Job",
+            "class": "LSFJob"
         }
     ]
 }
 
 
-###############################################################################
+# ------------------------------------------------------------------------------
 # The adaptor class
-class Adaptor (saga.adaptors.base.Base):
+class Adaptor(saga.adaptors.base.Base):
     """ this is the actual adaptor class, which gets loaded by SAGA (i.e. by 
         the SAGA engine), and which registers the CPI implementation classes 
         which provide the adaptor's functionality.
     """
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     def __init__(self):
 
         saga.adaptors.base.Base.__init__(self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
 
         self.id_re = re.compile('^\[(.*)\]-\[(.*?)\]$')
-        self.opts  = self.get_config (_ADAPTOR_NAME)
+        self.opts  = self.get_config(_ADAPTOR_NAME)
 
-    # ----------------------------------------------------------------
+
+    # --------------------------------------------------------------------------
     #
     def sanity_check(self):
         # FIXME: also check for gsissh
         pass
 
-    # ----------------------------------------------------------------
+
+    # --------------------------------------------------------------------------
     #
     def parse_id(self, id):
         # split the id '[rm]-[pid]' in its parts, and return them.
@@ -350,35 +358,35 @@ class Adaptor (saga.adaptors.base.Base):
         return (match.group(1), match.group(2))
 
 
-###############################################################################
+# ------------------------------------------------------------------------------
 #
-class LSFJobSummitService (saga.adaptors.cpi.job.Service):
+class LSFJobService(saga.adaptors.cpi.job.Service):
     """ implements saga.adaptors.cpi.job.Service
     """
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     def __init__(self, api, adaptor):
 
         self._mt  = None
-        _cpi_base = super(LSFJobSummitService, self)
+        _cpi_base = super(LSFJobService, self)
         _cpi_base.__init__(api, adaptor)
 
         self._adaptor = adaptor
 
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     def __del__(self):
 
         self.close()
 
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     def close(self):
 
-        if  self.mt :
+        if  self.mt:
             self.mt.stop()
             self.mt.join(10)  # don't block forever on join()
 
@@ -391,9 +399,9 @@ class LSFJobSummitService (saga.adaptors.cpi.job.Service):
     #
     def finalize(self, kill_shell=False):
 
-        if  kill_shell :
-            if  self.shell :
-                self.shell.finalize (True)
+        if  kill_shell:
+            if  self.shell:
+                self.shell.finalize(True)
 
 
     # ----------------------------------------------------------------
@@ -415,26 +423,21 @@ class LSFJobSummitService (saga.adaptors.cpi.job.Service):
         self.mt.start()
 
         rm_scheme = rm_url.scheme
-        pty_url   = surl.Url (rm_url)
+        pty_url   = surl.Url(rm_url)
 
         # this adaptor supports options that can be passed via the
         # 'query' component of the job service URL.
         if rm_url.query:
             for key, val in parse_qs(rm_url.query).iteritems():
-                if key == 'queue':
-                    self.queue = val[0]
-                elif key == 'span':
-                    self.span = val[0]
+                if   key == 'queue': self.queue = val[0]
+                elif key == 'span' : self.span  = val[0]
 
         # we need to extrac the scheme for PTYShell. That's basically the
         # job.Serivce Url withou the lsf+ part. We use the PTYShell to execute
         # lsf commands either locally or via gsissh or ssh.
-        if rm_scheme == "lsfsummit":
-            pty_url.scheme = "fork"
-        elif rm_scheme == "lsfsummit+ssh":
-            pty_url.scheme = "ssh"
-        elif rm_scheme == "lsfsummit+gsissh":
-            pty_url.scheme = "gsissh"
+        if   rm_scheme == "lsf"       : pty_url.scheme = "fork"
+        elif rm_scheme == "lsf+ssh"   : pty_url.scheme = "ssh"
+        elif rm_scheme == "lsf+gsissh": pty_url.scheme = "gsissh"
 
         # these are the commands that we need in order to interact with LSF.
         # the adaptor will try to find them during initialize(self) and bail
@@ -482,13 +485,13 @@ class LSFJobSummitService (saga.adaptors.cpi.job.Service):
         # different queues, number of processes per node, etc.
         # TODO: this is quite a hack. however, it *seems* to work quite
         #       well in practice.
-        #ret, out, _ = self.shell.run_sync('unset GREP_OPTIONS; %s -a | grep -E "(np|pcpu)"' % \
-        #    self._commands['pbsnodes']['path'])
-        #if ret != 0:
-        #
-        #    message = "Error running pbsnodes: %s" % out
-        #    log_error_and_raise(message, saga.NoSuccess, self._logger)
-        #else:
+        # ret, out, _ = self.shell.run_sync('unset GREP_OPTIONS; %s -a | grep -E "(np|pcpu)"' % \
+        #     self._commands['pbsnodes']['path'])
+        # if ret != 0:
+        # 
+        #     message = "Error running pbsnodes: %s" % out
+        #     log_error_and_raise(message, saga.NoSuccess, self._logger)
+        # else:
             # this is black magic. we just assume that the highest occurence
             # of a specific np is the number of processors (cores) per compute
             # node. this equals max "PPN" for job scripts
@@ -503,8 +506,9 @@ class LSFJobSummitService (saga.adaptors.cpi.job.Service):
         #                ppn_list[np] = 1
         #    self.ppn = max(ppn_list, key=ppn_list.get)
         #    self._logger.debug("Found the following 'ppn' configurations: %s. \
-    #Using %s as default ppn." 
-     #           % (ppn_list, self.ppn))
+        #          Using %s as default ppn." 
+        #        % (ppn_list, self.ppn))
+
 
     # ----------------------------------------------------------------
     #
@@ -515,22 +519,22 @@ class LSFJobSummitService (saga.adaptors.cpi.job.Service):
         jd = job_obj.jd
 
         # normalize working directory path
-        if  jd.working_directory :
-            jd.working_directory = os.path.normpath (jd.working_directory)
+        if  jd.working_directory:
+            jd.working_directory = os.path.normpath(jd.working_directory)
 
-        if (self.queue is not None) and (jd.queue is not None):
-            self._logger.warning("Job service was instantiated explicitly with \
-'queue=%s', but job description tries to a differnt queue: '%s'. Using '%s'." %
-                                (self.queue, jd.queue, self.queue))
+        if self.queue and jd.queue:
+            self._logger.warning("Job queue (%s) supercedes service queue (%s)"
+                                % (jd.queue, self.queue))
 
         try:
             # create an LSF job script from SAGA job description
-            script = _lsfscript_generator(url=self.rm, logger=self._logger,
-                                         jd=jd, ppn=self.ppn,
-                                         lsf_version=self._commands['bjobs']['version'],
-                                         queue=self.queue, span=self.span)
-
+            version = self._commands['bjobs']['version'],
+            script  = _lsfscript_generator(url=self.rm, logger=self._logger,
+                                          jd=jd, ppn=self.ppn,
+                                          lsf_version=version,
+                                          queue=self.queue, span=self.span)
             self._logger.info("Generated LSF script: %s" % script)
+
         except Exception, ex:
             log_error_and_raise(str(ex), saga.BadParameter, self._logger)
 
@@ -538,9 +542,10 @@ class LSFJobSummitService (saga.adaptors.cpi.job.Service):
         # WARNING: this assumes a shared filesystem between login node and
         #          compute nodes.
         if jd.working_directory is not None:
-            self._logger.info("Creating working directory %s" % jd.working_directory)
-            ret, out, _ = self.shell.run_sync("mkdir -p %s" % (jd.working_directory))
-            if ret != 0:
+            self._logger.info("Creating working directory %s" %  jd.working_directory)
+            ret, out, _ = self.shell.run_sync("mkdir -p %s"   % (jd.working_directory))
+
+            if ret:
                 # something went wrong
                 message = "Couldn't create working directory - %s" % (out)
                 log_error_and_raise(message, saga.NoSuccess, self._logger)
@@ -548,7 +553,7 @@ class LSFJobSummitService (saga.adaptors.cpi.job.Service):
         # Now we want to execute the script. This process consists of two steps:
         # (1) we create a temporary file with 'mktemp' and write the contents of 
         #     the generated PBS script into it
-        # (2) we call 'qsub <tmpfile>' to submit the script to the queueing system
+        # (2) we call 'qsub <tmpfile>' to submit to the queueing system
         cmdline = """SCRIPTFILE=`mktemp -t SAGA-Python-LSFJobScript.XXXXXX` && echo "%s" > $SCRIPTFILE && %s $SCRIPTFILE && rm -f $SCRIPTFILE""" % (script, self._commands['bsub']['path'])
         ret, out, _ = self.shell.run_sync(cmdline)
 
@@ -668,7 +673,7 @@ class LSFJobSummitService (saga.adaptors.cpi.job.Service):
 
         # if we don't have the job in our dictionary, we don't want it
         if job_obj not in self.jobs:
-            message = "Unknown job object: %s. Can't update state." % job_obj._id
+            message = "Unknown job %s. Can't update state." % job_obj._id
             log_error_and_raise(message, saga.NoSuccess, self._logger)
 
         # prev. info contains the info collect when _job_get_info
@@ -684,14 +689,14 @@ class LSFJobSummitService (saga.adaptors.cpi.job.Service):
         # as a copy of prev_info (don't use deepcopy because there is an API 
         # object in the dict -> recursion)
         curr_info = dict()
-        curr_info['job_id'     ] = prev_info.get ('job_id'     )
-        curr_info['state'      ] = prev_info.get ('state'      )
-        curr_info['exec_hosts' ] = prev_info.get ('exec_hosts' )
-        curr_info['returncode' ] = prev_info.get ('returncode' )
-        curr_info['create_time'] = prev_info.get ('create_time')
-        curr_info['start_time' ] = prev_info.get ('start_time' )
-        curr_info['end_time'   ] = prev_info.get ('end_time'   )
-        curr_info['gone'       ] = prev_info.get ('gone'       )
+        curr_info['job_id'     ] = prev_info.get('job_id'     )
+        curr_info['state'      ] = prev_info.get('state'      )
+        curr_info['exec_hosts' ] = prev_info.get('exec_hosts' )
+        curr_info['returncode' ] = prev_info.get('returncode' )
+        curr_info['create_time'] = prev_info.get('create_time')
+        curr_info['start_time' ] = prev_info.get('start_time' )
+        curr_info['end_time'   ] = prev_info.get('end_time'   )
+        curr_info['gone'       ] = prev_info.get('gone'       )
 
         rm, pid = self._adaptor.parse_id(job_obj._id)
 
@@ -703,16 +708,17 @@ class LSFJobSummitService (saga.adaptors.cpi.job.Service):
         # 
         # If we add the -nodeader flag, the first row is ommited 
 
-        ret, out, _ = self.shell.run_sync("%s -noheader %s" % (self._commands['bjobs']['path'], pid))
+        ret, out, _ = self.shell.run_sync("%s -noheader %s"
+                                 % (self._commands['bjobs']['path'], pid))
 
         if ret != 0:
-            if ("Illegal job ID" in out):
+            if "Illegal job ID" in out:
                 # Let's see if the previous job state was running or pending. in
                 # that case, the job is gone now, which can either mean DONE,
                 # or FAILED. the only thing we can do is set it to 'DONE'
                 curr_info['gone'] = True
                 # we can also set the end time
-                self._logger.warning("Previously running job has disappeared. This probably means that the backend doesn't store informations about finished jobs. Setting state to 'DONE'.")
+                self._logger.warning("job disappeared - set to 'DONE'.")
 
                 if prev_info['state'] in [saga.job.RUNNING, saga.job.PENDING]:
                     curr_info['state'] = saga.job.DONE
@@ -725,11 +731,12 @@ class LSFJobSummitService (saga.adaptors.cpi.job.Service):
         else:
             # parse the result
             results = out.split()
-            curr_info['state'] = _lsf_to_saga_jobstate(results[2])
+            curr_info['state']      = _lsf_to_saga_jobstate(results[2])
             curr_info['exec_hosts'] = results[5]
 
         # return the new job info dict
         return curr_info
+
 
     # ----------------------------------------------------------------
     #
@@ -737,6 +744,7 @@ class LSFJobSummitService (saga.adaptors.cpi.job.Service):
         """ get the job's state
         """
         return self.jobs[job_obj]['state']
+
 
     # ----------------------------------------------------------------
     #
@@ -746,8 +754,9 @@ class LSFJobSummitService (saga.adaptors.cpi.job.Service):
         ret = self.jobs[job_obj]['returncode']
 
         # FIXME: 'None' should cause an exception
-        if ret == None : return None
-        else           : return int(ret)
+        if ret is None: return None
+        else          : return int(ret)
+
 
     # ----------------------------------------------------------------
     #
@@ -756,6 +765,7 @@ class LSFJobSummitService (saga.adaptors.cpi.job.Service):
         """
         return self.jobs[job_obj]['exec_hosts']
 
+
     # ----------------------------------------------------------------
     #
     def _job_get_create_time(self, job_obj):
@@ -763,12 +773,14 @@ class LSFJobSummitService (saga.adaptors.cpi.job.Service):
         """
         return self.jobs[job_obj]['create_time']
 
+
     # ----------------------------------------------------------------
     #
     def _job_get_start_time(self, job_obj):
         """ get the job's start time
         """
         return self.jobs[job_obj]['start_time']
+
 
     # ----------------------------------------------------------------
     #
@@ -785,8 +797,8 @@ class LSFJobSummitService (saga.adaptors.cpi.job.Service):
         """
         rm, pid = self._adaptor.parse_id(job_obj._id)
 
-        ret, out, _ = self.shell.run_sync("%s %s\n" \
-            % (self._commands['bkill']['path'], pid))
+        ret, out, _ = self.shell.run_sync("%s %s\n"
+                                       % (self._commands['qdel']['path'], pid))
 
         if ret != 0:
             message = "Error canceling job via 'qdel': %s" % out
@@ -805,12 +817,10 @@ class LSFJobSummitService (saga.adaptors.cpi.job.Service):
         rm, pid    = self._adaptor.parse_id(job_obj._id)
 
         while True:
-            #state = self._job_get_state(job_id=job_id, job_obj=job_obj)
+          # state = self._job_get_state(job_id=job_id, job_obj=job_obj)
             state = self.jobs[job_obj]['state']  # this gets updated in the bg.
 
-            if state == saga.job.DONE or \
-               state == saga.job.FAILED or \
-               state == saga.job.CANCELED:
+            if state in [DONE, FAILED, CANCLED]:
                     return True
 
             # avoid busy poll
@@ -821,6 +831,7 @@ class LSFJobSummitService (saga.adaptors.cpi.job.Service):
                 time_now = time.time()
                 if time_now - time_start > timeout:
                     return False
+
 
     # ----------------------------------------------------------------
     #
@@ -855,6 +866,7 @@ class LSFJobSummitService (saga.adaptors.cpi.job.Service):
 
         return job_obj
 
+
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
@@ -881,7 +893,9 @@ class LSFJobSummitService (saga.adaptors.cpi.job.Service):
 
         # throw it into our job dictionary.
         self.jobs[job._adaptor] = job_info
+
         return job
+
 
     # ----------------------------------------------------------------
     #
@@ -891,6 +905,7 @@ class LSFJobSummitService (saga.adaptors.cpi.job.Service):
         """
         return self.rm
 
+
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
@@ -899,70 +914,81 @@ class LSFJobSummitService (saga.adaptors.cpi.job.Service):
         """
         ids = []
 
-        ret, out, _ = self.shell.run_sync("%s -a" % self._commands['bjobs']['path'])
+        ret, out, _ = self.shell.run_sync("%s -a"
+                                        % self._commands['bjobs']['path'])
 
         if ret != 0 and len(out) > 0:
             message = "failed to list jobs via 'bjobs': %s" % out
             log_error_and_raise(message, saga.NoSuccess, self._logger)
-        elif ret != 0 and len(out) == 0:
 
+        elif ret != 0 and len(out) == 0:
             pass
+
         else:
             for line in out.split("\n"):
                 # output looks like this:
                 # 112059.svc.uc.futuregrid testjob oweidner 0 Q batch
                 # 112061.svc.uc.futuregrid testjob oweidner 0 Q batch
                 if len(line.split()) > 1:
-                    jobid = "[%s]-[%s]" % (self.rm, line.split()[0].split('.')[0])
+                    jobid = "[%s]-[%s]" % (self.rm, line.split('.')[0])
                     ids.append(str(jobid))
 
         return ids
 
 
-  # # ----------------------------------------------------------------
-  # #
-  # def container_run (self, jobs) :
-  #     self._logger.debug ("container run: %s"  %  str(jobs))
-  #     # TODO: this is not optimized yet
-  #     for job in jobs:
-  #         job.run ()
-  #
-  #
-  # # ----------------------------------------------------------------
-  # #
-  # def container_wait (self, jobs, mode, timeout) :
-  #     self._logger.debug ("container wait: %s"  %  str(jobs))
-  #     # TODO: this is not optimized yet
-  #     for job in jobs:
-  #         job.wait ()
-  #
-  #
-  # # ----------------------------------------------------------------
-  # #
-  # def container_cancel (self, jobs, timeout) :
-  #     self._logger.debug ("container cancel: %s"  %  str(jobs))
-  #     raise saga.NoSuccess ("Not Implemented");
+    # --------------------------------------------------------------------------
+    #
+    def container_run(self, jobs):
+        self._logger.debug("container run: %s"  %  str(jobs))
+        # TODO: this is not optimized yet
+        for job in jobs:
+            job.run()
 
 
-###############################################################################
+    # --------------------------------------------------------------------------
+    #
+    def container_wait(self, jobs, mode, timeout):
+        self._logger.debug("container wait: %s"  %  str(jobs))
+        # TODO: this is not optimized yet
+        for job in jobs:
+            job.wait()
+
+
+    # --------------------------------------------------------------------------
+    #
+    def container_cancel(self, jobs, timeout):
+        self._logger.debug("container cancel: %s"  %  str(jobs))
+        raise saga.NoSuccess("Not Implemented");
+
+
+# ------------------------------------------------------------------------------
 #
-class LSFJob_Summit (saga.adaptors.cpi.job.Job):
+class LSFJob(saga.adaptors.cpi.job.Job):
     """ implements saga.adaptors.cpi.job.Job
     """
 
+    # --------------------------------------------------------------------------
+    #
     def __init__(self, api, adaptor):
 
         # initialize parent class
-        _cpi_base = super(LSFJob_Summit, self)
+        _cpi_base = super(LSFJob, self)
         _cpi_base.__init__(api, adaptor)
 
+
+    # --------------------------------------------------------------------------
+    #
     def _get_impl(self):
         return self
 
+    # --------------------------------------------------------------------------
+    #
     @SYNC_CALL
     def init_instance(self, job_info):
+
         """ implements saga.adaptors.cpi.job.Job.init_instance()
         """
+        
         # init_instance is called for every new saga.job.Job object
         # that is created
         self.jd = job_info["job_description"]
@@ -979,6 +1005,7 @@ class LSFJob_Summit (saga.adaptors.cpi.job.Job):
 
         return self.get_api()
 
+
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
@@ -986,7 +1013,8 @@ class LSFJob_Summit (saga.adaptors.cpi.job.Job):
         """ implements saga.adaptors.cpi.job.Job.get_state()
         """
         return self.js._job_get_state(job_obj=self)
-            
+
+
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
@@ -998,6 +1026,7 @@ class LSFJob_Summit (saga.adaptors.cpi.job.Job):
                 saga.IncorrectState, self._logger)
         else:
             self.js._job_wait(job_obj=self, timeout=timeout)
+
 
     # ----------------------------------------------------------------
     #
@@ -1011,6 +1040,7 @@ class LSFJob_Summit (saga.adaptors.cpi.job.Job):
         else:
             self.js._job_cancel(self)
 
+
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
@@ -1020,6 +1050,7 @@ class LSFJob_Summit (saga.adaptors.cpi.job.Job):
         self._id = self.js._job_run(self)
         self._started = True
 
+
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
@@ -1027,6 +1058,7 @@ class LSFJob_Summit (saga.adaptors.cpi.job.Job):
         """ implements saga.adaptors.cpi.job.Job.get_service_url()
         """
         return self.js.rm
+
 
     # ----------------------------------------------------------------
     #
@@ -1036,12 +1068,14 @@ class LSFJob_Summit (saga.adaptors.cpi.job.Job):
         """
         return self._id
 
+
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
-    def get_name (self):
+    def get_name(self):
         """ Implements saga.adaptors.cpi.job.Job.get_name() """        
         return self._name
+
 
     # ----------------------------------------------------------------
     #
@@ -1049,10 +1083,9 @@ class LSFJob_Summit (saga.adaptors.cpi.job.Job):
     def get_exit_code(self):
         """ implements saga.adaptors.cpi.job.Job.get_exit_code()
         """
-        if self._started is False:
-            return None
-        else:
-            return self.js._job_get_exit_code(self)
+        if self._started: return self.js._job_get_exit_code(self)
+        else            : return None
+
 
     # ----------------------------------------------------------------
     #
@@ -1060,10 +1093,9 @@ class LSFJob_Summit (saga.adaptors.cpi.job.Job):
     def get_created(self):
         """ implements saga.adaptors.cpi.job.Job.get_created()
         """
-        if self._started is False:
-            return None
-        else:
-            return self.js._job_get_create_time(self)
+        if self._started: return self.js._job_get_create_time(self)
+        else            : return None
+
 
     # ----------------------------------------------------------------
     #
@@ -1071,10 +1103,9 @@ class LSFJob_Summit (saga.adaptors.cpi.job.Job):
     def get_started(self):
         """ implements saga.adaptors.cpi.job.Job.get_started()
         """
-        if self._started is False:
-            return None
-        else:
-            return self.js._job_get_start_time(self)
+        if self._started: return self.js._job_get_start_time(self)
+        else            : return None
+
 
     # ----------------------------------------------------------------
     #
@@ -1082,10 +1113,9 @@ class LSFJob_Summit (saga.adaptors.cpi.job.Job):
     def get_finished(self):
         """ implements saga.adaptors.cpi.job.Job.get_finished()
         """
-        if self._started is False:
-            return None
-        else:
-            return self.js._job_get_end_time(self)
+        if self._started: return self.js._job_get_end_time(self)
+        else            : return None
+
 
     # ----------------------------------------------------------------
     #
@@ -1093,7 +1123,9 @@ class LSFJob_Summit (saga.adaptors.cpi.job.Job):
     def get_execution_hosts(self):
         """ implements saga.adaptors.cpi.job.Job.get_execution_hosts()
         """
-        if self._started is False:
-            return None
-        else:
-            return self.js._job_get_execution_hosts(self)
+        if self._started: return self.js._job_get_execution_hosts(self)
+        else            : return None
+
+
+# ------------------------------------------------------------------------------
+
