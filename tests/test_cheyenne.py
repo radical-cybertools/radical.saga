@@ -30,13 +30,13 @@ def main():
 
     try:
         # Your ssh identity on the remote machine.
-        ctx = saga.Context("ssh")
+        # ctx = saga.Context("ssh")
 
         # Change e.g., if you have a differnent username on the remote machine
         #ctx.user_id = "your_ssh_username"
 
         session = saga.Session()
-        session.add_context(ctx)
+        # session.add_context(ctx)
 
         # Create a job service object that represent a remote pbs cluster.
         # The keyword 'pbs' in the url scheme triggers the PBS adaptors
@@ -48,13 +48,13 @@ def main():
         # description attributes can be found in the API documentation.
         jd = saga.job.Description()
         jd.wall_time_limit   = 1 # minutes
-        jd.executable        = '/bin/data'
+        jd.executable        = '/bin/date'
 
-       #jd.total_cpu_count   = 12 # for lonestar this has to be a multiple of 12
+        jd.total_cpu_count   = 36 # for lonestar this has to be a multiple of 12
        #jd.spmd_variation    = '12way' # translates to the qsub -pe flag
 
-       #jd.queue             = "batch"
-        jd.project           = "e291"
+        jd.queue             = "regular"
+        jd.project           = "URTG0014"
 
         jd.output            = "examplejob.out"
         jd.error             = "examplejob.err"
