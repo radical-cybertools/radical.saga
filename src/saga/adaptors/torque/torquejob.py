@@ -853,6 +853,7 @@ class TORQUEJobService (saga.adaptors.cpi.job.Service):
             qstat_flag = '-f'
         else:
             qstat_flag ='-f1'
+        qstat_flag = '-f1'
             
         ret, out, _ = self.shell.run_sync("unset GREP_OPTIONS; %s %s %s | "
                 "grep -E -i '(job_state)|(exec_host)|(exit_status)|"
