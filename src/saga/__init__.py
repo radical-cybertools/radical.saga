@@ -37,18 +37,21 @@ import saga.filesystem
 import saga.replica
 import saga.advert
 import saga.resource
+# import saga.messages
 
 
 # ------------------------------------------------------------------------------
 
 pwd     = os.path.dirname (__file__)
 root    = "%s/.." % pwd
-version, version_detail, version_branch, sdist_name, sdist_path = ru.get_version ([root, pwd])
+version_short, version_detail, version_base, version_branch, \
+        sdist_name, sdist_path = ru.get_version ([root, pwd])
+version = version_short
 
 # FIXME: the logger init will require a 'classical' ini based config, which is
 # different from the json based config we use now.   May need updating once the
 # radical configuration system has changed to json
-_logger = ru.get_logger('radical.saga')
+_logger = ru.Logger('radical.saga')
 _logger.info ('radical.saga         version: %s' % version_detail)
 
 

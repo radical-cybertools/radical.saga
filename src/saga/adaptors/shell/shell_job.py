@@ -203,10 +203,11 @@ _ADAPTOR_CAPABILITIES  = {
                           saga.job.OUTPUT,
                           saga.job.ERROR,
                           saga.job.NAME,
-                          saga.job.WALL_TIME_LIMIT, # TODO: 'hot'-fix for BigJob - implement properly
-                          saga.job.TOTAL_CPU_COUNT, # TODO: 'hot'-fix for BigJob - implement properly
+                          saga.job.WALL_TIME_LIMIT,
+                          saga.job.TOTAL_CPU_COUNT,
+                          saga.job.TOTAL_GPU_COUNT,
                           saga.job.PROCESSES_PER_HOST,
-                          saga.job.SPMD_VARIATION,  # TODO: 'hot'-fix for BigJob - implement properly
+                          saga.job.SPMD_VARIATION,
                          ],
     "job_attributes"   : [saga.job.EXIT_CODE,
                           saga.job.EXECUTION_HOSTS,

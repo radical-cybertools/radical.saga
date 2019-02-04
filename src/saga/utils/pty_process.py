@@ -100,7 +100,7 @@ class PTYProcess (object) :
         """
 
         self.logger = logger
-        if  not  self.logger : self.logger = ru.get_logger ('radical.saga.pty')
+        if  not  self.logger : self.logger = ru.Logger('radical.saga.pty')
         self.logger.debug ("PTYProcess init %s" % self)
 
 

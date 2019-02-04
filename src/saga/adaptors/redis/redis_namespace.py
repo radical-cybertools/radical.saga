@@ -208,7 +208,7 @@ class redis_ns_server (redis.Redis) :
         t2 = time.time ()
 
         # add a logger 
-        self.logger = ru.get_logger ('radical.saga')
+        self.logger = ru.Logger('radical.saga')
 
         # create a cache dict and attach to redis client instance.  Cache
         # lifetime is set to 10 times the redis-connect latency.

@@ -6,6 +6,138 @@
     https://github.com/radical-cybertools/saga-python/issues?q=is%3Aissue+is%3Aopen+
 
 
+Version 0.50.5                                                        2018-12-19
+--------------------------------------------------------------------------------
+
+  - fixes in Slurm and Torque adaptor
+
+
+Version 0.50.4                                                        2018-12-12
+--------------------------------------------------------------------------------
+
+  - fix version check in slurm adaptor
+
+
+Version 0.50.3                                                        2018-11-13
+--------------------------------------------------------------------------------
+
+  - fix version check in face of git errors
+
+
+Version 0.50.2                                                        2018-11-13
+--------------------------------------------------------------------------------
+
+  - fix version check for Stampede (#rp-1754) - thanks Ioannis!
+
+
+Version 0.50.1                                                        2018-10-26
+--------------------------------------------------------------------------------
+
+  - Add Cheyenne suport - thanks Vivek!
+
+
+Version 0.50.0                                                        2018-0&-03
+--------------------------------------------------------------------------------
+
+  - partial support for heterogeneous clusters (slurm)
+  - (origin/pr/637) more thorough handling of $PROMPT_COMMAND 
+  - Fix #680 - Corrected Error on LSF: module object has no attribute Event
+  - Fix/issue 1514
+  - Fix/issue 662
+  - Fix/issue 663
+  - add gpu "support" to torque 
+  - correctly interprete candidate_hosts on pbspro 
+  - fix torque job name handling 
+  - make sure theh default session also inherits the uid (#671) 
+  - remove obsolete comment, add local GPUs 
+  - sync pbspro and torque adaptor. 
+
+
+Version 0.47.6                                                        2018-06-02
+--------------------------------------------------------------------------------
+
+  - catch up with  RU log, rep and prof settings
+
+
+Version 0.47.5                                                        2018-04-20
+--------------------------------------------------------------------------------
+
+  - slurm uses '-N' on wrangler now.
+
+
+Version 0.47.4                                                        2018-04-09
+--------------------------------------------------------------------------------
+
+  - trigger BW syntax based on version string
+
+
+Version 0.47.3                                                        2018-03-20
+--------------------------------------------------------------------------------
+
+  - accept SID settings from upper layers (RP) (#654) 
+  - add travis tests, badge
+  - cheyenne fix to pbspro 
+  - get titan back to work (#664) 
+  - fix task container get_state reval 
+
+
+Version 0.47.2                                                        2018-02-28
+--------------------------------------------------------------------------------
+
+  - accept SID settings from upper layers (RP) (#654) 
+  - fix task container get_state reval 
+
+
+Version 0.47                                                          2017-11-19
+--------------------------------------------------------------------------------
+
+  - avoid use of `condor_history` if so configured
+  - cleaner recovery for `condor_hist` when its used
+  - be more resilient against `sacct` errors 
+  - one more `PROMPT_COMMAND` setting 
+
+
+Version 0.46                                                          2017-08-23
+--------------------------------------------------------------------------------
+
+  - hotfix for RP #1415
+
+
+Version 0.46                                                          2017-08-11
+--------------------------------------------------------------------------------
+
+  - Fix several debug messages
+  - Fix/621 experiment aimes (#622) 
+  - Fixed run_job to run in service.py 
+  - Properly support SGE job name. (#624) 
+  - Anselm support in pbspro v.13 (#634) 
+  - fix a condor script syntax error 
+  - attempt to prevent job eviction 
+  - be resiliant against lingering NFS locks (hi titan) 
+  - clean bulk job info for condor 
+  - clean up state management in condor adaptor,
+  - slim down condor log calls, simplify status updates, ensure output transfer 
+  - container_cancel needs to accept timeout parameter (#633) 
+  - don't barf on failing condor_history 
+  - don't limit status check length 
+  - iteration on slurm mpi support (#623) 
+  - fix logic error in directive evaluation 
+  - fix parsing of condor_history for multi-file staging
+  - fixes on src/tgt ordering in osg staging 
+  - follow the rename of ru.Task to ru.Future 
+  - follow the rename of ru.Thread to ru.Future 
+  - implement bulk cancel for condor 
+  - iteration on bulk submission, data staging 
+  - iteration on run_job implementatio 
+  - improve condor scaling / performance
+  - make sure we alsways have a valid transfer directive in condor 
+  - make sure we do not fail on a missing exit code 
+  - more clarity on file staging semantics, some cleanup 
+  - better handling of $PROMPT_COMMAND 
+  - resilience against condor_history errors 
+  - update on torque to avoid triggering a check 
+
+
 Version 0.45.1                                                        2017-02-28
 --------------------------------------------------------------------------------
 

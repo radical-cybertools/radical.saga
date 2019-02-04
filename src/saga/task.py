@@ -621,7 +621,7 @@ class Container (sbase.SimpleBase, satt.Attributes) :
 
         # We still need to get the states from all futures.
         # FIXME: order
-        states  = []
+        states = list()
 
         for future in futures :
             future.join ()
@@ -633,7 +633,7 @@ class Container (sbase.SimpleBase, satt.Attributes) :
             res = future.result
 
             if res != None :
-                states += res
+                states.append(res)
 
         return states
 

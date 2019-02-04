@@ -224,7 +224,7 @@ class Engine(ruc.Configurable):
         self._cfg = self.get_config('saga.engine')
 
         # Initialize the logging, and log version (this is a singleton!)
-        self._logger = ru.get_logger ('radical.saga')
+        self._logger = ru.Logger('radical.saga')
 
         # load adaptors
         self._load_adaptors ()
