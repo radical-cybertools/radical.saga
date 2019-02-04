@@ -69,6 +69,8 @@ SPMD_VARIATION        = 'SPMDVariation';       """ The type of parallelism
                                                    required by this job """ 
 TOTAL_CPU_COUNT       = 'TotalCPUCount';       """ The number of CPUs required 
                                                    by this job """
+TOTAL_GPU_COUNT       = 'TotalGPUCount';       """ The number of GPUs required 
+                                                   by this job """
 NUMBER_OF_PROCESSES   = 'NumberOfProcesses';   """ Number of instances of """ 
 PROCESSES_PER_HOST    = 'ProcessesPerHost';    """ :todo: docstring """ 
 THREADS_PER_PROCESS   = 'ThreadsPerProcess';   """ :todo: docstring """ 

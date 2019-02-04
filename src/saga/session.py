@@ -38,7 +38,7 @@ class _ContextList (list) :
         if  session : 
             self._logger  = session._logger
         else :
-            self._logger  = ru.get_logger ('radical.saga')
+            self._logger  = ru.Logger('radical.saga')
 
         base_list = super  (_ContextList, self)
         base_list.__init__ (*args, **kwargs)
@@ -166,14 +166,14 @@ class Session (saga.base.SimpleBase) :
     @rus.takes   ('Session', 
                   rus.optional(bool))
     @rus.returns (rus.nothing)
-    def __init__ (self, default=True):
+    def __init__ (self, default=True, uid=None):
         """
         default: bool
         ret:     None
         """
 
         simple_base = super  (Session, self)
-        simple_base.__init__ ()
+        simple_base.__init__ (uid=uid)
 
         self._logger = ru.get_logger ('radical.saga')
 
@@ -184,7 +184,7 @@ class Session (saga.base.SimpleBase) :
         # a session also has a lease manager, for adaptors in this session to use.
 
         if  default :
-            default_session     = DefaultSession ()
+            default_session     = DefaultSession (uid=self._id)
             self.contexts       = copy.deepcopy(default_session.contexts)
             self._lease_manager = default_session._lease_manager
         else :
@@ -288,14 +288,14 @@ class DefaultSession(Session):
     #
     @rus.takes   ('DefaultSession')
     @rus.returns (rus.nothing)
-    def __init__ (self):
+    def __init__ (self, uid=None):
 
         # the default session picks up default contexts, from all context
         # adaptors.  To implemented, we have to do some legwork: get the engine,
         # dig through the registered context adaptors, and ask each of them for
         # default contexts.
         
-        super(DefaultSession, self).__init__(default=False)
+        super(DefaultSession, self).__init__(default=False, uid=uid)
 
         _engine = saga.engine.engine.Engine()
 

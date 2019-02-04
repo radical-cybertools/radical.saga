@@ -24,20 +24,20 @@ def start():
         # Create a job service object that represent a remote pbs cluster.
         # The keyword 'pbs' in the url scheme triggers the SGE adaptors
         # and '+ssh' enables SGE remote access via SSH.
-        js = saga.job.Service("slurm+gsissh://stampede.tacc.xsede.org:2222/")
+        js = saga.job.Service("slurm+gsissh://wrangler.tacc.xsede.org:2222/")
 
         # Next, we describe the job we want to run. A complete set of job
         # description attributes can be found in the API documentation.
         jd = saga.job.Description()
         jd.environment       = {'FILENAME': 'testfile'}
-        jd.wall_time_limit   = 1 # minutes
-        
+        jd.wall_time_limit   = 1  # minutes
+
         jd.executable        = '/bin/touch'
         jd.arguments         = ['$FILENAME']
 
         jd.name              = "examplejob"
-        jd.queue             = "development"
-        jd.project           = "TG-MCB090174"
+        jd.queue             = "normal"
+        jd.project           = "TG-MCB090174" 
 
         jd.working_directory = ".saga/test"
         jd.output            = "examplejob.out"
