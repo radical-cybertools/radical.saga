@@ -20,8 +20,6 @@ import math
 import time
 import tempfile
 
-from distutils.version import StrictVersion
-
 SYNC_CALL  = saga.adaptors.cpi.decorators.SYNC_CALL
 ASYNC_CALL = saga.adaptors.cpi.decorators.ASYNC_CALL
 
@@ -374,7 +372,7 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
                                self.rm.detected_username)
 
         _, out, _ = self.shell.run_sync('scontrol --version')
-        self._version = StrictVersion(out.split()[1].strip())
+        self._version = out.split()[1].strip()
         self._logger.info('slurm version: %s' % self._version)
 
         ppn_pat   = '\'s/.*\\(CPUTot=[0-9]*\\).*/\\1/g\'' 
@@ -479,8 +477,8 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
             # we start N independent processes
             mpi_cmd = ''
 
-            if self._version >= StrictVersion('17.11.5'):
-        
+            if self._version in ['17.11.5', '18.08.0', '18.08.3']:
+
                 assert(self._ppn), 'need unique number of cores per node'
                 number_of_nodes = int(math.ceil(float(total_cpu_count) / self._ppn))
                 slurm_script += "#SBATCH -N %d\n" % (number_of_nodes)
