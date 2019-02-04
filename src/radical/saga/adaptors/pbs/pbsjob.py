@@ -306,15 +306,13 @@ def _pbscript_generator(url, logger, jd, ppn, gres, pbs_version, is_cray=False, 
     if gres:
         pbs_params += "#PBS -l gres=%s\n" % gres
 
-    # escape all double quotes and dollarsigns, otherwise 'echo |'
+    # escape all single quotes, otherwise 'echo |'
     # further down won't work
-    # only escape '$' in args and exe. not in the params
     exec_n_args = workdir_directives + exec_n_args
-    exec_n_args = exec_n_args.replace('$', '\\$')
 
     pbscript = "\n#!/bin/bash \n%s%s" % (pbs_params, exec_n_args)
 
-    pbscript = pbscript.replace('"', '\\"')
+    pbscript = pbscript.replace('\'', '\\\'')
     return pbscript
 
 
@@ -677,7 +675,7 @@ class PBSJobService (cpi_job.Service):
         # (1) we create a temporary file with 'mktemp' and write the contents of 
         #     the generated PBS script into it
         # (2) we call 'qsub <tmpfile>' to submit the script to the queueing system
-        cmdline = """SCRIPTFILE=`mktemp -t SAGA-Python-PBSJobScript.XXXXXX` &&  echo "%s" > $SCRIPTFILE && %s $SCRIPTFILE && rm -f $SCRIPTFILE""" %  (script, self._commands['qsub']['path'])
+        cmdline = """SCRIPTFILE=`mktemp -t SAGA-Python-PBSJobScript.XXXXXX` &&  echo '%s' > $SCRIPTFILE && %s $SCRIPTFILE && rm -f $SCRIPTFILE""" %  (script, self._commands['qsub']['path'])
         ret, out, _ = self.shell.run_sync(cmdline)
 
         if ret != 0:

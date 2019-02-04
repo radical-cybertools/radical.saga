@@ -834,7 +834,7 @@ class TORQUEJobService (cpi_job.Service):
         rm, pid = self._adaptor.parse_id(job_id)
 
         qstat_flag = '-f1'
-            
+
         ret, out, _ = self.shell.run_sync("unset GREP_OPTIONS; %s %s %s | "
                 "grep -E -i '(job_state)|(Job_Name)|(exec_host)|(exit_status)|"
                  "(ctime)|(start_time)|(stime)|(mtime)'"
