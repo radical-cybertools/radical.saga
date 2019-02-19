@@ -9,9 +9,10 @@ import radical.utils.signatures as rus
 from .. import attributes       as sa
 from .. import exceptions       as se
 
-from .constants import *
+from .  import constants        as c
 
-#-------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 #
 class Description (sa.Attributes) :
     """ 
@@ -27,7 +28,7 @@ class Description (sa.Attributes) :
         inspection of resource properties.
 
     There are three specific types of descriptions: 
-      
+
       * :class:`saga.resource.ComputeDescription` for the description of
         resources with compute capabilities;
 
@@ -102,22 +103,22 @@ class Description (sa.Attributes) :
 
         # register properties with the attribute interface
 
-        self._attributes_register  (RTYPE       , None , sa.ENUM  , sa.SCALAR, sa.WRITEABLE) 
-        self._attributes_register  (TEMPLATE    , None , sa.STRING, sa.SCALAR, sa.WRITEABLE) 
-        self._attributes_register  (IMAGE       , None , sa.STRING, sa.SCALAR, sa.WRITEABLE) 
-        self._attributes_register  (DYNAMIC     , False, sa.BOOL  , sa.SCALAR, sa.WRITEABLE) 
-        self._attributes_register  (START       , None , sa.TIME  , sa.SCALAR, sa.WRITEABLE) 
-        self._attributes_register  (END         , None , sa.TIME  , sa.SCALAR, sa.WRITEABLE) 
-        self._attributes_register  (DURATION    , None , sa.TIME  , sa.SCALAR, sa.WRITEABLE) 
-        self._attributes_register  (MACHINE_OS  , None , sa.STRING, sa.SCALAR, sa.WRITEABLE) 
-        self._attributes_register  (MACHINE_ARCH, None , sa.STRING, sa.SCALAR, sa.WRITEABLE) 
-        self._attributes_register  (SIZE        , 1    , sa.INT   , sa.SCALAR, sa.WRITEABLE) 
-        self._attributes_register  (MEMORY      , None , sa.STRING, sa.SCALAR, sa.WRITEABLE) 
-        self._attributes_register  (ACCESS      , None , sa.STRING, sa.SCALAR, sa.WRITEABLE) 
+        self._attributes_register(c.RTYPE       , None , sa.ENUM  , sa.SCALAR, sa.WRITEABLE) 
+        self._attributes_register(c.TEMPLATE    , None , sa.STRING, sa.SCALAR, sa.WRITEABLE) 
+        self._attributes_register(c.IMAGE       , None , sa.STRING, sa.SCALAR, sa.WRITEABLE) 
+        self._attributes_register(c.DYNAMIC     , False, sa.BOOL  , sa.SCALAR, sa.WRITEABLE) 
+        self._attributes_register(c.START       , None , sa.TIME  , sa.SCALAR, sa.WRITEABLE) 
+        self._attributes_register(c.END         , None , sa.TIME  , sa.SCALAR, sa.WRITEABLE) 
+        self._attributes_register(c.DURATION    , None , sa.TIME  , sa.SCALAR, sa.WRITEABLE) 
+        self._attributes_register(c.MACHINE_OS  , None , sa.STRING, sa.SCALAR, sa.WRITEABLE) 
+        self._attributes_register(c.MACHINE_ARCH, None , sa.STRING, sa.SCALAR, sa.WRITEABLE) 
+        self._attributes_register(c.SIZE        , 1    , sa.INT   , sa.SCALAR, sa.WRITEABLE) 
+        self._attributes_register(c.MEMORY      , None , sa.STRING, sa.SCALAR, sa.WRITEABLE) 
+        self._attributes_register(c.ACCESS      , None , sa.STRING, sa.SCALAR, sa.WRITEABLE) 
 
-        self._attributes_set_enums (RTYPE, [COMPUTE ,
-                                            STORAGE ,
-                                            NETWORK ])
+        self._attributes_set_enums(c.RTYPE, [c.COMPUTE ,
+                                             c.STORAGE ,
+                                             c.NETWORK ])
 
         # FIXME: initialization should be done in Attributes: initialization
         # from dict or from other attributable
@@ -178,16 +179,16 @@ class ComputeDescription (Description) :
                   rus.optional (dict))
     @rus.returns (rus.nothing)
     def __init__ (self, d=None) :
-        
+
         if  d :
-            if  RTYPE in d and d[RTYPE] != COMPUTE :
-                raise se.BadParameter ("Cannot create ComputeResource with type '%s'" \
-                                    % d[RTYPE])
+            if  c.RTYPE in d and d[c.RTYPE] != c.COMPUTE :
+                raise se.BadParameter ("Cannot create ComputeResource type '%s'"
+                                    % d[c.RTYPE])
 
         self._descr = super  (ComputeDescription, self)
         self._descr.__init__ (d)
 
-        self.rtype = COMPUTE
+        self.rtype = c.COMPUTE
 
 
 # ------------------------------------------------------------------------------
@@ -205,16 +206,16 @@ class StorageDescription (Description) :
                   rus.optional (dict))
     @rus.returns (rus.nothing)
     def __init__ (self, d=None) :
-        
+
         if  d :
-            if  RTYPE in d and d[RTYPE] != STORAGE :
-                raise se.BadParameter ("Cannot create StorageResource with type '%s'" \
-                                    % d[RTYPE])
+            if  c.RTYPE in d and d[c.RTYPE] != c.STORAGE :
+                raise se.BadParameter ("Cannot create StorageResource type '%s'"
+                                    % d[c.RTYPE])
 
         self._descr = super  (StorageDescription, self)
         self._descr.__init__ (d)
 
-        self.rtype = STORAGE
+        self.rtype = c.STORAGE
 
 
 # ------------------------------------------------------------------------------
@@ -231,18 +232,17 @@ class NetworkDescription (Description) :
                   rus.optional (dict))
     @rus.returns (rus.nothing)
     def __init__ (self, d=None) :
-        
-        if  d :
-            if  RTYPE in d and d[RTYPE] != NETWORK :
-                raise se.BadParameter ("Cannot create NetworkResource with type '%s'" \
-                                    % d[RTYPE])
+
+        if  d:
+            if  c.RTYPE in d and d[c.RTYPE] != c.NETWORK :
+                raise se.BadParameter ("Cannot create NetworkResource type '%s'"
+                                    % d[c.RTYPE])
 
         self._descr = super  (NetworkDescription, self)
         self._descr.__init__ ()
 
-        self.rtype = NETWORK
+        self.rtype = c.NETWORK
 
 
-
-
+# ------------------------------------------------------------------------------
 

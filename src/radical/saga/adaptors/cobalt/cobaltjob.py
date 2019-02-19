@@ -124,7 +124,7 @@ def log_error_and_raise(message, exception, logger):
 def _cobalt_to_saga_jobstate(cobaltjs):
     """ translates a cobalt one-letter state to saga
     """
-    
+
     if   cobaltjs == 'C': return DONE
     elif cobaltjs == 'F': return DONE
     elif cobaltjs == 'H': return PENDING  # "Job is held by user or dependency"                     
@@ -212,10 +212,10 @@ def _cobaltscript_generator(url, logger, jd, ppn, is_cray=False, queue=None, run
         cobalt_params += '#COBALT --queue %s\n' % queue
     elif jd.queue:
         cobalt_params += '#COBALT --queue %s\n' % jd.queue
-    
+
     if jd.project:
         cobalt_params += '#COBALT --project %s\n' % str(jd.project)
-    
+
     if jd.job_contact:
         cobalt_params += '#COBALT --notify %s\n' % str(jd.job_contact)
 
@@ -679,7 +679,7 @@ class CobaltJobService (cpi_job.Service):
         if ret != 0:
             message = "Couldn't create Cobalt script file - %s" % (out)
             log_error_and_raise(message, NoSuccess, self._logger)
-        
+
         # Save Script file for later...
         # Cobalt *needs* the file to stick around, even after submission
         # so, we will keep the file around and delete it *only* when
@@ -809,16 +809,16 @@ class CobaltJobService (cpi_job.Service):
                 # which can be found at: 'self._adaptor._job_current_workdir_cwd/pid.cobaltlog' 
                 # If file is found: get the final status of the job
                 # If file not found: let's assume it FAILED. 
-                
+
                 # Run a 'cat' command to the final info about our job
                 # Sample OUTPUT:
                 # ...
                 # Mon Jan 23 02:44:05 2017 +0000 (UTC) Info: task completed normally with an exit code of 126; initiating job cleanup and removal
-                
+
                 ret, out, _ = self.shell.run_sync("unset GREP_OPTIONS; cat %s/%s.cobaltlog | "
                     "grep -P -i '^[A-Z][a-z]{2} [A-Z][a-z]{2} \d{2} \d{2}:\d{2}:\d{2} \d{4} \+\d{4} \([A-Za-z]+\) *Info: task completed'"
                     % (self._adaptor._job_current_workdir[job_id], pid))
-                
+
                 if ret != 0:
                     if reconnect:
                         message = "Couldn't reconnect to job '%s': %s" % (job_id, out)
@@ -845,7 +845,7 @@ class CobaltJobService (cpi_job.Service):
                         exit_code = matches.group(2).strip()
                     except Exception, ex:
                         log_error_and_raise('Could not parse cobaltlog\'s job status' % (str(ex)), NoSuccess, self._logger)
-                    
+
                     # Current format: Mon Jan 23 02:44:05 2017 +0000 (UTC)
                     # ASSUMPTION: Date is in UTC (as seen on the servers)
                     # Will be parsed as UTC and output format: 
@@ -853,10 +853,10 @@ class CobaltJobService (cpi_job.Service):
                     # Wed Dec 21 15:51:34 2016 +0000 (UTC)
                     end_time = datetime.datetime.strptime(timestamp, "%a %b %d %H:%M:%S %Y +0000 (UTC)")
                     job_info['end_time'] = (end_time - self._adaptor.epoch).total_seconds()
-                
+
                     # Return code is on position '13'
                     job_info['returncode'] = int(exit_code)
-                    
+
                     # Final Job State given the exit code
                     if job_info['returncode'] != 0:
                         job_info['state'] = FAILED
@@ -1112,8 +1112,8 @@ class CobaltJobService (cpi_job.Service):
         # TODO: this is not optimized yet
         for job in jobs:
             job.run ()
-    
-    
+
+
     # ----------------------------------------------------------------
     #
     def container_wait (self, jobs, mode, timeout) :
@@ -1121,8 +1121,8 @@ class CobaltJobService (cpi_job.Service):
         # TODO: this is not optimized yet
         for job in jobs:
             job.wait ()
-    
-    
+
+
     # ----------------------------------------------------------------
     #
     def container_cancel (self, jobs, timeout) :
@@ -1176,7 +1176,7 @@ class CobaltJob (cpi_job.Job):
             return NEW
 
         return self.js._job_get_state(job_id=self._id)
-            
+
     # ----------------------------------------------------------------
     #
     @SYNC_CALL

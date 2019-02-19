@@ -36,6 +36,7 @@ class Description (sa.Attributes) :
         self._attributes_register  (ARGUMENTS            , None, sa.STRING, sa.VECTOR, sa.WRITEABLE)
         self._attributes_register  (ENVIRONMENT          , None, sa.STRING, sa.DICT,   sa.WRITEABLE)
         self._attributes_register  (TOTAL_CPU_COUNT      , None, sa.INT,    sa.SCALAR, sa.WRITEABLE)
+        self._attributes_register  (TOTAL_GPU_COUNT      , None, sa.INT,    sa.SCALAR, sa.WRITEABLE)
         self._attributes_register  (NUMBER_OF_PROCESSES  , None, sa.INT,    sa.SCALAR, sa.WRITEABLE)
         self._attributes_register  (PROCESSES_PER_HOST   , None, sa.INT,    sa.SCALAR, sa.WRITEABLE)
         self._attributes_register  (THREADS_PER_PROCESS  , None, sa.INT,    sa.SCALAR, sa.WRITEABLE)
@@ -57,7 +58,7 @@ class Description (sa.Attributes) :
         self._attributes_register  (PROJECT              , None, sa.STRING, sa.SCALAR, sa.WRITEABLE)
         self._attributes_register  (JOB_CONTACT          , None, sa.STRING, sa.VECTOR, sa.WRITEABLE)
         self._attributes_register  (SPMD_VARIATION       , None, sa.ENUM,   sa.SCALAR, sa.WRITEABLE)
-      
+
         self._attributes_set_enums (SPMD_VARIATION,      ['MPI', 'OpenMP', 'MPICH-G'])
 
         self._env_is_list = False

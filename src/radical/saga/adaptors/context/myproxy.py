@@ -114,7 +114,7 @@ class ContextMyProxy (cpi.Context) :
 
         # set up the myproxy command
         cmd = ""
-        
+
         if api.user_pass :
             cmd = "echo %s | myproxy-logon --stdin_pass"  %  api.user_pass
         else :
@@ -131,7 +131,7 @@ class ContextMyProxy (cpi.Context) :
 
         if  api.user_id : 
             cmd += " --username %s"        %  api.user_id
-        
+
         if  api.life_time and api.life_time > 0 : 
             cmd += " --proxy_lifetime %s"  %  api.life_time
 

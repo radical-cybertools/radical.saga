@@ -216,7 +216,7 @@ class ShellResourceManager (cpi_resource.Manager) :
         if  not len (self.access[rd.rtype]) :
             raise BadParameter._log (self._logger, "resource type is not supported by this backend")
 
-        
+
         # this dict is passed on to the job adaptor class -- use it to pass any
         # state information you need there.
         adaptor_state = { "resource_access_url"     : self.access[rd.rtype][0], 
@@ -245,8 +245,8 @@ class ShellResourceManager (cpi_resource.Manager) :
     def list (self, rtype):
 
         return self.access[rtype]
-   
-   
+
+
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
@@ -254,7 +254,7 @@ class ShellResourceManager (cpi_resource.Manager) :
 
         return # hahaha
 
-   
+
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
@@ -262,7 +262,7 @@ class ShellResourceManager (cpi_resource.Manager) :
 
         return [] # no templates
 
-   
+
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
@@ -384,7 +384,7 @@ class ShellResourceCompute (cpi_resource.Compute) :
         if  timeout < 0 :
             while True :
                 time.sleep (10)
-        
+
         # we never get here...
 
 

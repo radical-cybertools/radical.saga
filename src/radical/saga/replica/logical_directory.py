@@ -7,7 +7,6 @@ __license__   = "MIT"
 import radical.utils              as ru
 import radical.utils.signatures   as rus
 
-from .constants  import *
 from ..constants import SYNC, ASYNC, TASK
 from ..adaptors  import base      as sab
 from ..namespace import directory as nsdir
@@ -15,6 +14,8 @@ from ..namespace import directory as nsdir
 from .. import attributes         as sa
 from .. import session            as ss
 from .. import task               as st
+from .  import constants          as c
+
 
 # ------------------------------------------------------------------------------
 #
@@ -30,7 +31,7 @@ class LogicalDirectory (nsdir.Directory, sa.Attributes) :
                   rus.optional (dict), 
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns (rus.nothing)
-    def __init__ (self, url=None, flags=READ, session=None, 
+    def __init__ (self, url=None, flags=c.READ, session=None, 
                   _adaptor=None, _adaptor_state={}, _ttype=None) : 
         '''
         __init__(url, flags=READ, session=None)
@@ -61,7 +62,7 @@ class LogicalDirectory (nsdir.Directory, sa.Attributes) :
                   rus.optional (ss.Session),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns (st.Task)
-    def create (cls, url, flags=READ, session=None, ttype=None) :
+    def create (cls, url, flags=c.READ, session=None, ttype=None) :
         '''
         url:       saga.Url
         flags:     saga.replica.flags enum
@@ -87,8 +88,8 @@ class LogicalDirectory (nsdir.Directory, sa.Attributes) :
         ttype:          saga.task.type enum
         ret:            bool / saga.Task
         '''
-        if    tgt  :  return self._adaptor.is_file      (tgt, ttype=ttype)
-        else       :  return self._nsdirec.is_entry_self(     ttype=ttype)
+        if tgt: return self._adaptor.is_file      (tgt, ttype=ttype)
+        else  : return self._nsdirec.is_entry_self(     ttype=ttype)
 
 
     @rus.takes   ('LogicalDirectory', 
@@ -96,7 +97,7 @@ class LogicalDirectory (nsdir.Directory, sa.Attributes) :
                   rus.optional (int, rus.nothing),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns (('LogicalFile', st.Task))
-    def open (self, tgt, flags=READ, ttype=None) :
+    def open (self, tgt, flags=c.READ, ttype=None) :
         '''
         open(tgt, flags=READ)
 
@@ -110,12 +111,14 @@ class LogicalDirectory (nsdir.Directory, sa.Attributes) :
         return self._adaptor.open (tgt_url, flags, ttype=ttype)
 
 
+    # ----------------------------------------------------------------
+    #
     @rus.takes   ('LogicalDirectory', 
                   rus.one_of (ru.Url, basestring), 
                   rus.optional (int, rus.nothing),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns (('LogicalDirectory', st.Task))
-    def open_dir (self, tgt, flags=READ, ttype=None) :
+    def open_dir (self, tgt, flags=c.READ, ttype=None) :
         '''
         open_dir(tgt, flags=READ)
 
@@ -124,7 +127,7 @@ class LogicalDirectory (nsdir.Directory, sa.Attributes) :
 
         ttype:    saga.task.type enum
         ret:      saga.namespace.Directory / saga.Task
-        
+
         Open and return a new directoy
 
            The call opens and returns a directory at the given location.
@@ -157,14 +160,15 @@ class LogicalDirectory (nsdir.Directory, sa.Attributes) :
         tgt:     logical file to get size for
         ttype:    saga.task.type enum
         ret:      int / saga.Task
-        
-        Returns the size of the physical file represented by the given logical file (in bytes)
+
+        Returns the size of the physical file represented by the given logical
+        file (in bytes)
 
            Example::
 
                # get a logical directory handle
                lf = saga.replica.LogicalFile("irods://localhost/tmp/data/")
-    
+
                # print a logical file's size
                print lf.get_size ('data.dat')
 
@@ -172,14 +176,17 @@ class LogicalDirectory (nsdir.Directory, sa.Attributes) :
         tgt_url = ru.Url (tgt)
         return self._adaptor.get_size (tgt_url, ttype=ttype)
 
-  
+
+    # ----------------------------------------------------------------
+    #
     @rus.takes   ('LogicalDirectory', 
                   rus.optional (basestring),
                   rus.optional (basestring),
                   rus.optional (int, rus.nothing),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((rus.list_of (ru.Url), st.Task))
-    def find (self, name_pattern, attr_pattern=None, flags=RECURSIVE, ttype=None) :
+    def find (self, name_pattern, attr_pattern=None, flags=c.RECURSIVE,
+              ttype=None) :
         '''
         find(name_pattern, attr_pattern=None, flags=RECURSIVE)
 
@@ -190,10 +197,14 @@ class LogicalDirectory (nsdir.Directory, sa.Attributes) :
         ret:            list [saga.Url] / saga.Task
 
         '''
-        if not flags : flags = 0
-        if attr_pattern  :  return self._adaptor.find_replicas (name_pattern, attr_pattern, flags, ttype=ttype)
-        else             :  return self._nsdirec.find          (name_pattern,               flags, ttype=ttype)
+        if not flags: flags = 0
 
-    
+        if attr_pattern: 
+            return self._adaptor.find_replicas(name_pattern, attr_pattern,
+                                               flags, ttype=ttype)
+        else: 
+            return self._nsdirec.find(name_pattern, flags, ttype=ttype)
 
+
+# ------------------------------------------------------------------------------
 

@@ -390,7 +390,7 @@ class EC2Keypair (cpi_context.Context) :
     #
     @SYNC_CALL
     def init_instance (self, adaptor_state, type) :
-        
+
         if  not type.lower () == 'ec2'         and \
             not type.lower () == 'ec2_keypair' :
             raise BadParameter \
@@ -542,7 +542,7 @@ class EC2ResourceManager (cpi_resource.Manager) :
     """
 
     **EC2_URLs:**
-    
+
 
     AWS Generic access point           https://ec2.amazonaws.com/
     AWS US East (Northern Virginia)    https://ec2.us-east-1.amazonaws.com/
@@ -613,7 +613,7 @@ class EC2ResourceManager (cpi_resource.Manager) :
         self.images    = []
 
         # FIXME: we could pre-fetch existing resources right now...
-            
+
 
     # ----------------------------------------------------------------
     #
@@ -668,7 +668,7 @@ class EC2ResourceManager (cpi_resource.Manager) :
             if  context.type.lower () == 'ec2_keypair' :
                 token = context.token
                 self._logger.info ("using '%s' as ec2 keypair" % token)
-       
+
         resource_info = None
 
         # check that only supported attributes are provided
@@ -683,7 +683,7 @@ class EC2ResourceManager (cpi_resource.Manager) :
         # resource attributes
         if  not rd.template :
             raise BadParameter ("no 'template' attribute in resource description")
-        
+
         # we also need an OS image
         if  not rd.image :
             raise BadParameter ("no 'image' attribute in resource description")
@@ -698,21 +698,21 @@ class EC2ResourceManager (cpi_resource.Manager) :
                                      "right now")
 
         try :
-            
+
             # make sure template and image are valid, and get handles
             if  not rd.template in self.templates_dict : 
                 self._refresh_templates (rd.template)
 
             if  not rd.image in self.images_dict : 
                 self._refresh_images (uid=rd.image)
-          
-          
+
+
             # FIXME: interpret / verify size
-          
+
             # user name as id tag
             import getpass
             cid = getpass.getuser()
-          
+
             # create/use the saga-sg security group which allows ssh access
             try: 
                 ret = self.conn.ex_create_security_group('saga-sg', 'used by SAGA', None) 
@@ -724,7 +724,7 @@ class EC2ResourceManager (cpi_resource.Manager) :
             except Exception as e:
                 # lets hope this was a race and the group now exists...
                 pass
-          
+
             # it should be safe to create the VM instance now
             node = self.conn.create_node (name  = 'radical.saga.resource.Compute.%s' % cid,
                                           size  = self.templates_dict[rd.template], 
@@ -763,19 +763,19 @@ class EC2ResourceManager (cpi_resource.Manager) :
 
 
         try :
-            
+
             manager_url, rid_s = self._adaptor.parse_id (str(rid))
-        
+
             # FIXME: interpret / verify size
             nodes  = self.conn.list_nodes (ex_node_ids=[rid_s])
-        
+
             if  len (nodes) < 1 :
                 raise BadParameter ("Cannot find resource '%s'" % rid_s)
             if  len (nodes) > 1 :
                 raise BadParameter ("Cannot identify resource '%s'" % rid_s)
-        
+
             node = nodes[0]
-        
+
             resource_info = { 'backend'                 : self.backend   ,
                               'resource'                : node           ,
                               'resource_type'           : COMPUTE        ,
@@ -784,7 +784,7 @@ class EC2ResourceManager (cpi_resource.Manager) :
                               'resource_manager_url'    : self.url       , 
                               'resource_schema'         : self.url.schema, 
                               'connection'              : self.conn      }
-        
+
         except Exception as e :
             # FIXME: translate errors more sensibly
             raise NoSuccess ("Failed with %s" % e)
@@ -810,9 +810,9 @@ class EC2ResourceManager (cpi_resource.Manager) :
 
 
         ret = []
-        
+
         try :
-            
+
             for node in self.conn.list_nodes () :
               ret.append ("[%s]-[%s]" % (self.url, node.id))
 
@@ -821,8 +821,8 @@ class EC2ResourceManager (cpi_resource.Manager) :
             raise NoSuccess ("Failed with %s" % e)
 
         return ret
-   
-   
+
+
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
@@ -831,7 +831,7 @@ class EC2ResourceManager (cpi_resource.Manager) :
         node = self.acquire (id)
         node.destroy ()
 
-   
+
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
@@ -843,10 +843,10 @@ class EC2ResourceManager (cpi_resource.Manager) :
 
         if not len (self.templates) :
             self._refresh_templates ()
-    
+
         return self.templates
 
-   
+
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
@@ -870,7 +870,7 @@ class EC2ResourceManager (cpi_resource.Manager) :
 
         return self.images
 
-   
+
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
@@ -1033,7 +1033,7 @@ class EC2ResourceCompute (cpi_resource.Compute) :
     #
     @SYNC_CALL
     def get_id (self) : 
-        
+
         return self.id
 
 
@@ -1041,7 +1041,7 @@ class EC2ResourceCompute (cpi_resource.Compute) :
     #
     @SYNC_CALL
     def get_rtype (self) : 
-        
+
         return self.rtype
 
 
@@ -1049,7 +1049,7 @@ class EC2ResourceCompute (cpi_resource.Compute) :
     #
     @SYNC_CALL
     def get_state (self) : 
-        
+
         return self.state
 
 
@@ -1057,7 +1057,7 @@ class EC2ResourceCompute (cpi_resource.Compute) :
     #
     @SYNC_CALL
     def get_state_detail (self) : 
-        
+
         return self.detail
 
 
@@ -1076,7 +1076,7 @@ class EC2ResourceCompute (cpi_resource.Compute) :
     #
     @SYNC_CALL
     def get_manager      (self) : 
-        
+
         return self.manager
 
 
@@ -1084,7 +1084,7 @@ class EC2ResourceCompute (cpi_resource.Compute) :
     #
     @SYNC_CALL
     def get_description  (self) : 
-        
+
         return self.descr
 
 
@@ -1139,7 +1139,7 @@ class EC2ResourceCompute (cpi_resource.Compute) :
         self._logger.info ("waited for resource state %s: %s" % (state, self.state))
 
         return
-    
+
 
 
 

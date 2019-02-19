@@ -21,21 +21,21 @@ from .. import task                as st
 class Directory (nsdir.Directory) :
     """
     Represents a (remote) directory.
-    
+
     The saga.filesystem.Directory class represents, as the name indicates,
     a directory on some (local or remote) filesystem.  That class offers
     a number of operations on that directory, such as listing its contents,
     copying files, or creating subdirectories::
-    
+
         # get a directory handle
         dir = saga.filesystem.Directory("sftp://localhost/tmp/")
-    
+
         # create a subdir
         dir.make_dir ("data/")
-    
+
         # list contents of the directory
         files = dir.list ()
-    
+
         # copy *.dat files into the subdir
         for f in files :
             if f ^ '^.*\.dat$' :
@@ -64,7 +64,7 @@ class Directory (nsdir.Directory) :
 
         :param flags:   :ref:`filesystemflags`
         :param session: :class:`saga.Session`
-        
+
         The specified directory is expected to exist -- otherwise
         a DoesNotExist exception is raised.  Also, the URL must point to
         a directory (not to a file), otherwise a BadParameter exception is
@@ -138,7 +138,7 @@ class Directory (nsdir.Directory) :
         :param flags:    :ref:`filesystemflags`
         """
         if  not flags : flags = 0
-        
+
         return self._adaptor.open (path, flags, ttype=ttype)
 
 
@@ -182,7 +182,7 @@ class Directory (nsdir.Directory) :
         get_size(path=None)
 
         Return the size of the directory itself or the entry pointed to by `path`. 
-        
+
         :param path:     (Optional) name/path of an entry
         :type path:      str()
 
@@ -235,6 +235,6 @@ class Directory (nsdir.Directory) :
 
     size  = property (get_size)  # int
 
-    
+
 # ------------------------------------------------------------------------------
 

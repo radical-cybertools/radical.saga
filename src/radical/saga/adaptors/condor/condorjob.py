@@ -765,7 +765,7 @@ class CondorJobService (cpi.job.Service):
                 raise Exception('File append (<<) not supported')
 
             if td.in_overwrite:
-                
+
                 for (local, remote) in td.in_overwrite:
 
                     source = local
@@ -1110,7 +1110,7 @@ class CondorJobService (cpi.job.Service):
                     if not matched:
                         self._logger.warn('cannot match job info to any known job (%s)', row)
 
-   
+
         # are still any jobs missing?
         missing = [x for x in job_ids if x not in found]
         if missing:

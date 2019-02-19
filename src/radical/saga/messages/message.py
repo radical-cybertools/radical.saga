@@ -6,14 +6,14 @@ __license__   = "MIT"
 
 import radical.utils.signatures as rus
 
-import saga.adaptors.base       as sab
-import saga.attributes          as sa
-import saga.session             as ss
-import saga.task                as st
-import saga.url                 as surl
+import ..adaptors.base       as sab
+import ..attributes          as sa
+import ..session             as ss
+import ..task                as st
+import ..url                 as surl
+import ..constants           as c
 
-from   saga.messages.constants  import *
-from   saga.constants           import SYNC, ASYNC, TASK
+from   ..constants           import SYNC, ASYNC, TASK
 
 
 # ------------------------------------------------------------------------------
@@ -41,8 +41,10 @@ class Message (sa.Attributes) :
                                               caller=self._attribute_caller)
 
         # register properties with the attribute interface 
-        self._attributes_register   (ID,     None, sa.STRING, sa.SCALAR, sa.READONLY)
-        self._attributes_register   (SENDER, None, sa.STRING, sa.SCALAR, sa.READONLY)
+        self._attributes_register(c.ID,     None, sa.STRING, sa.SCALAR,
+                                                             sa.READONLY)
+        self._attributes_register(c.SENDER, None, sa.STRING, sa.SCALAR,
+                                                             sa.READONLY)
 
 
     # --------------------------------------------------------------------------

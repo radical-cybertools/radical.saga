@@ -522,7 +522,7 @@ class ShellDirectory(cpi_fs.Directory):
 
         if rsumisc.url_is_relative(src): src = rsumisc.url_make_absolute(cwdurl, src)
         if rsumisc.url_is_relative(tgt): tgt = rsumisc.url_make_absolute(cwdurl, tgt)
-    
+
         rec_flag = ""
         if  flags & RECURSIVE: 
             rec_flag  += "-r "

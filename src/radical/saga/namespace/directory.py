@@ -7,12 +7,13 @@ __license__   = "MIT"
 import radical.utils            as ru
 import radical.utils.signatures as rus
 
-from .constants  import *
+
 from ..constants import SYNC, ASYNC, TASK
 from ..adaptors  import base    as sab
 
 from .. import session          as ss
 from .. import task             as st
+from .  import constants        as c
 from .  import entry
 
 
@@ -21,21 +22,21 @@ from .  import entry
 class Directory (entry.Entry) :
     '''
     Represents a SAGA directory as defined in GFD.90
-    
+
     The saga.namespace.Directory class represents, as the name indicates,
     a directory on some (local or remote) namespace.  That class offers
     a number of operations on that directory, such as listing its contents,
     copying entries, or creating subdirectories::
-    
+
         # get a directory handle
         dir = saga.namespace.Directory("sftp://localhost/tmp/")
-    
+
         # create a subdir
         dir.make_dir ("data/")
-    
+
         # list contents of the directory
         entries = dir.list ()
-    
+
         # copy *.dat entries into the subdir
         for f in entries :
             if f ^ '^.*\.dat$' :
@@ -150,7 +151,7 @@ class Directory (entry.Entry) :
 
         ttype:    saga.task.type enum
         ret:      saga.namespace.Directory / saga.Task
-        
+
         Open and return a new directoy
 
            The call opens and returns a directory at the given location.
@@ -164,7 +165,7 @@ class Directory (entry.Entry) :
         if  not flags : flags = 0
         return self._adaptor.open_dir (ru.Url(path), flags, ttype=ttype)
 
-    
+
     # ----------------------------------------------------------------
     #
     # namespace directory methods
@@ -181,7 +182,7 @@ class Directory (entry.Entry) :
 
         ttype:         saga.task.type enum
         ret:           None / saga.Task
-        
+
         Create a new directoy
 
         The call creates a directory at the given location.
@@ -194,8 +195,8 @@ class Directory (entry.Entry) :
         '''
         if  not flags : flags = 0
         return self._adaptor.make_dir (ru.Url (tgt), flags, ttype=ttype)
-  
-    
+
+
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Directory', 
@@ -212,8 +213,8 @@ class Directory (entry.Entry) :
         '''
         if  not flags : flags = 0
         return self._adaptor.change_dir (url, flags=flags, ttype=ttype)
-  
-    
+
+
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Directory', 
@@ -228,7 +229,7 @@ class Directory (entry.Entry) :
         flags:         flags enum
         ttype:         saga.task.type enum
         ret:           list [saga.Url] / saga.Task
-        
+
         List the directory's content
 
         The call will return a list of entries and subdirectories within the
@@ -255,7 +256,7 @@ class Directory (entry.Entry) :
 
         ttype:         saga.task.type enum
         ret:           bool / saga.Task
-        
+
         Returns True if path exists, False otherwise. 
 
 
@@ -267,8 +268,8 @@ class Directory (entry.Entry) :
                 # do something
         '''
         return self._adaptor.exists (path, ttype=ttype)
-  
-  
+
+
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Directory', 
@@ -276,7 +277,7 @@ class Directory (entry.Entry) :
                   rus.optional (int, rus.nothing),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((rus.list_of (ru.Url), st.Task))
-    def find (self, pattern, flags=RECURSIVE, ttype=None) :
+    def find (self, pattern, flags=c.RECURSIVE, ttype=None) :
         '''
         pattern:       string
         flags:         flags enum
@@ -285,8 +286,8 @@ class Directory (entry.Entry) :
         '''
         if  not flags : flags = 0
         return self._adaptor.find (pattern, flags, ttype=ttype)
-  
-    
+
+
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Directory', 
@@ -298,8 +299,8 @@ class Directory (entry.Entry) :
         ret:           int / saga.Task
         '''
         return self._adaptor.get_num_entries (ttype=ttype)
-  
-    
+
+
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Directory', 
@@ -329,13 +330,13 @@ class Directory (entry.Entry) :
         '''
         :param src: path of the entry to copy
         :param tgt: absolute URL of target name or directory
-        
+
         url_1:         saga.Url
         url_2:         saga.Url / None
         flags:         flags enum / None
         ttype:         saga.task.type enum / None
         ret:           None / saga.Task
-        
+
         Copy an entry from source to target
 
         The source is copied to the given target directory.  The path of the
@@ -348,11 +349,12 @@ class Directory (entry.Entry) :
 
         # FIXME: re-implement the url switching (commented out below)
 
-        if  not flags : flags = 0
-        if url_2  :  return self._adaptor.copy (url_1, url_2, flags, ttype=ttype) 
-        else      :  return self._nsentry.copy (url_1,        flags, ttype=ttype)
+        if not flags: flags = 0
 
-    
+        if url_2: return self._adaptor.copy(url_1, url_2, flags, ttype=ttype) 
+        else    : return self._nsentry.copy(url_1,        flags, ttype=ttype)
+
+
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Directory', 
@@ -369,11 +371,12 @@ class Directory (entry.Entry) :
         ttype:         saga.task.type enum
         ret:           None / saga.Task
         '''
-        if  not flags : flags = 0
-        if url_2  :  return self._adaptor.link (url_1, url_2, flags, ttype=ttype)
-        else      :  return self._nsentry.link (url_1,        flags, ttype=ttype)
-  
-    
+        if not flags: flags = 0
+
+        if url_2: return self._adaptor.link(url_1, url_2, flags, ttype=ttype)
+        else    : return self._nsentry.link(url_1,        flags, ttype=ttype)
+
+
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Directory', 
@@ -390,7 +393,7 @@ class Directory (entry.Entry) :
         flags:         flags enum
         ttype:         saga.task.type enum
         ret:           None / saga.Task
-        
+
         Move an entry from source to target
 
         The source is moved to the given target directory.  The path of the
@@ -401,18 +404,19 @@ class Directory (entry.Entry) :
             dir.move ("./data.bin", "sftp://localhost/tmp/data/")
 
         '''
-        if  not flags : flags = 0
-        if url_2  :  return self._adaptor.move (url_1, url_2, flags, ttype=ttype)
-        else      :  return self._nsentry.move (url_1,        flags, ttype=ttype)
-  
-    
+        if not flags: flags = 0
+
+        if url_2: return self._adaptor.move(url_1, url_2, flags, ttype=ttype)
+        else    : return self._nsentry.move(url_1,        flags, ttype=ttype)
+
+
     # --------------------------------------------------------------------------
     #
-    @rus.takes   ('Directory', 
-                  (ru.Url, basestring), 
-                  rus.optional (int, rus.nothing),
-                  rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
-    @rus.returns ((rus.nothing, st.Task))
+    @rus.takes('Directory', 
+               (ru.Url, basestring), 
+               rus.optional (int, rus.nothing),
+               rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
+    @rus.returns((rus.nothing, st.Task))
     def remove (self, tgt=None, flags=0, ttype=None) :
         '''
         tgt:           saga.Url
@@ -420,10 +424,11 @@ class Directory (entry.Entry) :
         ttype:         saga.task.type enum
         ret:           None / saga.Task
         '''
-        if  not flags : flags = 0
-        if tgt    :  return self._adaptor.remove (tgt, flags, ttype=ttype)
-        else      :  return self._nsentry.remove (     flags, ttype=ttype)
-  
+        if not flags: flags = 0
+
+        if tgt: return self._adaptor.remove(tgt, flags, ttype=ttype)
+        else  : return self._nsentry.remove(     flags, ttype=ttype)
+
 
     # --------------------------------------------------------------------------
     #
@@ -436,7 +441,7 @@ class Directory (entry.Entry) :
         tgt:           saga.Url / None
         ttype:         saga.task.type enum
         ret:           bool / saga.Task
-        
+
         Returns True if path is a directory, False otherwise. 
 
         Example::
@@ -446,26 +451,26 @@ class Directory (entry.Entry) :
             if dir.is_dir ('data'):
                 # do something
         '''
-        if tgt    :  return self._adaptor.is_dir (tgt, ttype=ttype)
-        else      :  return self._nsentry.is_dir (     ttype=ttype)
-  
-    
+        if tgt: return self._adaptor.is_dir(tgt, ttype=ttype)
+        else  : return self._nsentry.is_dir(     ttype=ttype)
+
+
     # --------------------------------------------------------------------------
     #
-    @rus.takes   ('Directory', 
-                  rus.optional ((ru.Url, basestring)),
-                  rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
-    @rus.returns ((bool, st.Task))
-    def is_entry (self, tgt=None, ttype=None) :
+    @rus.takes('Directory', 
+               rus.optional ((ru.Url, basestring)),
+               rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
+    @rus.returns((bool, st.Task))
+    def is_entry(self, tgt=None, ttype=None) :
         '''
         tgt:           saga.Url / None
         ttype:         saga.task.type enum
         ret:           bool / saga.Task
         '''
-        if tgt    :  return self._adaptor.is_entry (tgt, ttype=ttype)
-        else      :  return self._nsentry.is_entry (     ttype=ttype)
-  
-    
+        if tgt: return self._adaptor.is_entry(tgt, ttype=ttype)
+        else  : return self._nsentry.is_entry(     ttype=ttype)
+
+
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Directory', 
@@ -478,8 +483,8 @@ class Directory (entry.Entry) :
         ttype:         saga.task.type enum
         ret:           bool / saga.Task
         '''
-        if tgt    :  return self._adaptor.is_link (tgt, ttype=ttype)
-        else      :  return self._nsentry.is_link (     ttype=ttype)
+        if tgt: return self._adaptor.is_link(tgt, ttype=ttype)
+        else  : return self._nsentry.is_link(     ttype=ttype)
 
 
     # --------------------------------------------------------------------------
@@ -495,9 +500,9 @@ class Directory (entry.Entry) :
         ret:           saga.Url / saga.Task
         '''
 
-        if tgt    :  return self._adaptor.read_link (tgt, ttype=ttype)
-        else      :  return self._nsentry.read_link (     ttype=ttype)
-  
+        if tgt: return self._adaptor.read_link(tgt, ttype=ttype)
+        else  : return self._nsentry.read_link(     ttype=ttype)
 
 
+# ------------------------------------------------------------------------------
 

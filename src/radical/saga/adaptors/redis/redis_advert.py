@@ -6,17 +6,14 @@ __license__   = "MIT"
 
 """ Redis advert adaptor implementation """
 
-import radical.utils as ru
 
-from ...exceptions       import *
-from ...                 import utils      as rsu
-from ...utils            import pty_shell  as rsups
-from ...utils            import misc       as rsumisc
 from ...                 import advert     as api_advert
 from ...adaptors         import base       as a_base
 from ...adaptors.cpi     import advert     as cpi_advert
 from ...adaptors.cpi     import decorators as cpi_decs
+
 from ...advert.constants import *
+from ...exceptions       import *
 
 
 SYNC_CALL  = cpi_decs.SYNC_CALL
@@ -88,7 +85,7 @@ class Adaptor (a_base.Base):
         port     = 6379
         username = None
         password = None
-     
+
         if url.host     : host     = url.host
         if url.port     : port     = url.port
         if url.username : username = url.username
@@ -104,7 +101,7 @@ class Adaptor (a_base.Base):
                 hash = "redis://%s@%s:%d"     %  (password,       host, port)
             else :
                 hash = "redis://%s:%d"        %  (                host, port)
-       
+
         if not hash in self._redis :
             self._redis[hash] = rns.redis_ns_server (url)
 
@@ -207,9 +204,9 @@ class RedisDirectory (cpi_advert.Directory) :
 
         self._url     = sumisc.url_normalize (url)
         self._flags   = flags
-        
+
         self._set_session (session)
-        
+
         c = { 'url'     : self._url, 
               'flags'   : self._flags }
 

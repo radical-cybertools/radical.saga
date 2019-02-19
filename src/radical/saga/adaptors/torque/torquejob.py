@@ -428,7 +428,6 @@ _ADAPTOR_OPTIONS       = []
 # the adaptor capabilities & supported attributes
 #
 _ADAPTOR_CAPABILITIES = {
-<<<<<<< HEAD:src/radical/saga/adaptors/torque/torquejob.py
     "jdes_attributes":   [NAME,
                           EXECUTABLE,
                           ARGUMENTS,
@@ -447,25 +446,6 @@ _ADAPTOR_CAPABILITIES = {
                           SPMD_VARIATION,
                           TOTAL_CPU_COUNT,
                           TOTAL_GPU_COUNT,
-=======
-    "jdes_attributes":   [saga.job.NAME,
-                          saga.job.EXECUTABLE,
-                          saga.job.ARGUMENTS,
-                          saga.job.CANDIDATE_HOSTS,
-                          saga.job.ENVIRONMENT,
-                          saga.job.INPUT,
-                          saga.job.OUTPUT,
-                          saga.job.ERROR,
-                          saga.job.QUEUE,
-                          saga.job.PROJECT,
-                          saga.job.WALL_TIME_LIMIT,
-                          saga.job.WORKING_DIRECTORY,
-                          saga.job.WALL_TIME_LIMIT,
-                          saga.job.PROCESSES_PER_HOST,
-                          saga.job.SPMD_VARIATION,
-                          saga.job.TOTAL_CPU_COUNT,
-                          saga.job.TOTAL_GPU_COUNT,
->>>>>>> devel:src/saga/adaptors/torque/torquejob.py
                           ],
     "job_attributes":    [EXIT_CODE,
                           EXECUTION_HOSTS,
@@ -533,12 +513,8 @@ class Adaptor (a_base.Base):
         a_base.Base.__init__(self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
 
         self.id_re = re.compile('^\[(.*)\]-\[(.*?)\]$')
-<<<<<<< HEAD:src/radical/saga/adaptors/torque/torquejob.py
-=======
-        self.opts  = self.get_config (_ADAPTOR_NAME)
         self.epoch = datetime.datetime(1970,1,1)
 
->>>>>>> devel:src/saga/adaptors/torque/torquejob.py
 
     # ----------------------------------------------------------------
     #
@@ -929,14 +905,7 @@ class TORQUEJobService (cpi_job.Service):
                         "This probably means that the backend doesn't store "
                         "information about finished jobs. Setting state to 'DONE'.")
 
-<<<<<<< HEAD:src/radical/saga/adaptors/torque/torquejob.py
-                if job_info['state'] in [RUNNING, PENDING]:
-                    job_info['state'] = DONE
-                else:
-                    # TODO: This is an uneducated guess?
-                    job_info['state'] = FAILED
-=======
-                if job_info['state'] in [saga.job.RUNNING, saga.job.PENDING]:
+                if job_info['state'] in [RUNNING.PENDING]:
                     job_info['state']      = saga.job.DONE
                     job_info['returncode'] = 0  # we are guessing here...
                 else:
@@ -950,7 +919,6 @@ class TORQUEJobService (cpi_job.Service):
                     # inaccurate guess, but better than nothing
                     job_info['end_time'] = time.time()
 
->>>>>>> devel:src/saga/adaptors/torque/torquejob.py
             else:
                 # something went wrong
                 message = "Error retrieving job info via 'qstat': %s" % out
@@ -996,36 +964,25 @@ class TORQUEJobService (cpi_job.Service):
                   # # generally the same as mtime.
                   # #
                   # # For now we  use mtime for both TORQUE and PBS Pro.
-                   
-                    elif key in ['start_time', # TORQUE / PBS Pro
+
+                    elif key in ['start_time',  # TORQUE / PBS Pro
                                  'stime'      ]: job_info['start_time' ] = val
                     elif key in ['ctime'      ]: job_info['create_time'] = val
                     elif key in ['mtime'      ]: job_info['end_time'   ] = val
 
             # TORQUE doesn't allow us to distinguish DONE/FAILED on final state alone,
             # we need to consider the exit_status.
-<<<<<<< HEAD:src/radical/saga/adaptors/torque/torquejob.py
-            # TODO: move this logic into _torque_to_saga_jobstate in a future life
-            if job_state == 'C': # "Job is completed after having run."
-                if job_info['returncode'] == 0:
-                    job_info['state'] = DONE
-                else:
-                    job_info['state'] = FAILED
-            else:
-                job_info['state'] = _torque_to_saga_jobstate(job_state)
-=======
             retcode = job_info.get('returncode', -1)
             job_info['state'] = _to_saga_jobstate(job_state, retcode)
 
             # FIXME: workaround for time zone problem described above
-            if job_info['state'] in [saga.job.RUNNING] + saga.job.FINAL \
+            if job_info['state'] in [RUNNING] + FINAL \
                 and not job_info['start_time']:
                 job_info['start_time'] = time.time()
 
-            if job_info['state'] in saga.job.FINAL \
+            if job_info['state'] in FINAL \
                 and not job_info['end_time']:
                 job_info['end_time'] = time.time()
->>>>>>> devel:src/saga/adaptors/torque/torquejob.py
 
         # return the updated job info
         return job_info
@@ -1117,11 +1074,7 @@ class TORQUEJobService (cpi_job.Service):
         while True:
             state = self.jobs[job_id]['state']  # this gets updated in the bg.
 
-<<<<<<< HEAD:src/radical/saga/adaptors/torque/torquejob.py
-            if state in [DONE, FAILED, CANCELED]:
-=======
-            if state in saga.job.FINAL:
->>>>>>> devel:src/saga/adaptors/torque/torquejob.py
+            if state in FINAL:
                 return True
 
             # avoid busy poll
@@ -1313,7 +1266,7 @@ class TORQUEJob (cpi_job.Job):
 
         return self.js._job_get_state(job_id=self._id)
 
-            
+
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
@@ -1390,7 +1343,6 @@ class TORQUEJob (cpi_job.Job):
         """
         if self._started: return self.js._job_get_exit_code(self._id)
         else            : return None
-            
 
 
     # ----------------------------------------------------------------

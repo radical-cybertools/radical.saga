@@ -162,7 +162,7 @@ class Entry (nsentry.Entry, sa.Attributes) :
 
         return self._adaptor.set_ttl (ttl, ttype=ttype)
 
-     
+
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Entry', 
@@ -177,7 +177,7 @@ class Entry (nsentry.Entry, sa.Attributes) :
         return self._adaptor.get_ttl (ttype=ttype)
 
 
-     
+
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Entry', 
@@ -192,7 +192,7 @@ class Entry (nsentry.Entry, sa.Attributes) :
         """
         return self._adaptor.store_object (object, ttype=ttype)
 
-  
+
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Entry', 
@@ -205,7 +205,7 @@ class Entry (nsentry.Entry, sa.Attributes) :
         """
         return self._adaptor.retrieve_object (ttype=ttype)
 
-     
+
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Entry', 

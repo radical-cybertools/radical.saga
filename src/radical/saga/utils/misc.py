@@ -11,8 +11,8 @@ import time
 import socket
 import traceback
 
-from ..url        import Url
-from ..exceptions import *
+from ..url import Url
+from ..    import exceptions as se
 
 
 """ Provides an assortment of utilities """
@@ -35,6 +35,7 @@ def get_trace () :
         stack           = traceback.extract_stack ()
         traceback_list  = traceback.format_list (stack)
         return "".join (traceback_list[:-1])
+
 
 # --------------------------------------------------------------------
 #
@@ -64,9 +65,9 @@ def host_is_valid (host) :
 
     if  host_is_local (host) :
         return True
-    
-    try :
-        ip   = socket.gethostbyname (host)
+
+    try:
+        _ = socket.gethostbyname (host)
         return True
     except :
         return False
@@ -83,13 +84,11 @@ def get_host_latency (host_url) :
     """
 
     try :
-
         # FIXME see comments to #62bebc9 -- this breaks for some cases, or is at
         # least annoying.  Thus we disable latency checking for the time being,
         # and return a constant assumed latency of 250ms (which approximately 
         # represents a random WAN link).
         return 0.25
-
 
         global _latencies
 
@@ -101,13 +100,11 @@ def get_host_latency (host_url) :
         if u.host : host = u.host
         else      : host = 'localhost'
         if u.port : port = u.port
-        else      : port = 22  #  FIXME: we should guess by protocol 
-
-        import socket
-        import time
+        else      : port = 22  # FIXME: we should guess by protocol 
 
         # ensure host is valid
-        ip   = socket.gethostbyname (host)
+        if not host_is_valid(host):
+            raise ValueError('invalid host')
 
         start = time.time ()
 
@@ -128,7 +125,6 @@ def get_host_latency (host_url) :
         raise
 
 
-
 # --------------------------------------------------------------------
 #
 def url_is_local (arg) :
@@ -138,7 +134,7 @@ def url_is_local (arg) :
     We consider all URLs which explicitly define a port as non-local, because it
     looks like someone wants to explicitly use some protocol --
     `ssh://localost:2222/` is likely to point at an ssh tunnel.  
-    
+
     If, however, the port matches the default port for the given protocol, we
     consider it local again -- `ssh://localhost:22/` is most likely a real local
     activity.
@@ -147,7 +143,7 @@ def url_is_local (arg) :
     port 22 for `ssh` and also for `sge+ssh` -- this may break in corner cases
     (altough I can't think of any right now).
     """
-    
+
     u = Url (arg)
 
     if  not host_is_local (u.host) :
@@ -155,7 +151,7 @@ def url_is_local (arg) :
 
     # host is local, but what does the port indicate?
     if u.port and u.port > 0 :
-        
+
         try :
             if  socket.getservbyport (u.port) in u.schema :
                 # some non-default port is used -- consider remote
@@ -166,7 +162,6 @@ def url_is_local (arg) :
 
     # port is not set or points to default port for service
     return True
-
 
 
 # --------------------------------------------------------------------
@@ -251,8 +246,8 @@ def url_make_absolute (url_1, url_2) :
         url_2 = Url(url_2)
 
     if  not url_is_compatible (url_1, url_2) :
-        raise BadParameter ("Cannot interpret url %s in the context of url %s" \
-                              % (url_2, url_1))
+        raise se.BadParameter("Cannot interpret url %s in the context of url %s"
+                               % (url_2, url_1))
 
     # re-interpret path of url_2, using url_1 as base directory
     ret = Url (url_1)
@@ -278,7 +273,7 @@ def url_is_compatible (url_1, url_2) :
     protocol/port/user etc.  If one of the URLs only contains a path, it is
     considered compatible with any other URL.
     """
-    
+
     u1 = Url (url_1)
     u2 = Url (url_2)
 
@@ -287,23 +282,23 @@ def url_is_compatible (url_1, url_2) :
     if os.path.normpath(u2.path) == os.path.normpath (str(u2)) : return True
 
     # more than path in both URLs -- check compatibility for all elements
-    if u1.scheme   and     u2.scheme   and u1.scheme   != u2.scheme   : return False 
-    if u1.host     and     u2.host     and u1.host     != u2.host     : return False
-    if u1.port     and     u2.port     and u1.port     != u2.port     : return False
-    if u1.username and     u2.username and u1.username != u2.username : return False
-    if u1.password and     u2.password and u1.password != u2.password : return False
+    if u1.scheme   and     u2.scheme   and u1.scheme   != u2.scheme  : return False 
+    if u1.host     and     u2.host     and u1.host     != u2.host    : return False
+    if u1.port     and     u2.port     and u1.port     != u2.port    : return False
+    if u1.username and     u2.username and u1.username != u2.username: return False
+    if u1.password and     u2.password and u1.password != u2.password: return False
 
-    if u1.scheme   and not u2.scheme                                  : return False 
-    if u1.host     and not u2.host                                    : return False
-    if u1.port     and not u2.port                                    : return False
-    if u1.username and not u2.username                                : return False
-    if u1.password and not u2.password                                : return False
+    if u1.scheme   and not u2.scheme  : return False 
+    if u1.host     and not u2.host    : return False
+    if u1.port     and not u2.port    : return False
+    if u1.username and not u2.username: return False
+    if u1.password and not u2.password: return False
 
-    if u2.scheme   and not u1.scheme                                  : return False 
-    if u2.host     and not u1.host                                    : return False
-    if u2.port     and not u1.port                                    : return False
-    if u2.username and not u1.username                                : return False
-    if u2.password and not u1.password                                : return False
+    if u2.scheme   and not u1.scheme  : return False 
+    if u2.host     and not u1.host    : return False
+    if u2.port     and not u1.port    : return False
+    if u2.username and not u1.username: return False
+    if u2.password and not u1.password: return False
 
     # no differences detected (ignored fragments and query though)
     return True

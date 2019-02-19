@@ -861,11 +861,11 @@ class SGEJobService (cpi_job.Service):
         job_info = None
 
         if ret == 0 and len(out) > 0: 
-            
+
             # job is still in the queue
             # output is something like
             # r 06/24/2013 17:24:50
-            
+
             m = _QSTAT_JOB_STATE_RE.match(out)
             if not m:  
                 # something wrong with the result of qstat
@@ -901,7 +901,7 @@ class SGEJobService (cpi_job.Service):
                                             key_suffix=":")
 
                 if qres is not None:
-                    
+
                     # when qstat fails it will fall back to qacct
                     # output is something like
                     # submission_time:            Mon Jun 24 17:24:43 2013

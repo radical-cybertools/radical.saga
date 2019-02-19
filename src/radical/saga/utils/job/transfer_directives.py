@@ -8,7 +8,8 @@ __license__   = "MIT"
     defined in GFD.90, sction 4.1.3.
 '''
 
-from ...exceptions import *
+from ... import exceptions as se
+
 
 # 4.1.3 File Transfer Specifications (GFD90 p 176-177)
 #
@@ -48,7 +49,7 @@ class TransferDirectives(object):
             directives = {}
 
         for d in directives:
-            
+
             if (d.count('>') > 2) or (d.count('<') > 2):
                 msg = "'%s' is not a valid transfer d string."
                 raise se.BadParameter(msg)

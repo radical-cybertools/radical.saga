@@ -3,10 +3,13 @@ __author__    = "Andre Merzky"
 __copyright__ = "Copyright 2013, The SAGA Project"
 __license__   = "MIT"
 
+import traceback
+import radical.utils as ru
 
-from ..exceptions import *
+from ..import exceptions as se
 
-# ----------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 #
 def translate_exception (e, msg=None) :
     """
@@ -16,16 +19,14 @@ def translate_exception (e, msg=None) :
     message and appropriate exception type.
     """
 
-    if  not issubclass (e.__class__, SagaException) :
+    if  not issubclass (e.__class__, se.SagaException) :
         # we do not touch non-saga exceptions
         return e
 
-    if  not issubclass (e.__class__, NoSuccess) :
+    if  not issubclass (e.__class__, se.NoSuccess) :
         # this seems to have a specific cause already, leave it alone
         return e
 
-    import traceback
-    import radical.utils as ru
     ru.Logger('radical.saga.pty').debug (traceback.format_exc())
 
 
@@ -36,38 +37,25 @@ def translate_exception (e, msg=None) :
 
     lmsg = cmsg.lower ()
 
-    if  'could not resolve hostname' in lmsg :
-        e = BadParameter (cmsg)
-
-    elif  'connection timed out' in lmsg :
-        e = BadParameter (cmsg)
-
-    elif  'connection refused' in lmsg :
-        e = BadParameter (cmsg)
-
-    elif 'auth' in lmsg :
-        e = AuthorizationFailed (cmsg)
-
-    elif 'man-in-the-middle' in lmsg :
-        e = AuthenticationFailed ("ssh key mismatch detected: %s" % cmsg)
-
-    elif 'pass' in lmsg :
-        e = AuthenticationFailed (cmsg)
-
+    if   'could not resolve hostname' in lmsg: e = se.BadParameter (cmsg)
+    elif 'connection timed out'       in lmsg: e = se.BadParameter (cmsg)
+    elif 'connection refused'         in lmsg: e = se.BadParameter (cmsg)
+    elif 'auth'                       in lmsg: e = se.AuthorizationFailed(cmsg)
+    elif 'pass'                       in lmsg: e = se.AuthenticationFailed(cmsg)
+    elif 'denied'                     in lmsg: e = se.PermissionDenied (cmsg)
+    elif 'man-in-the-middle'          in lmsg: 
+        e = se.AuthenticationFailed("ssh key mismatch: %s" % cmsg)
     elif 'ssh_exchange_identification' in lmsg :
-        e = AuthenticationFailed ("too frequent login attempts, or sshd misconfiguration: %s" % cmsg)
-
-    elif 'denied' in lmsg :
-        e = PermissionDenied (cmsg)
-
+        e = se.AuthenticationFailed ("too many login attempts: %s" % cmsg)
     elif 'shared connection' in lmsg :
-        e = NoSuccess ("Insufficient system resources: %s" % cmsg)
-
+        e = se.NoSuccess ("Insufficient system resources: %s" % cmsg)
     elif 'pty allocation' in lmsg :
-        e = NoSuccess ("Insufficient system resources: %s" % cmsg)
-
+        e = se.NoSuccess ("Insufficient system resources: %s" % cmsg)
     elif 'Connection to master closed' in lmsg :
-        e = NoSuccess ("Connection failed (insufficient system resources?): %s" % cmsg)
+        e = se.NoSuccess ("Connection closed by system: %s" % cmsg)
 
     return e
+
+
+# ------------------------------------------------------------------------------
 

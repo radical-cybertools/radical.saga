@@ -7,7 +7,6 @@ __license__   = "MIT"
 import radical.utils               as ru
 import radical.utils.signatures    as rus
 
-from .constants  import *
 from ..constants import SYNC, ASYNC, TASK
 from ..adaptors  import base       as sab
 
@@ -16,28 +15,28 @@ from .. import task                as st
 from .. import base                as sb
 from .. import session             as ss
 from .. import exceptions          as se
-from .. import attributes          as sa
 from .. import constants           as sc
 
 from .  import description         as descr
 from .  import resource            as resrc
-
+from .  import constants           as c
 
 
 # ------------------------------------------------------------------------------
 # 
 class Manager (sb.Base, async.Async) :
     """
-    In the context of SAGA-Python, a *ResourceManager* is a service which asserts
-    control over a set of resources.  That manager can, on request, render
-    control over subsets of those resources (resource slices) to an application.
+    In the context of SAGA-Python, a *ResourceManager* is a service which
+    asserts control over a set of resources.  That manager can, on request,
+    render control over subsets of those resources (resource slices) to an
+    application.
 
     This :class:`Manager` class represents the contact point to such
     ResourceManager instances -- the application can thus acquire compute, data
     or network resources, according to some resource specification, for a bound
     or unbound amount of time. 
     """
-    
+
     # --------------------------------------------------------------------------
     # 
     @rus.takes   ('Manager', 
@@ -91,7 +90,7 @@ class Manager (sb.Base, async.Async) :
     # --------------------------------------------------------------------------
     # 
     @rus.takes   ('Manager', 
-                  rus.optional (rus.one_of (COMPUTE, STORAGE, NETWORK)),
+                  rus.optional (rus.one_of (c.COMPUTE, c.STORAGE, c.NETWORK)),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((rus.list_of (basestring), st.Task))
     def list     (self, rtype=None, ttype=None) :
@@ -131,7 +130,7 @@ class Manager (sb.Base, async.Async) :
     # --------------------------------------------------------------------------
     # 
     @rus.takes   ('Manager', 
-                  rus.optional (rus.one_of (COMPUTE, STORAGE, NETWORK)),
+                  rus.optional (rus.one_of (c.COMPUTE, c.STORAGE, c.NETWORK)),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((rus.list_of (basestring), st.Task))
     def list_templates (self, rtype=None, ttype=None) :
@@ -176,7 +175,7 @@ class Manager (sb.Base, async.Async) :
     # --------------------------------------------------------------------------
     # 
     @rus.takes   ('Manager', 
-                  rus.optional (rus.one_of (COMPUTE, STORAGE, NETWORK)),
+                  rus.optional (rus.one_of (c.COMPUTE, c.STORAGE, c.NETWORK)),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((rus.list_of (basestring), st.Task))
     def list_images (self, rtype=None, ttype=None) :
@@ -244,8 +243,8 @@ class Manager (sb.Base, async.Async) :
 
             # make sure at least 'executable' is defined
             if spec.rtype is None:
-                raise se.BadParameter ("No resource type defined in resource description")
-    
+                raise se.BadParameter ("resource type undefined in description")
+
             # spec_copy = descr.Description ()
             # spec._attributes_deep_copy (spec_copy)
 
@@ -271,10 +270,10 @@ class Manager (sb.Base, async.Async) :
         return self._adaptor.destroy (rid, ttype=ttype)
 
   # FIXME: add
-  # templates = property (list_templates, get_template)    # dict {string : Description}
-  # images    = property (list_images,    get_image)       # dict {string : dict}
-  # resources = property (list,           get_description) # dict {string : Description}
+  # templates = property(list_templates, get_template)     # dict{string: Description}
+  # images    = property(list_images,    get_image)        # dict{string: dict}
+  # resources = property(list,           get_description)  # dict{string: Description}
 
 
-
+# ------------------------------------------------------------------------------
 

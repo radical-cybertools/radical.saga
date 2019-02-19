@@ -129,9 +129,9 @@ def _decode (data) :
 
     elem = ""
     code = ""
-    
+
     for c in data :
-    
+
         if  c in ['0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f'] :
             code += c
         elif c not in [' ', '\n'] :
@@ -233,7 +233,7 @@ _ADAPTOR_DOC           = {
 
               NoSuccess: read from pty process failed (Could not read line - pty process died)
 
- 
+
           * number of processes are limited: the creation of an job.service
             object will create one additional process on the local system, and
             two processes on the remote system (ssh daemon clone and a shell
@@ -248,29 +248,29 @@ _ADAPTOR_DOC           = {
 
             On hitting process limits, the job creation will fail with an error
             similar to either of these::
-            
+
               NoSuccess: failed to run job (/bin/sh: fork: retry: Resource temporarily unavailable)
               NoSuccess: failed to run job -- backend error
 
           * number of files are limited, as is disk space: the job.service will
-            
+
             keep job state on the remote disk, in ``~/.saga/adaptors/shell_job/``.
             Quota limitations may limit the number of files created there,
             and/or the total size of that directory.  
 
             On quota or disk space limits, you may see error messages similar to
             the following ones::
-            
+
               NoSuccess: read from pty process failed ([Errno 5] Quota exceeded)
               NoSuccess: read from pty process failed ([Errno 5] Input/output error)
               NoSuccess: find from pty process [Thread-5] failed (Could not read - pty process died)
-              
+
 
 
           * Other system limits (memory, CPU, selinux, accounting etc.) apply as
             usual.
 
-          
+
           * thread safety: it is safe to create multiple :class:`job.Service`
             instances to the same target host at a time -- they should not
             interfere with each other, but ``list()`` will list jobs created by
@@ -442,7 +442,7 @@ class ShellJobService (cpi.Service) :
         except Exception as e :
           # print str(e)
             pass
-    
+
 
 
     # ----------------------------------------------------------------
@@ -537,7 +537,7 @@ class ShellJobService (cpi.Service) :
               # src = shell_wrapper._WRAPPER_SCRIPT % ({ 'PURGE_ON_START' : str(self._adaptor.purge_on_start) })
                 src = shell_wrapper._WRAPPER_SCRIPT
                 src = src.replace('%(PURGE_ON_START)s', str(self._adaptor.purge_on_start))
-                
+
                 # If the target directory begins with $HOME or ${HOME} then we
                 # need to remove this since scp won't expand the variable and
                 # the copy will end up attempting to copy the file to 
@@ -556,7 +556,7 @@ class ShellJobService (cpi.Service) :
         # drops -- that will free all associated resources, and allows for
         # a clean reconnect.
         # ret, out, _ = self.shell.run_sync (" exec sh %s/wrapper.sh" % base)
-      
+
         # Well, actually, we do not use exec, as that does not give us good
         # feedback on failures (the shell just quits) -- so we replace it with
         # this poor-man's version...
@@ -577,7 +577,7 @@ class ShellJobService (cpi.Service) :
             raise NoSuccess   ("host bootstrap failed - no pid (%s)" % out)
 
         # we actually don't care much about the PID :-P
-        
+
         self._logger.debug ("got cmd prompt (%s)(%s)" % (ret, out.strip ()))
 
 
@@ -599,7 +599,7 @@ class ShellJobService (cpi.Service) :
             raise NoSuccess   ("host bootstrap failed - no pid (%s)" % out)
 
         # we actually don't care much about the PID :-P
-        
+
         self._logger.debug ("got mon prompt (%s)(%s)" % (ret, out.strip ()))
 
 
@@ -680,7 +680,7 @@ class ShellJobService (cpi.Service) :
 
         if  len (lines) < 2 :
             raise NoSuccess ("Failed to run job (%s)" % lines)
-        
+
       # for i in range (0, len(lines)) :
       #     print "%d: %s" % (i, lines[i])
 
@@ -702,7 +702,7 @@ class ShellJobService (cpi.Service) :
                 raise NoSuccess ("failed to run multiline job '%s': (%s)(%s)" % (run_cmd, ret, out))
 
         return job_id
-        
+
 
     # ----------------------------------------------------------------
     #
@@ -766,7 +766,7 @@ class ShellJobService (cpi.Service) :
 
         return ret
 
-        
+
 
     # ----------------------------------------------------------------
     #
@@ -808,7 +808,7 @@ class ShellJobService (cpi.Service) :
             return None
 
         return int(exit_code)
-        
+
 
     # ----------------------------------------------------------------
     #
@@ -896,7 +896,7 @@ class ShellJobService (cpi.Service) :
     #
     @SYNC_CALL
     def create_job (self, jd) :
-        
+
         # this dict is passed on to the job adaptor class -- use it to pass any
         # state information you need there.
         adaptor_state = { "job_service"     : self, 
@@ -946,8 +946,8 @@ class ShellJobService (cpi.Service) :
                 continue
 
         return job_ids
-   
-   
+
+
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
@@ -1060,7 +1060,7 @@ class ShellJobService (cpi.Service) :
             self._logger.error ("failed to run (parts of the) bulk jobs: (%s)(%s)" % (ret, out))
             return
 
-   
+
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
@@ -1130,7 +1130,7 @@ class ShellJobService (cpi.Service) :
             self._logger.error ("failed to wait for (parts of the) bulk jobs: (%s)(%s)" % (ret, out))
             return
 
-   
+
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
@@ -1313,7 +1313,7 @@ class ShellJob (cpi.Job) :
         else :
             # don't know what to do...
             raise BadParameter ("Cannot create job, insufficient information")
-        
+
         if self._created : self._created = float(self._created)
 
         return self.get_api ()
@@ -1337,7 +1337,7 @@ class ShellJob (cpi.Job) :
             # stage output data
             # FIXME: _update_state blocks until data are staged.  That should not happen.
             self._adaptor.stage_output (self.js.shell, self.jd)
-        
+
         # files are staged -- update state, and report to application
         self._state = state
         self._api ()._attributes_i_set ('state', self._state, self._api ()._UP)
@@ -1366,7 +1366,7 @@ class ShellJob (cpi.Job) :
 
         if self._started  : self._started  = float(self._started)
         if self._finished : self._finished = float(self._finished)
-        
+
         if  not 'state' in stats :
             raise NoSuccess ("failed to get job state for '%s': (%s)" \
                           % (self._id, stats))
@@ -1386,7 +1386,7 @@ class ShellJob (cpi.Job) :
         if  old_state != state :
             self._state  = state
             self._api ()._attributes_i_set ('state', state, self._api ()._UP)
-        
+
         return self._state
 
 
@@ -1565,14 +1565,14 @@ class ShellJob (cpi.Job) :
                 time_now = time.time ()
                 if  time_now - time_start > timeout :
                     return False
-   
+
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
     def get_id (self) :
 
         return self._id
-   
+
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
@@ -1594,7 +1594,7 @@ class ShellJob (cpi.Job) :
         self._exit_code = self.js._job_get_exit_code (self._id)
 
         return self._exit_code
-   
+
     # ----------------------------------------------------------------
     #
     # TODO: the values below should be fetched with every get_state...
@@ -1604,7 +1604,7 @@ class ShellJob (cpi.Job) :
 
         self._logger.debug ("this is the shell adaptor, reporting execution hosts")
         return [self.js.get_url ().host]
-   
+
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
@@ -1625,8 +1625,8 @@ class ShellJob (cpi.Job) :
             raise IncorrectState ("Cannot suspend, job is not RUNNING")
 
         self.js._job_suspend (self._id)
-   
-   
+
+
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
@@ -1636,8 +1636,8 @@ class ShellJob (cpi.Job) :
             raise IncorrectState ("Cannot resume, job is not SUSPENDED")
 
         self.js._job_resume (self._id)
-   
-   
+
+
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
@@ -1657,8 +1657,8 @@ class ShellJob (cpi.Job) :
             return
 
         self.js._job_cancel (self._id)
-   
-   
+
+
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
