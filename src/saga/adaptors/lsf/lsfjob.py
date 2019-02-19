@@ -22,6 +22,7 @@ import re
 import os 
 import time
 import threading
+import datetime
 
 from cgi  import parse_qs
 
@@ -310,6 +311,8 @@ class Adaptor (saga.adaptors.base.Base):
 
         self.id_re = re.compile('^\[(.*)\]-\[(.*?)\]$')
         self.opts  = self.get_config (_ADAPTOR_NAME)
+        self.epoch = datetime.datetime(1970,1,1)
+
 
     # ----------------------------------------------------------------
     #
@@ -595,13 +598,13 @@ class LSFJobService (saga.adaptors.cpi.job.Service):
             }
 
             results = out.split(',')
-            job_info['state'] = _lsf_to_saga_jobstate(results[0])
-            job_info['exec_hosts'] = results[1]
+            job_info['state']       = _lsf_to_saga_jobstate(results[0])
+            job_info['exec_hosts']  = results[1]
+            job_info['create_time'] = results[3]
+            job_info['start_time']  = results[4]
+            job_info['end_time']    = results[5]  
             if results[2] != '-':
                 job_info['returncode'] = int(results[2])
-            job_info['create_time']    =     results[3]
-            job_info['start_time']     =     results[4]
-            job_info['end_time']       =     results[5]
 
             jd = saga.job.Description()
 
@@ -731,6 +734,7 @@ class LSFJobService (saga.adaptors.cpi.job.Service):
     def _job_get_end_time(self, job_obj):
         """ get the job's end time
         """
+        # FIXME: convert to EOPCH
         return self.jobs[job_obj]['end_time']
 
 
@@ -1019,6 +1023,7 @@ class LSFJob (saga.adaptors.cpi.job.Job):
         if self._started is False:
             return None
         else:
+            # FIXME: convert to EPOCH
             return self.js._job_get_create_time(self)
 
     # ----------------------------------------------------------------
@@ -1030,6 +1035,7 @@ class LSFJob (saga.adaptors.cpi.job.Job):
         if self._started is False:
             return None
         else:
+            # FIXME: convert to EPOCH
             return self.js._job_get_start_time(self)
 
     # ----------------------------------------------------------------
@@ -1041,6 +1047,7 @@ class LSFJob (saga.adaptors.cpi.job.Job):
         if self._started is False:
             return None
         else:
+            # FIXME: convert to EPOCH
             return self.js._job_get_end_time(self)
 
     # ----------------------------------------------------------------
