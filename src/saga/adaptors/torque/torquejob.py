@@ -356,6 +356,9 @@ def _script_generator(url, logger, jd, ppn, gpn, gres, version,
             if gpu_flag and ppn > 16: ppn = 16
             logger.info("Using Blue Waters (Cray XE6/XK7) specific '#PBS -l nodes=xx:ppn=yy'")
             pbs_params += "#PBS -l nodes=%d:ppn=%d%s\n" % (nnodes, ppn, gpu_flag)
+            if 'RS_USE_COMMTRANSPARENT' in os.environ:
+                pbs_params += "#PBS -l flags=commtransparent\n"
+
         elif 'Version: 5.' in version:
             # What would removing this catchall break?
             logger.info("Using TORQUE 5.x notation '#PBS -l procs=XX' ")
