@@ -1,5 +1,5 @@
 
-__author__    = "Ole Weidner"
+__author__    = "RADICAL Team @ Rutgers"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
@@ -118,7 +118,7 @@ def _lsf_to_saga_jobstate(lsfjs):
 
 # --------------------------------------------------------------------
 #
-def _lsfcript_generator(url, logger, jd, ppn, lsf_version, queue, span):
+def _lsfscript_generator(url, logger, jd, ppn, lsf_version, queue, span):
     """ generates an LSF script from a SAGA job description
     """
     lsf_params = str()
@@ -188,22 +188,29 @@ def _lsfcript_generator(url, logger, jd, ppn, lsf_version, queue, span):
     elif (jd.queue is None) and (queue is not None):
         lsf_params += "#BSUB -q %s \n" % queue
 
-    if jd.project is not None:
+    if jd.project is not None and ':' in jd.project:
+        account, reservation = jd.project.split(':',1)
+        lsf_params += "#BSUB -P %s \n" % str(account)
+        lsf_params += "#BSUB -U %s \n" % str(reservation)
+    elif jd.project is not None:
         lsf_params += "#BSUB -P %s \n" % str(jd.project)
+
     if jd.job_contact is not None:
         lsf_params += "#BSUB -u %s \n" % str(jd.job_contact)
 
     # if total_cpu_count is not defined, we assume 1
     if jd.total_cpu_count is None:
-        jd.total_cpu_count = 1
+        total_cpu_count = 1
+    else:
+        total_cpu_count = jd.total_cpu_count
 
     lsf_params += "#BSUB -n %s \n" % str(jd.total_cpu_count)
-
+    
     # span parameter allows us to influence core spread over nodes
     if span:
         lsf_params += '#BSUB -R "span[%s]"\n' % span
 
-    # escape all double quotes and dollarsigns, otherwise 'echo |'
+    # escape all double quotes and dollar signs, otherwise 'echo |'
     # further down won't work
     # only escape '$' in args and exe. not in the params
     #exec_n_args = workdir_directives exec_n_args
@@ -507,7 +514,7 @@ class LSFJobService (saga.adaptors.cpi.job.Service):
 
         try:
             # create an LSF job script from SAGA job description
-            script = _lsfcript_generator(url=self.rm, logger=self._logger,
+            script = _lsfscript_generator(url=self.rm, logger=self._logger,
                                          jd=jd, ppn=self.ppn,
                                          lsf_version=self._commands['bjobs']['version'],
                                          queue=self.queue, span=self.span)
