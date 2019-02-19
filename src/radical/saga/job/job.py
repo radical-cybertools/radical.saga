@@ -50,7 +50,7 @@ class Job (sb.Base, st.Task, sasync.Async) :
     job's state, and initiating job state transitions.
 
     '''
-    
+
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Job',
