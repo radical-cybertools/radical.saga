@@ -495,27 +495,30 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
             else:
                 slurm_script += "#SBATCH --ntasks-per-node=%s\n" % processes_per_host
 
+        # target host specifica
+        # FIXME: these should be moved into resource config files
         if 'bridges' in self.rm.host.lower():
-            # bridges requires '-C EGRESS' to enable outbound network
-            # connections.
-            # FIXME: this should be moved into a resource config file
-            if total_gpu_count:
-                if cpu_arch : gpu_arch=cpu_arch.lower()
-                else : gpu_arch = 'p100'
-                slurm_script += "#SBATCH --gres=gpu:%s:2\n" % (gpu_arch)
+
+            if total_gpu_count: 
+                if cpu_arch: gpu_arch = cpu_arch.lower()
+                else       : gpu_arch = 'p100'
+                slurm_script += "#SBATCH --gres=gpu:%s:%s\n" % (gpu_arch, total_gpu_count)
+
+            # use '-C EGRESS' to enable outbound network
             slurm_script += "#SBATCH -C EGRESS\n"
 
+
         elif 'cori' in self.rm.host.lower():
-            # Cori rqeuires '-C knl', '-C haswell', .. for selecting
-            # the CPU architecture (on top of the job queues)
-            # From Cori's user guide:
-            #   short:       -C feature
-            #   long:        --constraint=feature
-            #   default:     none
-            #   description: Always specify what type of nodes to run. set to
-            #                "haswell" for Haswell nodes, and set "knl,quad,cache"
-            #                (or other modes) for KNL.
-            if cpu_arch: slurm_script += "#SBATCH -C %s\n" % cpu_arch
+
+            # Set to "haswell" for Haswell nodes, to "knl,quad,cache" (or other
+            # modes) for KNL, etc.
+            if cpu_arch       : slurm_script += "#SBATCH -C %s\n"     % cpu_arch
+            if total_gpu_count: slurm_script += "#SBATCH --gpus=%s\n" % total_gpu_count
+
+        else:
+
+            if total_gpu_count: slurm_script += "#SBATCH --gpus=%s\n" % total_gpu_count
+
 
         if cwd:             slurm_script += "#SBATCH --workdir %s\n"     % cwd 
         if output:          slurm_script += "#SBATCH --output %s\n"      % output 
@@ -529,10 +532,6 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
         if reservation:     slurm_script += "#SBATCH --reservation %s\n" % reservation
         if wall_time_limit: slurm_script += "#SBATCH --time %02d:%02d:00\n" \
                                           % (wall_time_limit / 60,wall_time_limit % 60)
-        if total_gpu_count: slurm_script += "#SBATCH --gpus=%s\n"        % total_gpu_count
-
-        # TODO: right now we only support the `--gpus=[n]` variant.  That is
-        #       likely insufficient.
 
         if env:
             slurm_script += "\n## ENVIRONMENT\n"
