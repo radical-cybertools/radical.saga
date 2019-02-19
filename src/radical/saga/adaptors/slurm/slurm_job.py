@@ -18,6 +18,7 @@ import re
 import os
 import math
 import time
+import datetime
 import tempfile
 
 import radical.utils as ru
@@ -77,7 +78,6 @@ _ADAPTOR_CAPABILITIES  = {
                           ERROR,
                           FILE_TRANSFER,
                           CLEANUP,
-                          JOB_START_TIME,
                           WALL_TIME_LIMIT,
                           TOTAL_PHYSICAL_MEMORY,
                           CPU_ARCHITECTURE,
@@ -234,6 +234,8 @@ class Adaptor (a_base.Base):
         a_base.Base.__init__ (self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
 
         self.id_re = re.compile ('^\[(.*)\]-\[(.*?)\]$')
+        self.epoch = datetime.datetime(1970,1,1)
+
 
     # --------------------------------------------------------------------------
     #
@@ -501,27 +503,30 @@ class SLURMJobService (cpi_job.Service) :
             else:
                 slurm_script += "#SBATCH --ntasks-per-node=%s\n" % processes_per_host
 
+        # target host specifica
+        # FIXME: these should be moved into resource config files
         if 'bridges' in self.rm.host.lower():
-            # bridges requires '-C EGRESS' to enable outbound network
-            # connections.
-            # FIXME: this should be moved into a resource config file
-            if total_gpu_count:
-                if cpu_arch : gpu_arch=cpu_arch.lower()
-                else : gpu_arch = 'p100'
-                slurm_script += "#SBATCH --gres=gpu:%s:2\n" % (gpu_arch)
+
+            if total_gpu_count: 
+                if cpu_arch: gpu_arch = cpu_arch.lower()
+                else       : gpu_arch = 'p100'
+                slurm_script += "#SBATCH --gres=gpu:%s:%s\n" % (gpu_arch, total_gpu_count)
+
+            # use '-C EGRESS' to enable outbound network
             slurm_script += "#SBATCH -C EGRESS\n"
 
+
         elif 'cori' in self.rm.host.lower():
-            # Cori rqeuires '-C knl', '-C haswell', .. for selecting
-            # the CPU architecture (on top of the job queues)
-            # From Cori's user guide:
-            #   short:       -C feature
-            #   long:        --constraint=feature
-            #   default:     none
-            #   description: Always specify what type of nodes to run. set to
-            #                "haswell" for Haswell nodes, and set "knl,quad,cache"
-            #                (or other modes) for KNL.
-            if cpu_arch: slurm_script += "#SBATCH -C %s\n" % cpu_arch
+
+            # Set to "haswell" for Haswell nodes, to "knl,quad,cache" (or other
+            # modes) for KNL, etc.
+            if cpu_arch       : slurm_script += "#SBATCH -C %s\n"     % cpu_arch
+            if total_gpu_count: slurm_script += "#SBATCH --gpus=%s\n" % total_gpu_count
+
+        else:
+
+            if total_gpu_count: slurm_script += "#SBATCH --gpus=%s\n" % total_gpu_count
+
 
         if cwd:             slurm_script += "#SBATCH --workdir %s\n"     % cwd 
         if output:          slurm_script += "#SBATCH --output %s\n"      % output 
@@ -535,10 +540,6 @@ class SLURMJobService (cpi_job.Service) :
         if reservation:     slurm_script += "#SBATCH --reservation %s\n" % reservation
         if wall_time_limit: slurm_script += "#SBATCH --time %02d:%02d:00\n" \
                                           % (wall_time_limit / 60,wall_time_limit % 60)
-        if total_gpu_count: slurm_script += "#SBATCH --gpus=%s\n"        % total_gpu_count
-
-        # TODO: right now we only support the `--gpus=[n]` variant.  That is
-        #       likely insufficient.
 
         if env:
             slurm_script += "\n## ENVIRONMENT\n"
@@ -565,7 +566,7 @@ class SLURMJobService (cpi_job.Service) :
         self.shell.write_to_remote (src=slurm_script, tgt=tgt)
 
         # submit the job
-        ret, out, _ = self.shell.run_sync ("sbatch '%s'; rm -vf '%s'" % (tgt, tgt))
+        ret, out, _ = self.shell.run_sync ("sbatch '%s'; rm -f '%s'" % (tgt, tgt))
 
         self._logger.debug ("submit SLURM script (%s) (%s)" % (tgt, ret))
 
@@ -573,9 +574,11 @@ class SLURMJobService (cpi_job.Service) :
         # TODO: Could make this more efficient
         self.job_id = None
         for line in out.split("\n"):
+            print 'line: %s' % line
             if "Submitted batch job" in line:
                 self.job_id = "[%s]-[%s]" % \
                     (self.rm, int(line.split()[-1:][0]))
+                print 'match: %s' % self.job_id
                 break
 
         # if we have no job ID, there's a failure...
@@ -919,6 +922,16 @@ class SLURMJob(cpi_job.Job):
             curr_info['comp_time'  ] = prev_info.get('comp_time'  )
             curr_info['exec_hosts' ] = prev_info.get('exec_hosts' )
             curr_info['gone'       ] = prev_info.get('gone'       )
+        else:
+            curr_info['job_id'     ] = None
+            curr_info['job_name'   ] = None
+            curr_info['state'      ] = None
+            curr_info['create_time'] = None
+            curr_info['start_time' ] = None
+            curr_info['end_time'   ] = None
+            curr_info['comp_time'  ] = None
+            curr_info['exec_hosts' ] = None
+            curr_info['gone'       ] = None
 
         rm, pid = self._adaptor.parse_id(self._id)
 
@@ -971,7 +984,6 @@ class SLURMJob(cpi_job.Job):
                 val = None
             data[key] = val
 
-        # update state
         if data.get('JobState'):
             curr_info['state'] = self.js._slurm_to_saga_jobstate(data['JobState'])
         else:
@@ -984,11 +996,22 @@ class SLURMJob(cpi_job.Job):
             curr_info['exit_code'] = self._job_get_state(self._id)
 
         curr_info['job_name'   ] = data.get('JobName')
-        curr_info['create_time'] = data.get('SubmitTime')
-        curr_info['start_time' ] = data.get('StartTime')
-        curr_info['end_time'   ] = data.get('EndTime')
+      # curr_info['create_time'] = data.get('SubmitTime')
+      # curr_info['start_time' ] = data.get('StartTime')
+      # curr_info['end_time'   ] = data.get('EndTime')
         curr_info['comp_time'  ] = data.get('RunTime')
         curr_info['exec_hosts' ] = data.get('NodeList')
+
+        # Alas, time stamps are not in EPOCH, and do not contain time zone info,
+        # so we set approximate values here
+        now = time.time()
+        if not curr_info['create_time']: curr_info['create_time'] = now
+
+        if curr_info['state'] in [saga.job.RUNNING] + saga.job.FINAL:
+            if not curr_info['start_time' ]: curr_info['start_time' ] = now
+
+        if curr_info['state'] in saga.job.FINAL:
+            if not curr_info['end_time' ]: curr_info['end_time' ] = now
 
         return curr_info
 
@@ -1173,6 +1196,7 @@ class SLURMJob(cpi_job.Job):
     def get_created(self) :
 
         # FIXME: use cache
+        # FIXME: convert to EOPCH
         return self._job_get_info()['create_time']
 
 
@@ -1182,6 +1206,7 @@ class SLURMJob(cpi_job.Job):
     def get_started(self) :
 
         # FIXME: use cache
+        # FIXME: convert to EPOCH
         return self._job_get_info()['start_time']
 
 
@@ -1191,6 +1216,7 @@ class SLURMJob(cpi_job.Job):
     def get_finished(self) :
 
         # FIXME: use cache
+        # FIXME: convert to EPOCH
         return self._job_get_info()['end_time']
 
 

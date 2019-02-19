@@ -205,6 +205,7 @@ class Adaptor (a_base.Base):
         a_base.Base.__init__(self, _ADAPTOR_INFO)
 
         self.id_re = re.compile('^\[(.*)\]-\[(.*?)\]$')
+        self.epoch = datetime.datetime(1970,1,1)
 
         self.purge_on_start   = self._cfg['purge_on_start']
         self.purge_older_than = self._cfg['purge_older_than']
@@ -216,6 +217,7 @@ class Adaptor (a_base.Base):
     def sanity_check(self):
         # FIXME: also check for gsissh
         pass
+
 
     # ----------------------------------------------------------------
     #
@@ -522,38 +524,46 @@ class SGEJobService (cpi_job.Service):
         """
 
         job_info = None
-        retries = max_retries
+        retries  = max_retries
 
-        while job_info is None and retries > 0:
+        while retries > 0:
             retries -= 1
 
             qres = self.__kvcmd_results('qacct', "-j %s | grep -E '%s'" % (
                                             sge_job_id, "jobname|hostname|qsub_time|start_time|end_time|exit_status|failed"))
 
-            if qres is not None: # ok, extract job info from qres
-                # jobname      test
-                # hostname     sge
-                # qsub_time    Mon Jun 24 17:24:43 2013
-                # start_time   Mon Jun 24 17:24:50 2013
-                # end_time     Mon Jun 24 17:44:50 2013
-                # failed       0
-                # exit_status  0
-                job_info = dict(
-                    state=DONE if qres.get("failed") == "0" else FAILED,
-                    name=qres.get("jobname"),
-                    exec_hosts=qres.get("hostname"),
-                    returncode=int(qres.get("exit_status", -1)),
-                    create_time=qres.get("qsub_time"),
-                    start_time=qres.get("start_time"),
-                    end_time=qres.get("end_time"),
-                    gone=False)
-            elif retries > 0:
+            if not qres and retries > 0:
                 # sometimes there is a lapse between the job exits from the queue and
                 # its information enters in the accounting database
                 # let's run qacct again after a delay
                 time.sleep(1)
+                continue
+
+
+            # ok, extract job info from qres
+            # jobname      test
+            # hostname     sge
+            # qsub_time    Mon Jun 24 17:24:43 2013  # FIXME: convert to EPOCH
+            # start_time   Mon Jun 24 17:24:50 2013  # FIXME: convert to EPOCH
+            # end_time     Mon Jun 24 17:44:50 2013  # FIXME: convert to EPOCH
+            # failed       0
+            # exit_status  0
+
+            if qres.get("failed") == "0": state = DONE 
+            else                        : state = FAILED
+            job_info = {'state'       : state,
+                        'name'        : qres.get("jobname"),
+                        'exec_hosts'  : qres.get("hostname"),
+                        'create_time' : qres.get("qsub_time"),
+                        'start_time'  : qres.get("start_time"),
+                        'end_time'    : qres.get("end_time"),
+                        'returncode'  : int(qres.get("exit_status", -1)),
+                        'gone'        : False
+                       }
+            break
 
         return job_info
+
 
     def __remote_job_info_path(self, sge_job_id="$JOB_ID"):
         """
@@ -592,15 +602,14 @@ class SGEJobService (cpi_job.Service):
         elif "exit_status" in qres: state = DONE
         else                      : state = RUNNING
 
-        job_info = dict(
-                    state=state,
-                    name=qres.get("jobname"),
-                    exec_hosts=qres.get("hostname"),
-                    returncode=int(qres.get("exit_status", -1)),
-                    create_time=qres.get("qsub_time"),
-                    start_time=qres.get("start_time"),
-                    end_time=qres.get("end_time"),
-                    gone=False)
+        job_info = {'state'       : state,
+                    'name'        : qres.get("jobname"),
+                    'exec_hosts'  : qres.get("hostname"),
+                    'create_time' : qres.get("qsub_time"),
+                    'start_time'  : qres.get("start_time"),
+                    'end_time'    : qres.get("end_time"),
+                    'returncode'  : int(qres.get("exit_status", -1)),
+                    'gone'        : False}
 
         return job_info
 
@@ -713,15 +722,15 @@ class SGEJobService (cpi_job.Service):
             'function aborted() {',
             '  echo Aborted with signal $1.',
             '  echo "signal: $1" >>%s' % job_info_path,
-            '  echo "end_time: $(LC_ALL=en_US.utf8 date \'+%%a %%b %%d %%H:%%M:%%S %%Y\')" >>%s' % job_info_path,
+            '  echo "end_time: $(LC_ALL=en_US.utf8 date \'+%%s\')" >>%s' % job_info_path,
             '  exit -1',
             '}',
             'mkdir -p %s' % self.temp_path,
             'for sig in SIGHUP SIGINT SIGQUIT SIGTERM SIGUSR1 SIGUSR2; do trap "aborted $sig" $sig; done',
             'echo "hostname: $HOSTNAME" >%s' % job_info_path,
             'echo "jobname: %s" >>%s' % (jd.name, job_info_path),
-            'echo "qsub_time: %s" >>%s' % (datetime.now().strftime("%a %b %d %H:%M:%S %Y"), job_info_path),
-            'echo "start_time: $(LC_ALL=en_US.utf8 date \'+%%a %%b %%d %%H:%%M:%%S %%Y\')" >>%s' % job_info_path
+            'echo "qsub_time: %s" >>%s' % (time.time(), job_info_path),
+            'echo "start_time: $(LC_ALL=en_US.utf8 date \'+%%s\')" >>%s' % job_info_path
         ]
 
         exec_n_args = None
@@ -738,7 +747,7 @@ class SGEJobService (cpi_job.Service):
 
         script_body += [
             'echo "exit_status: $?" >>%s' % job_info_path,
-            'echo "end_time: $(LC_ALL=en_US.utf8 date \'+%%a %%b %%d %%H:%%M:%%S %%Y\')" >>%s' % job_info_path
+            'echo "end_time: $(LC_ALL=en_US.utf8 date \'+%%s\')" >>%s' % job_info_path
         ]
 
         # convert exec and args into an string and
@@ -851,32 +860,38 @@ class SGEJobService (cpi_job.Service):
 
         job_info = None
 
-        if ret == 0 and len(out) > 0: # job is still in the queue
+        if ret == 0 and len(out) > 0: 
+            
+            # job is still in the queue
             # output is something like
             # r 06/24/2013 17:24:50
+            
             m = _QSTAT_JOB_STATE_RE.match(out)
-            if m is None: # something wrong with the result of qstat
+            if not m:  
+                # something wrong with the result of qstat
                 message = "Unexpected qstat results retrieving job info:\n%s" % out.rstrip()
                 log_error_and_raise(message, saga.NoSuccess, self._logger)
 
             state, start_time, queue = m.groups()
 
-            # Convert start time into POSIX format
-            try:
-                dt = datetime.strptime(start_time, "%m/%d/%Y %H:%M:%S")
-                start_time = dt.strftime("%a %b %d %H:%M:%S %Y")
-            except:
-                start_time = None
-
-            if state not in ["r", "t", "s", "S", "T", "d", "E", "Eqw"]:
-                start_time = None
+            # Convert start time into EPOCH
+            start_time = None
+            if state in ["r", "t", "s", "S", "T", "d", "E", "Eqw"]:
+                try:
+                    dt = datetime.strptime(start_time, "%m/%d/%Y %H:%M:%S")
+                    start_time = (dt - self._adaptor.epoch).total_seconds()
+                except:
+                    # keep 'None'
+                    pass
 
             exec_host = None
             if "@" in queue:
                 queue, exec_host = queue.split("@")
                 exec_host = exec_host.rstrip()
 
-            if self.accounting and state == "Eqw": # if it is an Eqw job it is better to retrieve the information from qacct
+            # if it is an Eqw job it is better to retrieve the information
+            # from qacct
+            if self.accounting and state == "Eqw": 
                 job_info = self.__job_info_from_accounting(pid)
                 # TODO remove the job from the queue ?
                 # self.__shell_run("%s %s" % (self._commands['qdel']['path'], pid))
@@ -885,19 +900,22 @@ class SGEJobService (cpi_job.Service):
                 qres = self.__kvcmd_results('qstat', "-j %s | grep -E 'job_name|submission_time|sge_o_host'" % pid,
                                             key_suffix=":")
 
-                if qres is not None: # when qstat fails it will fall back to qacct
+                if qres is not None:
+                    
+                    # when qstat fails it will fall back to qacct
                     # output is something like
                     # submission_time:            Mon Jun 24 17:24:43 2013
                     # sge_o_host:                 sge
-                    job_info = dict(
-                        state=self.__sge_to_saga_jobstate(state),
-                        name=qres.get("job_name"),
-                        exec_hosts=exec_host or qres.get("sge_o_host"),
-                        returncode=None, # it can not be None because it will be casted to int()
-                        create_time=qres.get("submission_time"),
-                        start_time=start_time,
-                        end_time=None,
-                        gone=False)
+
+                    job_info = {'state'       : self.__sge_to_saga_jobstate(state),
+                                'name'        : qres.get("job_name"),
+                                'exec_hosts'  : exec_host or qres.get("sge_o_host"),
+                                'returncode'  : None,
+                                'create_time' : qres.get("submission_time"),
+                                'start_time'  : start_time,
+                                'end_time'    : None,
+                                'gone'        : False
+                                }
 
         # if job already finished or there was an error with qstat
         # try to read the remote job info
@@ -1006,6 +1024,7 @@ class SGEJobService (cpi_job.Service):
         and (self.jobs[job_id]['create_time'] is None):
             self.jobs[job_id] = self._job_get_info(job_id=job_id)
 
+        # FIXME: convert to EOPCH
         return self.jobs[job_id]['create_time']
 
     # ----------------------------------------------------------------

@@ -173,11 +173,11 @@ class Adaptor (base.Base):
         base.Base.__init__(self, _ADAPTOR_INFO)
 
         self.id_re = re.compile('^\[(.*)\]-\[(.*?)\]$')
-      # # FIXME: RADICAL
-      # self.opts = self.get_config(_ADAPTOR_NAME)
-      #
-      # self.purge_on_start = self.opts['purge_on_start'].get_value()
-      # self.purge_older_than = self.opts['purge_older_than'].get_value()
+        self.epoch = datetime.datetime(1970,1,1)
+
+        self.purge_on_start   = self._cfg['purge_on_start']
+        self.purge_older_than = self._cfg['purge_older_than']
+
 
     # ----------------------------------------------------------------
     #
@@ -427,24 +427,20 @@ class LOADLJobService (cpi.job.Service):
 
         qres = SgeKeyValueParser(out, key_suffix=":").as_dict()
 
-        if "signal" in qres:
-            state = CANCELED
-        elif "exit_status" in qres:
-            if int(qres.get("exit_status")) == 0:
-                state = DONE
-            else:
-                state = FAILED
-        else:
-            state = RUNNING
+        if   "signal"          in qres   : state = saga.job.CANCELED
+        elif "exit_status" not in qres   : state = saga.job.RUNNING
+        elif not int(qres["exit_status"]): state = saga.job.DONE
+        else                             : state = saga.job.FAILED
 
-        job_info = dict(
-                    state=state,
-                    exec_hosts=qres.get("hostname"),
-                    returncode=int(qres.get("exit_status", -1)),
-                    create_time=qres.get("qsub_time"),
-                    start_time=qres.get("start_time"),
-                    end_time=qres.get("end_time"),
-                    gone=False)
+        job_info = {
+                    'state'       : state,
+                    'exec_hosts'  : qres.get("hostname"),
+                    'create_time' : qres.get("qsub_time"),
+                    'start_time'  : qres.get("start_time"),
+                    'end_time'    : qres.get("end_time"),
+                    'returncode'  : int(qres.get("exit_status", -1)),
+                    'gone'        : False
+                    }
 
         return job_info
 
@@ -569,21 +565,21 @@ class LOADLJobService (cpi.job.Service):
             'function aborted() {',
             '  echo Aborted with signal $1.',
             '  echo "signal: $1" >>%s' % job_info_path,
-            '  echo "end_time: $(LC_ALL=en_US.utf8 date \'+%%a %%b %%d %%H:%%M:%%S %%Y\')" >>%s' % job_info_path,
+            '  echo "end_time: $(LC_ALL=en_US.utf8 date \'+%%s\')" >>%s' % job_info_path,
             '  exit -1',
             '}',
             'mkdir -p %s' % self.temp_path,
             'for sig in SIGHUP SIGINT SIGQUIT SIGTERM SIGUSR1 SIGUSR2; do trap "aborted $sig" $sig; done',
-            'echo "hostname: $HOSTNAME" >%s' % job_info_path,
-            'echo "qsub_time: %s" >>%s' % (datetime.now().strftime("%a %b %d %H:%M:%S %Y"), job_info_path),
-            'echo "start_time: $(LC_ALL=en_US.utf8 date \'+%%a %%b %%d %%H:%%M:%%S %%Y\')" >>%s' % job_info_path
+            'echo "hostname: $HOSTNAME" > %s' % job_info_path,
+            'echo "qsub_time: %s"       >>%s' % (time.time(), job_info_path),
+            'echo "start_time: $(LC_ALL=en_US.utf8 date \'+%%s\')" >>%s' % job_info_path
         ]
 
         script_body += ['%s %s' % (exec_string, args_strings)]
 
         script_body += [
             'echo "exit_status: $?" >>%s' % job_info_path,
-            'echo "end_time: $(LC_ALL=en_US.utf8 date \'+%%a %%b %%d %%H:%%M:%%S %%Y\')" >>%s' % job_info_path
+            'echo "end_time: $(LC_ALL=en_US.utf8 date \'+%%s\')" >>%s' % job_info_path
         ]
 
         # convert exec and args into an string and
@@ -671,7 +667,7 @@ class LOADLJobService (cpi.job.Service):
         rm, pid = self._adaptor.parse_id(job_id)
 
         # run the LoadLeveler 'llq' command to get some info about our job
-        ret, out, _ = self.shell.run_sync("%s -j %s -r %%st %%dd %%cc %%jt %%c %%Xs" % \
+        ret, out, _ = self.shell.run_sync("%s -j %s -r %%st %%dd %%cc %%jt %%c %%Xs" %
                                           (self._commands['llq']['path'], pid))
         # output is something like
         # R!03/25/2014 13:47!!Serial!normal!kisti.kim
@@ -693,36 +689,44 @@ class LOADLJobService (cpi.job.Service):
                 'gone':         False
             }
 
-            #lastStr=out.rstrip().split('\n')[-1]
-            lastStr=out.rstrip()
+          # lastStr = out.rstrip().split('\n')[-1]
+            lastStr = out.rstrip()
             self._logger.debug(lastStr)
-            if lastStr.startswith('llq:'): # llq: There is currently no job status to report
+
+            if lastStr.startswith('llq:'):
+                # llq: There is currently no job status to report
+                
                 job_info = None
-                retries = 0
-                delay = 1
+                retries  = 0
+
                 while job_info is None and retries < max_retries:
+
                     job_info = self.__get_remote_job_info(pid)
-                    #print "llq:", job_info
-                    if job_info == None and retries > 0:
+                  # print "llq:", job_info
+
+                    if job_info is None and retries > 0:
                         message = "__get_remote_job_info get None, pid: %s and retries: %d" % (pid, retries)
                         self._logger.debug(message)
                         # Exponential back-off
                         time.sleep(2**retries)
+
                     retries += 1
 
-                if job_info == None:
+                if job_info is None:
                     message = "__get_remote_job_info exceed %d times(s), pid: %s" % (max_retries, pid)
                     log_error_and_raise(message, NoSuccess, self._logger)
 
                 self._logger.info("_retrieve_job: %r", job_info)
-            else: # job is still in the queue
+
+            else:
+                # job is still in the queue
                 results = lastStr.split('!')
                 self._logger.info("results: %r",results)
 
-                job_info['state'] = _ll_to_saga_jobstate(results[0])
-                job_info['returncode'] = -1 # still running
+                job_info['state']      = _ll_to_saga_jobstate(results[0])
+                job_info['returncode'] = None  # still running
                 job_info['start_time'] = results[1]
-                #job_info['exec_hosts'] = results[5]
+              # job_info['exec_hosts'] = results[5]
 
             return job_info
 
@@ -830,8 +834,7 @@ class LOADLJobService (cpi.job.Service):
         """ get the job's end time
         """
         # check if we can / should update
-        if (self.jobs[job_id]['gone'] is not True) \
-        and (self.jobs[job_id]['end_time'] is None):
+        if not self.jobs[job_id]['gone'] and not self.jobs[job_id]['end_time']:
             self.jobs[job_id] = self._job_get_info(job_id=job_id)
 
         return self.jobs[job_id]['end_time']
@@ -1120,6 +1123,7 @@ class LOADLJob (cpi.job.Job):
         if self._started is False:
             return None
         else:
+            # FIXME: convert to EPOCH
             return self.js._job_get_create_time(self._id)
 
     # ----------------------------------------------------------------
@@ -1131,6 +1135,7 @@ class LOADLJob (cpi.job.Job):
         if self._started is False:
             return None
         else:
+            # FIXME: convert to EPOCH
             return self.js._job_get_start_time(self._id)
 
     # ----------------------------------------------------------------

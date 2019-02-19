@@ -693,8 +693,6 @@ class Job (sb.Base, st.Task, sasync.Async) :
         if ec in [None, ""]:
             return None
         else:
-            # Exit code is always an int. If this 'cast' fails, 
-            # the adaptor is doing something stupid.
             return ec
 
     # --------------------------------------------------------------------------

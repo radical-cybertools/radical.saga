@@ -10,9 +10,10 @@ __license__   = "MIT"
 import re
 import os 
 import time
+import datetime
 import threading
 
-from cgi  import parse_qs
+from cgi import parse_qs
 
 import radical.utils as ru
 
@@ -47,6 +48,7 @@ class _job_state_monitor(threading.Thread):
         super(_job_state_monitor, self).__init__()
         self.setDaemon(True)
 
+
     def stop(self):
         self._stop.set()
 
@@ -71,8 +73,8 @@ class _job_state_monitor(threading.Thread):
                     # we only need to monitor jobs that are not in a
                     # terminal state, so we can skip the ones that are 
                     # either done, failed or canceled
-                    if  job_info['state'] not in [DONE, FAILED, CANCELED] :
-                        
+                    if  job_info['state'] not in FINAL:
+
                         # Store the current state since the current state 
                         # variable is updated when _job_get_info is called
                         pre_update_state = job_info['state']
@@ -85,7 +87,9 @@ class _job_state_monitor(threading.Thread):
                         # fire job state callback if 'state' has changed
                         if  new_job_info['state'] != pre_update_state:
                             job_obj = job_info['obj']
-                            job_obj._attributes_i_set('state', new_job_info['state'], job_obj._UP, True)
+                            job_obj._attributes_i_set('state', 
+                                                      new_job_info['state'], 
+                                                      job_obj._UP, True)
 
                         # update job info
                         jobs[job_id] = new_job_info
@@ -103,7 +107,7 @@ class _job_state_monitor(threading.Thread):
                 else :
                     error_type_count[error_type] += 1
                     if  error_type_count[error_type] >= 3 :
-                        self.logger.error("too many monitoring errors -- stopping job monitoring thread")
+                        self.logger.error("too many monitoring errors -- stop")
                         return
 
             finally :
@@ -121,21 +125,27 @@ def log_error_and_raise(message, exception, logger):
 
 # --------------------------------------------------------------------
 #
-def _torque_to_saga_jobstate(job_state):
-    """ translates a torque one-letter state to saga
+def _to_saga_jobstate(job_state, retcode, logger=None):
+    """ translates one-letter batch system state to saga
     """
-    # 'C' Torque            : Job is completed after having run
-    # 'F' PBS Pro           : Job is finished
-    # 'H' PBS Pro and TORQUE: Job is held
-    # 'Q' PBS Pro and TORQUE: Job is queued, eligible to run or routed
-    # 'S' PBS Pro and TORQUE: Job is suspended."
-    # 'W' PBS Pro and TORQUE: Job is waiting for its execution time to be reached
-    # 'R' PBS Pro and TORQUE: Job is running
-    # 'E' PBS Pro and TORQUE: Job is exiting after having run
-    # 'T' PBS Pro and TORQUE: Job is being moved to new location
-    # 'X' PBS Pro           : Subjob has completed execution or has been deleted
+    # H: Job is held.
+    # Q: Job is queued (eligible to run or routed.)
+    # S: Job is suspended.
+    # W: Job is waiting for its execution time to be reached.
+    # R: Job is running.
+    # E: Job is exiting after having run
+    # T: Job is being moved to new location.
+    # X: Subjob has completed execution or has been deleted (PBSPro)
+    # F: Job is Finished (PBSPro)
+    # C: Job is completed after having run (Torque)
 
-    if   job_state == 'C': ret = DONE
+    ret = None
+    if   job_state == 'F':                 # PBSPro
+        if retcode ==  0 : ret = DONE
+        else             : ret = FAILED
+    elif job_state == 'C':                 # Torque
+        if retcode ==  0 : ret = DONE
+        else             : ret = FAILED
     elif job_state == 'H': ret = PENDING
     elif job_state == 'Q': ret = PENDING
     elif job_state == 'S': ret = PENDING
@@ -143,19 +153,26 @@ def _torque_to_saga_jobstate(job_state):
     elif job_state == 'R': ret = RUNNING
     elif job_state == 'E': ret = RUNNING
     elif job_state == 'T': ret = RUNNING
+    elif job_state == 'X': ret = CANCELED  # PBSPro
     else                 : ret = UNKNOWN
+
+    logger.debug('check state: %s', job_state)
+    logger.debug('use   state: %s', ret)
 
     return ret
 
 
 # --------------------------------------------------------------------
 #
-def _torquescript_generator(url, logger, jd, ppn, gpn, gres, torque_version,
-                            is_cray=None, queue=None):
-    """ generates a Torque script from a SAGA job description
-    """
+def _script_generator(url, logger, jd, ppn, gpn, gres, version,
+                      is_cray=False, queue=None):
+    '''
+    generates a Torque script from a SAGA job description
+    '''
+
     pbs_params  = str()
     exec_n_args = str()
+
     if jd.executable:
         exec_n_args += "%s " % (jd.executable)
 
@@ -170,7 +187,7 @@ def _torquescript_generator(url, logger, jd, ppn, gpn, gres, torque_version,
     if jd.name:
         pbs_params += "#PBS -N %s \n" % jd.name
 
-    if (is_cray is ""):
+    if is_cray or 'Version: 4.2.7' not in version:
         # qsub on Cray systems complains about the -V option:
         # Warning:
         # Your job uses the -V option, which requests that all of your
@@ -185,9 +202,10 @@ def _torquescript_generator(url, logger, jd, ppn, gpn, gres, torque_version,
                            for k,v in jd.environment.iteritems()])
 
     # apparently this doesn't work with older PBS installations
-    #    if jd.working_directory:
-    #        pbs_params += "#PBS -d %s \n" % jd.working_directory
-
+    #
+    #   if jd.working_directory:
+    #       pbs_params += "#PBS -d %s \n" % jd.working_directory
+    #
     # a workaround is to do an explicit 'cd'
     if jd.working_directory:
         workdir_directives  = 'export    PBS_O_WORKDIR=%s \n' % jd.working_directory
@@ -225,6 +243,7 @@ def _torquescript_generator(url, logger, jd, ppn, gpn, gres, torque_version,
                 pbs_params += "#PBS -e %s/%s \n" % (jd.working_directory, jd.error)
         else:
             pbs_params += "#PBS -e %s \n" % jd.error
+
 
     if jd.wall_time_limit:
         hours = jd.wall_time_limit / 60
@@ -273,12 +292,22 @@ def _torquescript_generator(url, logger, jd, ppn, gpn, gres, torque_version,
         pbs_params += "#PBS -q %s\n" % queue_spec
 
     if jd.project:
+
         if '@' in jd.project:
             user, group = jd.project.split('@', 1)
             pbs_params += "#PBS -A %s \n"            % user
             pbs_params += "#PBS -W group_list:%s \n" % group
+
+        elif 'PBSPro_1' in version:
+            # On PBS Pro we set both -P(roject) and -A(accounting),
+            # as we don't know what the admins decided, and just
+            # pray that this doesn't create problems.
+            pbs_params += "#PBS -P %s \n" % str(jd.project)
+            pbs_params += "#PBS -A %s \n" % str(jd.project)
+
         else:
-            pbs_params += "#PBS -A %s \n" % jd.project
+            # Torque
+            pbs_params += "#PBS -A %s \n" % str(jd.project)
 
     if jd.job_contact:
         pbs_params += "#PBS -m abe \n"
@@ -313,34 +342,38 @@ def _torquescript_generator(url, logger, jd, ppn, gpn, gres, torque_version,
     # use the ncpus for systems that need to specify ncpus as multiple of PPN
     ncpus = nnodes * ppn
 
-    if is_cray is not "":
+    if is_cray:
         # Special cases for PBS/TORQUE on Cray. Different PBSes,
         # different flags. A complete nightmare...
         if  'titan'      in url.host       or \
-            '5.1.0.h1'   in torque_version or \
-            '6.1.1.1.h2' in torque_version or \
-            '4.2.6-snap' in torque_version :
+            '5.1.0.h1'   in version or \
+            '6.1.1.1.h2' in version or \
+            '4.2.6-snap' in version :
             # Can't really use hostname as we run also from the headnode
             logger.info("Using Titan (Cray XP) specific '#PBS -l nodes=xx'")
             pbs_params += "#PBS -l nodes=%d\n" % nnodes
         elif 'edison' in url.host:
+
             logger.info("Using Edison@NERSC (Cray XC30) specific '#PBS -l mppwidth=xx' parameter.")
             pbs_params += "#PBS -l mppwidth=%s \n" % jd.total_cpu_count
         elif 'bw.ncsa.illinois.edu' in url.host   or \
-             'Version: 6.0.4'       in torque_version:
+             'Version: 6.0.4'       in version:
             if gpu_nnodes: gpu_flag = ':xk'
             else         : gpu_flag = ''
             if gpu_flag and ppn > 16: ppn = 16
             logger.info("Using Blue Waters (Cray XE6/XK7) specific '#PBS -l nodes=xx:ppn=yy'")
             pbs_params += "#PBS -l nodes=%d:ppn=%d%s\n" % (nnodes, ppn, gpu_flag)
-        elif 'Version: 5.' in torque_version:
+            if 'RS_USE_COMMTRANSPARENT' in os.environ:
+                pbs_params += "#PBS -l flags=commtransparent\n"
+
+        elif 'Version: 5.' in version:
             # What would removing this catchall break?
             logger.info("Using TORQUE 5.x notation '#PBS -l procs=XX' ")
             pbs_params += "#PBS -l procs=%d\n" % jd.total_cpu_count
         else:
             logger.info("Using Cray XT (e.g. Kraken, Jaguar) specific '#PBS -l size=xx' flags (TORQUE).")
             pbs_params += "#PBS -l size=%s\n" % jd.total_cpu_count
-    elif 'version: 2.3.13' in torque_version:
+    elif 'version: 2.3.13' in version:
         # e.g. Blacklight
         # TODO: The more we add, the more it screams for a refactoring
         pbs_params += "#PBS -l ncpus=%d\n" % ncpus
@@ -395,6 +428,7 @@ _ADAPTOR_OPTIONS       = []
 # the adaptor capabilities & supported attributes
 #
 _ADAPTOR_CAPABILITIES = {
+<<<<<<< HEAD:src/radical/saga/adaptors/torque/torquejob.py
     "jdes_attributes":   [NAME,
                           EXECUTABLE,
                           ARGUMENTS,
@@ -413,6 +447,25 @@ _ADAPTOR_CAPABILITIES = {
                           SPMD_VARIATION,
                           TOTAL_CPU_COUNT,
                           TOTAL_GPU_COUNT,
+=======
+    "jdes_attributes":   [saga.job.NAME,
+                          saga.job.EXECUTABLE,
+                          saga.job.ARGUMENTS,
+                          saga.job.CANDIDATE_HOSTS,
+                          saga.job.ENVIRONMENT,
+                          saga.job.INPUT,
+                          saga.job.OUTPUT,
+                          saga.job.ERROR,
+                          saga.job.QUEUE,
+                          saga.job.PROJECT,
+                          saga.job.WALL_TIME_LIMIT,
+                          saga.job.WORKING_DIRECTORY,
+                          saga.job.WALL_TIME_LIMIT,
+                          saga.job.PROCESSES_PER_HOST,
+                          saga.job.SPMD_VARIATION,
+                          saga.job.TOTAL_CPU_COUNT,
+                          saga.job.TOTAL_GPU_COUNT,
+>>>>>>> devel:src/saga/adaptors/torque/torquejob.py
                           ],
     "job_attributes":    [EXIT_CODE,
                           EXECUTION_HOSTS,
@@ -448,10 +501,10 @@ controlled HPC clusters.
 # the adaptor info is used to register the adaptor with SAGA
 #
 _ADAPTOR_INFO = {
-    "name"        :    _ADAPTOR_NAME,
+    "name"        : _ADAPTOR_NAME,
     "version"     : "v0.1",
     "schemas"     : _ADAPTOR_SCHEMAS,
-    "capabilities":  _ADAPTOR_CAPABILITIES,
+    "capabilities": _ADAPTOR_CAPABILITIES,
     "cpis": [
         {
         "type": "radical.saga.job.Service",
@@ -480,12 +533,19 @@ class Adaptor (a_base.Base):
         a_base.Base.__init__(self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
 
         self.id_re = re.compile('^\[(.*)\]-\[(.*?)\]$')
+<<<<<<< HEAD:src/radical/saga/adaptors/torque/torquejob.py
+=======
+        self.opts  = self.get_config (_ADAPTOR_NAME)
+        self.epoch = datetime.datetime(1970,1,1)
+
+>>>>>>> devel:src/saga/adaptors/torque/torquejob.py
 
     # ----------------------------------------------------------------
     #
     def sanity_check(self):
         # FIXME: also check for gsissh
         pass
+
 
     # ----------------------------------------------------------------
     #
@@ -554,7 +614,7 @@ class TORQUEJobService (cpi_job.Service):
         self.session = session
         self.ppn     = None
         self.gpn     = 1   # gpus per node  # FIXME: inspect system
-        self.is_cray = ""
+        self.is_cray = False
         self.queue   = None
         self.shell   = None
         self.jobs    = dict()
@@ -584,12 +644,10 @@ class TORQUEJobService (cpi_job.Service):
         # we need to extract the scheme for PTYShell. That's basically the
         # job.Service Url without the pbs+ part. We use the PTYShell to execute
         # pbs commands either locally or via gsissh or ssh.
-        if rm_scheme == "torque":
-            pty_url.scheme = "fork"
-        elif rm_scheme == "torque+ssh":
-            pty_url.scheme = "ssh"
-        elif rm_scheme == "torque+gsissh":
-            pty_url.scheme = "gsissh"
+        scheme_elems = rm_scheme.split('+')
+        if   'gsissh' in scheme_elems : pty_url.scheme = "gsissh"
+        elif 'ssh'    in scheme_elems : pty_url.scheme = "ssh"
+        else                          : pty_url.scheme = "fork"
 
         # these are the commands that we need in order to interact with PBS.
         # the adaptor will try to find them during initialize(self) and bail
@@ -672,8 +730,15 @@ class TORQUEJobService (cpi_job.Service):
             self._logger.debug("Using user specified 'ppn': %d" % self.ppn)
             return
 
-        ret, out, _ = self.shell.run_sync('unset GREP_OPTIONS; %s -a | grep -E "(np|pcpu)[[:blank:]]*=" ' % \
-                self._commands['pbsnodes']['path'])
+        # TODO: this is quite a hack. however, it *seems* to work quite
+        #       well in practice.
+        if any(ver in self._commands['qstat']['version'] for ver in ('PBSPro_13', 'PBSPro_12', 'PBSPro_11.3')):
+            ret, out, _ = self.shell.run_sync('unset GREP_OPTIONS; %s -a | grep -E "resources_available.ncpus"' %
+                                               self._commands['pbsnodes']['path'])
+        else:
+            ret, out, _ = self.shell.run_sync('unset GREP_OPTIONS; %s -a | grep -E "(np|pcpu|pcpus)[[:blank:]]*=" ' %
+                                               self._commands['pbsnodes']['path'])
+
         if ret != 0:
             message = "Error running pbsnodes: %s" % out
             log_error_and_raise(message, NoSuccess, self._logger)
@@ -720,10 +785,10 @@ class TORQUEJobService (cpi_job.Service):
 
         try:
             # create a PBS job script from SAGA job description
-            script = _torquescript_generator(url=self.rm, logger=self._logger,
+            script = _script_generator(url=self.rm, logger=self._logger,
                                          jd=jd, ppn=self.ppn, gpn=self.gpn, 
                                          gres=self.gres,
-                                         torque_version=self._commands['qstat']['version'],
+                                         version=self._commands['qstat']['version'],
                                          is_cray=self.is_cray, queue=self.queue
                                          )
 
@@ -746,7 +811,12 @@ class TORQUEJobService (cpi_job.Service):
         # (1) we create a temporary file with 'mktemp' and write the contents of 
         #     the generated PBS script into it
         # (2) we call 'qsub <tmpfile>' to submit the script to the queueing system
-        cmdline = """SCRIPTFILE=`mktemp -t SAGA-Python-TORQUEJobScript.XXXXXX` &&  echo "%s" > $SCRIPTFILE && %s $SCRIPTFILE && rm -f $SCRIPTFILE""" %  (script, self._commands['qsub']['path'])
+        cmdline = """
+        SCRIPTFILE=`mktemp -t rs.jobscript.XXXXXX` \\
+            &&  echo "%s" > $SCRIPTFILE \\
+            &&  %s $SCRIPTFILE \\
+            &&  rm -f $SCRIPTFILE
+            """ %  (script, self._commands['qsub']['path'])
         ret, out, _ = self.shell.run_sync(cmdline)
 
         if ret != 0:
@@ -765,9 +835,6 @@ class TORQUEJobService (cpi_job.Service):
                 self._logger.warning('qsub: %s' % ''.join(lines[:-2]))
 
             # we asssume job id is in the last line
-            #print cmdline
-            #print out
-
             job_id = "[%s]-[%s]" % (self.rm, lines[-1].strip().split('.')[0])
             self._logger.info("Submitted PBS job with id: %s" % job_id)
 
@@ -780,13 +847,13 @@ class TORQUEJobService (cpi_job.Service):
                                  'state'       : state,
                                  'exec_hosts'  : None,
                                  'returncode'  : None,
-                                 'create_time' : None,
+                                 'create_time' : time.time(),
                                  'start_time'  : None,
                                  'end_time'    : None,
                                  'gone'        : False
                                  }
 
-            self._logger.info ("assign job id  %s / %s / %s to watch list (%s)" \
+            self._logger.info ("assign job id  %s / %s / %s to watch list (%s)"
                             % (job_name, job_id, job_obj, self.jobs.keys()))
 
             # set status to 'pending' and manually trigger callback
@@ -833,10 +900,16 @@ class TORQUEJobService (cpi_job.Service):
 
         rm, pid = self._adaptor.parse_id(job_id)
 
+        # run the PBS 'qstat' command to get some infos about our job
+        # TODO: create a PBSPRO/TORQUE flag once
+        if 'PBSPro_1' in self._commands['qstat']['version']:
+            qstat_flag = '-f'
+        else:
+            qstat_flag ='-f1'
         qstat_flag = '-f1'
 
         ret, out, _ = self.shell.run_sync("unset GREP_OPTIONS; %s %s %s | "
-                "grep -E -i '(job_state)|(Job_Name)|(exec_host)|(exit_status)|"
+                "grep -E -i '(job_state)|(exec_host)|(exit_status)|"
                  "(ctime)|(start_time)|(stime)|(mtime)'"
                 % (self._commands['qstat']['path'], qstat_flag, pid))
 
@@ -856,11 +929,28 @@ class TORQUEJobService (cpi_job.Service):
                         "This probably means that the backend doesn't store "
                         "information about finished jobs. Setting state to 'DONE'.")
 
+<<<<<<< HEAD:src/radical/saga/adaptors/torque/torquejob.py
                 if job_info['state'] in [RUNNING, PENDING]:
                     job_info['state'] = DONE
                 else:
                     # TODO: This is an uneducated guess?
                     job_info['state'] = FAILED
+=======
+                if job_info['state'] in [saga.job.RUNNING, saga.job.PENDING]:
+                    job_info['state']      = saga.job.DONE
+                    job_info['returncode'] = 0  # we are guessing here...
+                else:
+                    job_info['state'] = saga.job.UNKNOWN
+
+                if not job_info['start_time']:
+                    # inaccurate guess, but better than nothing
+                    job_info['start_time'] = time.time()
+
+                if not job_info['end_time']:
+                    # inaccurate guess, but better than nothing
+                    job_info['end_time'] = time.time()
+
+>>>>>>> devel:src/saga/adaptors/torque/torquejob.py
             else:
                 # something went wrong
                 message = "Error retrieving job info via 'qstat': %s" % out
@@ -879,58 +969,42 @@ class TORQUEJobService (cpi_job.Service):
             results = out.split('\n')
             for line in results:
 
-                if len(line.split('=')) == 2:
+                if line.count('=') == 1:
+
                     key, val = line.split('=')
                     key = key.strip()
                     val = val.strip()
 
-                    # The ubiquitous job state
-                    if key in ['job_state']:
-                        job_state = val
+                    if   key in ['job_state'  ]: job_state = val 
+                    elif key in ['job_name'   ]: job_info['name'] = val
+                    elif key in ['exit_status']: job_info['returncode' ] = int(val)
+                    elif key in ['exec_host'  ]: job_info['exec_hosts' ] = val.split('+')
+                                                 # format i73/7+i73/6+...
 
-                    # The job name
-                    if key in ['Job_Name']:
-                        job_info['name'] = val
 
-                    # Hosts where the job ran
-                    elif key in ['exec_host']: # PBS Pro and TORQUE
-                        job_info['exec_hosts'] = val.split('+')  # format i73/7+i73/6+...
-
-                    # Exit code of the job
-                    elif key in ['exit_status']:
-                        job_info['returncode'] = int(val)
-
-                    # Time job got created in the queue
-                    elif key in ['ctime']: # PBS Pro and TORQUE
-                        job_info['create_time'] = val
-
-                    # Time job started to run
-                    elif key in ['start_time', # TORQUE
-                                 'stime'       # PBS Pro
-                                ]:
-                        job_info['start_time'] = val
-
-                    # Time job ended.
-                    #
-                    # PBS Pro doesn't have an "end time" field.
-                    # It has an "resources_used.walltime" though,
-                    # which could be added up to the start time.
-                    # We will not do that arithmetic now though.
-                    #
-                    # Alternatively, we can use mtime, as the latest
-                    # modification time will generally also be the end time.
-                    #
-                    # TORQUE has an "comp_time" (completion? time) field,
-                    # that is generally the same as mtime at the finish.
-                    #
-                    # For the time being we will use mtime as end time for
-                    # both TORQUE and PBS Pro.
-                    #
-                    if key in ['mtime']: # PBS Pro and TORQUE
-                        job_info['end_time'] = val
+                  # FIXME: qstat will not tell us time zones, so we cannot convert to
+                  #        EPOCH (which is UTC).  We thus take times ourself.
+                  #        A proper solution would be to either do the time
+                  #        conversion on the target host, or to inspect time
+                  #        zone settings on the host.
+                  #
+                  # # PBS Pro doesn't provide "end time", but
+                  # # "resources_used.walltime" could be added up to the start
+                  # # time.  Alternatively, we can use mtime, (latest
+                  # # modification time) which is generally also end time.
+                  # # TORQUE has an "comp_time" (completion? time), that is
+                  # # generally the same as mtime.
+                  # #
+                  # # For now we  use mtime for both TORQUE and PBS Pro.
+                   
+                    elif key in ['start_time', # TORQUE / PBS Pro
+                                 'stime'      ]: job_info['start_time' ] = val
+                    elif key in ['ctime'      ]: job_info['create_time'] = val
+                    elif key in ['mtime'      ]: job_info['end_time'   ] = val
 
             # TORQUE doesn't allow us to distinguish DONE/FAILED on final state alone,
             # we need to consider the exit_status.
+<<<<<<< HEAD:src/radical/saga/adaptors/torque/torquejob.py
             # TODO: move this logic into _torque_to_saga_jobstate in a future life
             if job_state == 'C': # "Job is completed after having run."
                 if job_info['returncode'] == 0:
@@ -939,10 +1013,26 @@ class TORQUEJobService (cpi_job.Service):
                     job_info['state'] = FAILED
             else:
                 job_info['state'] = _torque_to_saga_jobstate(job_state)
+=======
+            retcode = job_info.get('returncode', -1)
+            job_info['state'] = _to_saga_jobstate(job_state, retcode)
+
+            # FIXME: workaround for time zone problem described above
+            if job_info['state'] in [saga.job.RUNNING] + saga.job.FINAL \
+                and not job_info['start_time']:
+                job_info['start_time'] = time.time()
+
+            if job_info['state'] in saga.job.FINAL \
+                and not job_info['end_time']:
+                job_info['end_time'] = time.time()
+>>>>>>> devel:src/saga/adaptors/torque/torquejob.py
 
         # return the updated job info
         return job_info
 
+
+    # ----------------------------------------------------------------
+    #
     def _parse_qstat(self, haystack, job_info):
 
 
@@ -963,8 +1053,7 @@ class TORQUEJobService (cpi_job.Service):
         """
         ret = self.jobs[job_id]['returncode']
 
-        # FIXME: 'None' should cause an exception
-        if ret == None : return None
+        if ret is None : return None
         else           : return int(ret)
 
     # ----------------------------------------------------------------
@@ -1012,6 +1101,9 @@ class TORQUEJobService (cpi_job.Service):
         # assume the job was succesfully canceled
         self.jobs[job_id]['state'] = CANCELED
 
+        if not self.jobs[job_id]['end_time']:
+            self.jobs[job_id]['end_time'] = time.time()
+
 
     # ----------------------------------------------------------------
     #
@@ -1025,7 +1117,11 @@ class TORQUEJobService (cpi_job.Service):
         while True:
             state = self.jobs[job_id]['state']  # this gets updated in the bg.
 
+<<<<<<< HEAD:src/radical/saga/adaptors/torque/torquejob.py
             if state in [DONE, FAILED, CANCELED]:
+=======
+            if state in saga.job.FINAL:
+>>>>>>> devel:src/saga/adaptors/torque/torquejob.py
                 return True
 
             # avoid busy poll
@@ -1140,8 +1236,8 @@ class TORQUEJobService (cpi_job.Service):
         # TODO: this is not optimized yet
         for job in jobs:
             job.run ()
-   
-   
+
+
     # ----------------------------------------------------------------
     #
     def container_wait (self, jobs, mode, timeout) :
@@ -1151,8 +1247,8 @@ class TORQUEJobService (cpi_job.Service):
         # TODO: this is not optimized yet
         for job in jobs:
             job.wait ()
-   
-   
+
+
     # ----------------------------------------------------------------
     #
     def container_cancel (self, jobs, timeout) :

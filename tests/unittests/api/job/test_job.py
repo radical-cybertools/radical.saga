@@ -173,6 +173,7 @@ def test_job_wait():
     js = None
     j  = None
     try:
+        t_min = time.time()
         tc = testing.get_test_config ()
         js = saga.job.Service(tc.job_service_url, tc.session)
         jd = saga.job.Description()
@@ -186,7 +187,15 @@ def test_job_wait():
 
         j.run()
         j.wait()
-        assert j.state == saga.job.DONE, "%s != %s" % (j.state, saga.job.DONE)
+        t_max = time.time()
+
+        # assert success
+        assert(j.state == saga.job.DONE), "%s != %s" % (j.state, saga.job.DONE)
+
+        # We expect job time information to be reported in seconds since epoch.
+        assert(t_min <= j.created  <= t_max), 'created  invalid: %s' % j.created
+        assert(t_min <= j.started  <= t_max), 'started  invalid: %s' % j.started
+        assert(t_min <= j.finished <= t_max), 'finished invalid: %s' % j.finished
 
     except saga.NotImplemented as ni:
         assert tc.notimpl_warn_only, "%s " % ni

@@ -438,6 +438,7 @@ class Adaptor (a_base.Base):
 
         self.id_re = re.compile('^\[(.*)\]-\[(.*?)\]$')
         self.opts  = self.get_config (_ADAPTOR_NAME)
+        self.epoch = datetime.datetime(1970,1,1)
 
         # Adaptor Options
         self.base_workdir = os.path.normpath(self.opts['base_workdir'].get_value ())
@@ -445,8 +446,9 @@ class Adaptor (a_base.Base):
         self.purge_older_than = self.opts['purge_older_than'].get_value()
 
         # dictionaries to keep track of certain Cobalt jobs data
-        self._script_file           = dict() # keep track of the cobalt script file
-        self._job_current_workdir   = dict() # keep track of the current working directory, for final status checking...
+        self._script_file         = dict()  # location of cobalt script file
+        self._job_current_workdir = dict()  # working dir, for status checking
+
 
     # ----------------------------------------------------------------
     #
@@ -850,7 +852,7 @@ class CobaltJobService (cpi_job.Service):
                     # DDD mmm dd HH:MM:SS YYYY +0000 (UTC)
                     # Wed Dec 21 15:51:34 2016 +0000 (UTC)
                     end_time = datetime.datetime.strptime(timestamp, "%a %b %d %H:%M:%S %Y +0000 (UTC)")
-                    job_info['end_time'] = end_time.strftime("%a %b %d %H:%M:%S %Y +0000 (UTC)")
+                    job_info['end_time'] = (end_time - self._adaptor.epoch).total_seconds()
                 
                     # Return code is on position '13'
                     job_info['returncode'] = int(exit_code)
@@ -1251,6 +1253,7 @@ class CobaltJob (cpi_job.Job):
         if self._started is False:
             return None
         else:
+            # FIXME: convert to EPOCH
             return self.js._job_get_create_time(self._id)
 
     # ----------------------------------------------------------------
@@ -1262,6 +1265,7 @@ class CobaltJob (cpi_job.Job):
         if self._started is False:
             return None
         else:
+            # FIXME: convert to EPOCH
             return self.js._job_get_start_time(self._id)
 
     # ----------------------------------------------------------------
