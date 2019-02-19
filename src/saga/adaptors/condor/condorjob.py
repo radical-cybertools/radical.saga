@@ -19,6 +19,8 @@ from saga.utils.job     import TransferDirectives
 import re
 import os
 import time
+import datetime
+
 from urlparse import parse_qs
 from tempfile import NamedTemporaryFile
 
@@ -343,10 +345,13 @@ class Adaptor (saga.adaptors.base.Base):
 
         saga.adaptors.base.Base.__init__(self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
 
-        self.id_re = re.compile('^\[(.*)\]-\[(.*?)\]$')
-        self.opts  = self.get_config (_ADAPTOR_NAME)
+        self.id_re    = re.compile('^\[(.*)\]-\[(.*?)\]$')
+        self.opts     = self.get_config (_ADAPTOR_NAME)
         self.use_hist = self.opts['use_history'].get_value()
+        self.epoch    = datetime.datetime(1970,1,1)
+
         self._logger.info("use condor_history: %s", self.use_hist)
+
 
 
     # ----------------------------------------------------------------
@@ -1308,6 +1313,7 @@ class CondorJobService (saga.adaptors.cpi.job.Service):
             (self.jobs[job_id]['end_time'] is     None):
             self._job_get_info(job_id=job_id)
 
+        # FIXME: convert to EPOCH
         return self.jobs[job_id]['end_time']
 
 
@@ -1810,6 +1816,7 @@ class CondorJob (saga.adaptors.cpi.job.Job):
         if self._started is False:
             return None
         else:
+            # FIXME: convert to EPOCH
             return self.js._job_get_create_time(self._id)
 
 
@@ -1822,6 +1829,7 @@ class CondorJob (saga.adaptors.cpi.job.Job):
         if self._started is False:
             return None
         else:
+            # FIXME: convert to EPOCH
             return self.js._job_get_start_time(self._id)
 
 

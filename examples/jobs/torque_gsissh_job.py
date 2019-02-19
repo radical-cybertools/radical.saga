@@ -1,11 +1,7 @@
+#!/usr/bin/env python
 
-__author__    = "Ole Weidner"
-__copyright__ = "Copyright 2012-2013, The SAGA Project"
-__license__   = "MIT"
-
-
-""" This examples shows how to run a job on a remote PBSPRO cluster
-    using the 'PBSPRO' job adaptor.
+""" This examples shows how to run a job on a remote TORQUE cluster
+    using the 'PBS' job adaptor via GSISSH.
 
     More information about the saga-python job API can be found at:
     http://saga-project.github.com/saga-python/doc/library/job/index.html
@@ -29,37 +25,33 @@ def job_state_change_cb(src_obj, fire_on, value):
 def main():
 
     try:
-        # Your ssh identity on the remote machine.
-        ctx = saga.Context("ssh")
-
-        # Change e.g., if you have a differnent username on the remote machine
-        #ctx.user_id = "your_ssh_username"
-
         session = saga.Session()
-        session.add_context(ctx)
 
         # Create a job service object that represent a remote pbs cluster.
         # The keyword 'pbs' in the url scheme triggers the PBS adaptors
         # and '+ssh' enables PBS remote access via SSH.
-        js = saga.job.Service("pbspro://localhost/",
+        js = saga.job.Service("torque+gsissh://supermic.cct-lsu.xsede.org:2222",
                               session=session)
 
         # Next, we describe the job we want to run. A complete set of job
         # description attributes can be found in the API documentation.
         jd = saga.job.Description()
-        jd.wall_time_limit   = 1 # minutes
-        jd.executable        = '/bin/data'
+        jd.environment       = {'FILENAME': 'testfile'}
+        jd.wall_time_limit   = 1  # minutes
+        
+        jd.executable        = '/bin/touch'
+        jd.arguments         = ['$FILENAME']
 
-       #jd.total_cpu_count   = 12 # for lonestar this has to be a multiple of 12
-       #jd.spmd_variation    = '12way' # translates to the qsub -pe flag
+        jd.total_cpu_count   = 20
 
-       #jd.queue             = "batch"
-        jd.project           = "e291"
+        jd.queue             = "workq"
+      # jd.project           = "TG-MCB090174"
 
+        jd.working_directory = "$HOME/A/B/C"
         jd.output            = "examplejob.out"
         jd.error             = "examplejob.err"
 
-        # Create a new job from the job description. The initial state of
+        # Create a new job from the job description. The initial state of 
         # the job is 'New'.
         job = js.create_job(jd)
 
@@ -79,19 +71,19 @@ def main():
         # List all jobs that are known by the adaptor.
         # This should show our job as well.
         print "\nListing active jobs: "
-        for jid in js.list():
-            print " * %s" % jid
+        for job in js.list():
+            print " * %s" % job
 
         # wait for our job to complete
         print "\n...waiting for job...\n"
         job.wait()
 
-        print "Job State   : %s" % (job.state)
-        print "Exitcode    : %s" % (job.exit_code)
-        print "Exec. hosts : %s" % (job.execution_hosts)
-        print "Create time : %s" % (job.created)
-        print "Start time  : %s" % (job.started)
-        print "End time    : %s" % (job.finished)
+        print "Job State   : %s" % job.state
+        print "Exitcode    : %s" % job.exit_code
+        print "Exec. hosts : %s" % job.execution_hosts
+        print "Create time : %d" % job.created
+        print "Start time  : %d" % job.started
+        print "End time    : %d" % job.finished
 
         js.close()
         return 0
@@ -104,5 +96,11 @@ def main():
         print " \n*** Backtrace:\n %s" % ex.traceback
         return -1
 
+
+# ------------------------------------------------------------------------------
+#
 if __name__ == "__main__":
     sys.exit(main())
+
+# ------------------------------------------------------------------------------
+
