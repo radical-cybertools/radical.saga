@@ -7,19 +7,19 @@ __license__   = "MIT"
 """ shell based resource adaptor implementation """
 
 import re
-import os
 import time
 
-from ...exceptions         import *
-from ...                   import utils      as rsu
+from ...                   import exceptions as rse
+from ...                   import url        as rsurl
 from ...utils              import pty_shell  as rsups
-from ...utils              import misc       as rsumisc
 from ...                   import resource   as api_resource
 from ...adaptors           import base       as a_base
 from ...adaptors.cpi       import resource   as cpi_resource
 from ...adaptors.cpi       import decorators as cpi_decs
-from ...resource.constants import *
-ANY = COMPUTE | STORAGE
+from ...resource           import constants  as c
+
+
+c.ANY = c.COMPUTE | c.STORAGE
 
 SYNC_CALL  = cpi_decs.SYNC_CALL
 ASYNC_CALL = cpi_decs.ASYNC_CALL
@@ -36,20 +36,20 @@ _ADAPTOR_OPTIONS       = []
 # the adaptor capabilities & supported attributes
 #
 _ADAPTOR_CAPABILITIES  = {
-    "rdes_attributes"  : [RTYPE         ,
-                          MACHINE_OS    ,
-                          MACHINE_ARCH  ,
-                          SIZE          ,
-                          MEMORY        ,
-                          ACCESS       ],
-    "res_attributes"   : [RTYPE         ,
-                          MACHINE_OS    ,
-                          MACHINE_ARCH  ,
-                          SIZE          ,
-                          MEMORY        ,
-                          ACCESS       ],    
-    "metrics"          : [STATE, 
-                          STATE_DETAIL],
+    "rdes_attributes"  : [c.RTYPE         ,
+                          c.MACHINE_OS    ,
+                          c.MACHINE_ARCH  ,
+                          c.SIZE          ,
+                          c.MEMORY        ,
+                          c.ACCESS       ],
+    "res_attributes"   : [c.RTYPE         ,
+                          c.MACHINE_OS    ,
+                          c.MACHINE_ARCH  ,
+                          c.SIZE          ,
+                          c.MEMORY        ,
+                          c.ACCESS       ],    
+    "metrics"          : [c.STATE, 
+                          c.STATE_DETAIL],
     "contexts"         : {"ssh"      : "public/private keypair",
                           "x509"     : "X509 proxy for gsissh",
                           "userpass" : "username/password pair for ssh"}
@@ -89,6 +89,7 @@ _ADAPTOR_INFO          = {
         },
     ]
 }
+
 
 ###############################################################################
 # The adaptor class
@@ -130,7 +131,7 @@ class Adaptor (a_base.Base):
         match = self.id_re.match (id)
 
         if  not match or len (match.groups()) != 2 :
-            raise BadParameter ("Cannot parse resource id '%s'" % id)
+            raise rse.BadParameter ("Cannot parse resource id '%s'" % id)
 
         return (rsurl.Url (match.group(1)), rsurl.Url (match.group (2)))
 
@@ -158,9 +159,9 @@ class ShellResourceManager (cpi_resource.Manager) :
         self.url     = rsurl.Url (url)  # deep copy
         self.session = session
         self.access  = {}
-        self.access[COMPUTE] = []
-        self.access[STORAGE] = []
-        self.access[ANY]     = []
+        self.access[c.COMPUTE] = []
+        self.access[c.STORAGE] = []
+        self.access[c.ANY]     = []
 
         # check for compute entry points
         for schema in ['fork', 'ssh', 'gsissh'] :
@@ -170,8 +171,8 @@ class ShellResourceManager (cpi_resource.Manager) :
             shell = rsups.PTYShell (tmp_url, self.session, self._logger)
 
             if  shell.alive () :
-                self.access[COMPUTE].append (tmp_url)
-                self.access[ANY]    .append (tmp_url)
+                self.access[c.COMPUTE].append (tmp_url)
+                self.access[c.ANY]    .append (tmp_url)
                 shell.finalize (True)
 
 
@@ -183,8 +184,8 @@ class ShellResourceManager (cpi_resource.Manager) :
             shell = rsups.PTYShell (tmp_url, self.session, self._logger)
 
             if  shell.alive () :
-                self.access[STORAGE].append (tmp_url)
-                self.access[ANY]    .append (tmp_url)
+                self.access[c.STORAGE].append (tmp_url)
+                self.access[c.ANY]    .append (tmp_url)
                 shell.finalize (True)
 
 
@@ -194,41 +195,41 @@ class ShellResourceManager (cpi_resource.Manager) :
     def acquire (self, rd) :
 
         if  not rd :
-            raise BadParameter._log (self._logger, "acquire needs a resource description")
+            raise rse.BadParameter._log (self._logger, "acquire needs a resource description")
 
-        if  rd.rtype != COMPUTE and \
-            rd.rtype != STORAGE     :
-            raise BadParameter._log (self._logger, "can only acquire compute and storage resources.")
+        if  rd.rtype != c.COMPUTE and \
+            rd.rtype != c.STORAGE     :
+            raise rse.BadParameter._log (self._logger, "can only acquire compute and storage resources.")
 
 
         # check that only supported attributes are provided
         for attribute in rd.list_attributes():
             if attribute not in _ADAPTOR_CAPABILITIES["rdes_attributes"]:
                 msg = "'resource.Description.%s' is not supported by this adaptor" % attribute
-                raise BadParameter._log (self._logger, msg)
+                raise rse.BadParameter._log (self._logger, msg)
 
         if  rd.access :
             access_url = rsurl.Url (rd.access) 
-            if  not access_url in self.access[rd.rtype] :
+            if  access_url not in self.access[rd.rtype] :
                 msg = "access '%s' is not supported by this backend" % rd.access
-                raise BadParameter._log (self._logger, msg)
+                raise rse.BadParameter._log (self._logger, msg)
 
         if  not len (self.access[rd.rtype]) :
-            raise BadParameter._log (self._logger, "resource type is not supported by this backend")
+            raise rse.BadParameter._log (self._logger, "resource type is not supported by this backend")
 
 
         # this dict is passed on to the job adaptor class -- use it to pass any
         # state information you need there.
-        adaptor_state = { "resource_access_url"     : self.access[rd.rtype][0], 
-                          "resource_type"           : rd.rtype, 
-                          "resource_manager"        : self.get_api (), 
-                          "resource_manager_url"    : self.url, 
-                          "resource_schema"         : self.url.schema }
+        adaptor_state = {"resource_access_url"     : self.access[rd.rtype][0], 
+                         "resource_type"           : rd.rtype, 
+                         "resource_manager"        : self.get_api (), 
+                         "resource_manager_url"    : self.url, 
+                         "resource_schema"         : self.url.schema }
 
-        if rd.rtype == COMPUTE :
+        if rd.rtype == c.COMPUTE :
             return api_resource.Compute (_adaptor=self._adaptor, _adaptor_state=adaptor_state)
 
-        if rd.rtype == STORAGE :
+        if rd.rtype == c.STORAGE :
             return api_resource.Storage (_adaptor=self._adaptor, _adaptor_state=adaptor_state)
 
 
@@ -268,7 +269,7 @@ class ShellResourceManager (cpi_resource.Manager) :
     @SYNC_CALL
     def get_template (self, name) :
 
-        raise BadParameter ("unknown template %s" % name)
+        raise rse.BadParameter ("unknown template %s" % name)
 
 
 ###############################################################################
@@ -282,7 +283,7 @@ class ShellResourceCompute (cpi_resource.Compute) :
         self._cpi_base = super  (ShellResourceCompute, self)
         self._cpi_base.__init__ (api, adaptor)
 
-        self.state       = ACTIVE
+        self.state       = c.ACTIVE
         self.rtype       = None
         self.manager     = None
         self.manager_url = None
@@ -299,23 +300,23 @@ class ShellResourceCompute (cpi_resource.Compute) :
             self.manager_url, self.access_url = self._adaptor.parse_id (id)
             self.manager = api_resource.Manager (self.manager_url)
 
-            if  self.access_url.scheme in self.manager.list (COMPUTE) :
-                self.rtype = COMPUTE
+            if  self.access_url.scheme in self.manager.list (c.COMPUTE) :
+                self.rtype = c.COMPUTE
 
-            elif self.access_url.scheme in self.manager.list (STORAGE) :
-                self.rtype = STORAGE
+            elif self.access_url.scheme in self.manager.list (c.STORAGE) :
+                self.rtype = c.STORAGE
 
             else :
-                raise BadParameter ("Cannot handle resource type for %s", id)
+                raise rse.BadParameter ("Cannot handle resource type for %s", id)
 
         # no id -- grab info from adaptor_info
         elif adaptor_info :
 
-            if  not 'resource_access_url'  in adaptor_info or \
-                not 'resource_type'        in adaptor_info or \
-                not 'resource_manager'     in adaptor_info or \
-                not 'resource_manager_url' in adaptor_info    :
-                raise BadParameter ("Cannot acquiure resource, insufficient information")
+            if  'resource_access_url'  not in adaptor_info or \
+                'resource_type'        not in adaptor_info or \
+                'resource_manager'     not in adaptor_info or \
+                'resource_manager_url' not in adaptor_info    :
+                raise rse.BadParameter ("Cannot acquiure resource, insufficient information")
 
             self.access_url  = adaptor_info['resource_access_url']
             self.rtype       = adaptor_info['resource_type']
@@ -325,7 +326,7 @@ class ShellResourceCompute (cpi_resource.Compute) :
             self.id = "[%s]-[%s]" % (self.manager_url, self.access_url)
 
         else :
-            raise BadParameter ("Cannot acquire resource, no contact information")
+            raise rse.BadParameter ("Cannot acquire resource, no contact information")
 
 
         return self.get_api ()
@@ -352,7 +353,8 @@ class ShellResourceCompute (cpi_resource.Compute) :
     def get_manager      (self) : return self.manager
 
     @SYNC_CALL
-    def get_description  (self) : return { ACCESS : self.access_url }
+    def get_description  (self) : return {c.ACCESS : self.access_url}
+
 
     # ----------------------------------------------------------------
     #
@@ -366,7 +368,8 @@ class ShellResourceCompute (cpi_resource.Compute) :
     @SYNC_CALL
     def release (self):
 
-        return # hahahah
+        return  # hahahah
+
 
     # ----------------------------------------------------------------
     #

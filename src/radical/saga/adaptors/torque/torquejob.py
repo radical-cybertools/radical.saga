@@ -650,7 +650,7 @@ class TORQUEJobService (cpi_job.Service):
         ret, out, _ = self.shell.run_sync("qstat --version")
         if ret:
             message = "Error finding PBS tools: %s" % out
-            log_error_and_raise(message, saga.NoSuccess, self._logger)
+            log_error_and_raise(message, NoSuccess, self._logger)
         version = out.strip()
         self._logger.info("Found PBS version: %s" % version)
 
@@ -905,11 +905,11 @@ class TORQUEJobService (cpi_job.Service):
                         "This probably means that the backend doesn't store "
                         "information about finished jobs. Setting state to 'DONE'.")
 
-                if job_info['state'] in [RUNNING.PENDING]:
-                    job_info['state']      = saga.job.DONE
+                if job_info['state'] in [RUNNING, PENDING]:
+                    job_info['state']      = DONE
                     job_info['returncode'] = 0  # we are guessing here...
                 else:
-                    job_info['state'] = saga.job.UNKNOWN
+                    job_info['state'] = .UNKNOWN
 
                 if not job_info['start_time']:
                     # inaccurate guess, but better than nothing
@@ -1122,7 +1122,7 @@ class TORQUEJobService (cpi_job.Service):
 
         # create job description from queue info
         # FIXME: incomplete
-        jd = saga.job.Description()
+        jd = api_job.Description()
         jd.name = job_info['name']
 
         # this dict is passed on to the job adaptor class -- use it to pass any

@@ -14,6 +14,7 @@ from cgi  import parse_qs
 import radical.utils as ru
 
 from ...exceptions    import *
+from ...url           import misc       as Url
 from ...              import utils      as rsu
 from ...utils         import pty_shell  as rsups
 from ...utils         import misc       as rsumisc
@@ -110,12 +111,12 @@ class Adaptor(a_base.Base):
         a_base.Base.__init__(self, _ADAPTOR_INFO)
 
         # FIXME: RADICAL
-      # self.opts = self.get_config(_ADAPTOR_NAME)
-      # self.notify = self.opts['enable_notifications'].get_value()
-      # self.f_mode = self.opts['failure_mode'].get_value()
-      # self.prompt = self.opts['prompt_pattern'].get_value()
-      # self.localhost_ep = self.opts['localhost_endpoint'].get_value()
-        self.shells = {}  # keep go shells for each session
+        self.opts = self.get_config(_ADAPTOR_NAME)
+        self.notify       = self.cfg['enable_notifications'].get_value()
+        self.f_mode       = self.cfg['failure_mode'].get_value()
+        self.prompt       = self.cfg['prompt_pattern'].get_value()
+        self.localhost_ep = self.cdfg['localhost_endpoint'].get_value()
+        self.shells       = dict()  # keep go shells for each session
 
         #
         # Lock to synchronize concurrent access to data structures
@@ -164,7 +165,7 @@ class Adaptor(a_base.Base):
             if create:
 
                 # deep copy URL (because of?)
-                new_url = rsu.Url(go_url)
+                new_url = Url(go_url)
 
                 # GO specific prompt pattern
                 opts = {'prompt_pattern': self.prompt}
@@ -220,7 +221,7 @@ class Adaptor(a_base.Base):
         if not sid in self.shells:
             raise IncorrectState("GO shell disconnected")
 
-        ep_url = rsu.Url()
+        ep_url = Url()
         ep_url.schema = url.schema
         ep_url.port = url.port
 
@@ -259,13 +260,13 @@ class Adaptor(a_base.Base):
             raise IncorrectState("GO shell disconnected")
 
         shell = self.shells[sid]['shell']
-        url   = rsu.Url(url)
+        url   = Url(url)
 
         if not path:
             path = url.path
 
         if not cwd_url:
-            cwd_url = rsu.Url(url)
+            cwd_url = Url(url)
 
             if not cwd_path:
                 cwd_path = '.'
@@ -656,8 +657,8 @@ class GODirectory(cpi_fs.Directory):
         if flags == None:
             flags = 0
 
-        self.orig     = rsu.Url(url) # deep copy
-        self.url      = rsu.Url(url) # deep copy
+        self.orig     = Url(url) # deep copy
+        self.url      = Url(url) # deep copy
         self.path     = url.path       # keep path separate
         self.url.path = None
 
@@ -729,7 +730,7 @@ class GODirectory(cpi_fs.Directory):
         self._is_valid()
 
         adaptor_state = { "from_open" : True,
-                          "url"       : rsu.Url(self.url),   # deep copy
+                          "url"       : Url(self.url),   # deep copy
                           "path"      : self.path}
 
         if rsumisc.url_is_relative(url):
@@ -746,7 +747,7 @@ class GODirectory(cpi_fs.Directory):
         self._is_valid()
 
         adaptor_state = {"from_open": True,
-                         "url"      : rsu.Url(self.url),   # deep copy
+                         "url"      : Url(self.url),   # deep copy
                          "path"     : self.path}
 
         if rsumisc.url_is_relative(url):
@@ -760,7 +761,7 @@ class GODirectory(cpi_fs.Directory):
     @SYNC_CALL
     def change_dir(self, tgt, flags):
 
-        tgt_url = rsu.Url(tgt)
+        tgt_url = Url(tgt)
 
         # TODO: attempt to get new EP
         if not rsumisc.url_is_compatible(self.url, tgt_url):
@@ -773,7 +774,7 @@ class GODirectory(cpi_fs.Directory):
             self.orig.path = self.path
 
         else:
-            self.orig      = rsu.Url(tgt_url)
+            self.orig      = Url(tgt_url)
             self.url       = tgt_url
             self.path      = self.url.path
             self.url.path  = None
@@ -798,7 +799,7 @@ class GODirectory(cpi_fs.Directory):
 
         self._is_valid()
 
-        return rsu.Url(self.orig) # deep copy
+        return Url(self.orig) # deep copy
 
     # ----------------------------------------------------------------
     #
@@ -815,7 +816,7 @@ class GODirectory(cpi_fs.Directory):
 
         self.entries = []
         for line in lines:
-            self.entries.append(rsu.Url(line.strip()))
+            self.entries.append(Url(line.strip()))
 
         return self.entries
    
@@ -1076,8 +1077,8 @@ class GOFile(cpi_fs.File):
         if flags == None:
             flags = 0
 
-        self.orig     = rsu.Url(url) # deep copy
-        self.url      = rsu.Url(url) # deep copy
+        self.orig     = Url(url) # deep copy
+        self.url      = Url(url) # deep copy
         self.path     = url.path       # keep path separate
         self.cwd      = rsumisc.url_get_dirname(self.url)
         self.url.path = None
@@ -1160,7 +1161,7 @@ class GOFile(cpi_fs.File):
 
         self._is_valid()
 
-        return rsu.Url(self.orig) # deep copy
+        return Url(self.orig) # deep copy
 
     # ----------------------------------------------------------------
     #

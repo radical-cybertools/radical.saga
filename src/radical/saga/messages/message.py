@@ -6,14 +6,14 @@ __license__   = "MIT"
 
 import radical.utils.signatures as rus
 
-import ..adaptors.base       as sab
-import ..attributes          as sa
-import ..session             as ss
-import ..task                as st
-import ..url                 as surl
-import ..constants           as c
+from ..          import adaptors.base       as sab
+from ..          import attributes          as sa
+from ..          import session             as ss
+from ..          import task                as st
+from ..          import url                 as surl
+from ..          import constants           as c
 
-from   ..constants           import SYNC, ASYNC, TASK
+from ..constants import SYNC, ASYNC, TASK
 
 
 # ------------------------------------------------------------------------------
@@ -24,11 +24,11 @@ class Message (sa.Attributes) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Message', 
-                  rus.optional (int, rus.nothing)) # size
+                  rus.optional (int, rus.nothing))  # size
     @rus.returns (rus.nothing)
     def __init__ (self, size=None) : 
         '''
-        size:      expected size of buffer when used -- informative, not normative
+        size:      expected size of buffer (informative, not normative)
         ret:       Message
         '''
 

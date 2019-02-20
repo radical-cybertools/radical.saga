@@ -12,9 +12,9 @@ try:
 
     dh = ru.DebugHelper()
 
-    print "______________________________________________________________________"
+    print "____________________________________________________________________"
     print "Using radical.saga from: %s" % str(rs)
-    print "______________________________________________________________________"
+    print "____________________________________________________________________"
 
 except Exception, e:
     srcdir = "%s/../" % os.path.dirname(os.path.realpath(__file__))
@@ -22,9 +22,10 @@ except Exception, e:
     import radical.saga                   as rs
     import radical.saga.utils.test_config as sutc
     import radical.utils.testing          as rut
-    print "______________________________________________________________________"
+
+    print "____________________________________________________________________"
     print "Using radical.saga from: %s" % str(rs)
-    print "______________________________________________________________________"
+    print "____________________________________________________________________"
 
 
 # ------------------------------------------------------------------------------
@@ -35,20 +36,26 @@ if __name__ == "__main__":
         print "ERROR: provide test config files as arguments"
         sys.exit (-1)
 
+    configs = sys.argv[1:]
+
+    for config in configs :
+        if  not os.path.exists (config) :
+            print "ERROR: config '%s' does not exist." % config
+            sys.exit (-1)
 
     test_cfgs = sys.argv[1:]
 
     # set up the testing framework
     testing = rut.Testing ('radical.saga', __file__)
-    ret     = True
-    for test_cfg in test_cfgs :
+    ret     = 0
 
-        # use this config, ignore not implemented errors, run tests
-        tc = sutc.TestConfig(test_cfg)
-        tc.notimpl_warn_only = True
+    for config in configs :
 
-        if not testing.run(tc):
-            ret = False
+        # for each config, set up the test config singleton and run the tests
+        tc = sutc.TestConfig (config)
+
+        if  not testing.run () :
+            ret += 1
 
     sys.exit (ret)
 

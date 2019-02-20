@@ -15,7 +15,7 @@ import radical.utils           as ru
 from   . import misc           as sumisc
 from   . import pty_process    as supp
 from   . import pty_exceptions as ptye
-from   ..import exceptions     as se
+from   ..import exceptions     as rse
 
 from   ..session import Session
 from   ..url     import Url
@@ -193,7 +193,7 @@ class PTYShellFactory (object) :
 
                 info['pty'] = supp.PTYProcess (m_cmd, cfg, logger)
                 if not info['pty'].alive () :
-                    raise se.NoSuccess._log (logger,
+                    raise rse.NoSuccess._log (logger,
                           "Shell not connected to %s" % info['host_str'])
 
                 # authorization, prompt setup, etc.  Initialize as shell if not
@@ -210,7 +210,7 @@ class PTYShellFactory (object) :
                 info = self.registry[host_s][user_s][type_s]
 
                 if  not info['pty'].alive (recover=True) :
-                    raise se.IncorrectState._log (logger,
+                    raise rse.IncorrectState._log (logger,
                           "Lost shell connection to %s" % info['host_str'])
 
             return info
@@ -237,7 +237,7 @@ class PTYShellFactory (object) :
 
             pty_shell.latency = latency
 
-            if posix == None:
+            if posix is None:
                 posix = info['posix']
 
             # if we did not see a decent prompt within 'delay' time, something
@@ -248,8 +248,8 @@ class PTYShellFactory (object) :
             delay = min (1.0, max (0.1, 10 * latency))
 
             try :
-                prompt_patterns = 
-                    ["[Pp]assword:\s*$",              # password   prompt
+                prompt_patterns = [
+                     "[Pp]assword:\s*$",              # password   prompt
                      "Enter passphrase for .*:\s*$",  # passphrase prompt
                      "Token_Response.*:\s*$",         # passtoken  prompt
                      "Enter PASSCODE:$",              # RSA SecureID
@@ -292,7 +292,7 @@ class PTYShellFactory (object) :
                         # command...
 
                         if time.time() - time_start > timeout:
-                            raise NoSuccess("Could not detect shell prompt (timeout)")
+                            raise rse.NoSuccess("Could not detect shell prompt (timeout)")
 
                         # make sure we retry a finite time...
                         retries += 1
@@ -317,7 +317,7 @@ class PTYShellFactory (object) :
                     elif n == 0 :
                         logger.info ("got password prompt")
                         if  not shell_pass :
-                            raise AuthenticationFailed ("prompted for unknown password (%s)" \
+                            raise rse.AuthenticationFailed ("prompted for unknown password (%s)" \
                                                           % match)
 
                         pty_shell.write ("%s\n" % shell_pass, nolog=True)
@@ -332,13 +332,13 @@ class PTYShellFactory (object) :
                         end   = string.find (match, "'", start + 1)
 
                         if start == -1 or end == -1 :
-                            raise AuthenticationFailed(
+                            raise rse.AuthenticationFailed(
                                     "could not extract key name (%s)" % match)
 
                         key = match[start + 1:end]
 
                         if  key not in key_pass    :
-                            raise AuthenticationFailed(
+                            raise rse.AuthenticationFailed(
                                 "prompted for unknown key password (%s)" % key)
 
                         pty_shell.write ("%s\n" % key_pass[key], nolog=True)
@@ -408,7 +408,7 @@ class PTYShellFactory (object) :
                                                     pty_shell.write (" printf 'HELLO_%%d_SAGA\\n' %d\n" % retries)
 
                                             if  attempts > 100 :
-                                                raise NoSuccess ("Could not detect shell prompt (timeout)")
+                                                raise rse.NoSuccess ("Could not detect shell prompt (timeout)")
 
                                     continue
 
@@ -546,7 +546,7 @@ class PTYShellFactory (object) :
                     info['cp_exe'] =  self._which ("cp")
 
             else :
-                raise BadParameter._log (self.logger,
+                raise rse.BadParameter._log (self.logger,
                           "cannot handle schema '%s://'" % url.schema)
 
 
@@ -581,7 +581,7 @@ class PTYShellFactory (object) :
                 info['sh_env'] = "/usr/bin/env TERM=vt100 "  # avoid ansi escapes
 
                 if not sumisc.host_is_local (url.host) :
-                    raise BadParameter._log (self.logger,
+                    raise rse.BadParameter._log (self.logger,
                             "expect local host for '%s://', not '%s'"
                             % (url.schema, url.host))
 

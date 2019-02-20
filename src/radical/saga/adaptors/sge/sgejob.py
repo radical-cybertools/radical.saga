@@ -19,7 +19,7 @@ from datetime import datetime
 
 import radical.utils as ru
 
-from ...exceptions    import *
+from ...              import exceptions as rse
 from ...              import utils      as rsu
 from ...utils         import pty_shell  as rsups
 from ...utils         import misc       as rsumisc
@@ -27,7 +27,7 @@ from ...              import job        as api_job
 from ...adaptors      import base       as a_base
 from ...adaptors.cpi  import job        as cpi_job
 from ...adaptors.cpi  import decorators as cpi_decs
-from ...job.constants import *
+from ...job           import.constants  as c
 
 
 SYNC_CALL  = cpi_decs.SYNC_CALL
@@ -126,28 +126,28 @@ _ADAPTOR_SCHEMAS       = ["sge", "sge+ssh", "sge+gsissh"]
 # the adaptor capabilities & supported attributes
 #
 _ADAPTOR_CAPABILITIES = {
-    "jdes_attributes":   [NAME,
-                          EXECUTABLE,
-                          ARGUMENTS,
-                          ENVIRONMENT,
-                          INPUT,
-                          OUTPUT,
-                          ERROR,
-                          QUEUE,
-                          PROJECT,
-                          WALL_TIME_LIMIT,
-                          WORKING_DIRECTORY,
-                          SPMD_VARIATION,
-                          TOTAL_CPU_COUNT,
-                          PROCESSES_PER_HOST,
-                          CANDIDATE_HOSTS,
-                          TOTAL_PHYSICAL_MEMORY],
-    "job_attributes":    [EXIT_CODE,
-                          EXECUTION_HOSTS,
-                          CREATED,
-                          STARTED,
-                          FINISHED],
-    "metrics":           [STATE],
+    "jdes_attributes":   [c.NAME,
+                          c.EXECUTABLE,
+                          c.ARGUMENTS,
+                          c.ENVIRONMENT,
+                          c.INPUT,
+                          c.OUTPUT,
+                          c.ERROR,
+                          c.QUEUE,
+                          c.PROJECT,
+                          c.WALL_TIME_LIMIT,
+                          c.WORKING_DIRECTORY,
+                          c.SPMD_VARIATION,
+                          c.TOTAL_CPU_COUNT,
+                          c.PROCESSES_PER_HOST,
+                          c.CANDIDATE_HOSTS,
+                          c.TOTAL_PHYSICAL_MEMORY],
+    "job_attributes":    [c.EXIT_CODE,
+                          c.EXECUTION_HOSTS,
+                          c.CREATED,
+                          c.STARTED,
+                          c.FINISHED],
+    "metrics":           [c.STATE],
     "contexts":          {"ssh": "SSH public/private keypair",
                           "x509": "GSISSH X509 proxy context",
                           "userpass": "username/password pair (ssh)"}
@@ -227,7 +227,7 @@ class Adaptor (a_base.Base):
         match = self.id_re.match(id)
 
         if not match or len(match.groups()) != 2:
-            raise saga.BadParameter("Cannot parse job id '%s'" % id)
+            raise rse.BadParameter("Cannot parse job id '%s'" % id)
 
         return (match.group(1), match.group(2))
 
@@ -327,7 +327,7 @@ class SGEJobService (cpi_job.Service):
             ret, out, _ = self.shell.run_sync("which %s " % cmd)
             if ret != 0:
                 message = "Error finding SGE tools: %s" % out
-                log_error_and_raise(message, saga.NoSuccess, self._logger)
+                log_error_and_raise(message, rse.NoSuccess, self._logger)
             else:
                 path = out.strip()  # strip removes newline
 
@@ -340,7 +340,7 @@ class SGEJobService (cpi_job.Service):
                         version = out.strip().split('\n')[0]
                     else:
                         message = "Error finding SGE tools: %s" % out
-                        log_error_and_raise(message, saga.NoSuccess,
+                        log_error_and_raise(message, rse.NoSuccess,
                                             self._logger)
                 else:
                     # version is reported in the first row of the
@@ -358,7 +358,7 @@ class SGEJobService (cpi_job.Service):
                       (self._commands['qconf']['path']))
         if ret != 0:
             message = "Error running 'qconf': %s" % out
-            log_error_and_raise(message, saga.NoSuccess, self._logger)
+            log_error_and_raise(message, rse.NoSuccess, self._logger)
         else:
             for pe in out.split('\n'):
                 if pe != '':
@@ -370,7 +370,7 @@ class SGEJobService (cpi_job.Service):
         ret, out, _ = self.shell.run_sync('%s -sc' % (self._commands['qconf']['path']))
         if ret != 0:
             message = "Error running 'qconf': %s" % out
-            log_error_and_raise(message, saga.NoSuccess, self._logger)
+            log_error_and_raise(message, rse.NoSuccess, self._logger)
         else: 
             mandatory_attrs = []
             optional_attrs = []
@@ -398,7 +398,7 @@ class SGEJobService (cpi_job.Service):
             if not (missing_flags == []):
                 message = "The following memory attribute(s) are mandatory in your SGE environment and thus " \
                           "must be specified in the job service URL: %s" % ' '.join(missing_flags)
-                log_error_and_raise(message, saga.BadParameter, self._logger) 
+                log_error_and_raise(message, rse.BadParameter, self._logger) 
         # if memory attributes were specified in the job.Service URL, check that they correspond to existing optional or mandatory memory attributes
         invalid_attrs = []
         for f in flags:
@@ -407,7 +407,7 @@ class SGEJobService (cpi_job.Service):
         if not (invalid_attrs == []):
             message = "The following memory attribute(s) were specified in the job.Service URL but are not valid " \
                       "memory attributes in your SGE environment: %s" % ' '.join(invalid_attrs)
-            log_error_and_raise(message, saga.BadParameter, self._logger)
+            log_error_and_raise(message, rse.BadParameter, self._logger)
 
         # check if accounting is activated
         qres = self.__kvcmd_results('qconf', '-sconf', filter_keys=["reporting_params"])
@@ -445,19 +445,19 @@ class SGEJobService (cpi_job.Service):
                 sge_state = sge_state[1:]
 
             return {
-                'c'   : DONE,
-                'E'   : RUNNING,
-                'H'   : PENDING,
-                'qw'  : PENDING,
-                'r'   : RUNNING,
-                't'   : RUNNING,
-                'w'   : PENDING,
-                's'   : PENDING,
-                'X'   : CANCELED,
-                'Eqw' : FAILED
+                'c'   : c.DONE,
+                'E'   : c.RUNNING,
+                'H'   : c.PENDING,
+                'qw'  : c.PENDING,
+                'r'   : c.RUNNING,
+                't'   : c.RUNNING,
+                'w'   : c.PENDING,
+                's'   : c.PENDING,
+                'X'   : c.CANCELED,
+                'Eqw' : c.FAILED
             }[sge_state]
         except:
-            return UNKNOWN
+            return c.UNKNOWN
 
     def __parse_memreqs(self, s):
         """
@@ -511,7 +511,7 @@ class SGEJobService (cpi_job.Service):
         elif ret != 0:
             # something went wrong
             message = "Couldn't create remote directory - %s" % (out)
-            log_error_and_raise(message, saga.NoSuccess, self._logger)
+            log_error_and_raise(message, rse.NoSuccess, self._logger)
 
     def __job_info_from_accounting(self, sge_job_id, max_retries=10):
         """ Returns job information from the SGE accounting using qacct.
@@ -549,8 +549,8 @@ class SGEJobService (cpi_job.Service):
             # failed       0
             # exit_status  0
 
-            if qres.get("failed") == "0": state = DONE 
-            else                        : state = FAILED
+            if qres.get("failed") == "0": state = c.DONE 
+            else                        : state = c.FAILED
             job_info = {'state'       : state,
                         'name'        : qres.get("jobname"),
                         'exec_hosts'  : qres.get("hostname"),
@@ -598,9 +598,9 @@ class SGEJobService (cpi_job.Service):
 
         qres = SgeKeyValueParser(out, key_suffix=":").as_dict()
 
-        if   "signal"      in qres: state = CANCELED
-        elif "exit_status" in qres: state = DONE
-        else                      : state = RUNNING
+        if   "signal"      in qres: state = c.CANCELED
+        elif "exit_status" in qres: state = c.DONE
+        else                      : state = c.RUNNING
 
         job_info = {'state'       : state,
                     'name'        : qres.get("jobname"),
@@ -778,7 +778,7 @@ class SGEJobService (cpi_job.Service):
         # In SGE environments with mandatory memory attributes, 'total_physical_memory' must be specified        
         if len(self.mandatory_memreqs) != 0 and jd.total_physical_memory is None:
             log_error_and_raise("Your SGE environments has mandatory memory attributes, so 'total_physical_memory' "
-                                "must be specified in your job descriptor", saga.BadParameter, self._logger)
+                                "must be specified in your job descriptor", rse.BadParameter, self._logger)
 
         try:
             # create a SGE job script from SAGA job description
@@ -786,7 +786,7 @@ class SGEJobService (cpi_job.Service):
 
             self._logger.info("Generated SGE script: %s" % script)
         except Exception, ex:
-            log_error_and_raise(str(ex), saga.BadParameter, self._logger)
+            log_error_and_raise(str(ex), rse.BadParameter, self._logger)
 
         # try to create the working/output/error directories (if defined)
         # WARNING: this assumes a shared filesystem between login node and
@@ -812,7 +812,7 @@ class SGEJobService (cpi_job.Service):
         if ret != 0:
             # something went wrong
             message = "Error running job via 'qsub': %s. Commandline was: %s" % (out, cmdline)
-            log_error_and_raise(message, saga.NoSuccess, self._logger)
+            log_error_and_raise(message, rse.NoSuccess, self._logger)
 
         # stdout contains the job id:
         # Your job 1036608 ("testjob") has been submitted
@@ -822,14 +822,14 @@ class SGEJobService (cpi_job.Service):
                 sge_job_id = line.split()[2]
         if sge_job_id is None:
             message = "Couldn't parse job id from 'qsub' output: %s" % out
-            log_error_and_raise(message, saga.NoSuccess, self._logger)
+            log_error_and_raise(message, rse.NoSuccess, self._logger)
 
         job_id = "[%s]-[%s]" % (self.rm, sge_job_id)
         self._logger.info("Submitted SGE job with id: %s" % job_id)
 
         # add job to internal list of known jobs.
         self.jobs[job_id] = {
-            'state':        PENDING,
+            'state':        c.PENDING,
             'name':         jd.name,
             'exec_hosts':   None,
             'returncode':   None,
@@ -870,7 +870,7 @@ class SGEJobService (cpi_job.Service):
             if not m:  
                 # something wrong with the result of qstat
                 message = "Unexpected qstat results retrieving job info:\n%s" % out.rstrip()
-                log_error_and_raise(message, saga.NoSuccess, self._logger)
+                log_error_and_raise(message, rse.NoSuccess, self._logger)
 
             state, start_time, queue = m.groups()
 
@@ -929,7 +929,7 @@ class SGEJobService (cpi_job.Service):
 
         if job_info is None: # Oooops, we couldn't retrieve information from SGE
             message = "Couldn't reconnect to job '%s'" % job_id
-            log_error_and_raise(message, saga.NoSuccess, self._logger)
+            log_error_and_raise(message, rse.NoSuccess, self._logger)
 
         self._logger.debug("job_info(%s)=[%s]" % (pid, ", ".join(["%s=%s" % (k, str(job_info[k])) for k in [
                 "name", "state", "returncode", "exec_hosts", "create_time", "start_time", "end_time", "gone"]])))
@@ -945,7 +945,7 @@ class SGEJobService (cpi_job.Service):
         # if we don't have the job in our dictionary, we don't want it
         if job_id not in self.jobs:
             message = "Unknown job ID: %s. Can't update state." % job_id
-            log_error_and_raise(message, saga.NoSuccess, self._logger)
+            log_error_and_raise(message, rse.NoSuccess, self._logger)
 
         # prev. info contains the info collect when _job_get_info
         # was called the last time
@@ -958,7 +958,7 @@ class SGEJobService (cpi_job.Service):
             return prev_info
 
         # if the job is in a terminal state don't expect it to change anymore
-        if prev_info["state"] in [CANCELED, FAILED, DONE]:
+        if prev_info["state"] in c.FINAL:
             return prev_info
 
         # retrieve updated job information
@@ -977,7 +977,7 @@ class SGEJobService (cpi_job.Service):
         """ get the job's state
         """
         # check if we have already reach a terminal state
-        if self.jobs[job_id]['state'] in [DONE, FAILED, CANCELED]:
+        if self.jobs[job_id]['state'] in c.FINAL:
             return self.jobs[job_id]['state']
 
         # check if we can / should update
@@ -1063,12 +1063,12 @@ class SGEJobService (cpi_job.Service):
 
         if ret != 0:
             message = "Error canceling job via 'qdel': %s" % out
-            log_error_and_raise(message, saga.NoSuccess, self._logger)
+            log_error_and_raise(message, rse.NoSuccess, self._logger)
 
         self.__clean_remote_job_info(pid)
 
         # assume the job was succesfully canceld
-        self.jobs[job_id]['state'] = CANCELED
+        self.jobs[job_id]['state'] = c.CANCELED
 
     # ----------------------------------------------------------------
     #
@@ -1083,10 +1083,10 @@ class SGEJobService (cpi_job.Service):
         while True:
             state = self._job_get_state(job_id=job_id)
 
-            if state == UNKNOWN :
-                log_error_and_raise("cannot get job state", saga.IncorrectState, self._logger)
+            if state == c.UNKNOWN :
+                log_error_and_raise("cannot get job state", rse.IncorrectState, self._logger)
 
-            if state in [DONE, FAILED, CANCELED]:
+            if state in c.FINAL:
                 self.__clean_remote_job_info(pid)
                 return True
             # avoid busy poll
@@ -1161,7 +1161,7 @@ class SGEJobService (cpi_job.Service):
             % self._commands['qstat']['path'])
         if ret != 0 and len(out) > 0:
             message = "Failed to list jobs via 'qstat': %s" % out
-            log_error_and_raise(message, saga.NoSuccess, self._logger)
+            log_error_and_raise(message, rse.NoSuccess, self._logger)
         elif ret != 0 and len(out) == 0:
             # qstat | grep `whoami` exits with 1 if the list is empty
             pass
@@ -1195,7 +1195,7 @@ class SGEJobService (cpi_job.Service):
   # #
   # def container_cancel (self, jobs, timeout) :
   #     self._logger.debug ("container cancel: %s"  %  str(jobs))
-  #     raise saga.NoSuccess ("Not Implemented");
+  #     raise rse.NoSuccess ("Not Implemented");
 
 
 ###############################################################################
@@ -1256,7 +1256,7 @@ class SGEJob (cpi_job.Job):
         """
         if self._started is False:
             log_error_and_raise("Can't wait for job that hasn't been started",
-                saga.IncorrectState, self._logger)
+                rse.IncorrectState, self._logger)
         else:
             self.js._job_wait(self._id, timeout)
 
@@ -1268,7 +1268,7 @@ class SGEJob (cpi_job.Job):
         """
         if self._started is False:
             log_error_and_raise("Can't wait for job that hasn't been started",
-                saga.IncorrectState, self._logger)
+                rse.IncorrectState, self._logger)
         else:
             self.js._job_cancel(self._id)
 

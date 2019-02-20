@@ -20,7 +20,7 @@ from  .. import filesystem        as sfs
 
 from  .  import pty_exceptions    as ptye
 
-from  ..import exceptions         as se
+from  ..import exceptions         as rse
 
 
 # ------------------------------------------------------------------------------
@@ -234,7 +234,7 @@ class PTYShell (object) :
             if e.errno == errno.EEXIST and os.path.isdir (self.base):
                 pass
             else: 
-                raise NoSuccess ("could not create staging dir: %s" % e)
+                raise rse.NoSuccess ("could not create staging dir: %s" % e)
 
 
         self.factory    = supsf.PTYShellFactory   ()
@@ -313,7 +313,7 @@ class PTYShell (object) :
                     self.logger.debug ("got new shell prompt")
 
                 except Exception as e :
-                    raise NoSuccess ("Shell on target host failed: %s" % e)
+                    raise rse.NoSuccess ("Shell on target host failed: %s" % e)
 
             # got a command shell, finally!
             self.pty_shell.flush ()
@@ -332,7 +332,7 @@ class PTYShell (object) :
                         self.pty_shell.finalize ()
                         self.finalized = True
 
-        except Exception as e :
+        except Exception:
             pass
 
 
@@ -479,7 +479,7 @@ class PTYShell (object) :
                         retries += 1
                         if  retries > 10 :
                             self.prompt = old_prompt
-                            raise BadParameter("Cannot use new prompt,"
+                            raise rse.BadParameter("Cannot use new prompt,"
                                                "parsing failed (10 retries)")
 
                         self.pty_shell.write ("\n")
@@ -494,7 +494,7 @@ class PTYShell (object) :
 
                     if  ret != 0 :
                         self.prompt = old_prompt
-                        raise BadParameter ("could not parse exit value (%s)"
+                        raise rse.BadParameter ("could not parse exit value (%s)"
                                             % match)
 
                     # prompt looks valid...
@@ -518,7 +518,7 @@ class PTYShell (object) :
                 if  fret is None :
                     # not find prompt after blocking?  BAD!  Restart the shell
                     self.finalize (kill_pty=True)
-                    raise NoSuccess ("Could not synchronize prompt detection")
+                    raise rse.NoSuccess ("Could not synchronize prompt detection")
 
                 self.find_prompt ()
 
@@ -547,13 +547,13 @@ class PTYShell (object) :
 
                 result = None
                 if  not data :
-                    raise NoSuccess("cannot not parse prompt (%s), data: %s"
+                    raise rse.NoSuccess("cannot not parse prompt (%s), data: %s"
                                      % (prompt, data))
 
                 result = prompt_re.match (data)
 
                 if  not result :
-                    raise NoSuccess("could not parse prompt (%s) (%s)"
+                    raise rse.NoSuccess("could not parse prompt (%s) (%s)"
                                    % (prompt, data))
 
                 txt = result.group (1)
@@ -649,25 +649,26 @@ class PTYShell (object) :
             # a syncronous command -- thus we can check if the shell is alive
             # before doing so, and restart if needed
             if not self.pty_shell.alive (recover=True) :
-                raise IncorrectState ("Can't run command -- shell died:\n%s"
+                raise rse.IncorrectState ("Can't run command -- shell died:\n%s"
                                       % self.pty_shell.autopsy ())
 
             try :
 
                 command = command.strip ()
                 if command.endswith ('&') :
-                    raise BadParameter("run_sync can only run foreground jobs"
+                    raise rse.BadParameter("run_sync can only run foreground jobs"
                                        "('%s')" % command)
 
                 redir = ""
                 _err  = "/tmp/saga-python.ssh-job.stderr.$$"
 
-                if iomode == IGNORE  : redir =  " 1>>/dev/null 2>>/dev/null" 
-                if iomode == MERGED  : redir =  " 2>&1" 
-                if iomode == SEPARATE: redir =  " 2>%s" % _err 
-                if iomode == STDOUT  : redir =  " 2>/dev/null" 
-                if iomode == STDERR  : redir =  " 2>&1 1>/dev/null" 
-                if iomode is None    : redir =  ""
+                if iomode is None    : iomode =  STDOUT 
+                if iomode == IGNORE  : redir  =  " 1>>/dev/null 2>>/dev/null" 
+                if iomode == MERGED  : redir  =  " 2>&1" 
+                if iomode == SEPARATE: redir  =  " 2>%s" % _err 
+                if iomode == STDOUT  : redir  =  " 2>/dev/null" 
+                if iomode == STDERR  : redir  =  " 2>&1 1>/dev/null" 
+
 
                 self.logger.debug    ('run_sync: %s%s'   % (command, redir))
                 self.pty_shell.write (          "%s%s\n" % (command, redir))
@@ -684,36 +685,30 @@ class PTYShell (object) :
                 if  fret is None :
                     # not find prompt after blocking?  BAD!  Restart the shell
                     self.finalize (kill_pty=True)
-                    raise se.IncorrectState (
+                    raise rse.IncorrectState (
                             "run_sync failed, no prompt (%s)" % command)
 
 
                 ret, txt = self._eval_prompt (match, new_prompt)
 
-                stdout = None
+                stdout = txt
                 stderr = None
 
-                if  iomode is None        : iomode =  STDOUT 
-                if  iomode == IGNORE      : pass 
-                if  iomode == MERGED      : stdout =  txt 
-                if  iomode == STDOUT      : stdout =  txt 
-                if  iomode == SEPARATE or \
-                    iomode == STDERR      : stdout =  txt
+                if  iomode in [SEPARATE, STDERR]:
 
-                    self.pty_shell.write (" cat %s\n" % _err)
+                    self.pty_shell.write(" cat %s\n" % _err)
                     fret, match = self.pty_shell.find ([self.prompt],
                                                        timeout=-1.0)  # blocks
-
-                    if  fret == None :
+                    if  fret is None :
                         # not find prompt after blocking?  BAD!  Restart shell
                         self.finalize (kill_pty=True)
-                        raise se.IncorrectState (
+                        raise rse.IncorrectState (
                                 "run_sync failed, no prompt (%s)" % command)
 
                     _ret, _stderr = self._eval_prompt (match)
 
                     if  _ret :
-                        raise se.IncorrectState(
+                        raise rse.IncorrectState(
                                 "run_sync failed, no stderr (%s: %s)"
                                 % (_ret, _stderr))
 
@@ -721,7 +716,11 @@ class PTYShell (object) :
 
                 if  iomode == STDERR :
                     # got stderr in branch above
-                    stdout =  None
+                    stdout = None
+
+                elif iomode == IGNORE:
+                    stdout = None
+                    stderr = None
 
                 return (ret, stdout, stderr)
 
@@ -754,7 +753,7 @@ class PTYShell (object) :
             # asyncronous command -- thus we can check if the shell is alive
             # before doing so, and restart if needed
             if not self.pty_shell.alive (recover=True) :
-                raise se.IncorrectState ("Cannot run command:\n%s"
+                raise rse.IncorrectState ("Cannot run command:\n%s"
                                       % self.pty_shell.autopsy ())
 
             try :
@@ -775,7 +774,7 @@ class PTYShell (object) :
         with self.pty_shell.rlock :
 
             if not self.pty_shell.alive (recover=False) :
-                raise se.IncorrectState("Cannot send data:\n%s"
+                raise rse.IncorrectState("Cannot send data:\n%s"
                                        % self.pty_shell.autopsy ())
 
             try :
@@ -848,7 +847,7 @@ class PTYShell (object) :
             _ = self.stage_from_remote (src, fname)
             os.close(fhandle)
 
-            os.system('sync') # WTF?  Why do I need this?
+            os.system('sync')  # WTF?  Why do I need this?
 
             fhandle2 = open(fname, 'r')
             out      = fhandle2.read()
@@ -958,7 +957,7 @@ class PTYShell (object) :
                 cp_proc = supp.PTYProcess (s_cmd, cfg=self.cfg)
                 out = cp_proc.wait ()
                 if  cp_proc.exit_code :
-                    raise ptye.translate_exception(se.NoSuccess(
+                    raise ptye.translate_exception(rse.NoSuccess(
                                              "file copy failed: %s" % out))
 
                 return list()
@@ -1002,23 +1001,23 @@ class PTYShell (object) :
 
             # FIXME: we don't really get exit codes from copy
             # if  self.cp_slave.exit_code != 0 :
-            #     raise se.NoSuccess._log (info['logger'],
+            #     raise rse.NoSuccess._log (info['logger'],
             #                              "file copy failed: %s" % str(out))
 
             if 'Invalid flag' in out :
-                raise se.NoSuccess._log(info['logger'],
+                raise rse.NoSuccess._log(info['logger'],
                                     "unsupported sftp version %s" % str(out))
             if 'No such file or directory' in out :
-                raise se.DoesNotExist._log(info['logger'],
+                raise rse.DoesNotExist._log(info['logger'],
                                            "file copy failed: %s" % str(out))
 
             if 'is not a directory' in out :
-                raise se.BadParameter._log(info['logger'],
+                raise rse.BadParameter._log(info['logger'],
                                            "File copy failed: %s" % str(out))
 
             if  'sftp' in s_cmd :
                 if 'not found' in out :
-                    raise se.BadParameter._log(info['logger'],
+                    raise rse.BadParameter._log(info['logger'],
                                                "file copy failed: %s" % out)
 
 
@@ -1085,7 +1084,7 @@ class PTYShell (object) :
                 cp_proc = supp.PTYProcess (s_cmd, cfg=self.cfg)
                 cp_proc.wait ()
                 if  cp_proc.exit_code :
-                    raise ptye.translate_exception(se.NoSuccess(
+                    raise ptye.translate_exception(rse.NoSuccess(
                         "file copy failed: exit code %s" % cp_proc.exit_code))
 
                 return list()
@@ -1118,20 +1117,20 @@ class PTYShell (object) :
           #                           "file copy failed: %s" % out)
 
             if 'Invalid flag' in out :
-                raise se.NoSuccess._log(info['logger'],
+                raise rse.NoSuccess._log(info['logger'],
                                         "sftp version not supported (%s)" % out)
 
             if 'No such file or directory' in out :
-                raise se.DoesNotExist._log(info['logger'],
+                raise rse.DoesNotExist._log(info['logger'],
                                            "file copy failed: %s" % out)
 
             if 'is not a directory' in out :
-                raise se.BadParameter._log(info['logger'],
+                raise rse.BadParameter._log(info['logger'],
                                            "file copy failed: %s" % out)
 
             if  'sftp' in s_cmd :
                 if 'not found' in out :
-                    raise se.BadParameter._log(info['logger'],
+                    raise rse.BadParameter._log(info['logger'],
                                                "file copy failed: %s" % out)
 
 

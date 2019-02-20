@@ -1,33 +1,29 @@
 """ Local filesystem adaptor implementation """
 
 import os
-import pprint
-import shutil
-import traceback
-import stat
-import errno
 
 import radical.utils as ru
 
-from ...exceptions    import *
-import saga.url
-import saga.adaptors.base
-import saga.adaptors.cpi.filesystem
-import saga.utils.misc
-import saga.utils.pty_shell as sups
+from ...             import exceptions as rse
+from ...utils        import pty_shell  as sups
+from ...             import url        as rsurl
+from ...adaptors     import base       as rsab
+from ...adaptors.cpi import filesystem as cpi
+from ...             import filesystem as api
+from ...utils        import misc       as rsum
 
-from saga.adaptors.cpi.decorators import SYNC_CALL
+from ...adaptors.cpi.decorators import SYNC_CALL
 
 
 ###############################################################################
 # adaptor info
 #
 
-_ADAPTOR_NAME          = 'saga.adaptor.srm_file'
+_ADAPTOR_NAME          = 'radical.saga.adaptor.srm_file'
 _ADAPTOR_SCHEMAS       = ['srm']
 _ADAPTOR_OPTIONS       = [
     {
-        'category': 'saga.adaptor.srm_file',
+        'category': 'radical.saga.adaptor.srm_file',
         'name': 'pty_url',
         'type': str,
         'default': 'fork://localhost/',
@@ -54,33 +50,33 @@ _ADAPTOR_INFO          = {
     'schemas'          : _ADAPTOR_SCHEMAS,
     'cpis'             : [
         {
-        'type'         : 'saga.namespace.Directory',
+        'type'         : 'radical.saga.namespace.Directory',
         'class'        : 'SRMDirectory'
         },
         {
-        'type'         : 'saga.namespace.Entry',
+        'type'         : 'radical.saga.namespace.Entry',
         'class'        : 'SRMFile'
         },
         {
-        'type'         : 'saga.filesystem.Directory',
+        'type'         : 'radical.saga.filesystem.Directory',
         'class'        : 'SRMDirectory'
         },
         {
-        'type'         : 'saga.filesystem.File',
+        'type'         : 'radical.saga.filesystem.File',
         'class'        : 'SRMFile'
         }
     ]
 }
 
-TRANSFER_TIMEOUT = 3600 # Timeout of the SRM plugin for the transfer
-OPERATION_TIMEOUT = 3600 # Should be greater or equal than TRANSFER_TIMEOUT
-CONNECTION_TIMEOUT = 180 # Technically same as OPERATION_TIMEOUT,
-                         # but used for non-transfer operations.
+TRANSFER_TIMEOUT   = 3600  # Timeout of the SRM plugin for the transfer
+OPERATION_TIMEOUT  = 3600  # Should be greater or equal than TRANSFER_TIMEOUT
+CONNECTION_TIMEOUT = 180   # Technically same as OPERATION_TIMEOUT,
+                           # but used for non-transfer operations.
 
 ###############################################################################
 # The adaptor class
 
-class Adaptor(saga.adaptors.base.Base):
+class Adaptor(rsab.Base):
     """
     This is the actual adaptor class, which gets loaded by SAGA (i.e. by the
     SAGA engine), and which registers the CPI implementation classes which
@@ -88,7 +84,7 @@ class Adaptor(saga.adaptors.base.Base):
     """
 
     def __init__(self) :
-        saga.adaptors.base.Base.__init__(self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
+        rsab.Base.__init__(self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
 
         self.cfg = self.get_config(_ADAPTOR_NAME)
         self.pty_url = self.cfg['pty_url'].get_value()
@@ -110,7 +106,7 @@ class Adaptor(saga.adaptors.base.Base):
 
         if rc != 0:
             if 'SRM_INVALID_PATH' in out:
-                raise saga.exceptions.DoesNotExist(url)
+                raise rse.DoesNotExist(url)
             else:
                 raise Exception("Couldn't list file")
 
@@ -138,20 +134,20 @@ class Adaptor(saga.adaptors.base.Base):
 
         if rc != 0:
             if 'SRM_INVALID_PATH' in out:
-                raise saga.exceptions.DoesNotExist(url)
+                raise rse.DoesNotExist(url)
             if 'SRM_FAILURE' in out and 'forbidden' in out:
-                raise saga.exceptions.AuthorizationFailed(url)
+                raise rse.AuthorizationFailed(url)
             if 'Command timed out after' in out:
-                raise saga.exceptions.Timeout("Connection timeout")
+                raise rse.Timeout("Connection timeout")
             if 'Communication error on send' in out:
                 # (gfal-ls error: 70 (Communication error on send) -
                 # srm-ifce err: Communication error on send,
                 # err: [SE][Ls][] httpg://cit-se.ultralight.org:8443/srm/v2/server:
                 # CGSI-gSOAP running on nodo86 reports could not open connection
                 # to cit-se.ultralight.org:8443\n\n\n)
-                raise saga.exceptions.NoSuccess("Connection failed")
+                raise rse.NoSuccess("Connection failed")
             else:
-                raise saga.exceptions.NoSuccess("Couldn't list file")
+                raise rse.NoSuccess("Couldn't list file")
 
         # Sometimes we get cksum too, which we ignore
         fields = out.split()[:7]
@@ -165,7 +161,7 @@ class Adaptor(saga.adaptors.base.Base):
         elif mode == 'l':
             mode = 'link'
         else:
-            raise saga.NoSuccess("stat() unknown mode: '%s' (%s)" % (mode, out))
+            raise rse("stat() unknown mode: '%s' (%s)" % (mode, out))
 
         size = int(size_str)
 
@@ -181,7 +177,7 @@ class Adaptor(saga.adaptors.base.Base):
 
         if isinstance(src, ru.Url):
             src = src.__str__()
-        if isinstance(dst, saga.filesystem.file.File):
+        if isinstance(dst, api.file.File):
             dst = dst.get_url()
         try:
             rc, out, _ = shell.run_sync('gfal-copy --parent --timeout %d --transfer-timeout %d %s %s' % (
@@ -192,11 +188,11 @@ class Adaptor(saga.adaptors.base.Base):
 
         if rc != 0:
             if 'SRM_INVALID_PATH' in out:
-                raise saga.exceptions.DoesNotExist(src)
+                raise rse.DoesNotExist(src)
             elif '(File exists)' in out:
-                raise saga.exceptions.AlreadyExists(dst)
+                raise rse.AlreadyExists(dst)
             elif 'Could not open destination' in out:
-                raise saga.exceptions.DoesNotExist(dst)
+                raise rse.DoesNotExist(dst)
             else:
                 raise Exception("Copy failed.")
 
@@ -205,7 +201,7 @@ class Adaptor(saga.adaptors.base.Base):
     #
     def srm_file_remove(self, shell, flags, tgt):
 
-        if isinstance(tgt, saga.filesystem.file.File):
+        if isinstance(tgt, api.file.File):
             tgt = tgt.get_url()
 
         try:
@@ -216,7 +212,7 @@ class Adaptor(saga.adaptors.base.Base):
 
         if rc != 0:
             if 'SRM_INVALID_PATH' in out:
-                raise saga.exceptions.DoesNotExist(tgt)
+                raise rse.DoesNotExist(tgt)
             else:
                 raise Exception("Remove failed.")
 
@@ -225,9 +221,9 @@ class Adaptor(saga.adaptors.base.Base):
     #
     def srm_dir_remove(self, shell, flags, tgt):
 
-        if isinstance(tgt, saga.filesystem.directory.Directory):
+        if isinstance(tgt, api.directory.Directory):
             tgt = tgt.get_url()
-        if isinstance(tgt, saga.filesystem.file.File):
+        if isinstance(tgt, api.file.File):
             tgt = tgt.get_url()
         if isinstance(tgt, ru.Url):
             tgt = str(tgt)
@@ -240,7 +236,7 @@ class Adaptor(saga.adaptors.base.Base):
 
         if rc != 0:
             if 'SRM_INVALID_PATH' in out:
-                raise saga.exceptions.DoesNotExist(tgt)
+                raise rse.DoesNotExist(tgt)
             else:
                 raise Exception("Remove failed.")
 
@@ -249,11 +245,11 @@ class Adaptor(saga.adaptors.base.Base):
     def srm_list(self, shell, url, npat, flags):
 
         if npat:
-            raise saga.exceptions.NotImplemented("no pattern selection")
+            raise rse.NotImplemented("no pattern selection")
 
-        if isinstance(url, saga.filesystem.directory.Directory):
+        if isinstance(url, rse.directory.Directory):
             url = url.get_url()
-        if isinstance(url, saga.filesystem.file.File):
+        if isinstance(url, rse.file.File):
             url = url.get_url()
 
         try:
@@ -264,7 +260,7 @@ class Adaptor(saga.adaptors.base.Base):
 
         if rc != 0:
             if 'SRM_INVALID_PATH' in out:
-                raise saga.exceptions.DoesNotExist(url)
+                raise rse.DoesNotExist(url)
             else:
                 raise Exception("Couldn't list directory.")
 
@@ -284,7 +280,7 @@ class Adaptor(saga.adaptors.base.Base):
 
         if rc != 0:
             if 'SRM_INVALID_PATH' in out:
-                raise saga.exceptions.DoesNotExist(url)
+                raise rse.DoesNotExist(url)
             else:
                 raise Exception("Couldn't list directory.")
 
@@ -324,7 +320,7 @@ class Adaptor(saga.adaptors.base.Base):
 
 ###############################################################################
 #
-class SRMDirectory (saga.adaptors.cpi.filesystem.Directory):
+class SRMDirectory (cpi.Directory):
 
     # --------------------------------------------------------------------------
     #
@@ -357,7 +353,7 @@ class SRMDirectory (saga.adaptors.cpi.filesystem.Directory):
             # open a shell
             self.shell = sups.PTYShell(self._adaptor.pty_url, self.session)
         except:
-            raise saga.NoSuccess("Couldn't open shell (%s)" % self._adaptor.pty_url)
+            raise rse("Couldn't open shell (%s)" % self._adaptor.pty_url)
 
         #
         # Test for valid proxy
@@ -366,13 +362,13 @@ class SRMDirectory (saga.adaptors.cpi.filesystem.Directory):
             rc, out, _ = self.shell.run_sync("grid-proxy-info")
         except:
             self.shell.finalize(kill_pty=True)
-            raise saga.exceptions.NoSuccess("grid-proxy-info failed (runsync)")
+            raise rse.NoSuccess("grid-proxy-info failed (runsync)")
 
         if rc != 0:
-            raise saga.exceptions.NoSuccess("grid-proxy-info failed (rc!=0)")
+            raise rse.NoSuccess("grid-proxy-info failed (rc!=0)")
 
         if 'timeleft : 0:00:00' in out:
-            raise saga.exceptions.AuthenticationFailed("x509 proxy expired.")
+            raise rse.AuthenticationFailed("x509 proxy expired.")
 
         #
         # Test for gfal2 tool
@@ -381,10 +377,10 @@ class SRMDirectory (saga.adaptors.cpi.filesystem.Directory):
             rc, _, _ = self.shell.run_sync("gfal2_version")
         except:
             self.shell.finalize(kill_pty=True)
-            raise saga.exceptions.NoSuccess("gfal2_version")
+            raise rse.NoSuccess("gfal2_version")
 
         if rc != 0:
-            raise saga.exceptions.DoesNotExist("gfal2 client not found")
+            raise rse.DoesNotExist("gfal2 client not found")
 
         return self.get_api()
 
@@ -397,16 +393,16 @@ class SRMDirectory (saga.adaptors.cpi.filesystem.Directory):
         flags = self._flags
 
         if url.fragment :
-            raise saga.exceptions.BadParameter ("Cannot handle url %s (has fragment)"  %  url)
+            raise rse.BadParameter ("Cannot handle url %s (has fragment)"  %  url)
         if url.username :
-            raise saga.exceptions.BadParameter ("Cannot handle url %s (has username)"  %  url)
+            raise rse.BadParameter ("Cannot handle url %s (has username)"  %  url)
         if url.password :
-            raise saga.exceptions.BadParameter ("Cannot handle url %s (has password)"  %  url)
+            raise rse.BadParameter ("Cannot handle url %s (has password)"  %  url)
 
         self._path = url.path
         (prefix, surl) = url.query.split('=')
         if prefix != 'SFN':
-            raise saga.exceptions.BadParameter("SURL prefix %s is not SFN." % prefix)
+            raise rse.BadParameter("SURL prefix %s is not SFN." % prefix)
         self._surl = surl
 
 
@@ -446,8 +442,8 @@ class SRMDirectory (saga.adaptors.cpi.filesystem.Directory):
         if rc != 0:
             if 'SRM_DUPLICATION_ERROR' in out:
                 # Throw exception only if Exclusive flag was set.
-                if flags & saga.filesystem.EXCLUSIVE:
-                    raise saga.exceptions.AlreadyExists(url)
+                if flags & api.EXCLUSIVE:
+                    raise rse.AlreadyExists(url)
             else:
                 raise Exception("Couldn't create directory.")
 
@@ -529,7 +525,7 @@ class SRMDirectory (saga.adaptors.cpi.filesystem.Directory):
     @SYNC_CALL
     def remove(self, tgt, flags):
 
-        if flags & saga.filesystem.RECURSIVE:
+        if flags & api.RECURSIVE:
             self._adaptor.srm_dir_remove(self.shell, flags, tgt)
         else:
             self._adaptor.srm_file_remove(self.shell, flags, tgt)
@@ -566,7 +562,7 @@ class SRMDirectory (saga.adaptors.cpi.filesystem.Directory):
 
         try:
             self._adaptor.srm_stat(self.shell, tgt)
-        except saga.exceptions.DoesNotExist:
+        except rse.DoesNotExist:
             return False
 
         return True
@@ -577,14 +573,14 @@ class SRMDirectory (saga.adaptors.cpi.filesystem.Directory):
     def close(self, timeout=None):
 
         if timeout:
-            raise saga.BadParameter("timeout for close not supported")
+            raise rse("timeout for close not supported")
 
 
 ######################################################################
 #
 # file adaptor class
 #
-class SRMFile(saga.adaptors.cpi.filesystem.File):
+class SRMFile(cpi.File):
 
     def __init__(self, api, adaptor):
         _cpi_base = super(SRMFile, self)
@@ -618,7 +614,7 @@ class SRMFile(saga.adaptors.cpi.filesystem.File):
             # open a shell
             self.shell = sups.PTYShell(self._adaptor.pty_url, self.session)
         except:
-            raise saga.NoSuccess("Couldn't open shell")
+            raise rse("Couldn't open shell")
 
         #
         # Test for valid proxy
@@ -627,13 +623,13 @@ class SRMFile(saga.adaptors.cpi.filesystem.File):
             rc, out, _ = self.shell.run_sync("grid-proxy-info")
         except:
             self.shell.finalize(kill_pty=True)
-            raise saga.exceptions.NoSuccess("grid-proxy-info failed")
+            raise rse.NoSuccess("grid-proxy-info failed")
 
         if rc != 0:
-            raise saga.exceptions.NoSuccess("grid-proxy-info failed")
+            raise rse.NoSuccess("grid-proxy-info failed")
 
         if 'timeleft : 0:00:00' in out:
-            raise saga.exceptions.AuthenticationFailed("x509 proxy expired.")
+            raise rse.AuthenticationFailed("x509 proxy expired.")
 
         #
         # Test for gfal2 tool
@@ -642,10 +638,10 @@ class SRMFile(saga.adaptors.cpi.filesystem.File):
             rc, _, _ = self.shell.run_sync("gfal2_version")
         except:
             self.shell.finalize(kill_pty=True)
-            raise saga.exceptions.NoSuccess("gfal2_version")
+            raise rse.NoSuccess("gfal2_version")
 
         if rc != 0:
-            raise saga.exceptions.DoesNotExist("gfal2 client not found")
+            raise rse.DoesNotExist("gfal2 client not found")
 
         return self.get_api()
 
@@ -656,9 +652,9 @@ class SRMFile(saga.adaptors.cpi.filesystem.File):
         flags = self._flags 
 
         if url.username :
-            raise saga.exceptions.BadParameter ("Cannot handle url %s (has username)"  %  url)
+            raise rse.BadParameter ("Cannot handle url %s (has username)"  %  url)
         if url.password :
-            raise saga.exceptions.BadParameter ("Cannot handle url %s (has password)"  %  url)
+            raise rse.BadParameter ("Cannot handle url %s (has password)"  %  url)
 
         self._path = url.path
         path       = url.path
@@ -738,7 +734,7 @@ class SRMFile(saga.adaptors.cpi.filesystem.File):
     def close(self, timeout=None):
 
         if timeout:
-            raise saga.BadParameter("timeout for close not supported")
+            raise rse.BadParameter("timeout for close not supported")
 
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4

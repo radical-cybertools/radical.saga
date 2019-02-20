@@ -445,7 +445,8 @@ class Container (sbase.SimpleBase, satt.Attributes) :
             for m in buckets['bound'][b] :
                 tasks += buckets['bound'][b][m]
 
-            futures.append (ru.Future.Run (b.container_wait, tasks, ANY, timeout))
+            futures.append (ru.Future.Run (b.container_wait, tasks, c.ANY,
+                                           timeout))
 
 
         # handle all tasks not bound to containers

@@ -114,7 +114,7 @@ class Resource (sb.Base, sa.Attributes, async.Async) :
 
         # set attribute interface properties
 
-        import saga.attributes as sa
+        import radical.saga.attributes as sa
 
         self._attributes_extensible  (False)
         self._attributes_camelcasing (True)

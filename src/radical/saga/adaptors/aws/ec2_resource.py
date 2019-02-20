@@ -8,9 +8,8 @@ __license__   = "MIT"
 
 import re
 import os
-import time
 
-from ...exceptions         import *
+from ...                   import exceptions as rse
 from ...                   import url        as rs_url
 from ...                   import session    as rs_session
 from ...                   import context    as api_context
@@ -19,8 +18,9 @@ from ..                    import base       as a_base
 from ..cpi                 import context    as cpi_context
 from ..cpi                 import resource   as cpi_resource
 from ..cpi                 import decorators as cpi_decs
-from ...resource.constants import *
-ANY = COMPUTE | STORAGE
+from ...resource           import constants  as c
+
+c.ANY = c.COMPUTE | c.STORAGE
 
 SYNC_CALL  = cpi_decs.SYNC_CALL
 ASYNC_CALL = cpi_decs.ASYNC_CALL
@@ -37,25 +37,25 @@ _ADAPTOR_OPTIONS       = []
 # the adaptor capabilities & supported attributes
 #
 _ADAPTOR_CAPABILITIES  = {
-    "rdes_attributes"  : [RTYPE         ,
-                          TEMPLATE      ,
-                          IMAGE         ,
-                          DYNAMIC       ,
-                          MACHINE_OS    ,
-                          MACHINE_ARCH  ,
-                          SIZE          ,
-                          MEMORY        ,
-                          ACCESS       ],
-    "res_attributes"   : [RTYPE         ,
-                          TEMPLATE      ,
-                          IMAGE         ,
-                          MACHINE_OS    ,
-                          MACHINE_ARCH  ,
-                          SIZE          ,
-                          MEMORY        ,
-                          ACCESS       ],    
-    "metrics"          : [STATE, 
-                          STATE_DETAIL],
+    "rdes_attributes"  : [c.RTYPE         ,
+                          c.TEMPLATE      ,
+                          c.IMAGE         ,
+                          c.DYNAMIC       ,
+                          c.MACHINE_OS    ,
+                          c.MACHINE_ARCH  ,
+                          c.SIZE          ,
+                          c.MEMORY        ,
+                          c.ACCESS       ],
+    "res_attributes"   : [c.RTYPE         ,
+                          c.TEMPLATE      ,
+                          c.IMAGE         ,
+                          c.MACHINE_OS    ,
+                          c.MACHINE_ARCH  ,
+                          c.SIZE          ,
+                          c.MEMORY        ,
+                          c.ACCESS       ],    
+    "metrics"          : [c.STATE, 
+                          c.STATE_DETAIL],
     "contexts"         : {"ec2"         : "EC2 ID and Secret",
                           "ec2_keypair" : "ec2 keypair for node access"}
 }
@@ -148,7 +148,7 @@ class Adaptor (a_base.Base):
             # for now, at least
             if  rsutm.normalize_version (self.lc.__version__) < \
                 rsutm.normalize_version ('0.12.4')       :
-                raise NoSuccess ("Libcloud version newer than 0.12.4 required")
+                raise rse.NoSuccess ("Libcloud version newer than 0.12.4 required")
 
 
             # 0.12.4 does not support keypair footprint inspection, so we cannot
@@ -174,14 +174,14 @@ class Adaptor (a_base.Base):
             self._logger.warning ("Could not load libcloud module, "
                                   "disable EC2 resource adaptor")
             self._logger.warning (str(e))
-            raise NoSuccess ("Cannot load libcloud")
+            raise rse.NoSuccess ("Cannot load libcloud")
 
 
     # ----------------------------------------------------------------
     #
     def _get_default_contexts (self) :
 
-        if  None == self._default_contexts :
+        if  None is self._default_contexts :
 
             self._default_contexts = list()
 
@@ -208,14 +208,15 @@ class Adaptor (a_base.Base):
     # ----------------------------------------------------------------
     #
     def parse_id (self, id) :
-        # split the id '[manager-url]-[resource-url]' in its parts, and return them.
+        # split the id '[manager-url]-[resource-url]' in its parts, and return
+        # them.
 
         match = self.id_re.match (id)
 
         if  not match or len (match.groups()) != 2 :
-            raise BadParameter ("Cannot parse resource id '%s'" % id)
+            raise rse.BadParameter ("Cannot parse resource id '%s'" % id)
 
-        return (rsu.Url (match.group(1)), str (match.group (2)))
+        return (rsurl.Url (match.group(1)), str (match.group (2)))
 
 
     # ----------------------------------------------------------------
@@ -288,12 +289,10 @@ class Adaptor (a_base.Base):
 
         # no luck, didn't get a valid connection...
         if  error :
-            raise BadParameter (error)
+            raise rse.BadParameter (error)
 
         # no particular context failed -- raise generic exception
-        raise BadParameter ("no valid EC2 credentials found (ec2 url='%s')" % ec2_url)
-
-
+        raise rse.BadParameter ("no valid EC2 credentials found (ec2 url='%s')" % ec2_url)
 
 
 ###############################################################################
@@ -393,7 +392,7 @@ class EC2Keypair (cpi_context.Context) :
 
         if  not type.lower () == 'ec2'         and \
             not type.lower () == 'ec2_keypair' :
-            raise BadParameter \
+            raise rse,BadParameter \
                   ("ec2 adaptor only handles 'ec2' and 'ec2_keypair' contexts")
 
         self._type = type
@@ -436,14 +435,14 @@ class EC2Keypair (cpi_context.Context) :
             if  ctx.type.lower () == 'ec2' :
                 self.ec2_id  = ctx.user_id
                 self.ec2_key = ctx.user_key
-                break # only need one of those...
+                break  # only need one of those...
 
         if  not self.ec2_id or not self.ec2_key :
-            raise AuthenticationFailed \
+            raise rse.AuthenticationFailed \
                   ("no ec2 context -- cannot initialize ec2_keypair")
 
         if  not self._api ().token :
-            raise BadParameter \
+            raise rse.BadParameter \
                   ("`ec2_keypair` context must specify keypair name as `token`")
 
       # # valid context, connect to backend  
@@ -598,14 +597,14 @@ class EC2ResourceManager (cpi_resource.Manager) :
         self.session = session
 
         # internale (cached) registry of available resources
-        self.templates       = []
-        self.templates_dict  = {}
-        self.images          = []
-        self.images_dict     = {}
-        self.access          = {}
-        self.access[COMPUTE] = []
-        self.access[STORAGE] = []
-        self.access[ANY]     = []
+        self.templates         = []
+        self.templates_dict    = {}
+        self.images            = []
+        self.images_dict       = {}
+        self.access            = {}
+        self.access[c.COMPUTE] = []
+        self.access[c.STORAGE] = []
+        self.access[c.ANY]     = []
 
         self.conn, self.backend = self._adaptor.connect (session, url)
 
@@ -654,10 +653,10 @@ class EC2ResourceManager (cpi_resource.Manager) :
     def acquire (self, rd) :
 
         if  not self.conn :
-            raise IncorrectState ("not connected to backend")
+            raise rse.IncorrectState ("not connected to backend")
 
-        if  rd.rtype != COMPUTE :
-            raise BadParameter ("can only acquire compute resources.")
+        if  rd.rtype != c.COMPUTE :
+            raise rse.BadParameter ("can only acquire compute resources.")
 
 
         # check if a any 'ec2_keypair' context is known.  If so, use its
@@ -675,35 +674,35 @@ class EC2ResourceManager (cpi_resource.Manager) :
         for attribute in rd.list_attributes():
             if attribute not in _ADAPTOR_CAPABILITIES["rdes_attributes"]:
                 msg = "'resource.Description.%s' is not supported by this adaptor" % attribute
-                raise BadParameter._log (self._logger, msg)
+                raise rse.BadParameter._log (self._logger, msg)
 
 
         # we only support template defined instances right now
         # FIXME: should be able to select suitable template from given
         # resource attributes
         if  not rd.template :
-            raise BadParameter ("no 'template' attribute in resource description")
+            raise rse.BadParameter ("no 'template' attribute in resource description")
 
         # we also need an OS image
         if  not rd.image :
-            raise BadParameter ("no 'image' attribute in resource description")
+            raise rse.BadParameter ("no 'image' attribute in resource description")
 
         # and we don't support any other attribute right now
         if  rd.dynamic      or rd.start        or \
             rd.end          or rd.duration     or \
             rd.machine_os   or rd.machine_arch or \
             rd.access       or rd.memory       :
-            raise BadParameter ("resource descriptions only supports "
-                                     "'template' and 'image' attributes "
-                                     "right now")
+            raise rse.BadParameter ("resource descriptions only supports "
+                                    "'template' and 'image' attributes "
+                                    "right now")
 
         try :
 
             # make sure template and image are valid, and get handles
-            if  not rd.template in self.templates_dict : 
+            if  rd.template not in self.templates_dict : 
                 self._refresh_templates (rd.template)
 
-            if  not rd.image in self.images_dict : 
+            if  rd.image not in self.images_dict : 
                 self._refresh_images (uid=rd.image)
 
 
@@ -743,14 +742,14 @@ class EC2ResourceManager (cpi_resource.Manager) :
 
         except Exception as e :
             # FIXME: translate errors more sensibly
-            raise NoSuccess ("Failed with %s" % e)
+            raise rse.NoSuccess ("Failed with %s" % e)
 
         if  resource_info :
-            if  rd.rtype == COMPUTE :
+            if  rd.rtype == c.COMPUTE :
                 return api_resource.Compute (_adaptor       = self._adaptor, 
                                               _adaptor_state = resource_info)
 
-        raise NoSuccess ("Could not acquire requested resource")
+        raise rse.NoSuccess ("Could not acquire requested resource")
 
 
     # ----------------------------------------------------------------
@@ -759,7 +758,7 @@ class EC2ResourceManager (cpi_resource.Manager) :
     def acquire_by_id(self, rid):
 
         if  not self.conn :
-            raise IncorrectState ("not connected to backend")
+            raise rse.IncorrectState ("not connected to backend")
 
 
         try :
@@ -770,15 +769,15 @@ class EC2ResourceManager (cpi_resource.Manager) :
             nodes  = self.conn.list_nodes (ex_node_ids=[rid_s])
 
             if  len (nodes) < 1 :
-                raise BadParameter ("Cannot find resource '%s'" % rid_s)
+                raise rse.BadParameter ("Cannot find resource '%s'" % rid_s)
             if  len (nodes) > 1 :
-                raise BadParameter ("Cannot identify resource '%s'" % rid_s)
+                raise rse.BadParameter ("Cannot identify resource '%s'" % rid_s)
 
             node = nodes[0]
 
             resource_info = { 'backend'                 : self.backend   ,
                               'resource'                : node           ,
-                              'resource_type'           : COMPUTE        ,
+                              'resource_type'           : c.COMPUTE      ,
                               'resource_description'    : None           ,
                               'resource_manager'        : self.get_api (), 
                               'resource_manager_url'    : self.url       , 
@@ -787,10 +786,10 @@ class EC2ResourceManager (cpi_resource.Manager) :
 
         except Exception as e :
             # FIXME: translate errors more sensibly
-            raise NoSuccess ("Failed with %s" % e)
+            raise rse.NoSuccess ("Failed with %s" % e)
 
         return api_resource.Compute(_adaptor       = self._adaptor, 
-                                     _adaptor_state = resource_info)
+                                    _adaptor_state = resource_info)
 
 
     # ----------------------------------------------------------------
@@ -806,7 +805,7 @@ class EC2ResourceManager (cpi_resource.Manager) :
     def list (self, rtype):
 
         if  not self.conn :
-            raise IncorrectState ("not connected to backend")
+            raise rse.IncorrectState ("not connected to backend")
 
 
         ret = []
@@ -814,11 +813,11 @@ class EC2ResourceManager (cpi_resource.Manager) :
         try :
 
             for node in self.conn.list_nodes () :
-              ret.append ("[%s]-[%s]" % (self.url, node.id))
+                ret.append ("[%s]-[%s]" % (self.url, node.id))
 
         except Exception as e :
             # FIXME: translate errors more sensibly
-            raise NoSuccess ("Failed with %s" % e)
+            raise rse.NoSuccess ("Failed with %s" % e)
 
         return ret
 
@@ -838,7 +837,7 @@ class EC2ResourceManager (cpi_resource.Manager) :
     def list_templates (self, rtype) :
 
         # we support only compute templates right now
-        if  rtype and not (rtype & COMPUTE) :
+        if  rtype and not (rtype & c.COMPUTE) :
             return []
 
         if not len (self.templates) :
@@ -853,7 +852,7 @@ class EC2ResourceManager (cpi_resource.Manager) :
     def get_template (self, name) :
 
         # FIXME
-        raise BadParameter ("unknown template %s" % name)
+        raise rse.BadParameter ("unknown template %s" % name)
 
 
     # ----------------------------------------------------------------
@@ -862,7 +861,7 @@ class EC2ResourceManager (cpi_resource.Manager) :
     def list_images (self, rtype) :
 
         # we support only compute images right now
-        if  rtype and not (rtype & COMPUTE) :
+        if  rtype and not (rtype & c.COMPUTE) :
             return []
 
         if not len (self.images) :
@@ -880,11 +879,11 @@ class EC2ResourceManager (cpi_resource.Manager) :
             self._refresh_images (uid=img_id)
 
         if  img_id not in self.images_dict:
-            raise BadParameter ("unknown image %s" % img_id)
+            raise rse.BadParameter ("unknown image %s" % img_id)
 
         descr = dict(self.images_dict[img_id].extra)
 
-        if  not 'name' in descr :
+        if  'name' not in descr :
             descr['name'] = self.images_dict[img_id].name
 
         for key in descr.keys () :
@@ -892,7 +891,6 @@ class EC2ResourceManager (cpi_resource.Manager) :
                 descr.pop (key)
 
         return descr
-
 
 
 ###############################################################################
@@ -909,7 +907,7 @@ class EC2ResourceCompute (cpi_resource.Compute) :
         self.lcct = self._adaptor.lcct
         self.lccp = self._adaptor.lccp
 
-        self.state       = NEW
+        self.state       = c.NEW
         self.detail      = None
         self.rid         = None
         self.rtype       = None
@@ -928,9 +926,9 @@ class EC2ResourceCompute (cpi_resource.Compute) :
             self.manager = api_resource.Manager (self.manager_url, session=session)
 
 
-            if not id in self.manager.list(COMPUTE):
+            if id not in self.manager.list(c.COMPUTE):
 
-                raise BadParameter ("resource '%s' not found" % id)
+                raise rse.BadParameter ("resource '%s' not found" % id)
 
             cr = self.manager.acquire(id)
 
@@ -949,14 +947,14 @@ class EC2ResourceCompute (cpi_resource.Compute) :
         # no id -- grab info from adaptor_info
         elif adaptor_info :
 
-            if  not 'backend'              in adaptor_info or \
-                not 'resource'             in adaptor_info or \
-                not 'resource_type'        in adaptor_info or \
-                not 'resource_description' in adaptor_info or \
-                not 'resource_manager'     in adaptor_info or \
-                not 'resource_manager_url' in adaptor_info or \
-                not 'connection'           in adaptor_info    :
-                raise BadParameter ("Cannot acquire resource, insufficient information")
+            if  'backend'              not in adaptor_info or \
+                'resource'             not in adaptor_info or \
+                'resource_type'        not in adaptor_info or \
+                'resource_description' not in adaptor_info or \
+                'resource_manager'     not in adaptor_info or \
+                'resource_manager_url' not in adaptor_info or \
+                'connection'           not in adaptor_info    :
+                raise rse.BadParameter ("Cannot acquire resource, insufficient information")
 
             self.backend     = adaptor_info['backend']
             self.resource    = adaptor_info['resource']
@@ -972,7 +970,7 @@ class EC2ResourceCompute (cpi_resource.Compute) :
 
 
         else :
-            raise BadParameter ("Cannot acquire resource, no id / contact info")
+            raise rse.BadParameter ("Cannot acquire resource, no id / contact info")
 
 
         # FIXME: we don't actually need new state, it should be fresh at
@@ -987,7 +985,7 @@ class EC2ResourceCompute (cpi_resource.Compute) :
     #
     def _refresh_state (self) :
 
-        if  self.state == EXPIRED :
+        if  self.state == c.EXPIRED :
             # no need to update, state is final
             return
 
@@ -996,7 +994,7 @@ class EC2ResourceCompute (cpi_resource.Compute) :
             nodes = self.conn.list_nodes (ex_node_ids=[self.rid])
 
             if  not len (nodes) :
-                raise IncorrectState ("resource '%s' disappeared")
+                raise rse.IncorrectState ("resource '%s' disappeared")
 
             if  len (nodes) != 1 :
                 self._logger.warning ("Could not uniquely identify instance for '%s'" % self.rid)
@@ -1007,22 +1005,22 @@ class EC2ResourceCompute (cpi_resource.Compute) :
                 self.detail = self.resource.extra['status']
 
             # FIXME: move state translation to adaptor
-            if   self.resource.state == self.lcct.NodeState.RUNNING    : self.state = ACTIVE
-            elif self.resource.state == self.lcct.NodeState.REBOOTING  : self.state = PENDING
-            elif self.resource.state == self.lcct.NodeState.TERMINATED : self.state = EXPIRED
-            elif self.resource.state == self.lcct.NodeState.PENDING    : self.state = PENDING
-            elif self.resource.state == self.lcct.NodeState.UNKNOWN    : self.state = UNKNOWN
-            else                                                       : self.state = UNKNOWN
+            if   self.resource.state == self.lcct.NodeState.RUNNING    : self.state = c.ACTIVE
+            elif self.resource.state == self.lcct.NodeState.REBOOTING  : self.state = c.PENDING
+            elif self.resource.state == self.lcct.NodeState.TERMINATED : self.state = c.EXPIRED
+            elif self.resource.state == self.lcct.NodeState.PENDING    : self.state = c.PENDING
+            elif self.resource.state == self.lcct.NodeState.UNKNOWN    : self.state = c.UNKNOWN
+            else                                                       : self.state = c.UNKNOWN
 
-            if  self.state == UNKNOWN and self.detail == 'shutting-down' :
-                self.state =  EXPIRED
+            if  self.state == c.UNKNOWN and self.detail == 'shutting-down' :
+                self.state =  c.EXPIRED
 
         except Exception as e :
             self._logger.error ("Could not obtain resource state (%s): %s" \
                              % (self.id, e))
-            self.state  =  UNKNOWN
+            self.state  =  c.UNKNOWN
 
-        if  self.state  == EXPIRED :
+        if  self.state  == c.EXPIRED :
             self.access == None
         else :
             if  len (self.resource.public_ips) :
@@ -1101,7 +1099,7 @@ class EC2ResourceCompute (cpi_resource.Compute) :
     def destroy (self):
 
         self.conn.destroy_node (self.resource)
-        self.state  = EXPIRED
+        self.state  = c.EXPIRED
         self.detail = 'destroyed by user'
 
 
@@ -1116,9 +1114,9 @@ class EC2ResourceCompute (cpi_resource.Compute) :
         while not self.state :
             self._refresh_state ()
 
-        if  self.state == EXPIRED and \
-            not  state  & EXPIRED :      
-                raise IncorrectState ("resource is in final state (%s): %s" \
+        if  self.state == c.EXPIRED and \
+            not  state  & c.EXPIRED :      
+                raise rse.IncorrectState ("resource is in final state (%s): %s" \
                                         % (self.detail, self.id))
 
         while not ( self.state & state ) :

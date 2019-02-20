@@ -410,7 +410,7 @@ class Adaptor (base.Base):
                 raise BadParameter('FileTransfer append (<</>>) not supported')
 
             if  td.out_overwrite:
-                for (local, remote) in td.out_overwrite_dict.iteritems():
+                for (local, remote) in td.out_overwrite.iteritems():
                     source = remote
                     target = local
                     self._logger.info("Transferring file %s to %s" % (source, target))
@@ -1397,15 +1397,6 @@ class ShellJob (cpi.Job) :
 
         # no need to refresh stats -- this is set locally
         return self._created
-
-
-    # ----------------------------------------------------------------
-    #
-    @SYNC_CALL
-    def get_name (self) : 
-
-        # no need to refresh stats -- this is set locally
-        return self._name
 
 
     # ----------------------------------------------------------------

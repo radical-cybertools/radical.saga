@@ -38,7 +38,7 @@ except ImportError as e:
 #     tree.
 #   - The VERSION file is used to provide the runtime version information.
 #
-def get_version (mod_root):
+def get_version(mod_root):
     """
     mod_root
         a VERSION file containes the version strings is created in mod_root,
@@ -84,7 +84,7 @@ def get_version (mod_root):
             'git-error'      in version_detail or \
             'not-a-git-repo' in version_detail or \
             'not-found'      in version_detail or \
-            'fatal'          in version_detail :
+            'fatal'          in version_detail    :
             version = version_base
         elif '@' not in version_base:
             version = '%s-%s' % (version_base, version_detail)
@@ -105,11 +105,11 @@ def get_version (mod_root):
         if '--record'    in sys.argv or \
            'bdist_egg'   in sys.argv or \
            'bdist_wheel' in sys.argv    :
-          # pip install stage 2 or easy_install stage 1
-          #
-          # pip install will untar the sdist in a tmp tree.  In that tmp
-          # tree, we won't be able to derive git version tags -- so we pack the
-          # formerly derived version as ./VERSION
+           # pip install stage 2 or easy_install stage 1
+           #
+           # pip install will untar the sdist in a tmp tree.  In that tmp
+           # tree, we won't be able to derive git version tags -- so we pack the
+           # formerly derived version as ./VERSION
             shutil.move("VERSION", "VERSION.bak")            # backup version
             shutil.copy("%s/VERSION" % path, "VERSION")      # use full version
             os.system  ("python setup.py sdist")             # build sdist
@@ -122,7 +122,7 @@ def get_version (mod_root):
 
         return version_base, version_detail, sdist_name
 
-    except Exception as e :
+    except Exception as e:
         raise RuntimeError('Could not extract/set version: %s' % e)
 
 
@@ -140,9 +140,10 @@ version, version_detail, sdist_name = get_version(mod_root)
 # ------------------------------------------------------------------------------
 #
 def read(*rnames):
-    try :
+    try:
         return open(os.path.join(os.path.dirname(__file__), *rnames)).read()
-    except Exception :
+
+    except Exception:
         return ''
 
 
@@ -275,8 +276,7 @@ setup_args = {
     'namespace_packages' : ['radical'],
     'packages'           : find_packages('src'),
     'package_dir'        : {'': 'src'},
-    'scripts'            : ['bin/radical-saga-version'
-                           ],
+    'scripts'            : ['bin/radical-saga-version'],
     'package_data'       : {'': ['*.txt', '*.sh', '*.json', '*.gz',
                                  'VERSION', 'SDIST', sdist_name]},
     'setup_requires'     : ['pytest-runner'],
@@ -294,7 +294,7 @@ setup_args = {
 
 # ------------------------------------------------------------------------------
 #
-setup (**setup_args)
+setup(**setup_args)
 
 os.system('rm -rf src/%s.egg-info' % name)
 

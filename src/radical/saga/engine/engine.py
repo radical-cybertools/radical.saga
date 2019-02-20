@@ -40,7 +40,7 @@ except Exception as e:
 
 
 ################################################################################
-##
+#
 class Engine(object):
     """ Represents the SAGA engine runtime system.
 
@@ -107,10 +107,11 @@ class Engine(object):
 
           def __init__ (self, url="", session=None) :
 
-              for (adaptor, adaptor_class) in self._engine._adaptor_registry{'job'}{url.scheme}
+              for (adaptor, adaptor_class) in \
+                      self._engine._adaptor_registry{'job'}{url.scheme}
 
                   try :
-                      self._adaptor = adaptor_class (self, url, session}
+                      self._adaptor = adaptor_class(self, url, session}
 
                   except saga.Exception e :
                       # adaptor bailed out
@@ -124,7 +125,7 @@ class Engine(object):
     __metaclass__ = ru.Singleton
 
 
-    #-----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     def __init__(self):
 
@@ -143,32 +144,24 @@ class Engine(object):
         self._load_adaptors()
 
 
-    #-----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     def _load_adaptors (self, inject_registry=None):
-        """ Try to load all adaptors that are registered in
-            saga.engine.registry.py. This method is called from the
-            constructor.  As Engine is a singleton, this method is
-            called once after the module is first loaded in any python
-            application.
+        """ 
+        Try to load all adaptors that are registered in saga.engine.registry.py.
+        This method is called from the constructor.  As Engine is a singleton,
+        this method is called once after the module is first loaded in any
+        python application.
 
-            :param inject_registry: Inject a fake registry. *For unit tests only*.
+        :param inject_registry: Inject a fake registry. *For unit tests only*.
         """
 
 
-        # add the list of modpaths found in the config options
-        adaptor_path = self._cfg.get('adaptor_path', '')
-        for path in adaptor_path.split(':'):
-            if path:
-                self._logger.debug ("adding   adaptor path: '%s'" % path)
-                self._registry.append(path)
-
         self._logger.debug ("listing  adaptor registry: %s" % self._registry)
-
 
         # check if some unit test wants to use a special registry.  If
         # so, we reset cpi infos from the earlier singleton creation.
-        if inject_registry != None :
+        if inject_registry:
             self._adaptor_registry = dict()
             self._registry = {'adaptor_registry' : inject_registry}
 

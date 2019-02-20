@@ -8,9 +8,8 @@ __license__   = "MIT"
 
 import radical.utils.signatures as rus
 
-import saga.attributes       as sa
-import saga.base             as sb
-import saga.exceptions       as se
+from . import attributes        as sa
+from . import exceptions        as se
 
 
 # ------------------------------------------------------------------------------
