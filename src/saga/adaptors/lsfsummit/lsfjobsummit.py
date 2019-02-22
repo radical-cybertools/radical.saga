@@ -7,7 +7,8 @@ __license__   = "MIT"
 """ LSF job adaptor implementation for Summit
 """
 
-import saga.utils            as ru
+import radical.utils         as ru
+
 import saga.url              as surl
 import saga.utils.pty_shell
 
