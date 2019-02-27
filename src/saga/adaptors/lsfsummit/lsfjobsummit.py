@@ -215,7 +215,7 @@ def _lsfscript_generator(url, logger, jd, ppn, lsf_version, queue, span):
         number_of_nodes += 1
     lsf_params += "#BSUB -nnodes %s \n" %str(number_of_nodes)
 
-    lsf_params += "#BSUB -alloc_flags 'gpumps smt1' \n"
+    lsf_params += "#BSUB -alloc_flags 'gpumps smt4' \n"
 
     # span parameter allows us to influence core spread over nodes
     if span:
