@@ -479,12 +479,19 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
             # we start N independent processes
             mpi_cmd = ''
 
-            if self._version in ['17.11.5', '18.08.0', '18.08.3']:
+            if 'stampede2' in self.rm.host.lower():
+
+                assert(self._ppn), 'need unique number of cores per node'
+                number_of_nodes = int(math.ceil(float(total_cpu_count) / self._ppn))
+                slurm_script += "#SBATCH -N %d\n" % (number_of_nodes)
+
+            elif self._version in ['17.11.5', '18.08.0', '18.08.3']:
 
                 assert(self._ppn), 'need unique number of cores per node'
                 number_of_nodes = int(math.ceil(float(total_cpu_count) / self._ppn))
                 slurm_script += "#SBATCH -N %d\n" % (number_of_nodes)
                 slurm_script += "#SBATCH --ntasks=%s\n" % (number_of_processes)
+
             else:
                 slurm_script += "#SBATCH --ntasks=%s\n" % (number_of_processes)
 
@@ -506,6 +513,7 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
 
             # use '-C EGRESS' to enable outbound network
             slurm_script += "#SBATCH -C EGRESS\n"
+
 
 
         elif 'cori' in self.rm.host.lower():
