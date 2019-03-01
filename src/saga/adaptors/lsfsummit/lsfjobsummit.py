@@ -30,6 +30,8 @@ ASYNC_CALL = saga.adaptors.cpi.decorators.ASYNC_CALL
 SYNC_WAIT_UPDATE_INTERVAL = 1  # seconds
 MONITOR_UPDATE_INTERVAL = 3  # seconds
 
+SMT = 'smt4'
+
 
 # --------------------------------------------------------------------
 #
@@ -131,12 +133,10 @@ def _lsfscript_generator(url, logger, jd, ppn, lsf_version, queue, span):
     if jd.name is not None:
         lsf_params += "#BSUB -J %s \n" % jd.name
 
+    env_variable_list = "export RADICAL_SAGA_SMT=%s" % SMT
     if jd.environment is not None:
-        env_variable_list = "export "
         for key in jd.environment.keys():
             env_variable_list += " %s=%s " % (key, jd.environment[key])
-    else:
-        env_variable_list = ""
 
     # a workaround is to do an explicit 'cd'
     if jd.working_directory is not None:
@@ -215,7 +215,7 @@ def _lsfscript_generator(url, logger, jd, ppn, lsf_version, queue, span):
         number_of_nodes += 1
     lsf_params += "#BSUB -nnodes %s \n" %str(number_of_nodes)
 
-    lsf_params += "#BSUB -alloc_flags 'gpumps smt4' \n"
+    lsf_params += "#BSUB -alloc_flags 'gpumps %s' \n" % SMT
 
     # span parameter allows us to influence core spread over nodes
     if span:
