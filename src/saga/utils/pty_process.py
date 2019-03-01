@@ -155,38 +155,34 @@ class PTYProcess (object) :
 
     # ----------------------------------------------------------------------
     #
-    def flush (self) :
+    def flush(self):
 
         # clean the *read* data cache -- only use when you know what you are
         # doing!
 
-        try :
-             if not self.parent_out :
-                 # nothing to read, yet, so there is nothing to cache, so tehre is
-                 # nothing to flush...
-                 return
+        if not self.parent_out:
+            # nothing to read, yet, so there is nothing to cache, nor to flush
+            return
 
-             self.logger.debug ("flush: [%5d] [     ] (flush pty read cache)"  \
-                     % (self.parent_out))
+        self.logger.debug("flush: [%5d] [     ] (flush pty read cache)",
+                          self.parent_out)
 
-             # lets see if there are still things to read
-             while True :
-                 tmp = self.read (timeout=0.1)
-                 if tmp :
-                     self.logger.warn ("flush: [%5d] [%5d] (discard data: '%s')" \
-                             % (self.parent_out, len(tmp), tmp))
-                     continue
-                 break
+        # lets see if there are still things to read
+        while True:
+            try:
+                tmp = self.read(timeout=0.1)
+                if tmp :
+                    self.logger.warn("flush: [%5d] [%5d] (discard data : '%s')",
+                                     self.parent_out, len(tmp), tmp)
+                    continue
+            except:
+                self.logger.warn('read error on flush')
+            break
 
-             if len(self.cache) :
-                  self.logger.warn ("flush: [%5d] [%5d] (discard cache: '%s')" \
-                          % (self.parent_out, len(self.cache), self.cache))
-             self.cache = ""
-
-        except Exception as e :
-            self.logger.exception ('flushing failed')
-            raise
-
+        if len(self.cache):
+            self.logger.warn("flush: [%5d] [%5d] (discard cache: '%s')",
+                             self.parent_out, len(self.cache), self.cache)
+        self.cache = ""
 
 
     # ----------------------------------------------------------------------

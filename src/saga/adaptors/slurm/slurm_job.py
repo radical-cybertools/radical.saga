@@ -188,7 +188,7 @@ _ADAPTOR_DOC           = {
 
 _ADAPTOR_INFO          = {
     "name"             : _ADAPTOR_NAME,
-    "version"          : "v0.2",
+    "version"          : "v0.2.1",
     "schemas"          : _ADAPTOR_SCHEMAS,
     "capabilities"     : _ADAPTOR_CAPABILITIES,
     "cpis"             : [
@@ -385,7 +385,7 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
                     '| xargs echo'
         _, out, _ = self.shell.run_sync(ppn_cmd)
         ppn_vals  = [o.strip() for o in out.split() if o.strip()]
-        if len(ppn_vals) == 1: self._ppn = int(ppn_vals[0])
+        if len(ppn_vals) >= 1: self._ppn = int(ppn_vals[0])
         else                 : self._ppn = None
 
         self._logger.info(" === ppn: %s", self._ppn)
@@ -477,12 +477,12 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
             # we start N independent processes
             mpi_cmd = ''
 
-            if self._version == '17.11.5':
-        
+            if self._version in ['17.11.5', '18.08.0', '18.08.3']:
+
                 assert(self._ppn), 'need unique number of cores per node'
                 number_of_nodes = int(math.ceil(float(total_cpu_count) / self._ppn))
-                slurm_script += "#SBATCH -N %d --ntasks=%s\n" % (number_of_nodes, 
-                                                                 number_of_processes)
+                slurm_script += "#SBATCH -N %d\n" % (number_of_nodes)
+                slurm_script += "#SBATCH --ntasks=%s\n" % (number_of_processes)
             else:
                 slurm_script += "#SBATCH --ntasks=%s\n" % (number_of_processes)
 
@@ -497,6 +497,10 @@ class SLURMJobService (saga.adaptors.cpi.job.Service) :
             # bridges requires '-C EGRESS' to enable outbound network
             # connections.
             # FIXME: this should be moved into a resource config file
+            if total_gpu_count:
+                if cpu_arch : gpu_arch=cpu_arch.lower()
+                else : gpu_arch = 'p100'
+                slurm_script += "#SBATCH --gres=gpu:%s:2\n" % (gpu_arch)
             slurm_script += "#SBATCH -C EGRESS\n"
 
         elif 'cori' in self.rm.host.lower():
