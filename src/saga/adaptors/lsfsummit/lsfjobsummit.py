@@ -1,16 +1,15 @@
 
-__author__    = "Ole Weidner"
-__copyright__ = "Copyright 2012-2013, The SAGA Project"
+__author__    = "Ioannis Paraskevakos"
+__copyright__ = "Copyright 2018-2019, The SAGA Project"
 __license__   = "MIT"
 
 
-""" LSF job adaptor implementation
+""" LSF job adaptor implementation for Summit
 """
 
-import radical.utils.which
-import radical.utils.threads as sut
+import radical.utils         as ru
 
-import saga.url as surl
+import saga.url              as surl
 import saga.utils.pty_shell
 
 import saga.adaptors.base
@@ -197,14 +196,27 @@ def _lsfscript_generator(url, logger, jd, ppn, lsf_version, queue, span):
     if jd.job_contact is not None:
         lsf_params += "#BSUB -u %s \n" % str(jd.job_contact)
 
-    # if total_cpu_count is not defined, we assume 1
+    # Request enough nodes to cater for the number of cores requested
     if jd.total_cpu_count is None:
         total_cpu_count = 1
     else:
         total_cpu_count = jd.total_cpu_count
 
-    lsf_params += "#BSUB -n %s \n" % str(jd.total_cpu_count)
-    
+    out, err, ret = ru.sh_callout('hostname -f')
+
+    if ret: hostname = os.environ.get('HOSTNAME', '')
+    else  : hostname = out.strip()
+
+    if 'summitdev' in hostname: ppn = 20
+    elif 'summit'  in hostname: ppn = 42
+
+    number_of_nodes = int(total_cpu_count / ppn)
+    if total_cpu_count % ppn > 0:
+        number_of_nodes += 1
+    lsf_params += "#BSUB -nnodes %s \n" %str(number_of_nodes)
+
+    lsf_params += "#BSUB -alloc_flags 'gpumps smt4' \n"
+
     # span parameter allows us to influence core spread over nodes
     if span:
         lsf_params += '#BSUB -R "span[%s]"\n' % span
@@ -229,8 +241,8 @@ _PTY_TIMEOUT = 2.0
 # --------------------------------------------------------------------
 # the adaptor name
 #
-_ADAPTOR_NAME          = "saga.adaptor.lsfjob"
-_ADAPTOR_SCHEMAS       = ["lsf", "lsf+ssh", "lsf+gsissh"]
+_ADAPTOR_NAME          = "saga.adaptor.lsfjobsummit"
+_ADAPTOR_SCHEMAS       = ["lsfsummit", "lsfsummit+ssh", "lsfsummit+gsissh"]
 _ADAPTOR_OPTIONS       = []
 
 # --------------------------------------------------------------------
@@ -272,12 +284,12 @@ _ADAPTOR_DOC = {
     "capabilities":  _ADAPTOR_CAPABILITIES,
     "description":  """
 The LSF adaptor allows to run and manage jobs on `LSF <https://en.wikipedia.org/wiki/Platform_LSF>`_
-controlled HPC clusters.
+controlled Summit HPC.
 """,
     "example": "examples/jobs/lsfjob.py",
-    "schemas": {"lsf":        "connect to a local cluster",
-                "lsf+ssh":    "conenct to a remote cluster via SSH",
-                "lsf+gsissh": "connect to a remote cluster via GSISSH"}
+    "schemas": {"lsf_summit":        "connect to a local cluster",
+                "lsf_summit+ssh":    "conenct to a remote cluster via SSH",
+                "lsf_summit+gsissh": "connect to a remote cluster via GSISSH"}
 }
 
 # --------------------------------------------------------------------
@@ -285,17 +297,17 @@ controlled HPC clusters.
 #
 _ADAPTOR_INFO = {
     "name"        :    _ADAPTOR_NAME,
-    "version"     : "v0.2",
+    "version"     : "v0.1",
     "schemas"     : _ADAPTOR_SCHEMAS,
-    "capabilities":  _ADAPTOR_CAPABILITIES,
+    "capabilities": _ADAPTOR_CAPABILITIES,
     "cpis": [
         {
         "type": "saga.job.Service",
-        "class": "LSFJobService"
+        "class": "LSFJobSummitService"
         },
         {
         "type": "saga.job.Job",
-        "class": "LSFJob"
+        "class": "LSFJob_Summit"
         }
     ]
 }
@@ -339,7 +351,7 @@ class Adaptor (saga.adaptors.base.Base):
 
 ###############################################################################
 #
-class LSFJobService (saga.adaptors.cpi.job.Service):
+class LSFJobSummitService (saga.adaptors.cpi.job.Service):
     """ implements saga.adaptors.cpi.job.Service
     """
 
@@ -348,10 +360,11 @@ class LSFJobService (saga.adaptors.cpi.job.Service):
     def __init__(self, api, adaptor):
 
         self._mt  = None
-        _cpi_base = super(LSFJobService, self)
+        _cpi_base = super(LSFJobSummitService, self)
         _cpi_base.__init__(api, adaptor)
 
         self._adaptor = adaptor
+
 
     # ----------------------------------------------------------------
     #
@@ -415,11 +428,11 @@ class LSFJobService (saga.adaptors.cpi.job.Service):
         # we need to extrac the scheme for PTYShell. That's basically the
         # job.Serivce Url withou the lsf+ part. We use the PTYShell to execute
         # lsf commands either locally or via gsissh or ssh.
-        if rm_scheme == "lsf":
+        if rm_scheme == "lsfsummit":
             pty_url.scheme = "fork"
-        elif rm_scheme == "lsf+ssh":
+        elif rm_scheme == "lsfsummit+ssh":
             pty_url.scheme = "ssh"
-        elif rm_scheme == "lsf+gsissh":
+        elif rm_scheme == "lsfsummit+gsissh":
             pty_url.scheme = "gsissh"
 
         # these are the commands that we need in order to interact with LSF.
@@ -535,7 +548,7 @@ class LSFJobService (saga.adaptors.cpi.job.Service):
         # (1) we create a temporary file with 'mktemp' and write the contents of 
         #     the generated PBS script into it
         # (2) we call 'qsub <tmpfile>' to submit the script to the queueing system
-        cmdline = """SCRIPTFILE=`mktemp -t SAGA-Python-LSFJobScript.XXXXXX` && echo "%s" > $SCRIPTFILE && %s < $SCRIPTFILE && rm -f $SCRIPTFILE""" % (script, self._commands['bsub']['path'])
+        cmdline = """SCRIPTFILE=`mktemp -t SAGA-Python-LSFJobScript.XXXXXX` && echo "%s" > $SCRIPTFILE && %s $SCRIPTFILE && rm -f $SCRIPTFILE""" % (script, self._commands['bsub']['path'])
         ret, out, _ = self.shell.run_sync(cmdline)
 
         if ret != 0:
@@ -583,6 +596,28 @@ class LSFJobService (saga.adaptors.cpi.job.Service):
         """
         rm, pid = self._adaptor.parse_id(job_id)
 
+        # bjobs -noheader -o 'stat exec_host exit_code submit_time start_time 
+        # finish_time command job_name delimiter=","' 344077
+        # EXIT,summitdev-login1:summitdev-r0c1n12:summitdev-r0c1n12:
+        # summitdev-r0c1n12:summitdev-r0c1n12:summitdev-r0c1n12:
+        # summitdev-r0c1n12:summitdev-r0c1n12:summitdev-r0c1n12:
+        # summitdev-r0c1n12:summitdev-r0c1n12:summitdev-r0c1n12:
+        # summitdev-r0c1n12:summitdev-r0c1n12:summitdev-r0c1n12:
+        # summitdev-r0c1n12:summitdev-r0c1n12:summitdev-r0c1n12:
+        # summitdev-r0c1n12:summitdev-r0c1n12:summitdev-r0c1n12,
+        # 2,Oct 16 11:52,Oct 16 11:52,Oct 16 11:53 L,#!/bin/bash;
+        # #BSUB -J saga-test;
+        # #BSUB -o examplejob.out;
+        # #BSUB -e examplejob.err;
+        # #BSUB -W 0:10;
+        # #BSUB -q batch;
+        # #BSUB -P CSC190SPECFEM;
+        # #BSUB -nnodes 1;
+        # #BSUB -alloc_flags 'gpumps smt4'; 
+        # export  FILENAME=testfile;/bin/touch \$FILENAME " > $SCRIPTFILE && 
+        # /sw/sources/lsf-tools/bin/bsub $SCRIPTFILE && rm -f $SCRIPTFILE,
+        # saga-test
+
         ret, out, _ = self.shell.run_sync("%s -noheader -o 'stat exec_host exit_code submit_time start_time finish_time command job_name delimiter=\",\"' %s" % (self._commands['bjobs']['path'], pid))
 
         if ret != 0:
@@ -593,6 +628,7 @@ class LSFJobService (saga.adaptors.cpi.job.Service):
             # the job seems to exist on the backend. let's gather some data
             job_info = {
                 'state':        saga.job.UNKNOWN,
+                'name':         self._name,
                 'exec_hosts':   None,
                 'returncode':   None,
                 'create_time':  None,
@@ -749,7 +785,7 @@ class LSFJobService (saga.adaptors.cpi.job.Service):
         rm, pid = self._adaptor.parse_id(job_obj._id)
 
         ret, out, _ = self.shell.run_sync("%s %s\n" \
-            % (self._commands['qdel']['path'], pid))
+            % (self._commands['bkill']['path'], pid))
 
         if ret != 0:
             message = "Error canceling job via 'qdel': %s" % out
@@ -909,14 +945,14 @@ class LSFJobService (saga.adaptors.cpi.job.Service):
 
 ###############################################################################
 #
-class LSFJob (saga.adaptors.cpi.job.Job):
+class LSFJob_Summit (saga.adaptors.cpi.job.Job):
     """ implements saga.adaptors.cpi.job.Job
     """
 
     def __init__(self, api, adaptor):
 
         # initialize parent class
-        _cpi_base = super(LSFJob, self)
+        _cpi_base = super(LSFJob_Summit, self)
         _cpi_base.__init__(api, adaptor)
 
     def _get_impl(self):
@@ -933,11 +969,11 @@ class LSFJob (saga.adaptors.cpi.job.Job):
 
         if job_info['reconnect'] is True:
             self._id      = job_info['reconnect_jobid']
-            self._name    = self.jd.get(saga.job.NAME)
+            self._name    = self.jd.name
             self._started = True
         else:
             self._id      = None
-            self._name    = self.jd.get(saga.job.NAME)
+            self._name    = self.jd.name
             self._started = False
 
         return self.get_api()
