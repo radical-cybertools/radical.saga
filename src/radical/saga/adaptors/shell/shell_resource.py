@@ -253,7 +253,7 @@ class ShellResourceManager (cpi_resource.Manager) :
     @SYNC_CALL
     def release (self, id):
 
-        return # hahaha
+        return  # hahaha
 
 
     # ----------------------------------------------------------------
@@ -261,7 +261,7 @@ class ShellResourceManager (cpi_resource.Manager) :
     @SYNC_CALL
     def list_templates (self, rtype) :
 
-        return [] # no templates
+        return []  # no templates
 
 
     # ----------------------------------------------------------------
@@ -360,7 +360,7 @@ class ShellResourceCompute (cpi_resource.Compute) :
     #
     @SYNC_CALL
     def reconfig (self):
-        raise NotImplemented ("This backend cannot reconfigre resources")
+        raise rse.NotImplemented("This backend cannot reconfigre resources")
 
 
     # ----------------------------------------------------------------

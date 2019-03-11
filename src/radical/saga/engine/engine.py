@@ -6,21 +6,15 @@ __license__   = "MIT"
 
 """ Provides the SAGA runtime. """
 
-import re
-import sys
-import pprint
-import string
-import inspect
+import radical.utils      as ru
 
-import radical.utils as ru
-
-from ..exceptions import *
+from .. import exceptions as rse
 
 
 # we set the default of the pty share mode to 'no' on CentOS, as that seems to
 # consistently come with old ssh versions which can't handle sharing for sftp
 # channels.
-_share_mode_default='auto'
+_share_mode_default = 'auto'
 try:
     import subprocess as sp
     _p = sp.Popen ('lsb_release -a | grep "Distributor ID" | cut -f 2 -d ":"', 
@@ -31,7 +25,7 @@ try:
        'cent_os' in _os_flavor or \
        'cent-os' in _os_flavor or \
        'cent os' in _os_flavor :
-        _share_mode_default='no'
+        _share_mode_default = 'no'
 
 except Exception as e:
     # we ignore this then -- we are relatively sure that the above should work
@@ -177,8 +171,9 @@ class Engine(object):
                 adaptor_module = ru.import_module(module_name)
 
             except Exception as e:
-                self._logger.exception ("Skipping adaptor %s: module import failed: %s" % (module_name, e))
-                continue # skip to next adaptor
+                self._logger.exception("skip adaptor %s: import failed: %s"
+                                      % (module_name, e))
+                continue
 
             # we expect the module to have an 'Adaptor' class
             # implemented, which, on calling 'register()', returns
@@ -190,13 +185,15 @@ class Engine(object):
                 adaptor_instance = adaptor_module.Adaptor ()
                 adaptor_info     = adaptor_instance.register ()
 
-            except SagaException as e:
-                self._logger.exception ("Skipping adaptor %s: module load   failed: '%s'" % (module_name, e))
-                continue # skip to next adaptor
+            except rse.SagaException as e:
+                self._logger.exception("skip adaptor %s: failed t o load '%s'"
+                                      % (module_name, e))
+                continue
 
             except Exception as e:
-                self._logger.exception ("Skipping adaptor %s: instantiation failed: '%s'" % (module_name, e))
-                continue # skip to next adaptor
+                self._logger.exception("skip adaptor %s: init failed: '%s'"
+                                      % (module_name, e))
+                continue
 
 
             # the adaptor must also provide a sanity_check() method, which sould
@@ -207,30 +204,31 @@ class Engine(object):
                 adaptor_instance.sanity_check ()
 
             except Exception as e:
-                self._logger.exception ("Skipping adaptor %s: adaptor test failed : %s" % (module_name, e))
-                continue # skip to next adaptor
+                self._logger.exception("skip adaptor %s: test failed : %s"
+                                      % (module_name, e))
+                continue
 
 
             # check if we have a valid adaptor_info
             if adaptor_info is None :
-                self._logger.exception ("Skipping adaptor %s: adaptor data invalid" \
-                                % module_name)
-                continue  # skip to next adaptor
+                self._logger.exception("skip adaptor %s: invalid adaptor data"
+                                      % module_name)
+                continue
 
 
-            if  not 'name'    in adaptor_info or \
-                not 'cpis'    in adaptor_info or \
-                not 'version' in adaptor_info or \
-                not 'schemas' in adaptor_info    :
-                self._logger.exception ("Skipping adaptor %s: adaptor data incomplete" \
-                                % module_name)
-                continue  # skip to next adaptor
+            if  'name'    not in adaptor_info or \
+                'cpis'    not in adaptor_info or \
+                'version' not in adaptor_info or \
+                'schemas' not in adaptor_info    :
+                self._logger.exception("skip adaptor %s: incomplete data"
+                                      % module_name)
+                continue
 
 
             adaptor_name    = adaptor_info['name']
             adaptor_version = adaptor_info['version']
             adaptor_schemas = adaptor_info['schemas']
-            adaptor_enabled = True   # default unless disabled by 'enabled' option or version filer
+            adaptor_enabled = True  # default
 
             # disable adaptors in 'alpha' or 'beta' versions -- unless
             # the 'load_beta_adaptors' config option is set to True
@@ -239,9 +237,9 @@ class Engine(object):
                 if 'alpha' in adaptor_version.lower() or \
                    'beta'  in adaptor_version.lower()    :
 
-                    self._logger.exception ("Skipping adaptor %s: beta versions disabled (%s)" \
+                    self._logger.exception("skip beta adaptor %s (version %s)"
                                     % (module_name, adaptor_version))
-                    continue  # skip to next adaptor
+                    continue
 
 
             # get the 'enabled' option in the adaptor's config
@@ -254,28 +252,28 @@ class Engine(object):
                 adaptor_config  = ru.Config('radical.saga', name=adaptor_name)
                 adaptor_enabled = adaptor_config.get('enabled', True)
 
-            except SagaException as e:
-                self._logger.exception ("Skipping adaptor %s: init failed: %s" \
-                                     % (module_name, e))
-                continue # skip to next adaptor
+            except rse.SagaException as e:
+                self._logger.exception("skip adaptor %s: init failed: %s"
+                                      % (module_name, e))
+                continue
             except Exception as e:
-                self._logger.exception ("Skipping adaptor %s: init error : %s" \
-                                     % (module_name, e))
-                continue # skip to next adaptor
+                self._logger.exception("skip adaptor %s: init error : %s"
+                                      % (module_name, e))
+                continue
 
 
             # only load adaptor if it is not disabled via config files
             if not adaptor_enabled:
-                self._logger.info ("Skipping adaptor %s: adaptor not enabled:" \
-                                % (module_name))
-                continue # skip to next adaptor
+                self._logger.info("skip adaptor %s: adaptor not enabled:"
+                                 % (module_name))
+                continue
 
 
             # check if the adaptor has anything to register
             if 0 == len (adaptor_info['cpis']) :
-                self._logger.exception ("Skipping adaptor %s: adaptor has no cpis" \
-                                % (module_name))
-                continue # skip to next adaptor
+                self._logger.exception("skip adaptor %s: adaptor has no cpis"
+                                      % (module_name))
+                continue
 
 
             # we got an enabled adaptor with valid info - yay!  We can
@@ -285,9 +283,9 @@ class Engine(object):
                 # check cpi information details for completeness
                 if  not 'type'    in cpi_info or \
                     not 'class'   in cpi_info    :
-                    self._logger.info ("Skipping adaptor %s cpi: cpi info detail is incomplete" \
-                                    % (module_name))
-                    continue # skip to next cpi info
+                    self._logger.info("skip %s cpi: incomplete info detail"
+                                     % (module_name))
+                    continue
 
 
                 # adaptor classes are registered for specific API types.
@@ -299,11 +297,11 @@ class Engine(object):
                     cpi_class = getattr (adaptor_module, cpi_cname)
 
                 except Exception as e:
-                    # this exception likely means that the adaptor does
-                    # not call the radical.saga.adaptors.Base initializer (correctly)
-                    self._logger.exception ("Skipping adaptor %s: adaptor class invalid %s: %s" \
-                                       % (module_name, cpi_info['class'], str(e)))
-                    continue # skip to next adaptor
+                    # this exception likely means that the adaptor does not call
+                    # the radical.saga.adaptors.Base initializer (correctly)
+                    self._logger.exception("skip adaptor %s: invalid %s: %s"
+                                % (module_name, cpi_info['class'], str(e)))
+                    continue
 
                 # make sure the cpi class is a valid cpi for the given type.
                 # We walk through the list of known modules, and try to find
@@ -331,66 +329,64 @@ class Engine(object):
                 # ->   radical .  saga .  job .  Service
                 # <- ['radical', 'saga', 'job', 'Service']
                 cpi_type_nselems = cpi_type.split ('.')
-              # print cpi_type_nselems
 
                 if  len(cpi_type_nselems) < 3 or \
                     len(cpi_type_nselems) > 4    :
-                    self._logger.exception ("Skipping adaptor %s: cpi type not valid: '%s'" \
+                    self._logger.exception("skip adaptor %s invalid cpi %s"
                                      % (module_name, cpi_type))
-                    continue # skip to next cpi info
+                    continue
 
                 if  cpi_type_nselems[0] != 'radical' and \
                     cpi_type_nselems[1] != 'saga'    :
-                    self._logger.exception ("Skipping adaptor %s: cpi namespace not valid: '%s'" \
+                    self._logger.exception ("skip adaptor %s: invalid cpi ns %s"
                                      % (module_name, cpi_type))
-                    continue # skip to next cpi info
+                    continue
 
                 # -> ['radical', 'saga',                    'job', 'Service']
                 # <- ['radical', 'saga', 'adaptors', 'cpi', 'job', 'Service']
                 cpi_type_nselems.insert (2, 'adaptors')
                 cpi_type_nselems.insert (3, 'cpi')
 
-                # -> ['radical', 'saga', 'adaptors', 'cpi', 'job',  'Service']
-                # <- ['radical', 'saga', 'adaptors', 'cpi', 'job'], 'Service'
-                cpi_type_cname = cpi_type_nselems.pop ()
-
-                # -> ['radical', 'saga', 'adaptors', 'cpi', 'job'], 'Service'
-                # <-  'radical.saga.adaptors.cpi.job
-                # <-  'radical.saga.adaptors.cpi.job.service
-                cpi_type_modname_1 = '.'.join (cpi_type_nselems)
-                cpi_type_modname_2 = '.'.join (cpi_type_nselems + [cpi_type_cname.lower()])
-
-                # does either module exist?
-                cpi_type_modname = None
-              # print cpi_type_modname_1
-              # print cpi_type_modname_2
-              # pprint.pprint(sys.modules)
-
-                if  cpi_type_modname_1 in sys.modules :
-                    cpi_type_modname = cpi_type_modname_1
-
-                if  cpi_type_modname_2 in sys.modules :
-                    cpi_type_modname = cpi_type_modname_2
-
+             #  # -> ['radical', 'saga', 'adaptors', 'cpi', 'job',  'Service']
+             #  # <- ['radical', 'saga', 'adaptors', 'cpi', 'job'], 'Service'
+             #  cpi_type_cname = cpi_type_nselems.pop ()
+             #
+             #  # -> ['radical', 'saga', 'adaptors', 'cpi', 'job'], 'Service'
+             #  # <-  'radical.saga.adaptors.cpi.job
+             #  # <-  'radical.saga.adaptors.cpi.job.service
+             #  cpi_type_modname_1 = '.'.join (cpi_type_nselems)
+             #  cpi_type_modname_2 = '.'.join (cpi_type_nselems + \
+             #                                 [cpi_type_cname.lower()])
+             #
+             #  # does either module exist?
+             #  cpi_type_modname = None
+             #
+             #  if  cpi_type_modname_1 in sys.modules :
+             #      cpi_type_modname = cpi_type_modname_1
+             #
+             #  if  cpi_type_modname_2 in sys.modules :
+             #      cpi_type_modname = cpi_type_modname_2
+             #
              #  if  not cpi_type_modname :
-             #      self._logger.exception ("Skipping adaptor %s: cpi type not known: '%s'" \
+             #      self._logger.exception ("skip adaptor %s: unknown cpi %s"
              #                       % (module_name, cpi_type))
              #      sys.exit()
-             #      continue # skip to next cpi info
+             #      continue
              #
              #  # so, make sure the given cpi is actually
              #  # implemented by the adaptor class
              #  cpi_ok = False
-             #  for name, cpi_obj in inspect.getmembers (sys.modules[cpi_type_modname]) :
+             #  for name, cpi_obj \
+             #      in inspect.getmembers (sys.modules[cpi_type_modname]):
              #      if  name == cpi_type_cname      and \
              #          inspect.isclass (cpi_obj)       :
              #          if  issubclass (cpi_class, cpi_obj) :
              #              cpi_ok = True
              #
              #  if not cpi_ok :
-             #      self._logger.exception ("Skipping adaptor %s: doesn't implement cpi '%s (%s)'" \
+             #      self._logger.exception ("skip adaptor %s: no cpi %s (%s)"
              #                       % (module_name, cpi_class, cpi_type))
-             #      continue # skip to next cpi info
+             #      continue
 
 
                 # finally, register the cpi for all its schemas!
@@ -400,11 +396,11 @@ class Engine(object):
                     adaptor_schema = adaptor_schema.lower ()
 
                     # make sure we can register that cpi type
-                    if not cpi_type in self._adaptor_registry :
+                    if cpi_type not in self._adaptor_registry:
                         self._adaptor_registry[cpi_type] = dict()
 
                     # make sure we can register that schema
-                    if not adaptor_schema in self._adaptor_registry[cpi_type] :
+                    if adaptor_schema not in self._adaptor_registry[cpi_type]:
                         self._adaptor_registry[cpi_type][adaptor_schema] = []
 
                     # we register the cpi class, so that we can create
@@ -418,23 +414,21 @@ class Engine(object):
                             'adaptor_instance' : adaptor_instance}
 
                     # make sure this tuple was not registered, yet
-                    if info in self._adaptor_registry[cpi_type][adaptor_schema] :
+                    if info in self._adaptor_registry[cpi_type][adaptor_schema]:
+                        self._logger.exception("skip adaptor %s: exists %s: %s"
+                                  % (module_name, cpi_class, adaptor_instance))
+                        continue
 
-                        self._logger.exception ("Skipping adaptor %s: already registered '%s - %s'" \
-                                         % (module_name, cpi_class, adaptor_instance))
-                        continue  # skip to next cpi info
-
-                    self._adaptor_registry[cpi_type][adaptor_schema].append(info)
+                    self._adaptor_registry[cpi_type] \
+                                          [adaptor_schema].append(info)
                     registered_schemas.append(str("%s://" % adaptor_schema))
 
-                self._logger.info("Register adaptor %s for %s API with URL scheme(s) %s" %
-                                      (module_name,
-                                       cpi_type,
-                                       registered_schemas))
+                self._logger.info("Register adaptor %s for %s API: %s" %
+                                 (module_name, cpi_type, registered_schemas))
 
 
 
-    #-----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     def find_adaptors (self, ctype, schema) :
         ''' Look for a suitable cpi class serving a particular schema
@@ -445,7 +439,7 @@ class Engine(object):
             name)
         '''
 
-        if not ctype in self._adaptor_registry :
+        if ctype not in self._adaptor_registry :
             return []
 
         if not schema.lower () in self._adaptor_registry[ctype] :
@@ -459,7 +453,7 @@ class Engine(object):
 
 
 
-    #-----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     def get_adaptor (self, adaptor_name) :
         ''' Return the adaptor module's ``Adaptor`` class for the given adaptor
@@ -472,15 +466,15 @@ class Engine(object):
         for ctype in self._adaptor_registry.keys () :
             for schema in self._adaptor_registry[ctype].keys () :
                 for info in self._adaptor_registry[ctype][schema] :
-                    if ( info['adaptor_name'] == adaptor_name ) :
+                    if info['adaptor_name'] == adaptor_name:
                         return info['adaptor_instance']
 
         error_msg = "No adaptor named '%s' found" % adaptor_name
         self._logger.error(error_msg)
-        raise NoSuccess(error_msg)
+        raise rse.NoSuccess(error_msg)
 
 
-    #-----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     def bind_adaptor (self, api_instance, ctype, schema,
                       preferred_adaptor, *args, **kwargs) :
@@ -493,22 +487,22 @@ class Engine(object):
         adaptor.
         '''
 
-        if not ctype in self._adaptor_registry:
+        if ctype not in self._adaptor_registry:
             error_msg = "No adaptor found for '%s' and URL scheme %s://" \
                                   % (ctype, schema)
             self._logger.error(error_msg)
-            raise NotImplemented(error_msg)
+            raise rse.NotImplemented(error_msg)
 
-        if not schema in self._adaptor_registry[ctype]:
+        if schema not in self._adaptor_registry[ctype]:
             error_msg = "No adaptor found for '%s' and URL scheme %s://" \
                                   % (ctype, schema)
             self._logger.error(error_msg)
-            raise NotImplemented(error_msg)
+            raise rse.NotImplemented(error_msg)
 
 
         # cycle through all applicable adaptors, and try to instantiate
         # a matching one.
-        exception = NoSuccess ("binding adaptor failed", api_instance)
+        exception = rse.NoSuccess ("binding adaptor failed", api_instance)
         for info in self._adaptor_registry[ctype][schema] :
 
             cpi_cname        = info['cpi_cname']
@@ -519,12 +513,12 @@ class Engine(object):
             try :
 
                 # is this adaptor acceptable?
-                if  preferred_adaptor != None         and \
+                if  preferred_adaptor is not None     and \
                     preferred_adaptor != adaptor_instance :
 
                     # ignore this adaptor
-                    self._logger.debug ("bind_adaptor for %s : %s != %s - ignore adaptor" \
-                                     % (cpi_cname, preferred_adaptor, adaptor_instance))
+                    self._logger.debug ("bind_adaptor for %s : %s != %s ignored"
+                             % (cpi_cname, preferred_adaptor, adaptor_instance))
                     continue
 
 
@@ -536,36 +530,38 @@ class Engine(object):
                 return cpi_instance
 
 
-            except SagaException as e :
+            except rse.SagaException as e :
                 # adaptor class initialization failed - try next one
                 exception._add_exception (e)
-                self._logger.info  ("bind_adaptor adaptor class ctor failed : %s.%s: %s" \
+                self._logger.info("adaptor ctor failed : %s.%s: %s"
                                  % (adaptor_name, cpi_class, str(e)))
                 continue
             except Exception as e :
-                exception._add_exception (NoSuccess (str(e), api_instance))
-                self._logger.info ("bind_adaptor adaptor class ctor failed : %s.%s: %s" \
-                                % (adaptor_name, cpi_class, str(e)))
+                exception._add_exception (rse.NoSuccess (str(e), api_instance))
+                self._logger.info("adaptor ctor failed : %s.%s: %s"
+                                 % (adaptor_name, cpi_class, str(e)))
                 continue
 
 
-        self._logger.error ("No suitable adaptor found for '%s' and URL scheme '%s'" %  (ctype, schema))
+        self._logger.error("No adaptor found for '%s' and URL scheme '%s'"
+                          % (ctype, schema))
         self._logger.info  ("%s" %  (str(exception)))
         raise exception._get_exception_stack ()
 
 
-    #-----------------------------------------------------------------
+    # -----------------------------------------------------------------
     #
     def loaded_adaptors (self):
         return self._adaptor_registry
 
 
-    #-----------------------------------------------------------------
+    # -----------------------------------------------------------------
     #
-    def _dump (self) :
+    def _dump(self):
+
+        import pprint
 
         print 'adaptors'
-        import pprint
         pprint.pprint (self._adaptor_registry)
 
 

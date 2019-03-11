@@ -86,8 +86,7 @@ class Adaptor(rsab.Base):
     def __init__(self) :
         rsab.Base.__init__(self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
 
-        self.cfg = self.get_config(_ADAPTOR_NAME)
-        self.pty_url = self.cfg['pty_url'].get_value()
+        self.pty_url = self._cfg['pty_url']
 
 
     def sanity_check(self):
@@ -161,7 +160,7 @@ class Adaptor(rsab.Base):
         elif mode == 'l':
             mode = 'link'
         else:
-            raise rse("stat() unknown mode: '%s' (%s)" % (mode, out))
+            raise rse.BadParameter("stat() unknown mode: '%s' (%s)" % (mode, out))
 
         size = int(size_str)
 
@@ -247,9 +246,9 @@ class Adaptor(rsab.Base):
         if npat:
             raise rse.NotImplemented("no pattern selection")
 
-        if isinstance(url, rse.directory.Directory):
+        if isinstance(url, api.Directory):
             url = url.get_url()
-        if isinstance(url, rse.file.File):
+        if isinstance(url, api.File):
             url = url.get_url()
 
         try:
@@ -353,7 +352,7 @@ class SRMDirectory (cpi.Directory):
             # open a shell
             self.shell = sups.PTYShell(self._adaptor.pty_url, self.session)
         except:
-            raise rse("Couldn't open shell (%s)" % self._adaptor.pty_url)
+            raise rse.BadParameter("Couldn't open shell (%s)" % self._adaptor.pty_url)
 
         #
         # Test for valid proxy
@@ -573,7 +572,7 @@ class SRMDirectory (cpi.Directory):
     def close(self, timeout=None):
 
         if timeout:
-            raise rse("timeout for close not supported")
+            raise rse.Timeout("timeout for close not supported")
 
 
 ######################################################################
@@ -614,7 +613,7 @@ class SRMFile(cpi.File):
             # open a shell
             self.shell = sups.PTYShell(self._adaptor.pty_url, self.session)
         except:
-            raise rse("Couldn't open shell")
+            raise rse.NoSuccess("Couldn't open shell")
 
         #
         # Test for valid proxy

@@ -257,7 +257,7 @@ setup_args = {
     'maintainer_email'   : 'radical@rutgers.edu',
     'url'                : 'http://radical-cybertools.github.io/radical.saga/',
     'license'            : 'MIT',
-    'keywords'           : 'radical utils',
+    'keywords'           : 'radical job saga',
     'classifiers'        : [
         'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Developers',
@@ -280,7 +280,7 @@ setup_args = {
     'package_data'       : {'': ['*.txt', '*.sh', '*.json', '*.gz',
                                  'VERSION', 'SDIST', sdist_name]},
     'setup_requires'     : ['pytest-runner'],
-    'install_requires'   : ['radical.utils',
+    'install_requires'   : ['radical.utils>=0.60',
                             'apache-libcloud', 
                             'parse'
                            ],

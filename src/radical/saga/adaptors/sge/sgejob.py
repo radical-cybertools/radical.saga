@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
-__author__    = "Andre Merzky, Christian P.-Llamas, Ole Weidner, Thomas Schatz, Alexander Grill"
+__author__    = "Andre Merzky, Christian P.-Llamas, Ole Weidner, " \
+                "Thomas Schatz, Alexander Grill"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
@@ -11,7 +12,6 @@ __license__   = "MIT"
 import re
 import os 
 import time
-import threading
 
 from cgi      import parse_qs
 from StringIO import StringIO
@@ -23,18 +23,20 @@ from ...              import exceptions as rse
 from ...              import utils      as rsu
 from ...utils         import pty_shell  as rsups
 from ...utils         import misc       as rsumisc
-from ...              import job        as api_job
+from ...              import job        as api
 from ...adaptors      import base       as a_base
-from ...adaptors.cpi  import job        as cpi_job
+from ...adaptors.cpi  import job        as cpi
 from ...adaptors.cpi  import decorators as cpi_decs
-from ...job           import.constants  as c
+from ...job           import constants  as c
 
 
 SYNC_CALL  = cpi_decs.SYNC_CALL
 ASYNC_CALL = cpi_decs.ASYNC_CALL
 
 
-_QSTAT_JOB_STATE_RE = re.compile(r"^([^ ]+) ([0-9]{2}/[0-9]{2}/[0-9]{4} [0-9]{2}:[0-9]{2}:[0-9]{2}) (.+)$")
+_QSTAT_JOB_STATE_RE = re.compile(
+    r"^([^ ]+) ([0-9]{2}/[0-9]{2}/[0-9]{4} [0-9]{2}:[0-9]{2}:[0-9]{2}) (.+)$")
+
 
 class SgeKeyValueParser(object):
     """
@@ -78,25 +80,35 @@ class SgeKeyValueParser(object):
 
             # check for multi-line options
             while len(line) > 0 and line[-1] == "\\":
-                line = line[:-1] + self.stream.readline().rstrip(" \n").lstrip(" ")
+                line = line[:-1] + self.stream.readline() \
+                                              .rstrip(" \n") \
+                                              .lstrip(" ")
 
             m = self.KEY_VALUE_RE.match(line)
             if m is not None:
+
                 key, value = m.groups()
-                if self.key_suffix is not None and key.endswith(self.key_suffix):
+
+                if  self.key_suffix is not None and \
+                    key.endswith(self.key_suffix):
                     key = key[:-len(self.key_suffix)]
-                if self.filter_keys is not None and key not in self.filter_keys:
-                    key = None # skip this pair
+
+                if  self.filter_keys is not None and \
+                    key not in self.filter_keys:
+                    key = None  # skip this pair
 
         return key, value
+
 
     def __iter__(self):
         return self
 
+
     def as_dict(self):
         """
         Parses the key-value pairs and return them as a dictionary.
-        :return: a dictionary containing key-value pairs parsed from a SGE command.
+        :return: a dictionary containing key-value pairs parsed from
+                 a SGE command.
         """
 
         d = dict()
@@ -105,11 +117,13 @@ class SgeKeyValueParser(object):
 
         return d
 
+
 # --------------------------------------------------------------------
 #
 def log_error_and_raise(message, exception, logger):
     logger.error(message)
     raise exception(message)
+
 
 # --------------------------------------------------------------------
 # some private defs
@@ -161,7 +175,8 @@ _ADAPTOR_DOC = {
     "capabilities":  _ADAPTOR_CAPABILITIES,
     "description":  """
 The SGE (Sun/Oracle Grid Engine) adaptor allows to run and manage jobs on
-`SGE <http://en.wikipedia.org/wiki/Oracle_Grid_Engine>`_ controlled HPC clusters.
+`SGE <http://en.wikipedia.org/wiki/Oracle_Grid_Engine>`_ controlled HPC
+clusters.
 """,
     "example": "examples/jobs/sgejob.py",
     "schemas": {"sge":        "connect to a local cluster",
@@ -177,16 +192,16 @@ _ADAPTOR_INFO = {
     "version"      : "v0.1",
     "schemas"      : _ADAPTOR_SCHEMAS,
     "capabilities" : _ADAPTOR_CAPABILITIES,
-    "cpis": [
-        {
-        "type": "radical.saga.job.Service",
-        "class": "SGEJobService"
-        },
-        {
-        "type": "radical.saga.job.Job",
-        "class": "SGEJob"
-        }
-    ]
+    "cpis"         : [
+                         {
+                             "type": "radical.saga.job.Service",
+                             "class": "SGEJobService"
+                         },
+                         {
+                             "type": "radical.saga.job.Job",
+                             "class": "SGEJob"
+                         }
+                     ]
 }
 
 
@@ -205,7 +220,7 @@ class Adaptor (a_base.Base):
         a_base.Base.__init__(self, _ADAPTOR_INFO)
 
         self.id_re = re.compile('^\[(.*)\]-\[(.*?)\]$')
-        self.epoch = datetime.datetime(1970,1,1)
+        self.epoch = datetime(1970,1,1)
 
         self.purge_on_start   = self._cfg['purge_on_start']
         self.purge_older_than = self._cfg['purge_older_than']
@@ -234,8 +249,8 @@ class Adaptor (a_base.Base):
 
 ###############################################################################
 #
-class SGEJobService (cpi_job.Service):
-    """ implements cpi_job.Service
+class SGEJobService (cpi.Service):
+    """ implements cpi.Service
     """
 
     # ----------------------------------------------------------------
@@ -348,7 +363,8 @@ class SGEJobService (cpi_job.Service):
                     version = out.strip().split('\n')[0]
 
                     # add path and version to the command dictionary
-                    self._commands[cmd] = {"path":    "unset GREP_OPTIONS; %s" % path,
+                    self._commands[cmd] = {"path"   : "unset GREP_OPTIONS; %s"
+                                                      % path,
                                            "version": version}
 
         self._logger.info("Found SGE tools: %s" % self._commands)
@@ -367,7 +383,8 @@ class SGEJobService (cpi_job.Service):
                 (self.pe_list))
 
         # find out mandatory and optional memory attributes 
-        ret, out, _ = self.shell.run_sync('%s -sc' % (self._commands['qconf']['path']))
+        ret, out, _ = self.shell.run_sync('%s -sc'
+                                         % (self._commands['qconf']['path']))
         if ret != 0:
             message = "Error running 'qconf': %s" % out
             log_error_and_raise(message, rse.NoSuccess, self._logger)
@@ -381,46 +398,61 @@ class SGEJobService (cpi_job.Service):
                         optional_attrs.append(name)
                     elif att_type == 'MEMORY' and requestable == 'FORCED':
                         mandatory_attrs.append(name)
-            self._logger.debug("Optional memory attributes: %s" % (optional_attrs))
-            self._logger.debug("Mandatory memory attributes: %s" % (mandatory_attrs))
+            self._logger.debug("Optional  memory attr: %s" % optional_attrs)
+            self._logger.debug("Mandatory memory attr: %s" % mandatory_attrs)
+
         # find out user specified memory attributes in job.Service URL
         if self.memreqs is None:
             flags = []
         else:
             flags, _ = self.__parse_memreqs(self.memreqs)
-        # if there are mandatory memory attributes store them and check that they were specified in the job.Service URL
+
+        # if there are mandatory memory attributes store them and check that
+        # they were specified in the job.Service URL
+
         if not (mandatory_attrs == []):
             self.mandatory_memreqs = mandatory_attrs
             missing_flags = []
             for attr in mandatory_attrs:
-                if not attr in flags:
+                if attr not in flags:
                     missing_flags.append(attr)
-            if not (missing_flags == []):
-                message = "The following memory attribute(s) are mandatory in your SGE environment and thus " \
-                          "must be specified in the job service URL: %s" % ' '.join(missing_flags)
+            if missing_flags:
+                message = "The following memory attribute(s) are mandatory " \
+                          "in your SGE environment and thus must be " \
+                          "specifiedin the job service URL: %s" \
+                          % ' '.join(missing_flags)
                 log_error_and_raise(message, rse.BadParameter, self._logger) 
-        # if memory attributes were specified in the job.Service URL, check that they correspond to existing optional or mandatory memory attributes
+
+        # if memory attributes were specified in the job.Service URL, check that
+        # they correspond to existing optional or mandatory memory attributes
+
         invalid_attrs = []
         for f in flags:
             if not (f in optional_attrs or f in mandatory_attrs):
                 invalid_attrs.append(f)
-        if not (invalid_attrs == []):
-            message = "The following memory attribute(s) were specified in the job.Service URL but are not valid " \
-                      "memory attributes in your SGE environment: %s" % ' '.join(invalid_attrs)
+
+        if invalid_attrs:
+            message = "The following memory attribute(s) were specified in " \
+                      "the job.Service URL but are not valid memory " \
+                      "attributes in your SGE environment: %s" \
+                      % ' '.join(invalid_attrs)
             log_error_and_raise(message, rse.BadParameter, self._logger)
 
         # check if accounting is activated
-        qres = self.__kvcmd_results('qconf', '-sconf', filter_keys=["reporting_params"])
-        self.accounting = "reporting_params" in qres and "accounting=true" in qres["reporting_params"]
-        self._logger.info("Accounting is %sabled" % ("en" if self.accounting else "dis"))
+        qres = self.__kvcmd_results('qconf', '-sconf',
+                                    filter_keys=["reporting_params"])
+        self.accounting = "reporting_params" in qres and \
+                          "accounting=true"  in qres["reporting_params"]
 
         # purge temporary files
         if self._adaptor.purge_on_start:
             cmd = "find " + self.temp_path + \
-                  " -type f -mtime +%d -print -delete | wc -l" % self._adaptor.purge_older_than
+                  " -type f -mtime +%d -print -delete | wc -l" \
+                  % self._adaptor.purge_older_than
             ret, out, _ = self.shell.run_sync(cmd)
             if ret == 0 and out != "0":
                 self._logger.info("Purged %s temporary files" % out)
+
 
     # ----------------------------------------------------------------
     #
@@ -428,6 +460,7 @@ class SGEJobService (cpi_job.Service):
         if  kill_shell :
             if  self.shell :
                 self.shell.finalize (True)
+
 
     # ----------------------------------------------------------------
     #
@@ -441,7 +474,9 @@ class SGEJobService (cpi_job.Service):
 
         try:
             if sge_state.startswith("d"):
-                # when a qdel is done the state is prefixed with a d while the termination signal is queued
+
+                # when a qdel is done the state is prefixed with a d while the
+                # termination signal is queued
                 sge_state = sge_state[1:]
 
             return {
@@ -461,7 +496,8 @@ class SGEJobService (cpi_job.Service):
 
     def __parse_memreqs(self, s):
         """
-        Simple parser for getting memory requirements flags and multipliers from the memreqs part of the job.Service url
+        Simple parser for getting memory requirements flags and multipliers
+        from the memreqs part of the job.Service url
         """
         flags = []
         multipliers = []
@@ -480,19 +516,24 @@ class SGEJobService (cpi_job.Service):
                 s = ''
             else:
                 flags.append(s[:pos])
-                s = s[pos+1:]
+                s = s[pos + 1:]
         return flags, multipliers
+
 
     def __kvcmd_results(self, cmd, cmd_args, *args, **kwargs):
         """
-        Runs a SGE command that returns key-value pairs as result and parses the results.
+        Runs a SGE command that returns key-value pairs as result and parses
+        the results.
+
         :param cmd: command alias
         :param cmd_args: command arguments
         :param args: parser arguments
         :param kwargs: parser keyword arguments
         :returns: a dictionary if succeeded or None otherwise
         """
-        ret, out, _ = self.shell.run_sync('%s %s' % (self._commands[cmd]['path'], cmd_args))
+
+        ret, out, _ = self.shell.run_sync(
+                              '%s %s' % (self._commands[cmd]['path'], cmd_args))
         if ret == 0:
             return SgeKeyValueParser(out, *args, **kwargs).as_dict()
         return None
@@ -504,20 +545,26 @@ class SGEJobService (cpi_job.Service):
         """
         # check if the path exists
         ret, out, _ = self.shell.run_sync(
-                        "(test -d %s && echo -n 0) || (mkdir -p %s && echo -n 1)" % (path, path))
+                       "(test -d %s && echo -n 0) || (mkdir -p %s && echo -n 1)"
+                       % (path, path))
 
         if ret == 0 and out == "1":
             self._logger.info("Remote directory created: %s" % path)
+
         elif ret != 0:
             # something went wrong
             message = "Couldn't create remote directory - %s" % (out)
             log_error_and_raise(message, rse.NoSuccess, self._logger)
 
     def __job_info_from_accounting(self, sge_job_id, max_retries=10):
-        """ Returns job information from the SGE accounting using qacct.
-        It may happen that when the job exits from the queue system the results in
-        the accounting database take some time to appear. To avoid premature failing
-        several tries can be done (up to a maximum) with delays of 1 second in between.
+        """
+        Returns job information from the SGE accounting using qacct.
+
+        It may happen that when the job exits from the queue system the results
+        in the accounting database take some time to appear. To avoid premature
+        failing several tries can be done (up to a maximum) with delays of
+        1 second in between.
+
         :param sge_job_id: SGE job id
         :param max_retries: The maximum number of retries in case qacct fails
         :return: job information dictionary
@@ -529,12 +576,13 @@ class SGEJobService (cpi_job.Service):
         while retries > 0:
             retries -= 1
 
-            qres = self.__kvcmd_results('qacct', "-j %s | grep -E '%s'" % (
-                                            sge_job_id, "jobname|hostname|qsub_time|start_time|end_time|exit_status|failed"))
+            qres = self.__kvcmd_results('qacct', "-j %s | grep -E '%s'"
+                                       % (sge_job_id,
+           "jobname|hostname|qsub_time|start_time|end_time|exit_status|failed"))
 
             if not qres and retries > 0:
-                # sometimes there is a lapse between the job exits from the queue and
-                # its information enters in the accounting database
+                # sometimes there is a lapse between the job exits from the
+                # queue and its information enters in the accounting database
                 # let's run qacct again after a delay
                 time.sleep(1)
                 continue
@@ -568,11 +616,13 @@ class SGEJobService (cpi_job.Service):
     def __remote_job_info_path(self, sge_job_id="$JOB_ID"):
         """
         Returns the path of the remote job info file.
-        :param sge_job_id: the SGE job id, if omitted an enviroment variable representing the job id will be used.
-        :return: path to the remote job info file
+        param sge_job_id: the SGE job id, if omitted an enviroment variable
+                           representing the job id will be used.
+        return: path to the remote job info file
         """
 
         return "%s/%s" % (self.temp_path, sge_job_id)
+
 
     def __clean_remote_job_info(self, sge_job_id):
         """
@@ -585,9 +635,10 @@ class SGEJobService (cpi_job.Service):
         if ret != 0:
             self._logger.debug("Remote job info couldn't be removed: %s" % path)
 
+
     def __get_remote_job_info(self, sge_job_id):
         """
-        Obtains the job info from a temporary remote file created by the qsub script.
+        Obtains job info from temporary remote file created by the qsub script.
         :param sge_job_id: the SGE job id
         :return: a dictionary with the job info
         """
@@ -630,7 +681,8 @@ class SGEJobService (cpi_job.Service):
         sge_params += ["#$ -V"]
 
         if jd.environment is not None and len(jd.environment) > 0:
-            env_list = ",".join(["%s=%s" % (key, value) for key, value in jd.environment.items()])
+            env_list = ",".join(["%s=%s" % (key, value) for key, value
+                                                     in jd.environment.items()])
             sge_params += ["#$ -v %s" % env_list]
 
         if jd.working_directory is not None:
@@ -666,26 +718,30 @@ class SGEJobService (cpi_job.Service):
             # that can control this. Yes, ugly and not very saga-ish, but
             # the only way to do this, IMHO...
             if self.memreqs is None:
-                raise Exception("When using 'total_physical_memory' with the SGE adaptor, the query parameters "
-                                "of the job.Service URL must define the attributes used by your particular instance "
-                                "of SGE to control memory allocation.\n"
-                                "'virtual_free', 'h_vmem' or 'mem_req' are commonly encountered examples of "
-                                "such attributes.\n"
-                                "A valid job.Service URL could be for instance:\n"
-                                "'sge+ssh://myserver.edu?memreqs=virtual_free~1.5h_vmem'\n"
-                                "here the attribute 'virtual_free' would be set to 'total_physical_memory' and "
-                                "the attribute 'h_vmem' would be set to 1.5*'total_physical_memory', "
-                                "'~' is used as a separator.")
+                raise Exception("""
+When using 'total_physical_memory' with the SGE adaptor, the query parameters of
+the job.Service URL must define the attributes used by your particular instance
+of SGE to control memory allocation.  'virtual_free', 'h_vmem' or 'mem_req' are
+commonly encountered examples of such attributes.
+A valid job.Service URL could be for instance:
+
+    'sge+ssh://myserver.edu?memreqs=virtual_free~1.5h_vmem'
+
+here the attribute 'virtual_free' would be set to 'total_physical_memory' and
+the attribute 'h_vmem' would be set to 1.5*'total_physical_memory' '~' is used
+as a separator.
+""")
 
             flags, multipliers = self.__parse_memreqs(self.memreqs)
             for flag, mult in zip(flags, multipliers):
-                sge_params += ["#$ -l %s=%sm" % (flag, int(round(mult * int(jd.total_physical_memory))))]
+                sge_params += ["#$ -l %s=%sm" % (flag,
+                            int(round(mult * int(jd.total_physical_memory))))]
 
         # check spmd variation. this translates to the SGE qsub -pe flag.
         if jd.spmd_variation is not None:
             if jd.spmd_variation not in self.pe_list:
-                raise Exception("'%s' is not a valid option for jd.spmd_variation. "
-                                "Valid options are: %s" % (jd.spmd_variation, self.pe_list))
+                raise Exception("'%s' is not valid for jd.spmd_variation. "
+                      "Valid are: %s" % (jd.spmd_variation, self.pe_list))
 
             # if no cores are requested at all, we default to 1
 
@@ -699,11 +755,13 @@ class SGEJobService (cpi_job.Service):
             #if int(jd.total_cpu_count) % int(ppn) != 0:
             #    count = count + 1
             #count = count * int(ppn)
-            sge_params += ["#$ -pe %s %s" % (jd.spmd_variation, jd.total_cpu_count or 1)]
+            sge_params += ["#$ -pe %s %s" % (jd.spmd_variation,
+                                             jd.total_cpu_count or 1)]
 
         elif jd.total_cpu_count is not None and jd.total_cpu_count > 1:
-                raise Exception("jd.total_cpu_count requires that jd.spmd_variation is not empty. "
-                                "Valid options for jd.spmd_variation are: %s" % (self.pe_list))
+                raise Exception("jd.total_cpu_count requires that "
+                                "jd.spmd_variation is not empty. "
+                                "Valid are: %s" % (self.pe_list))
 
 
         # CANDEIDATE_HOSTS - this translates to 'qsub -l h="host1|host2|..."'
@@ -722,15 +780,18 @@ class SGEJobService (cpi_job.Service):
             'function aborted() {',
             '  echo Aborted with signal $1.',
             '  echo "signal: $1" >>%s' % job_info_path,
-            '  echo "end_time: $(LC_ALL=en_US.utf8 date \'+%%s\')" >>%s' % job_info_path,
+            '  echo "end_time: $(LC_ALL=en_US.utf8 date \'+%%s\')" >>%s' 
+                    % job_info_path,
             '  exit -1',
             '}',
             'mkdir -p %s' % self.temp_path,
-            'for sig in SIGHUP SIGINT SIGQUIT SIGTERM SIGUSR1 SIGUSR2; do trap "aborted $sig" $sig; done',
+            'for sig in SIGHUP SIGINT SIGQUIT SIGTERM SIGUSR1 SIGUSR2;'
+            '    do trap "aborted $sig" $sig; done',
             'echo "hostname: $HOSTNAME" >%s' % job_info_path,
             'echo "jobname: %s" >>%s' % (jd.name, job_info_path),
             'echo "qsub_time: %s" >>%s' % (time.time(), job_info_path),
-            'echo "start_time: $(LC_ALL=en_US.utf8 date \'+%%s\')" >>%s' % job_info_path
+            'echo "start_time: $(LC_ALL=en_US.utf8 date \'+%%s\')" >>%s'
+                   % job_info_path
         ]
 
         exec_n_args = None
@@ -740,14 +801,15 @@ class SGEJobService (cpi_job.Service):
                 exec_n_args += " %s" % " ".join(jd.arguments)
 
         elif jd.arguments is not None:
-            raise Exception("jd.arguments defined without jd.executable being defined")
+            raise Exception("jd.arguments defined without jd.executable")
 
         if exec_n_args is not None:
             script_body += [exec_n_args]
 
         script_body += [
             'echo "exit_status: $?" >>%s' % job_info_path,
-            'echo "end_time: $(LC_ALL=en_US.utf8 date \'+%%s\')" >>%s' % job_info_path
+            'echo "end_time: $(LC_ALL=en_US.utf8 date \'+%%s\')" >>%s'
+                  % job_info_path
         ]
 
         # convert exec and args into an string and
@@ -770,21 +832,25 @@ class SGEJobService (cpi_job.Service):
         Runs a job via qsub
         """
 
-        if self.queue is not None and jd.queue is not None and self.queue != jd.queue:
-            self._logger.warning("Job service was instantiated explicitly with 'queue=%s', "
-                                "but job description tries to a different queue: '%s'. Using '%s'." % (
-                                    self.queue, jd.queue, self.queue))
+        if self.queue and jd.queue and self.queue != jd.queue:
+            self._logger.warning("Job service has explicit 'queue=%s', "
+                                 "but job description uses queue: '%s'. "
+                                 "Using '%s'."
+                                 % (self.queue, jd.queue, self.queue))
 
-        # In SGE environments with mandatory memory attributes, 'total_physical_memory' must be specified        
-        if len(self.mandatory_memreqs) != 0 and jd.total_physical_memory is None:
-            log_error_and_raise("Your SGE environments has mandatory memory attributes, so 'total_physical_memory' "
-                                "must be specified in your job descriptor", rse.BadParameter, self._logger)
+        # In SGE environments with mandatory memory attributes,
+        # 'total_physical_memory' must be specified        
+        if self.mandatory_memreqs and jd.total_physical_memory is None:
+            log_error_and_raise("Your SGE environments has mandatory memory "
+                                "attributes, so 'total_physical_memory' "
+                                "must be specified in your job descriptor",
+                                rse.BadParameter, self._logger)
 
         try:
             # create a SGE job script from SAGA job description
             script = self.__generate_qsub_script(jd)
-
             self._logger.info("Generated SGE script: %s" % script)
+
         except Exception, ex:
             log_error_and_raise(str(ex), rse.BadParameter, self._logger)
 
@@ -804,14 +870,19 @@ class SGEJobService (cpi_job.Service):
         # Now we want to execute the script. This process consists of two steps:
         # (1) we create a temporary file with 'mktemp' and write the contents of 
         #     the generated PBS script into it
-        # (2) we call 'qsub <tmpfile>' to submit the script to the queueing system
-        cmdline = """SCRIPTFILE=`mktemp -t SAGA-Python-SGEJobScript.XXXXXX` &&  echo "%s" > $SCRIPTFILE && %s -notify $SCRIPTFILE && rm -f $SCRIPTFILE""" %  (script, self._commands['qsub']['path'])
-        #cmdline = 'echo "%s" | %s -notify' % (script, self._commands['qsub']['path'])
+        # (2) we call 'qsub <tmpfile>' to submit the script to the queueing
+        #     system
+        cmdline = 'SCRIPTFILE=`mktemp -t SAGA-Python-SGEJobScript.XXXXXX` ' \
+                  ' && echo "%s" > $SCRIPTFILE ' \
+                  ' && %s -notify $SCRIPTFILE ' \
+                  ' && rm -f $SCRIPTFILE' \
+                  %  (script, self._commands['qsub']['path'])
+
         ret, out, _ = self.shell.run_sync(cmdline)
 
         if ret != 0:
             # something went wrong
-            message = "Error running job via 'qsub': %s. Commandline was: %s" % (out, cmdline)
+            message = "Error running qsub: %s [%s]" % (out, cmdline)
             log_error_and_raise(message, rse.NoSuccess, self._logger)
 
         # stdout contains the job id:
@@ -853,8 +924,8 @@ class SGEJobService (cpi_job.Service):
 
         # check the state of the job
         ret, out, _ = self.shell.run_sync(
-                        "%s | tail -n+3 | awk '($1==%s) {{print $5,$6,$7,$8}}'" % (
-                            self._commands['qstat']['path'], pid))
+                    "%s | tail -n+3 | awk '($1==%s) {{print $5,$6,$7,$8}}'" % (
+                    self._commands['qstat']['path'], pid))
 
         out = out.strip()
 
@@ -869,7 +940,7 @@ class SGEJobService (cpi_job.Service):
             m = _QSTAT_JOB_STATE_RE.match(out)
             if not m:  
                 # something wrong with the result of qstat
-                message = "Unexpected qstat results retrieving job info:\n%s" % out.rstrip()
+                message = "Unexpected qstat results:\n%s" % out.rstrip()
                 log_error_and_raise(message, rse.NoSuccess, self._logger)
 
             state, start_time, queue = m.groups()
@@ -894,11 +965,11 @@ class SGEJobService (cpi_job.Service):
             if self.accounting and state == "Eqw": 
                 job_info = self.__job_info_from_accounting(pid)
                 # TODO remove the job from the queue ?
-                # self.__shell_run("%s %s" % (self._commands['qdel']['path'], pid))
 
             if job_info is None: # use qstat -j pid
-                qres = self.__kvcmd_results('qstat', "-j %s | grep -E 'job_name|submission_time|sge_o_host'" % pid,
-                                            key_suffix=":")
+                qres = self.__kvcmd_results(
+                'qstat', "-j %s | grep -E 'job_name|submission_time|sge_o_host'"
+                % pid, key_suffix=":")
 
                 if qres is not None:
 
@@ -907,9 +978,11 @@ class SGEJobService (cpi_job.Service):
                     # submission_time:            Mon Jun 24 17:24:43 2013
                     # sge_o_host:                 sge
 
-                    job_info = {'state'       : self.__sge_to_saga_jobstate(state),
+                    state = self.__sge_to_saga_jobstate(state)
+                    host  = exec_host or qres.get("sge_o_host")
+                    job_info = {'state'       : state,
                                 'name'        : qres.get("job_name"),
-                                'exec_hosts'  : exec_host or qres.get("sge_o_host"),
+                                'exec_hosts'  : host,
                                 'returncode'  : None,
                                 'create_time' : qres.get("submission_time"),
                                 'start_time'  : start_time,
@@ -931,10 +1004,13 @@ class SGEJobService (cpi_job.Service):
             message = "Couldn't reconnect to job '%s'" % job_id
             log_error_and_raise(message, rse.NoSuccess, self._logger)
 
-        self._logger.debug("job_info(%s)=[%s]" % (pid, ", ".join(["%s=%s" % (k, str(job_info[k])) for k in [
-                "name", "state", "returncode", "exec_hosts", "create_time", "start_time", "end_time", "gone"]])))
-
+        elems = ["name", "state", "returncode", "exec_hosts", "create_time",
+                 "start_time", "end_time", "gone"]
+        self._logger.debug("job_info(%s)=[%s]"
+                % (pid, ", ".join(["%s=%s" % (k, str(job_info[k]))
+                                           for k in elems])))
         return job_info
+
 
     # ----------------------------------------------------------------
     #
@@ -971,6 +1047,7 @@ class SGEJobService (cpi_job.Service):
         self.jobs[job_id] = curr_info
         return curr_info
 
+
     # ----------------------------------------------------------------
     #
     def _job_get_state(self, job_id):
@@ -985,6 +1062,7 @@ class SGEJobService (cpi_job.Service):
             self.jobs[job_id] = self._job_get_info(job_id=job_id)
 
         return self.jobs[job_id]['state']
+
 
     # ----------------------------------------------------------------
     #
@@ -1002,6 +1080,7 @@ class SGEJobService (cpi_job.Service):
         if ret == None : return None
         else           : return int(ret)
 
+
     # ----------------------------------------------------------------
     #
     def _job_get_execution_hosts(self, job_id):
@@ -1013,6 +1092,7 @@ class SGEJobService (cpi_job.Service):
             self.jobs[job_id] = self._job_get_info(job_id=job_id)
 
         return self.jobs[job_id]['exec_hosts']
+
 
     # ----------------------------------------------------------------
     #
@@ -1027,6 +1107,7 @@ class SGEJobService (cpi_job.Service):
         # FIXME: convert to EOPCH
         return self.jobs[job_id]['create_time']
 
+
     # ----------------------------------------------------------------
     #
     def _job_get_start_time(self, job_id):
@@ -1039,6 +1120,7 @@ class SGEJobService (cpi_job.Service):
 
         return self.jobs[job_id]['start_time']
 
+
     # ----------------------------------------------------------------
     #
     def _job_get_end_time(self, job_id):
@@ -1050,6 +1132,7 @@ class SGEJobService (cpi_job.Service):
             self.jobs[job_id] = self._job_get_info(job_id=job_id)
 
         return self.jobs[job_id]['end_time']
+
 
     # ----------------------------------------------------------------
     #
@@ -1070,6 +1153,7 @@ class SGEJobService (cpi_job.Service):
         # assume the job was succesfully canceld
         self.jobs[job_id]['state'] = c.CANCELED
 
+
     # ----------------------------------------------------------------
     #
     def _job_wait(self, job_id, timeout):
@@ -1084,7 +1168,8 @@ class SGEJobService (cpi_job.Service):
             state = self._job_get_state(job_id=job_id)
 
             if state == c.UNKNOWN :
-                log_error_and_raise("cannot get job state", rse.IncorrectState, self._logger)
+                log_error_and_raise("cannot get job state",
+                                    rse.IncorrectState, self._logger)
 
             if state in c.FINAL:
                 self.__clean_remote_job_info(pid)
@@ -1098,11 +1183,12 @@ class SGEJobService (cpi_job.Service):
                 if time_now - time_start > timeout:
                     return False
 
+
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
     def create_job(self, jd):
-        """ implements cpi_job.Service.get_url()
+        """ implements cpi.Service.get_url()
         """
         # this dict is passed on to the job adaptor class -- use it to pass any
         # state information you need there.
@@ -1112,14 +1198,15 @@ class SGEJobService (cpi_job.Service):
                          "reconnect":       False
                         }
 
-        return api_job.Job(_adaptor=self._adaptor,
-                            _adaptor_state=adaptor_state)
+        return api.Job(_adaptor=self._adaptor,
+                       _adaptor_state=adaptor_state)
+
 
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
     def get_job(self, jobid):
-        """ Implements cpi_job.Service.get_job()
+        """ Implements cpi.Service.get_job()
         """
 
         # try to get some information about this job
@@ -1132,39 +1219,45 @@ class SGEJobService (cpi_job.Service):
         # state information you need there.
         adaptor_state = {"job_service":     self,
                          # TODO: fill job description
-                         "job_description": api_job.Description(),
+                         "job_description": api.Description(),
                          "job_schema":      self.rm.schema,
                          "reconnect":       True,
                          "reconnect_jobid": jobid
                         }
 
-        return api_job.Job(_adaptor=self._adaptor,
-                            _adaptor_state=adaptor_state)
+        return api.Job(_adaptor=self._adaptor,
+                       _adaptor_state=adaptor_state)
+
 
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
     def get_url(self):
-        """ implements cpi_job.Service.get_url()
+        """ implements cpi.Service.get_url()
         """
         return self.rm
+
 
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
     def list(self):
-        """ implements cpi_job.Service.list()
+        """ implements cpi.Service.list()
         """
         ids = []
 
-        ret, out, _ = self.shell.run_sync("unset GREP_OPTIONS; %s | grep `whoami`"\
-            % self._commands['qstat']['path'])
+        ret, out, _ = self.shell.run_sync(
+                           "unset GREP_OPTIONS; %s | grep `whoami`"
+                           % self._commands['qstat']['path'])
+
         if ret != 0 and len(out) > 0:
             message = "Failed to list jobs via 'qstat': %s" % out
             log_error_and_raise(message, rse.NoSuccess, self._logger)
+
         elif ret != 0 and len(out) == 0:
             # qstat | grep `whoami` exits with 1 if the list is empty
             pass
+
         else:
             for line in out.split("\n"):
                 if len(line.split()) > 1:
@@ -1172,6 +1265,7 @@ class SGEJobService (cpi_job.Service):
                     ids.append(jobid)
 
         return ids
+
 
   # # ----------------------------------------------------------------
   # #
@@ -1200,8 +1294,8 @@ class SGEJobService (cpi_job.Service):
 
 ###############################################################################
 #
-class SGEJob (cpi_job.Job):
-    """ implements cpi_job.Job
+class SGEJob (cpi.Job):
+    """ implements cpi.Job
     """
 
     def __init__(self, api, adaptor):
@@ -1212,9 +1306,9 @@ class SGEJob (cpi_job.Job):
 
     @SYNC_CALL
     def init_instance(self, job_info):
-        """ implements cpi_job.Job.init_instance()
+        """ implements cpi.Job.init_instance()
         """
-        # init_instance is called for every new api_job.Job object
+        # init_instance is called for every new api.Job object
         # that is created
         self.jd = job_info["job_description"]
         self.js = job_info["job_service"]
@@ -1240,11 +1334,11 @@ class SGEJob (cpi_job.Job):
     #
     @SYNC_CALL
     def get_state(self):
-        """ implements cpi_job.Job.get_state()
+        """ implements cpi.Job.get_state()
         """
         if self._started is False:
             # jobs that are not started are always in 'NEW' state
-            return NEW
+            return api.NEW
         else:
             return self.js._job_get_state(self._id)
 
@@ -1252,7 +1346,7 @@ class SGEJob (cpi_job.Job):
     #
     @SYNC_CALL
     def wait(self, timeout):
-        """ implements cpi_job.Job.wait()
+        """ implements cpi.Job.wait()
         """
         if self._started is False:
             log_error_and_raise("Can't wait for job that hasn't been started",
@@ -1264,7 +1358,7 @@ class SGEJob (cpi_job.Job):
     #
     @SYNC_CALL
     def cancel(self, timeout):
-        """ implements cpi_job.Job.cancel()
+        """ implements cpi.Job.cancel()
         """
         if self._started is False:
             log_error_and_raise("Can't wait for job that hasn't been started",
@@ -1276,7 +1370,7 @@ class SGEJob (cpi_job.Job):
     #
     @SYNC_CALL
     def run(self):
-        """ implements cpi_job.Job.run()
+        """ implements cpi.Job.run()
         """
         self._id = self.js._job_run(self.jd)
         self._started = True
@@ -1285,7 +1379,7 @@ class SGEJob (cpi_job.Job):
     #
     @SYNC_CALL
     def get_service_url(self):
-        """ implements cpi_job.Job.get_service_url()
+        """ implements cpi.Job.get_service_url()
         """
         return self.js.rm
 
@@ -1293,7 +1387,7 @@ class SGEJob (cpi_job.Job):
     #
     @SYNC_CALL
     def get_id(self):
-        """ implements cpi_job.Job.get_id()
+        """ implements cpi.Job.get_id()
         """
         return self._id
 
@@ -1301,14 +1395,14 @@ class SGEJob (cpi_job.Job):
     #
     @SYNC_CALL
     def get_name (self):
-        """ Implements cpi_job.Job.get_name() """
+        """ Implements cpi.Job.get_name() """
         return self._name
 
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
     def get_exit_code(self):
-        """ implements cpi_job.Job.get_exit_code()
+        """ implements cpi.Job.get_exit_code()
         """
         if self._started is False:
             return None
@@ -1319,7 +1413,7 @@ class SGEJob (cpi_job.Job):
     #
     @SYNC_CALL
     def get_created(self):
-        """ implements cpi_job.Job.get_created()
+        """ implements cpi.Job.get_created()
         """
         if self._started is False:
             return None
@@ -1330,7 +1424,7 @@ class SGEJob (cpi_job.Job):
     #
     @SYNC_CALL
     def get_started(self):
-        """ implements cpi_job.Job.get_started()
+        """ implements cpi.Job.get_started()
         """
         if self._started is False:
             return None
@@ -1341,7 +1435,7 @@ class SGEJob (cpi_job.Job):
     #
     @SYNC_CALL
     def get_finished(self):
-        """ implements cpi_job.Job.get_finished()
+        """ implements cpi.Job.get_finished()
         """
         if self._started is False:
             return None
@@ -1352,10 +1446,13 @@ class SGEJob (cpi_job.Job):
     #
     @SYNC_CALL
     def get_execution_hosts(self):
-        """ implements cpi_job.Job.get_execution_hosts()
+        """ implements cpi.Job.get_execution_hosts()
         """
         if self._started is False:
             return None
         else:
             return self.js._job_get_execution_hosts(self._id)
+
+
+# ------------------------------------------------------------------------------
 

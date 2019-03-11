@@ -18,12 +18,11 @@ from cgi import parse_qs
 
 import radical.utils as ru
 
-from ...exceptions    import *
+from ...              import exceptions as rse
 from ...utils         import pty_shell  as rsups
-from ...              import job        as api_job
-from ...job.constants import *
+from ...              import job        as api
 from ..               import base       as a_base
-from ..cpi            import job        as cpi_job
+from ..cpi            import job        as cpi
 from ..cpi            import decorators as cpi_decs
 
 
@@ -73,7 +72,7 @@ class _job_state_monitor(threading.Thread):
                     # we only need to monitor jobs that are not in a
                     # terminal state, so we can skip the ones that are 
                     # either done, failed or canceled
-                    if  job_info['state'] not in FINAL:
+                    if  job_info['state'] not in api.FINAL:
 
                         # Store the current state since the current state 
                         # variable is updated when _job_get_info is called
@@ -143,20 +142,20 @@ def _to_saga_jobstate(job_state, retcode, logger=None):
     ret = None
 
     if   job_state == 'C':     # Torque
-        if retcode ==  0 : ret = DONE
-        else             : ret = FAILED
+        if retcode ==  0 : ret = api.DONE
+        else             : ret = api.FAILED
     elif job_state == 'F':     # PBSPro
-        if retcode ==  0 : ret = DONE
-        else             : ret = FAILED
-    elif job_state == 'H': ret = PENDING
-    elif job_state == 'Q': ret = PENDING
-    elif job_state == 'S': ret = PENDING
-    elif job_state == 'W': ret = PENDING
-    elif job_state == 'R': ret = RUNNING
-    elif job_state == 'E': ret = RUNNING
-    elif job_state == 'T': ret = RUNNING
-    elif job_state == 'X': ret = CANCELED
-    else                 : ret = UNKNOWN
+        if retcode ==  0 : ret = api.DONE
+        else             : ret = api.FAILED
+    elif job_state == 'H': ret = api.PENDING
+    elif job_state == 'Q': ret = api.PENDING
+    elif job_state == 'S': ret = api.PENDING
+    elif job_state == 'W': ret = api.PENDING
+    elif job_state == 'R': ret = api.RUNNING
+    elif job_state == 'E': ret = api.RUNNING
+    elif job_state == 'T': ret = api.RUNNING
+    elif job_state == 'X': ret = api.CANCELED
+    else                 : ret = api.UNKNOWN
 
     logger.debug('check state: %s', job_state)
     logger.debug('use   state: %s', ret)
@@ -280,7 +279,7 @@ def _script_generator(url, logger, jd, ppn, gres, version, is_cray=False,
         elif len(jd.candidate_hosts) == 1:
             queue_spec += '@%s' % jd.candidate_hosts[0]
         else:
-            raise saga.NotImplemented("unsupported candidate_hosts [%s]"
+            raise rse.NotImplemented("unsupported candidate_hosts [%s]"
                                       % jd.candidate_hosts)
 
     if queue_spec:
@@ -324,7 +323,7 @@ def _script_generator(url, logger, jd, ppn, gres, version, is_cray=False,
         if 'BIG_FLASH' in jd.candidate_hosts:
             node_properties.append('bigflash')
         else:
-            raise NotImplemented("This type of 'candidate_hosts' not implemented: '%s'" % jd.candidate_hosts)
+            raise rse.NotImplemented("This type of 'candidate_hosts' not implemented: '%s'" % jd.candidate_hosts)
 
     # If we want just a slice of one node
     if jd.total_cpu_count < ppn:
@@ -340,17 +339,17 @@ def _script_generator(url, logger, jd, ppn, gres, version, is_cray=False,
     #       different flags. A complete nightmare...
     #       The more we add, the more it screams for a refactoring
     if   is_cheyenne                     : pbs_params += "#PBS -l select=%d:ncpus=%d\n" % (nnodes, 36)           # cheyenne, ppn=36
-    elif 'PBSPro_10'       in pbs_version: pbs_params += "#PBS -l mppwidth=%s \n"       % jd.total_cpu_count     # hopper
-    elif 'PBSPro_12'       in pbs_version: pbs_params += "#PBS -l select=%d\n"          % nnodes                 # pbspro 12, archer
-    elif 'PBSPro_13'       in pbs_version: pbs_params += "#PBS -l select=%d\n"          % nnodes                 # pbspro 13
-    elif '4.2.6'           in pbs_version: pbs_params += "#PBS -l nodes=%d\n"           % nnodes                 # titan
-    elif '4.2.7'           in pbs_version: pbs_params += "#PBS -l mppwidth=%s \n"       % jd.total_cpu_count     # edison, hopper
-    elif 'Version: 5.'     in pbs_version: pbs_params += "#PBS -l procs=%d\n"           % jd.total_cpu_count     # torqye 5
-    elif 'version: 2.3.13' in pbs_version: pbs_params += "#PBS -l ncpus=%d\n"           % ncpus                  # blacklight
-    elif '14.2'            in pbs_version: pbs_params += "#PBS -l select=%d:ncpus=%d\n" % (nnodes, ppn)          # pbspro 14
-    elif is_cray                         : pbs_params += "#PBS -l size=%s\n"            % jd.total_cpu_count     # kraken, jaguar
-    else                                 : pbs_params += "#PBS -l nodes=%d:ppn=%d%s\n"  % (nnodes, ppn,          # default
-                                           ''.join([':%s' % prop for prop in node_properties]))
+    elif 'PBSPro_10'       in version: pbs_params += "#PBS -l mppwidth=%s \n"       % jd.total_cpu_count     # hopper
+    elif 'PBSPro_12'       in version: pbs_params += "#PBS -l select=%d\n"          % nnodes                 # pbspro 12, archer
+    elif 'PBSPro_13'       in version: pbs_params += "#PBS -l select=%d\n"          % nnodes                 # pbspro 13
+    elif '4.2.6'           in version: pbs_params += "#PBS -l nodes=%d\n"           % nnodes                 # titan
+    elif '4.2.7'           in version: pbs_params += "#PBS -l mppwidth=%s \n"       % jd.total_cpu_count     # edison, hopper
+    elif 'Version: 5.'     in version: pbs_params += "#PBS -l procs=%d\n"           % jd.total_cpu_count     # torqye 5
+    elif 'version: 2.3.13' in version: pbs_params += "#PBS -l ncpus=%d\n"           % ncpus                  # blacklight
+    elif '14.2'            in version: pbs_params += "#PBS -l select=%d:ncpus=%d\n" % (nnodes, ppn)          # pbspro 14
+    elif is_cray                     : pbs_params += "#PBS -l size=%s\n"            % jd.total_cpu_count     # kraken, jaguar
+    else                             : pbs_params += "#PBS -l nodes=%d:ppn=%d%s\n"  % (nnodes, ppn,          # default
+                                       ''.join([':%s' % prop for prop in node_properties]))
 
     # Process Generic Resource specification request
     if gres:
@@ -384,29 +383,29 @@ _ADAPTOR_OPTIONS       = []
 # the adaptor capabilities & supported attributes
 #
 _ADAPTOR_CAPABILITIES = {
-    "jdes_attributes":   [NAME,
-                          EXECUTABLE,
-                          ARGUMENTS,
-                          CANDIDATE_HOSTS,
-                          ENVIRONMENT,
-                          INPUT,
-                          OUTPUT,
-                          ERROR,
-                          QUEUE,
-                          PROJECT,
-                          WALL_TIME_LIMIT,
-                          WORKING_DIRECTORY,
-                          WALL_TIME_LIMIT,
-                          SPMD_VARIATION, # TODO: 'hot'-fix for BigJob
-                          PROCESSES_PER_HOST,
-                          TOTAL_CPU_COUNT],
-    "job_attributes":    [EXIT_CODE,
-                          EXECUTION_HOSTS,
-                          CREATED,
-                          STARTED,
-                          FINISHED],
-    "metrics":           [STATE],
-    "callbacks":         [STATE],
+    "jdes_attributes":   [api.NAME,
+                          api.EXECUTABLE,
+                          api.ARGUMENTS,
+                          api.CANDIDATE_HOSTS,
+                          api.ENVIRONMENT,
+                          api.INPUT,
+                          api.OUTPUT,
+                          api.ERROR,
+                          api.QUEUE,
+                          api.PROJECT,
+                          api.WALL_TIME_LIMIT,
+                          api.WORKING_DIRECTORY,
+                          api.WALL_TIME_LIMIT,
+                          api.SPMD_VARIATION, 
+                          api.PROCESSES_PER_HOST,
+                          api.TOTAL_CPU_COUNT],
+    "job_attributes":    [api.EXIT_CODE,
+                          api.EXECUTION_HOSTS,
+                          api.CREATED,
+                          api.STARTED,
+                          api.FINISHED],
+    "metrics":           [api.STATE],
+    "callbacks":         [api.STATE],
     "contexts":          {"ssh": "SSH public/private keypair",
                           "x509": "GSISSH X509 proxy context",
                           "userpass": "username/password pair (ssh)"}
@@ -484,15 +483,15 @@ class Adaptor (a_base.Base):
         match = self.id_re.match(id)
 
         if not match or len(match.groups()) != 2:
-            raise BadParameter("Cannot parse job id '%s'" % id)
+            raise rse.BadParameter("Cannot parse job id '%s'" % id)
 
         return (match.group(1), match.group(2))
 
 
 ###############################################################################
 #
-class PBSProJobService (cpi_job.Service):
-    """ implements cpi_job.Service
+class PBSProJobService (cpi.Service):
+    """ implements cpi.Service
     """
 
     # ----------------------------------------------------------------
@@ -598,7 +597,7 @@ class PBSProJobService (cpi_job.Service):
             ret, out, _ = self.shell.run_sync("which %s " % cmd)
             if ret != 0:
                 message = "Error finding PBS tools: %s" % out
-                log_error_and_raise(message, NoSuccess, self._logger)
+                log_error_and_raise(message, rse.NoSuccess, self._logger)
 
             else:
                 path = out.strip()  # strip removes newline
@@ -609,7 +608,7 @@ class PBSProJobService (cpi_job.Service):
                     ret, out, _ = self.shell.run_sync("%s --version" % cmd)
                     if ret != 0:
                         message = "Error finding PBS tools: %s" % out
-                        log_error_and_raise(message, NoSuccess,
+                        log_error_and_raise(message, rse.NoSuccess,
                             self._logger)
                     else:
                         # version is reported as: "version: x.y.z"
@@ -656,7 +655,7 @@ class PBSProJobService (cpi_job.Service):
 
         if ret != 0:
             message = "Error running pbsnodes: %s" % out
-            log_error_and_raise(message, NoSuccess, self._logger)
+            log_error_and_raise(message, rse.NoSuccess, self._logger)
         else:
             # this is black magic. we just assume that the highest occurrence
             # of a specific np is the number of processors (cores) per compute
@@ -706,7 +705,7 @@ class PBSProJobService (cpi_job.Service):
 
             self._logger.info("Generated PBS script: %s" % script)
         except Exception, ex:
-            log_error_and_raise(str(ex), BadParameter, self._logger)
+            log_error_and_raise(str(ex), rse.BadParameter, self._logger)
 
         # try to create the working directory (if defined)
         # WARNING: this assumes a shared filesystem between login node and
@@ -717,7 +716,7 @@ class PBSProJobService (cpi_job.Service):
             if ret != 0:
                 # something went wrong
                 message = "Couldn't create working directory - %s" % (out)
-                log_error_and_raise(message, NoSuccess, self._logger)
+                log_error_and_raise(message, rse.NoSuccess, self._logger)
 
         # Now we want to execute the script. This process consists of two steps:
         # (1) we create a temporary file with 'mktemp' and write the contents of 
@@ -735,7 +734,7 @@ class PBSProJobService (cpi_job.Service):
         if ret != 0:
             # something went wrong
             message = "Error running 'qsub': %s [%s]" % (out, cmdline)
-            log_error_and_raise(message, saga.NoSuccess, self._logger)
+            log_error_and_raise(message, rse.NoSuccess, self._logger)
 
         # parse the job id. qsub usually returns just the job id, but
         # sometimes there are a couple of lines of warnings before.
@@ -753,7 +752,7 @@ class PBSProJobService (cpi_job.Service):
         # we asssume job id is in the last line
         bs_id  = lines[-1].strip().split('.')[0]
         job_id = "[%s]-[%s]" % (self.rm, bs_id)
-        state  = PENDING
+        state  = api.PENDING
         self._logger.info("Submitted PBS job with id: %s" % job_id)
 
         # populate job info dict
@@ -773,7 +772,6 @@ class PBSProJobService (cpi_job.Service):
                         % (job_name, job_id, job_obj, self.jobs.keys()))
 
         # set status to 'pending' and manually trigger callback
-        state = PENDING
         job_obj._attributes_i_set('state', state, job_obj._UP, True)
 
         return job_id
@@ -789,7 +787,7 @@ class PBSProJobService (cpi_job.Service):
         # unless we are trying to reconnect.
         if not reconnect and job_id not in self.jobs:
             message = "Unknown job id: %s. Can't update state." % job_id
-            log_error_and_raise(message, NoSuccess, self._logger)
+            log_error_and_raise(message, rse.NoSuccess, self._logger)
 
         if not reconnect:
             # job_info contains the info collect when _job_get_info
@@ -804,7 +802,7 @@ class PBSProJobService (cpi_job.Service):
             # Create a template data structure
             job_info = {
                 'job_id':       job_id,
-                'state':        UNKNOWN,
+                'state':        api.UNKNOWN,
                 'name':         None,
                 'exec_hosts':   None,
                 'returncode':   None,
@@ -832,7 +830,7 @@ class PBSProJobService (cpi_job.Service):
 
             if reconnect:
                 message = "Couldn't reconnect to job '%s': %s" % (job_id, out)
-                log_error_and_raise(message, NoSuccess, self._logger)
+                log_error_and_raise(message, rse.NoSuccess, self._logger)
 
             if ("Unknown Job Id" in out):
                 # Let's see if the last known job state was running or pending. in
@@ -844,11 +842,11 @@ class PBSProJobService (cpi_job.Service):
                         "This probably means that the backend doesn't store "
                         "information about finished jobs. Setting state to 'DONE'.")
 
-                if  job_info['state'] in [RUNNING, PENDING]:
-                    job_info['state']      = DONE
+                if  job_info['state'] in [api.RUNNING, api.PENDING]:
+                    job_info['state']      = api.DONE
                     job_info['returncode'] = 0  # we are guessing here...
                 else:
-                    job_info['state'] = UNKNOWN
+                    job_info['state'] = api.UNKNOWN
 
                 if not job_info['start_time']:
                     # inaccurate guess, but better than nothing
@@ -861,7 +859,7 @@ class PBSProJobService (cpi_job.Service):
             else:
                 # something went wrong
                 message = "Error retrieving job info via 'qstat': %s" % out
-                log_error_and_raise(message, NoSuccess, self._logger)
+                log_error_and_raise(message, rse.NoSuccess, self._logger)
         else:
 
             # The job seems to exist on the backend. let's process some data.
@@ -912,11 +910,11 @@ class PBSProJobService (cpi_job.Service):
             job_info['state'] = _to_saga_jobstate(job_state, retcode)
 
             # FIXME: workaround for time zone problem described above
-            if job_info['state'] in [RUNNING] + FINAL \
+            if job_info['state'] in [api.RUNNING] + api.FINAL \
                 and not job_info['start_time']:
                 job_info['start_time'] = time.time()
 
-            if job_info['state'] in FINAL \
+            if job_info['state'] in api.FINAL \
                 and not job_info['end_time']:
                 job_info['end_time'] = time.time()
 
@@ -924,7 +922,7 @@ class PBSProJobService (cpi_job.Service):
         # PBSPRO state does not indicate error or success -- we derive that from
         # the exit code
         if job_info['returncode'] not in [None, 0]:
-            job_info['state'] = FAILED
+            job_info['state'] = api.FAILED
 
 
         # return the updated job info
@@ -988,10 +986,10 @@ class PBSProJobService (cpi_job.Service):
 
         if ret != 0:
             message = "Error canceling job via 'qdel': %s" % out
-            log_error_and_raise(message, NoSuccess, self._logger)
+            log_error_and_raise(message, rse.NoSuccess, self._logger)
 
         # assume the job was succesfully canceled
-        self.jobs[job_id]['state'] = CANCELED
+        self.jobs[job_id]['state'] = api.CANCELED
 
         if not self.jobs[job_id]['end_time']:
             self.jobs[job_id]['end_time'] = time.time()
@@ -1009,7 +1007,7 @@ class PBSProJobService (cpi_job.Service):
         while True:
             state = self.jobs[job_id]['state']  # this gets updated in the bg.
 
-            if state in FINAL:
+            if state in api.FINAL:
                 return True
 
             # avoid busy poll
@@ -1025,7 +1023,7 @@ class PBSProJobService (cpi_job.Service):
     #
     @SYNC_CALL
     def create_job(self, jd):
-        """ implements cpi_job.Service.get_url()
+        """ implements cpi.Service.get_url()
         """
         # this dict is passed on to the job adaptor class -- use it to pass any
         # state information you need there.
@@ -1036,14 +1034,14 @@ class PBSProJobService (cpi_job.Service):
                          }
 
         # create and return a new job object
-        return api_job.Job(_adaptor=self._adaptor,
-                           _adaptor_state=adaptor_state)
+        return api.Job(_adaptor=self._adaptor,
+                       _adaptor_state=adaptor_state)
 
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
     def get_job(self, job_id):
-        """ Implements cpi_job.Service.get_job()
+        """ Implements cpi.Service.get_job()
 
             Re-create job instance from a job-id.
         """
@@ -1057,7 +1055,7 @@ class PBSProJobService (cpi_job.Service):
 
         # this dict is passed on to the job adaptor class -- use it to pass any
         # state information you need there.
-        jd = saga.job.Description()
+        jd = api.Description()
         for k,v in job_info.get("description",{}).iteritems():
             jd[k] = v
         jd.name = job_info.get('name')
@@ -1069,8 +1067,8 @@ class PBSProJobService (cpi_job.Service):
                          "reconnect_jobid": job_id
                          }
 
-        job_obj = apijob.Job(_adaptor=self._adaptor,
-                             _adaptor_state=adaptor_state)
+        job_obj = api.Job(_adaptor=self._adaptor,
+                          _adaptor_state=adaptor_state)
 
         # throw it into our job dictionary.
         job_info['obj']   = job_obj
@@ -1082,7 +1080,7 @@ class PBSProJobService (cpi_job.Service):
     #
     @SYNC_CALL
     def get_url(self):
-        """ implements cpi_job.Service.get_url()
+        """ implements cpi.Service.get_url()
         """
         return self.rm
 
@@ -1090,7 +1088,7 @@ class PBSProJobService (cpi_job.Service):
     #
     @SYNC_CALL
     def list(self):
-        """ implements cpi_job.Service.list()
+        """ implements cpi.Service.list()
         """
         ids = []
 
@@ -1099,7 +1097,7 @@ class PBSProJobService (cpi_job.Service):
 
         if ret != 0 and len(out) > 0:
             message = "failed to list jobs via 'qstat': %s" % out
-            log_error_and_raise(message, NoSuccess, self._logger)
+            log_error_and_raise(message, rse.NoSuccess, self._logger)
         elif ret != 0 and len(out) == 0:
             # qstat | grep `` exits with 1 if the list is empty
             pass
@@ -1150,8 +1148,8 @@ class PBSProJobService (cpi_job.Service):
 
 ###############################################################################
 #
-class PBSProJob (cpi_job.Job):
-    """ implements cpi_job.Job
+class PBSProJob (cpi.Job):
+    """ implements cpi.Job
     """
 
     def __init__(self, api, adaptor):
@@ -1165,7 +1163,7 @@ class PBSProJob (cpi_job.Job):
 
     @SYNC_CALL
     def init_instance(self, job_info):
-        """ implements cpi_job.Job.init_instance()
+        """ implements cpi.Job.init_instance()
         """
         # init_instance is called for every new Job object
         # that is created
@@ -1174,11 +1172,11 @@ class PBSProJob (cpi_job.Job):
 
         if job_info['reconnect'] is True:
             self._id      = job_info['reconnect_jobid']
-            self._name    = self.jd.get(NAME)
+            self._name    = self.jd.get(api.NAME)
             self._started = True
         else:
             self._id      = None
-            self._name    = self.jd.get(NAME)
+            self._name    = self.jd.get(api.NAME)
             self._started = False
 
         return self.get_api()
@@ -1187,10 +1185,10 @@ class PBSProJob (cpi_job.Job):
     #
     @SYNC_CALL
     def get_state(self):
-        """ implements cpi_job.Job.get_state()
+        """ implements cpi.Job.get_state()
         """
         if  self._started is False:
-            return NEW
+            return api.NEW
 
         return self.js._job_get_state(job_id=self._id)
             
@@ -1198,11 +1196,11 @@ class PBSProJob (cpi_job.Job):
     #
     @SYNC_CALL
     def wait(self, timeout):
-        """ implements cpi_job.Job.wait()
+        """ implements cpi.Job.wait()
         """
         if self._started is False:
             log_error_and_raise("Can't wait for job that hasn't been started",
-                IncorrectState, self._logger)
+                rse.IncorrectState, self._logger)
         else:
             self.js._job_wait(job_id=self._id, timeout=timeout)
 
@@ -1210,11 +1208,11 @@ class PBSProJob (cpi_job.Job):
     #
     @SYNC_CALL
     def cancel(self, timeout):
-        """ implements cpi_job.Job.cancel()
+        """ implements cpi.Job.cancel()
         """
         if self._started is False:
             log_error_and_raise("Can't wait for job that hasn't been started",
-                IncorrectState, self._logger)
+                rse.IncorrectState, self._logger)
         else:
             self.js._job_cancel(self._id)
 
@@ -1222,7 +1220,7 @@ class PBSProJob (cpi_job.Job):
     #
     @SYNC_CALL
     def run(self):
-        """ implements cpi_job.Job.run()
+        """ implements cpi.Job.run()
         """
         self._id = self.js._job_run(self._api())
         self._started = True
@@ -1231,7 +1229,7 @@ class PBSProJob (cpi_job.Job):
     #
     @SYNC_CALL
     def get_service_url(self):
-        """ implements cpi_job.Job.get_service_url()
+        """ implements cpi.Job.get_service_url()
         """
         return self.js.rm
 
@@ -1239,7 +1237,7 @@ class PBSProJob (cpi_job.Job):
     #
     @SYNC_CALL
     def get_id(self):
-        """ implements cpi_job.Job.get_id()
+        """ implements cpi.Job.get_id()
         """
         return self._id
 
@@ -1247,14 +1245,14 @@ class PBSProJob (cpi_job.Job):
     #
     @SYNC_CALL
     def get_name (self):
-        """ Implements cpi_job.Job.get_name() """        
+        """ Implements cpi.Job.get_name() """        
         return self._name
 
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
     def get_exit_code(self):
-        """ implements cpi_job.Job.get_exit_code()
+        """ implements cpi.Job.get_exit_code()
         """
         if self._started is False:
             return None
@@ -1265,7 +1263,7 @@ class PBSProJob (cpi_job.Job):
     #
     @SYNC_CALL
     def get_created(self):
-        """ implements cpi_job.Job.get_created()
+        """ implements cpi.Job.get_created()
         """
         if self._started is False:
             return None
@@ -1276,7 +1274,7 @@ class PBSProJob (cpi_job.Job):
     #
     @SYNC_CALL
     def get_started(self):
-        """ implements cpi_job.Job.get_started()
+        """ implements cpi.Job.get_started()
         """
         if self._started is False:
             return None
@@ -1287,7 +1285,7 @@ class PBSProJob (cpi_job.Job):
     #
     @SYNC_CALL
     def get_finished(self):
-        """ implements cpi_job.Job.get_finished()
+        """ implements cpi.Job.get_finished()
         """
         if self._started is False:
             return None
@@ -1298,7 +1296,7 @@ class PBSProJob (cpi_job.Job):
     #
     @SYNC_CALL
     def get_execution_hosts(self):
-        """ implements cpi_job.Job.get_execution_hosts()
+        """ implements cpi.Job.get_execution_hosts()
         """
         if self._started is False:
             return None
@@ -1309,7 +1307,7 @@ class PBSProJob (cpi_job.Job):
     #
     @SYNC_CALL
     def get_description(self):
-        """ implements cpi_job.Job.get_execution_hosts()
+        """ implements cpi.Job.get_execution_hosts()
         """
         return self.jd
 

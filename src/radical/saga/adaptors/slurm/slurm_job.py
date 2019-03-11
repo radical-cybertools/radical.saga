@@ -20,7 +20,7 @@ import tempfile
 import radical.utils as ru
 
 from ...job           import constants   as c
-from ...              import wexceptions as rse
+from ...              import exceptions  as rse
 from ...utils         import pty_shell   as rsups
 from ...              import job         as api_job
 from ...              import exceptions  as rse
@@ -324,8 +324,8 @@ class SLURMJobService (cpi_job.Service) :
         if   self.rm.schema == "slurm":        shell_schema = "fork://"
         elif self.rm.schema == "slurm+ssh":    shell_schema = "ssh://"
         elif self.rm.schema == "slurm+gsissh": shell_schema = "gsissh://"
-        else: raise IncorrectURL("Schema %s not supported by SLURM adaptor."
-                                 % self.rm.schema)
+        else: raise rse.IncorrectURL("Schema %s not supported by SLURM adaptor."
+                                     % self.rm.schema)
 
         # <scheme>://<user>:<pass>@<host>:<port>/<path>?<query>#<fragment>
         # build our shell URL
@@ -1081,7 +1081,7 @@ class SLURMJob(cpi_job.Job):
                     return slurm_state.split()[0].strip()
 
         except Exception:
-            self._log.warn('cannot parse sacct output:\n%s' % sacct_out)
+            self._logger.warn('cannot parse sacct output:\n%s' % sacct_out)
 
         return None
 

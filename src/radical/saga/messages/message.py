@@ -6,14 +6,8 @@ __license__   = "MIT"
 
 import radical.utils.signatures as rus
 
-from ..          import adaptors.base       as sab
-from ..          import attributes          as sa
-from ..          import session             as ss
-from ..          import task                as st
-from ..          import url                 as surl
-from ..          import constants           as c
-
-from ..constants import SYNC, ASYNC, TASK
+from .. import attributes  as sa
+from .  import constants   as c
 
 
 # ------------------------------------------------------------------------------

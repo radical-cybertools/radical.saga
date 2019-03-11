@@ -175,7 +175,7 @@ class Session (base.SimpleBase) :
         simple_base = super  (Session, self)
         simple_base.__init__ (uid=uid)
 
-        self._logger = ru.get_logger ('radical.saga')
+        self._logger = ru.Logger('radical.saga')
 
         # if the default session is expected, we point our context list to the
         # shared list of the default session singleton.  Otherwise, we create

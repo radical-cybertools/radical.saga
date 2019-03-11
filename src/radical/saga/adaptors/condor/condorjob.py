@@ -23,7 +23,7 @@ from .. import cpi
 from ...exceptions    import *
 from ...job.constants import *
 from ...exceptions    import *
-from ...              import job        as sj
+from ...              import job        as api
 from ...              import filesystem as sfs
 from ...utils         import pty_shell  as sups
 from ...utils.job     import TransferDirectives
@@ -56,14 +56,14 @@ def _condor_to_saga_jobstate(condorjs):
     # 5   Held            H
     # 6   Submission_err  E
 
-    if   int(condorjs) == 0: return saga.job.PENDING
-    elif int(condorjs) == 1: return saga.job.PENDING
-    elif int(condorjs) == 2: return saga.job.RUNNING
-    elif int(condorjs) == 3: return saga.job.CANCELED
-    elif int(condorjs) == 4: return saga.job.DONE
-    elif int(condorjs) == 5: return saga.job.PENDING
-    elif int(condorjs) == 6: return saga.job.FAILED
-    else                   : return saga.job.UNKNOWN
+    if   int(condorjs) == 0: return api.PENDING
+    elif int(condorjs) == 1: return api.PENDING
+    elif int(condorjs) == 2: return api.RUNNING
+    elif int(condorjs) == 3: return api.CANCELED
+    elif int(condorjs) == 4: return api.DONE
+    elif int(condorjs) == 5: return api.PENDING
+    elif int(condorjs) == 6: return api.FAILED
+    else                   : return api.UNKNOWN
 
 
 # --------------------------------------------------------------------
@@ -908,10 +908,10 @@ class CondorJobService (cpi.job.Service):
 
                 # look the other way and pray...
                 info['returncode'] = 0
-                info['state']      = saga.job.DONE
+                info['state']      = api.DONE
 
 
-            elif info['state'] in [saga.job.RUNNING, saga.job.PENDING]:
+            elif info['state'] in [api.RUNNING, api.PENDING]:
 
                 # run the Condor 'condor_history' command to get info about
                 # finished jobs
@@ -1362,7 +1362,7 @@ class CondorJobService (cpi.job.Service):
                          "reconnect":       False
                         }
 
-        return sj.Job(_adaptor=self._adaptor, _adaptor_state=adaptor_state)
+        return api.Job(_adaptor=self._adaptor, _adaptor_state=adaptor_state)
 
 
 
@@ -1381,13 +1381,13 @@ class CondorJobService (cpi.job.Service):
         # state information you need there.
         adaptor_state = {"job_service":     self,
                          # TODO: fill job description
-                         "job_description": sj.Description(),
+                         "job_description": api.Description(),
                          "job_schema":      self.rm.schema,
                          "reconnect":       True,
                          "reconnect_jobid": jobid
                         }
 
-        return sj.Job(_adaptor=self._adaptor, _adaptor_state=adaptor_state)
+        return api.Job(_adaptor=self._adaptor, _adaptor_state=adaptor_state)
 
 
 
@@ -1452,7 +1452,7 @@ class CondorJobService (cpi.job.Service):
 
                 if len(elems) > 1:
 
-                    rm_clone = surl.Url(self.rm)  # TODO: this is costly
+                    rm_clone = ru.Url(self.rm)  # TODO: this is costly
                     rm_clone.query = ""
                     rm_clone.path  = ""
 
@@ -1679,7 +1679,7 @@ class CondorJob (cpi.job.Job):
     def init_instance(self, job_info):
         """ implements cpi.job.Job.init_instance()
         """
-        # init_instance is called for every new sj.Job object
+        # init_instance is called for every new api.Job object
         # that is created
         self.jd = job_info["job_description"]
         self.js = job_info["job_service"]
@@ -1792,14 +1792,6 @@ class CondorJob (cpi.job.Job):
         else:
             return self.js._job_get_exit_code(self._id)
 
-
-    # ----------------------------------------------------------------
-    #
-    @SYNC_CALL
-    def get_name(self):
-        """ implements cpi.job.Job.get_name()
-        """
-        return self._name
 
     # ----------------------------------------------------------------
     #

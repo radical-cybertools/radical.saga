@@ -15,20 +15,17 @@ import threading
 import datetime
 
 from urlparse import parse_qs
-from tempfile import NamedTemporaryFile
 
-import radical.utils         as ru
-import radical.utils.threads as rut
+import radical.utils  as ru
 
 from .. import base
 from .. import cpi
 
 from ...job.constants import *
 from ...exceptions    import *
-from ...              import job        as sj
-from ...              import filesystem as sfs
-from ...utils         import pty_shell  as sups
-from ...utils.job     import TransferDirectives
+from ...              import job as sj
+from ...utils         import pty_shell  as rsups
+
 
 SYNC_CALL  = cpi.decorators.SYNC_CALL
 ASYNC_CALL = cpi.decorators.ASYNC_CALL
@@ -46,7 +43,7 @@ class _job_state_monitor(threading.Thread):
 
         self.logger = job_service._logger
         self.js = job_service
-        self._stop = rut.Event()
+        self._stop = threading.Event()
 
         super(_job_state_monitor, self).__init__()
         self.setDaemon(True)
@@ -428,7 +425,7 @@ class LSFJobService (cpi.job.Service):
                           'bsub':     dict(),
                           'bkill':    dict()}
 
-        self.shell = susp.PTYShell(pty_url, self.session)
+        self.shell = rsups.PTYShell(pty_url, self.session)
 
       # self.shell.set_initialize_hook(self.initialize)
       # self.shell.set_finalize_hook(self.finalize)

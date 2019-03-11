@@ -7,12 +7,11 @@ __license__   = "MIT"
 """ shell based job adaptor implementation """
 
 
-from ...exceptions     import *
+from ...               import exceptions as rse
 from ..                import base
-from ..cpi             import SYNC_CALL, ASYNC_CALL
+from ..cpi             import SYNC_CALL
 from ..cpi             import job as cpi
 from ...               import job as api
-from ...job.constants  import *
 from ...utils.job      import TransferDirectives
 from ...utils          import pty_shell
 
@@ -63,9 +62,8 @@ class _job_state_monitor (threading.Thread) :
 
             while self.channel.alive () :
 
-                idx, out = self.channel.find (['\n'], timeout=MONITOR_READ_TIMEOUT)
-
-                line = out.strip ()
+                idx,out = self.channel.find(['\n'],timeout=MONITOR_READ_TIMEOUT)
+                line    = out.strip ()
 
                 if  not line :
 
@@ -77,11 +75,11 @@ class _job_state_monitor (threading.Thread) :
 
 
                 elif line == 'EXIT' or line == "Killed" :
-                    self.logger.error ("monitoring channel failed -- disable notifications")
+                    self.logger.error("monitor failed -- disable notifications")
                     return
 
 
-                elif not ':' in line :
+                elif ':' not in line :
                     self.logger.warn ("monitoring channel noise: %s" % line)
 
 
@@ -96,7 +94,7 @@ class _job_state_monitor (threading.Thread) :
 
                         if  not job :
                             # job not yet known -- keep event for later
-                            if  not job_id in self.events :
+                            if job_id not in self.events :
                                 self.events[job_id] = list()
                             self.events[job_id].append (state)
 
@@ -110,8 +108,8 @@ class _job_state_monitor (threading.Thread) :
                             job._adaptor._set_state (state)
 
 
-                    except DoesNotExist as e :
-                        self.logger.error ("event for unknown job '%s'" % job_id)
+                    except rse.DoesNotExist as e :
+                        self.logger.error("event for unknown job '%s'" % job_id)
 
 
         except Exception as e:
@@ -127,15 +125,15 @@ class _job_state_monitor (threading.Thread) :
 #
 def _decode (data) :
 
-    elem = ""
     code = ""
 
     for c in data :
 
-        if  c in ['0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f'] :
+        if  c in ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+                  'a', 'b', 'c', 'd', 'e', 'f']:
             code += c
         elif c not in [' ', '\n'] :
-            raise BadParameter("Cannot decode '%s' in data (%s)" % (c, data))
+            raise rse.BadParameter("Cannot decode '%s' in '%s'" % (c, data))
 
     return code.decode ('hex')
 
@@ -210,7 +208,8 @@ _ADAPTOR_DOC           = {
             of object instances which can be created concurrently.  Hitting the
             pty limit will cause the following error message (or similar)::
 
-              NoSuccess: pty_allocation or process creation failed (ENOENT: no more ptys)
+              NoSuccess: pty_allocation or process creation failed \
+                         (ENOENT: no more ptys)
 
             This limitation comes from rs.utils.pty_process.  On Linux
             systems, the utilization of pty's can be monitored::
@@ -224,14 +223,16 @@ _ADAPTOR_DOC           = {
             ssh connections to 10 per user -- beyond that, connections are
             refused with the following error::
 
-              NoSuccess: ssh_exchange_identification: Connection closed by remote host
+              NoSuccess: ssh_exchange_identification: \
+                         Connection closed by remote host
 
             As the communication with the ssh channel is unbuffered, the
             dropping of the connection will likely cause this error message to
             be lost.  Instead, the adaptor will just see that the ssh connection
             disappeared, and will issue an error message similar to this one::
 
-              NoSuccess: read from pty process failed (Could not read line - pty process died)
+              NoSuccess: read from pty process failed \
+                         (Could not read line - pty process died)
 
 
           * number of processes are limited: the creation of an job.service
@@ -249,12 +250,15 @@ _ADAPTOR_DOC           = {
             On hitting process limits, the job creation will fail with an error
             similar to either of these::
 
-              NoSuccess: failed to run job (/bin/sh: fork: retry: Resource temporarily unavailable)
-              NoSuccess: failed to run job -- backend error
+              NoSuccess: failed to run job \
+                         /bin/sh: fork: retry: Resource temporarily unavailable
+              NoSuccess: failed to run job \
+                         backend error
 
           * number of files are limited, as is disk space: the job.service will
 
-            keep job state on the remote disk, in ``~/.saga/adaptors/shell_job/``.
+            keep job state on the remote disk, in
+            ``~/.radical/saga/adaptors/shell_job/``.
             Quota limitations may limit the number of files created there,
             and/or the total size of that directory.  
 
@@ -262,8 +266,9 @@ _ADAPTOR_DOC           = {
             the following ones::
 
               NoSuccess: read from pty process failed ([Errno 5] Quota exceeded)
-              NoSuccess: read from pty process failed ([Errno 5] Input/output error)
-              NoSuccess: find from pty process [Thread-5] failed (Could not read - pty process died)
+              NoSuccess: read from pty process failed ([Errno 5] I/O error)
+              NoSuccess: find from pty process [Thread-5] failed \
+                         (Could not read - pty process died)
 
 
 
@@ -299,20 +304,20 @@ _ADAPTOR_INFO          = {
     "schemas"          : _ADAPTOR_SCHEMAS,
     "capabilities"     : _ADAPTOR_CAPABILITIES,
     "cpis"             : [
-        { 
-        "type"         : "radical.saga.job.Service",
-        "class"        : "ShellJobService"
-        }, 
-        { 
-        "type"         : "radical.saga.job.Job",
-        "class"        : "ShellJob"
-        }
-    ]
+                             { 
+                                 "type"  : "radical.saga.job.Service",
+                                 "class" : "ShellJobService"
+                             }, 
+                             { 
+                                 "type"  : "radical.saga.job.Job",
+                                 "class" : "ShellJob"
+                             }
+                         ]
 }
+
 
 ###############################################################################
 # The adaptor class
-
 class Adaptor (base.Base):
     """ 
     This is the actual adaptor class, which gets loaded by SAGA (i.e. by the
@@ -355,7 +360,7 @@ class Adaptor (base.Base):
         match = self.id_re.match (id)
 
         if  not match or len (match.groups()) != 2 :
-            raise BadParameter ("Cannot parse job id '%s'" % id)
+            raise rse.BadParameter ("Cannot parse job id '%s'" % id)
 
         return (match.group(1), match.group (2))
 
@@ -386,13 +391,13 @@ class Adaptor (base.Base):
             td = TransferDirectives (jd.file_transfer)
 
             if  td.in_append or td.out_append:
-                raise BadParameter('FileTransfer append (<</>>) not supported')
+                raise rse.BadParameter('FT append (<</>>) not supported')
 
             if  td.in_overwrite:
                 for (local, remote) in td.in_overwrite:
                     source = local
                     target = remote
-                    self._logger.info("Transferring file %s to %s" % (source, target))
+                    self._logger.info("stage %s to %s" % (source, target))
                     shell.stage_to_remote(source, target)
 
 
@@ -407,13 +412,13 @@ class Adaptor (base.Base):
             td = TransferDirectives (jd.file_transfer)
 
             if  td.out_append:
-                raise BadParameter('FileTransfer append (<</>>) not supported')
+                raise rse.BadParameter('FileTransfer append (<</>>) not supported')
 
             if  td.out_overwrite:
-                for (local, remote) in td.out_overwrite.iteritems():
+                for (local, remote) in td.out_overwrite:
                     source = remote
                     target = local
-                    self._logger.info("Transferring file %s to %s" % (source, target))
+                    self._logger.info("stage %s to %s" % (source, target))
                     shell.stage_from_remote(source, target)
 
 
@@ -439,8 +444,7 @@ class ShellJobService (cpi.Service) :
         try :
             self.close()
 
-        except Exception as e :
-          # print str(e)
+        except Exception:
             pass
 
 
@@ -490,9 +494,10 @@ class ShellJobService (cpi.Service) :
     def close (self) :
 
         if  self.shell : 
-            # FIXME: not sure if we should PURGE here -- that removes states which
-            # might not be evaluated, yet.  Should we mark state evaluation
-            # separately? 
+
+            # FIXME: not sure if we should PURGE here -- that removes states
+            # which might not be evaluated, yet.  Should we mark state
+            # evaluation separately? 
             #   cmd_state () { touch $DIR/purgeable; ... }
             # When should that be done?
 
@@ -521,7 +526,7 @@ class ShellJobService (cpi.Service) :
 
         ret, out, _ = self.shell.run_sync (" mkdir -p %s" % base)
         if  ret != 0 :
-            raise NoSuccess ("host setup failed (%s): (%s)" % (ret, out))
+            raise rse.NoSuccess ("host setup failed (%s): (%s)" % (ret, out))
 
         # TODO: replace some constants in the script with values from config
         # files, such as 'timeout' or 'purge_on_quit' ...
@@ -534,16 +539,16 @@ class ShellJobService (cpi.Service) :
             ret, out, _ = self.shell.run_sync (" test -f %s" % tgt)
             if  ret != 0 :
                 # yep, need to stage...
-              # src = shell_wrapper._WRAPPER_SCRIPT % ({ 'PURGE_ON_START' : str(self._adaptor.purge_on_start) })
                 src = shell_wrapper._WRAPPER_SCRIPT
-                src = src.replace('%(PURGE_ON_START)s', str(self._adaptor.purge_on_start))
+                src = src.replace('%(PURGE_ON_START)s',
+                                  str(self._adaptor.purge_on_start))
 
                 # If the target directory begins with $HOME or ${HOME} then we
                 # need to remove this since scp won't expand the variable and
                 # the copy will end up attempting to copy the file to 
                 # /<path_to_home_dir>/$HOME/.....
                 if tgt.startswith("$HOME") or tgt.startswith("${HOME}"):
-                    tgt = tgt[tgt.find('/')+1:]
+                    tgt = tgt[tgt.find('/') + 1:]
                 self.shell.write_to_remote (src, tgt)
 
         # ----------------------------------------------------------------------
@@ -566,7 +571,7 @@ class ShellJobService (cpi.Service) :
         # shell_wrapper.sh will report its own PID -- we use that to sync prompt
         # detection, too.
         if  ret != 0 :
-            raise NoSuccess ("failed to run bootstrap: (%s)(%s)" % (ret, out))
+            raise rse.NoSuccess ("failed to run bootstrap: (%s)(%s)" % (ret, out))
 
         id_pattern = re.compile ("\s*PID:\s+(\d+)\s*$")
         id_match   = id_pattern.search (out)
@@ -574,7 +579,7 @@ class ShellJobService (cpi.Service) :
         if  not id_match :
             self.shell.run_async (" exit")
             self._logger.error("host bootstrap failed - no pid (%s)" % out)
-            raise NoSuccess   ("host bootstrap failed - no pid (%s)" % out)
+            raise rse.NoSuccess   ("host bootstrap failed - no pid (%s)" % out)
 
         # we actually don't care much about the PID :-P
 
@@ -583,12 +588,14 @@ class ShellJobService (cpi.Service) :
 
         # ----------------------------------------------------------------------
         # now do the same for the monitoring shell
-        ret, out, _ = self.channel.run_sync (" /bin/sh %s/wrapper.sh %s" % (base, base))
+        ret, out, _ = self.channel.run_sync(" /bin/sh %s/wrapper.sh %s"
+                                           % (base, base))
 
         # shell_wrapper.sh will report its own PID -- we use that to sync prompt
         # detection, too.
         if  ret != 0 :
-            raise NoSuccess ("failed to run bootstrap: (%s)(%s)" % (ret, out))
+            raise rse.NoSuccess("failed to run bootstrap: (%s)(%s)"
+                               % (ret, out))
 
         id_pattern = re.compile ("\s*PID:\s+(\d+)\s*$")
         id_match   = id_pattern.search (out)
@@ -596,7 +603,7 @@ class ShellJobService (cpi.Service) :
         if  not id_match :
             self.channel.run_async (" exit")
             self._logger.error("host bootstrap failed - no pid (%s)" % out)
-            raise NoSuccess   ("host bootstrap failed - no pid (%s)" % out)
+            raise rse.NoSuccess   ("host bootstrap failed - no pid (%s)" % out)
 
         # we actually don't care much about the PID :-P
 
@@ -610,36 +617,37 @@ class ShellJobService (cpi.Service) :
 
         cmd = "true"
 
-        if  jd.attribute_exists (ENVIRONMENT) :
+        if  jd.attribute_exists (api.ENVIRONMENT) :
             for e in jd.environment :
                 cmd += " && export %s=%s"  %  (e, jd.environment[e])
 
-        if  jd.attribute_exists (WORKING_DIRECTORY) :
-            cmd += " && mkdir -p %s && cd %s" % (jd.working_directory, jd.working_directory)
+        if  jd.attribute_exists (api.WORKING_DIRECTORY) :
+            cmd += " && mkdir -p %s && cd %s" \
+                 % (jd.working_directory, jd.working_directory)
 
-        if  jd.attribute_exists (PRE_EXEC) :
+        if  jd.attribute_exists (api.PRE_EXEC) :
             for p in jd.pre_exec :
                 cmd += " && %s 2>&1 >> $SAGA_PWD/log"  %  p
 
         cmd += " && ("
         cmd += " %s" % jd.executable
 
-        if  jd.attribute_exists (ARGUMENTS) :
+        if  jd.attribute_exists (api.ARGUMENTS) :
             for a in jd.arguments :
                 cmd += " %s" % a
 
         cmd += " )"
 
-        if  jd.attribute_exists (INPUT) :
+        if  jd.attribute_exists (api.INPUT) :
             cmd += " <%s" % jd.input
 
-        if  jd.attribute_exists (OUTPUT) :
+        if  jd.attribute_exists (api.OUTPUT) :
             cmd += " 1>%s" % jd.output
 
-        if  jd.attribute_exists (ERROR) :
+        if  jd.attribute_exists (api.ERROR) :
             cmd += " 2>%s" % jd.error
 
-        if  jd.attribute_exists (POST_EXEC) :
+        if  jd.attribute_exists (api.POST_EXEC) :
             for p in jd.post_exec :
                 cmd += " && %s 2>&1 >> $SAGA_PWD/log"  %  p
 
@@ -663,29 +671,30 @@ class ShellJobService (cpi.Service) :
         use_lrun = False
 
         # simple one-liners use RUN, otherwise LRUN
-        if not "\n" in cmd :
+        if "\n" not in cmd :
             run_cmd = "RUN %s\n" % cmd
         else :
             use_lrun = True
             run_cmd  = "BULK\nLRUN\n%s\nLRUN_EOT\nBULK_RUN\n" % cmd
 
-        run_cmd = run_cmd.replace ("\\", "\\\\\\\\") # hello MacOS
+        run_cmd = run_cmd.replace ("\\", "\\\\\\\\")  # hello MacOS
 
         ret, out, _ = self.shell.run_sync (run_cmd)
         if  ret != 0 :
-            raise NoSuccess ("failed to run Job '%s': (%s)(%s)" % (cmd, ret, out))
+            raise rse.NoSuccess("failed to run Job '%s': (%s)(%s)"
+                               % (cmd, ret, out))
 
         lines = filter (None, out.split ("\n"))
         self._logger.debug (lines)
 
         if  len (lines) < 2 :
-            raise NoSuccess ("Failed to run job (%s)" % lines)
+            raise rse.NoSuccess ("Failed to run job (%s)" % lines)
 
       # for i in range (0, len(lines)) :
       #     print "%d: %s" % (i, lines[i])
 
         if lines[-2] != "OK" :
-            raise NoSuccess ("Failed to run Job (%s)" % lines)
+            raise rse.NoSuccess ("Failed to run Job (%s)" % lines)
 
         # FIXME: verify format of returned pid (\d+)!
         pid    = lines[-1].strip ()
@@ -695,12 +704,12 @@ class ShellJobService (cpi.Service) :
 
         self.njobs += 1
 
-        # before we return, we need to clean the 'BULK COMPLETED message from lrun
+        # clean 'BULK COMPLETED message from lrun
         if use_lrun :
             ret, out = self.shell.find_prompt ()
             if  ret != 0 :
-                raise NoSuccess ("failed to run multiline job '%s': (%s)(%s)" % (run_cmd, ret, out))
-
+                raise rse.NoSuccess("failed to run multiline job '%s': (%s)(%s)"
+                                   % (run_cmd, ret, out))
         return job_id
 
 
@@ -714,7 +723,7 @@ class ShellJobService (cpi.Service) :
         ret, out, _ = self.shell.run_sync ("STATS %s\n" % pid)
 
         if  ret != 0 :
-            raise NoSuccess ("failed to get job stats for '%s': (%s)(%s)" \
+            raise rse.NoSuccess ("failed to get job stats for '%s': (%s)(%s)"
                           % (id, ret, out))
 
         # the filter removes also empty lines from stdout/stderr.  Oh well...
@@ -722,13 +731,13 @@ class ShellJobService (cpi.Service) :
         self._logger.debug (lines)
 
         if lines[0] != "OK" :
-            raise NoSuccess ("failed to get valid job state for '%s' (%s)" % (id, lines))
-
-        ret = {}
+            raise rse.NoSuccess("failed to get valid job state for '%s' (%s)"
+                               % (id, lines))
+        ret           = dict()
         ret['STDOUT'] = ""
         ret['STDERR'] = ""
-        in_stdout = False
-        in_stderr = False
+        in_stdout     = False
+        in_stderr     = False
 
         for line in lines :
 
@@ -779,9 +788,9 @@ class ShellJobService (cpi.Service) :
 
         ret, out, _ = self.shell.run_sync ("RESULT %s\n" % pid)
         if  ret != 0 :
-            raise NoSuccess      ("failed to get exit code for '%s': (%s)(%s)" \
+            raise rse.NoSuccess  ("failed to get exit code for '%s': (%s)(%s)"
                                % (id, ret, out))
-            self._logger.warning ("failed to get exit code for '%s': (%s)(%s)" \
+            self._logger.warning ("failed to get exit code for '%s': (%s)(%s)"
                                % (id, ret, out))
             return None
 
@@ -793,14 +802,12 @@ class ShellJobService (cpi.Service) :
             del (lines[0])
 
         if  len (lines) != 2 :
-            raise NoSuccess      ("failed to get exit code for '%s': (%s)" % (id, lines))
-            self._logger.warning ("failed to get exit code for '%s': (%s)" % (id, lines))
-            return None
+            raise rse.NoSuccess("failed to get exit code for '%s': (%s)"
+                               % (id, lines))
 
         if lines[0] != "OK" :
-            raise NoSuccess      ("failed to get exit code for '%s' (%s)" % (id, lines))
-            self._logger.warning ("failed to get exit code for '%s' (%s)" % (id, lines))
-            return None
+            raise rse.NoSuccess("failed to get exit code for '%s' (%s)"
+                               % (id, lines))
 
         exit_code = lines[1].strip ()
 
@@ -820,8 +827,8 @@ class ShellJobService (cpi.Service) :
 
         ret, out, _ = self.shell.run_sync ("SUSPEND %s\n" % pid)
         if  ret != 0 :
-            raise NoSuccess ("failed to suspend job '%s': (%s)(%s)" \
-                          % (id, ret, out))
+            raise rse.NoSuccess("failed to suspend job '%s': (%s)(%s)"
+                               % (id, ret, out))
 
 
     # ----------------------------------------------------------------
@@ -834,8 +841,8 @@ class ShellJobService (cpi.Service) :
 
         ret, out, _ = self.shell.run_sync ("RESUME %s\n" % pid)
         if  ret != 0 :
-            raise NoSuccess ("failed to resume job '%s': (%s)(%s)" \
-                          % (id, ret, out))
+            raise rse.NoSuccess("failed to resume job '%s': (%s)(%s)"
+                               % (id, ret, out))
 
 
     # ----------------------------------------------------------------
@@ -848,8 +855,8 @@ class ShellJobService (cpi.Service) :
 
         ret, out, _ = self.shell.run_sync ("CANCEL %s\n" % pid)
         if  ret != 0 :
-            raise NoSuccess ("failed to cancel job '%s': (%s)(%s)" \
-                          % (id, ret, out))
+            raise rse.NoSuccess("failed to cancel job '%s': (%s)(%s)"
+                               % (id, ret, out))
 
         lines = filter (None, out.split ("\n"))
         self._logger.debug (lines)
@@ -859,11 +866,10 @@ class ShellJobService (cpi.Service) :
             del (lines[0])
 
         if  len (lines) != 2 :
-            raise NoSuccess ("failed to cancel job '%s': (%s)" % (id, lines))
+            raise rse.NoSuccess("failed to cancel job '%s': (%s)" % (id, lines))
 
         if lines[0] != "OK" :
-            raise NoSuccess ("failed to cancel job '%s' (%s)" % (id, lines))
-
+            raise rse.NoSuccess("failed to cancel job '%s' (%s)" % (id, lines))
 
 
     # ----------------------------------------------------------------
@@ -874,11 +880,12 @@ class ShellJobService (cpi.Service) :
         """
 
         if not cmd :
-            raise BadParameter._log (self._logger, "run_job needs a command to run")
+            raise rse.BadParameter._log(self._logger,
+                    "run_job needs a command to run")
 
         if  host and host != self.rm.host :
-            raise BadParameter._log (self._logger, "Can only run jobs on %s, not on %s" \
-                                  % (self.rm.host, host))
+            raise rse.BadParameter._log(self._logger,
+                    "Can only run jobs on %s, not on %s" % (self.rm.host, host))
 
         cmd_quoted = cmd.replace ("'", "\\\\'")
 
@@ -892,6 +899,7 @@ class ShellJobService (cpi.Service) :
 
         return job
 
+
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
@@ -899,9 +907,9 @@ class ShellJobService (cpi.Service) :
 
         # this dict is passed on to the job adaptor class -- use it to pass any
         # state information you need there.
-        adaptor_state = { "job_service"     : self, 
-                          "job_description" : jd,
-                          "job_schema"      : self.rm.schema }
+        adaptor_state = {"job_service"     : self, 
+                         "job_description" : jd,
+                         "job_schema"      : self.rm.schema }
 
         return api.Job (_adaptor=self._adaptor, _adaptor_state=adaptor_state)
 
@@ -922,14 +930,13 @@ class ShellJobService (cpi.Service) :
 
         ret, out, _ = self.shell.run_sync ("LIST\n")
         if  ret != 0 :
-            raise NoSuccess ("failed to list jobs: (%s)(%s)" \
-                          % (ret, out))
+            raise rse.NoSuccess ("failed to list jobs: (%s)(%s)" % (ret, out))
 
         lines = filter (None, out.split ("\n"))
         self._logger.debug (lines)
 
         if lines[0] != "OK" :
-            raise NoSuccess ("failed to list jobs (%s)" % (lines))
+            raise rse.NoSuccess ("failed to list jobs (%s)" % (lines))
 
         del lines[0]
         job_ids = list()
@@ -942,7 +949,8 @@ class ShellJobService (cpi.Service) :
                 job_ids.append (job_id)
 
             except Exception as e:
-                self._logger.debug ("Ignore ill-formatted job id (%s) (%s)" % (line, e))
+                self._logger.debug("Ignore ill-formatted job id (%s) (%s)"
+                                  % (line, e))
                 continue
 
         return job_ids
@@ -964,14 +972,14 @@ class ShellJobService (cpi.Service) :
 
         if  job_id not in known_jobs :
             # can't reconnect
-            raise BadParameter._log (self._logger, "job id '%s' unknown"
-                                  % job_id)
+            raise rse.BadParameter._log(self._logger, "job id '%s' unknown"
+                                       % job_id)
 
         # this dict is passed on to the job adaptor class -- use it to pass any
         # state information you need there.
-        adaptor_state = { "job_service"     : self, 
-                          "job_id"          : job_id,
-                          "job_schema"      : self.rm.schema }
+        adaptor_state = {"job_service"     : self, 
+                         "job_id"          : job_id,
+                         "job_schema"      : self.rm.schema }
 
         return api.Job (_adaptor=self._adaptor, _adaptor_state=adaptor_state)
 
@@ -1014,19 +1022,22 @@ class ShellJobService (cpi.Service) :
 
             if  ret != 0 :
                 job._adaptor._set_state (api.FAILED)
-                job._adaptor._exception = NoSuccess ("failed to run job: (%s)(%s)" % (ret, out))
+                job._adaptor._exception = rse.NoSuccess \
+                        ("failed to run job: (%s)(%s)" % (ret, out))
                 continue
 
             lines = filter (None, out.split ("\n"))
 
             if  len (lines) < 2 :
                 job._adaptor._set_state (api.FAILED)
-                job._adaptor._exception = NoSuccess ("failed to run job : (%s)(%s)" % (ret, out))
+                job._adaptor._exception = rse.NoSuccess \
+                        ("failed to run job : (%s)(%s)" % (ret, out))
                 continue
 
             if lines[-2] != "OK" :
                 job._adaptor._set_state (api.FAILED)
-                job._adaptor._exception = NoSuccess ("failed to run job : (%s)(%s)" % (ret, out))
+                job._adaptor._exception = rse.NoSuccess \
+                        ("failed to run job : (%s)(%s)" % (ret, out))
                 continue
 
             # FIXME: verify format of returned pid (\d+)!
@@ -1047,17 +1058,20 @@ class ShellJobService (cpi.Service) :
         ret, out = self.shell.find_prompt ()
 
         if  ret != 0 :
-            self._logger.error ("failed to run (parts of the) bulk jobs: (%s)(%s)" % (ret, out))
+            self._logger.error("failed to run (parts of ) bulk jobs: (%s)(%s)"
+                              % (ret, out))
             return
 
         lines = filter (None, out.split ("\n"))
 
         if  len (lines) < 2 :
-            self._logger.error ("Cannot evaluate status of bulk job submission: (%s)(%s)" % (ret, out))
+            self._logger.error("no status of bulk job submission: (%s)(%s)"
+                              % (ret, out))
             return
 
         if lines[-2] != "OK" :
-            self._logger.error ("failed to run (parts of the) bulk jobs: (%s)(%s)" % (ret, out))
+            self._logger.error("failed to run (parts of ) bulk jobs: (%s)(%s)"
+                              % (ret, out))
             return
 
 
@@ -1098,36 +1112,42 @@ class ShellJobService (cpi.Service) :
 
             if  ret != 0 :
                 job._adaptor._set_state (api.FAILED)
-                job._adaptor._exception = NoSuccess ("failed to wait for job: (%s)(%s)" % (ret, out))
+                job._adaptor._exception = rse.NoSuccess \
+                        ("failed to wait for job: (%s)(%s)" % (ret, out))
                 continue
 
             lines = filter (None, out.split ("\n"))
 
             if  len (lines) < 2 :
                 job._adaptor._set_state (api.FAILED)
-                job._adaptor._exception = NoSuccess ("failed to wait for job : (%s)(%s)" % (ret, out))
+                job._adaptor._exception = rse.NoSuccess \
+                        ("failed to wait for job : (%s)(%s)" % (ret, out))
                 continue
 
             if lines[-2] != "OK" :
                 job._adaptor._set_state (api.FAILED)
-                job._adaptor._exception = NoSuccess ("failed to wait for job : (%s)(%s)" % (ret, out))
+                job._adaptor._exception = rse.NoSuccess \
+                        ("failed to wait for job : (%s)(%s)" % (ret, out))
                 continue
 
         # we also need to find the output of the bulk op itself
         ret, out = self.shell.find_prompt ()
 
         if  ret != 0 :
-            self._logger.error ("failed to wait for (parts of the) bulk jobs: (%s)(%s)" % (ret, out))
+            self._logger.error("failed to wait for (part of) bulk job: (%s)(%s)"
+                              % (ret, out))
             return
 
         lines = filter (None, out.split ("\n"))
 
         if  len (lines) < 2 :
-            self._logger.error ("Cannot evaluate status of bulk job wait: (%s)(%s)" % (ret, out))
+            self._logger.error("no status of bulk job wait: (%s)(%s)"
+                              % (ret, out))
             return
 
         if lines[-2] != "OK" :
-            self._logger.error ("failed to wait for (parts of the) bulk jobs: (%s)(%s)" % (ret, out))
+            self._logger.error("failed to wait for part of bulk job: (%s)(%s)"
+                              % (ret, out))
             return
 
 
@@ -1136,7 +1156,7 @@ class ShellJobService (cpi.Service) :
     @SYNC_CALL
     def container_cancel (self, jobs, timeout) :
 
-        self._logger.debug ("container cancel: %s [%s]"  %  (str(jobs), timeout))
+        self._logger.debug("container cancel: %s [%s]"  %  (str(jobs), timeout))
 
         bulk = "BULK\n"
 
@@ -1153,36 +1173,42 @@ class ShellJobService (cpi.Service) :
 
             if  ret != 0 :
                 job._adaptor._set_state (api.FAILED)
-                job._adaptor._exception = NoSuccess ("failed to cancel job: (%s)(%s)" % (ret, out))
+                job._adaptor._exception = rse.NoSuccess \
+                        ("failed to cancel job: (%s)(%s)" % (ret, out))
                 continue
 
             lines = filter (None, out.split ("\n"))
 
             if  len (lines) < 2 :
                 job._adaptor._set_state (api.FAILED)
-                job._adaptor._exception = NoSuccess ("failed to cancel job : (%s)(%s)" % (ret, out))
+                job._adaptor._exception = rse.NoSuccess \
+                        ("failed to cancel job : (%s)(%s)" % (ret, out))
                 continue
 
             if lines[-2] != "OK" :
                 job._adaptor._set_state (api.FAILED)
-                job._adaptor._exception = NoSuccess ("failed to cancel job : (%s)(%s)" % (ret, out))
+                job._adaptor._exception = rse.NoSuccess \
+                        ("failed to cancel job : (%s)(%s)" % (ret, out))
                 continue
 
         # we also need to find the output of the bulk op itself
         ret, out = self.shell.find_prompt ()
 
         if  ret != 0 :
-            self._logger.error ("failed to cancel (parts of the) bulk jobs: (%s)(%s)" % (ret, out))
+            self._logger.error("failed to cancel part of bulk job: (%s)(%s)"
+                              % (ret, out))
             return
 
         lines = filter (None, out.split ("\n"))
 
         if  len (lines) < 2 :
-            self._logger.error ("Cannot evaluate status of bulk job cancel: (%s)(%s)" % (ret, out))
+            self._logger.error("no status of bulk job cancel: (%s)(%s)"
+                              % (ret, out))
             return
 
         if lines[-2] != "OK" :
-            self._logger.error ("failed to cancel (parts of the) bulk jobs: (%s)(%s)" % (ret, out))
+            self._logger.error("failed to cancel part of bulk job: (%s)(%s)"
+                              % (ret, out))
             return
 
 
@@ -1213,19 +1239,22 @@ class ShellJobService (cpi.Service) :
 
             if  ret != 0 :
                 job._adaptor._set_state (api.FAILED)
-                job._adaptor._exception = NoSuccess ("failed to get job state: (%s)(%s)" % (ret, out))
+                job._adaptor._exception = rse.NoSuccess \
+                        ("failed to get job state: (%s)(%s)" % (ret, out))
                 continue
 
             lines = filter (None, out.split ("\n"))
 
             if  len (lines) < 2 :
                 job._adaptor._set_state (api.FAILED)
-                job._adaptor._exception = NoSuccess ("failed to get job state : (%s)(%s)" % (ret, out))
+                job._adaptor._exception = rse.NoSuccess \
+                        ("failed to get job state : (%s)(%s)" % (ret, out))
                 continue
 
             if lines[-2] != "OK" :
                 job._adaptor._set_state (api.FAILED)
-                job._adaptor._exception = NoSuccess ("failed to get job state : (%s)(%s)" % (ret, out))
+                job._adaptor._exception = rse.NoSuccess \
+                        ("failed to get job state : (%s)(%s)" % (ret, out))
                 continue
 
             state = self._adaptor.string_to_state (lines[-1])
@@ -1238,17 +1267,20 @@ class ShellJobService (cpi.Service) :
         ret, out = self.shell.find_prompt ()
 
         if  ret != 0 :
-            self._logger.error ("failed to get state for (parts of the) bulk jobs: (%s)(%s)" % (ret, out))
+            self._logger.error("no state for part of bulk job: (%s)(%s)"
+                              % (ret, out))
             return
 
         lines = filter (None, out.split ("\n"))
 
         if  len (lines) < 2 :
-            self._logger.error ("Cannot evaluate status of bulk job get_state: (%s)(%s)" % (ret, out))
+            self._logger.error("Cannot eval status of bulk job: (%s)(%s)"
+                              % (ret, out))
             return
 
         if lines[-2] != "OK" :
-            self._logger.error ("failed to get state for (parts of the) bulk jobs: (%s)(%s)" % (ret, out))
+            self._logger.error("no state for part of bulk job: (%s)(%s)"
+                              % (ret, out))
             return
 
         return states
@@ -1312,7 +1344,7 @@ class ShellJob (cpi.Job) :
 
         else :
             # don't know what to do...
-            raise BadParameter ("Cannot create job, insufficient information")
+            raise rse.BadParameter ("insufficient info for job creation")
 
         if self._created : self._created = float(self._created)
 
@@ -1335,7 +1367,8 @@ class ShellJob (cpi.Job) :
             old_state not in [api.DONE, api.FAILED, api.CANCELED] :
 
             # stage output data
-            # FIXME: _update_state blocks until data are staged.  That should not happen.
+            # FIXME: _update_state blocks until data are staged.
+            #        That should not happen.
             self._adaptor.stage_output (self.js.shell, self.jd)
 
         # files are staged -- update state, and report to application
@@ -1350,7 +1383,7 @@ class ShellJob (cpi.Job) :
         """ Implements adaptors.cpi.job.Job.get_state() """
 
         # may not yet have backend representation, state is 'NEW'
-        if  self._id == None :
+        if  self._id is None :
             return self._state
 
         # no need to re-fetch final states
@@ -1367,9 +1400,9 @@ class ShellJob (cpi.Job) :
         if self._started  : self._started  = float(self._started)
         if self._finished : self._finished = float(self._finished)
 
-        if  not 'state' in stats :
-            raise NoSuccess ("failed to get job state for '%s': (%s)" \
-                          % (self._id, stats))
+        if 'state' not in stats :
+            raise rse.NoSuccess("failed to get job state for '%s': (%s)"
+                               % (self._id, stats))
 
         self._update_state (self._adaptor.string_to_state (stats['state']))
 
@@ -1404,7 +1437,7 @@ class ShellJob (cpi.Job) :
     @SYNC_CALL
     def get_started (self) : 
 
-        self.get_state () # refresh stats
+        self.get_state()  # refresh stats
         return self._started
 
 
@@ -1413,7 +1446,7 @@ class ShellJob (cpi.Job) :
     @SYNC_CALL
     def get_finished (self) : 
 
-        self.get_state () # refresh stats
+        self.get_state()  # refresh stats
         return self._finished
 
 
@@ -1426,22 +1459,27 @@ class ShellJob (cpi.Job) :
 
         if  state == api.NEW      or \
             state == api.PENDING  :
-            raise IncorrectState ("Job output is only available after the job started")
+            raise rse.IncorrectState \
+                    ("Job output is only available after the job started")
 
         if  not self._id :
-            raise IncorrectState ("Job output is only available after the job started")
+            raise rse.IncorrectState \
+                    ("Job output is only available after the job started")
 
         rm, pid     = self._adaptor.parse_id (self._id)
         ret, out, _ = self.js.shell.run_sync ("STDOUT %s\n" % pid)
 
         if  ret != 0 :
-            raise NoSuccess ("failed to get job stdout for '%s': (%s)(%s)" \
-                          % (self._id, ret, out))
+            raise rse.NoSuccess \
+                    ("failed to get job stdout for '%s': (%s)(%s)"
+                     % (self._id, ret, out))
 
         lines = filter (None, out.split ("\n"))
 
         if lines[0] != "OK" :
-            raise NoSuccess ("failed to get valid job stdout for '%s' (%s)" % (self._id, lines))
+            raise rse.NoSuccess \
+                    ("failed to get valid job stdout for '%s' (%s)"
+                     % (self._id, lines))
 
         return _decode('\n'.join (lines[1:]))
 
@@ -1455,22 +1493,27 @@ class ShellJob (cpi.Job) :
 
         if  state == api.NEW      or \
             state == api.PENDING  :
-            raise IncorrectState ("Job output is only available after the job started")
+            raise rse.IncorrectState \
+                    ("Job output is only available after the job started")
 
         if  not self._id :
-            raise IncorrectState ("Job output is only available after the job started")
+            raise rse.IncorrectState \
+                    ("Job output is only available after the job started")
 
         rm, pid     = self._adaptor.parse_id (self._id)
         ret, out, _ = self.js.shell.run_sync ("STDERR %s\n" % pid)
 
         if  ret != 0 :
-            raise NoSuccess ("failed to get job stderr for '%s': (%s)(%s)" \
-                          % (self._id, ret, out))
+            raise rse.NoSuccess \
+                    ("failed to get job stderr for '%s': (%s)(%s)"
+                     % (self._id, ret, out))
 
         lines = filter (None, out.split ("\n"))
 
         if lines[0] != "OK" :
-            raise NoSuccess ("failed to get valid job stderr for '%s' (%s)" % (self._id, lines))
+            raise rse.NoSuccess \
+                    ("failed to get valid job stderr for '%s' (%s)"
+                     % (self._id, lines))
 
         return _decode('\n'.join (lines[1:]))
 
@@ -1480,26 +1523,30 @@ class ShellJob (cpi.Job) :
     @SYNC_CALL
     def get_log (self) : 
 
-        state = self.get_state () # refresh stats
+        state = self.get_state()  # refresh stats
 
         if  state == api.NEW      or \
             state == api.PENDING  :
-            raise IncorrectState ("Job output is only available after the job started")
+            raise rse.IncorrectState ("Job output is only available after the job started")
 
         if  not self._id :
-            raise IncorrectState ("Job output is only available after the job started")
+            raise rse.IncorrectState \
+                    ("Job output is only available after the job started")
 
         rm, pid     = self._adaptor.parse_id (self._id)
         ret, out, _ = self.js.shell.run_sync ("LOG %s\n" % pid)
 
         if  ret != 0 :
-            raise NoSuccess ("failed to get job log for '%s': (%s)(%s)" \
-                          % (self._id, ret, out))
+            raise rse.NoSuccess \
+                    ("failed to get job log for '%s': (%s)(%s)"
+                     % (self._id, ret, out))
 
         lines = filter (None, out.split ("\n"))
 
         if lines[0] != "OK" :
-            raise NoSuccess ("failed to get valid job stderr for '%s' (%s)" % (self._id, lines))
+            raise rse.NoSuccess \
+                    ("failed to get valid job stderr for '%s' (%s)"
+                     % (self._id, lines))
 
         ret  = '\n'.join(self._log)  # pre-pend all local log messages
         ret += _decode('\n'.join(lines[1:]))
@@ -1513,7 +1560,7 @@ class ShellJob (cpi.Job) :
     def get_service_url (self):
 
         if not self.js :
-            raise IncorrectState ("Job Service URL unknown")
+            raise rse.IncorrectState ("Job Service URL unknown")
         else :
             return self.js.get_url ()
 
@@ -1576,15 +1623,17 @@ class ShellJob (cpi.Job) :
     @SYNC_CALL
     def get_exit_code (self) :
 
-        if  self._exit_code != None :
+        if  self._exit_code is not None :
             return self._exit_code
 
-        if  self.get_state () not in [DONE, FAILED, CANCELED] :
-            raise IncorrectState ("Cannot get exit code, job is not in final state")
+        if  self.get_state () not in [api.DONE, api.FAILED, api.CANCELED] :
+            raise rse.IncorrectState \
+                    ("Cannot get exit code, job is not in final state")
 
         self._exit_code = self.js._job_get_exit_code (self._id)
 
         return self._exit_code
+
 
     # ----------------------------------------------------------------
     #
@@ -1593,7 +1642,6 @@ class ShellJob (cpi.Job) :
     @SYNC_CALL
     def get_execution_hosts (self) :
 
-        self._logger.debug ("this is the shell adaptor, reporting execution hosts")
         return [self.js.get_url ().host]
 
     # ----------------------------------------------------------------
@@ -1613,7 +1661,7 @@ class ShellJob (cpi.Job) :
     def suspend (self):
 
         if  self.get_state () != api.RUNNING :
-            raise IncorrectState ("Cannot suspend, job is not RUNNING")
+            raise rse.IncorrectState ("Cannot suspend, job is not RUNNING")
 
         self.js._job_suspend (self._id)
 
@@ -1624,7 +1672,7 @@ class ShellJob (cpi.Job) :
     def resume (self):
 
         if  self.get_state () != api.SUSPENDED :
-            raise IncorrectState ("Cannot resume, job is not SUSPENDED")
+            raise rse.IncorrectState ("Cannot resume, job is not SUSPENDED")
 
         self.js._job_resume (self._id)
 
@@ -1639,7 +1687,7 @@ class ShellJob (cpi.Job) :
                                       api.CANCELED, 
                                       api.DONE, 
                                       api.FAILED] :
-            raise IncorrectState ("Cannot cancel, job is not running")
+            raise rse.IncorrectState ("Cannot cancel, job is not running")
 
         if  self._state in [api.CANCELED, 
                             api.DONE, 
@@ -1658,5 +1706,5 @@ class ShellJob (cpi.Job) :
         return self._exception
 
 
-
+# ------------------------------------------------------------------------------
 

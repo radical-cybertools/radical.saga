@@ -7,10 +7,6 @@ __license__   = "MIT"
 # TODO: Create function to check for all the iRODS error codes and give
 #       a better error readout?
 
-# TODO: Look into feasibility of having this access remote resources
-#       if there isn't a local iRODS install
-#       (this may be extremely difficult...)
-
 # TODO: Add debug output for -all- icommands showing how they are executed
 #       IE "[DEBUG] Executing: ils -l /mydir/"
 
@@ -18,7 +14,6 @@ __license__   = "MIT"
 
 # TODO: Implement Andre's changes in the iRODS adaptors!
 
-# TODO: One shell per adaptor in the future?
 
 """iRODS replica adaptor implementation 
    Uses icommands commandline tools
