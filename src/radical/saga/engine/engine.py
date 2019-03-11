@@ -155,7 +155,7 @@ class Engine(object):
 
         # check if some unit test wants to use a special registry.  If
         # so, we reset cpi infos from the earlier singleton creation.
-        if inject_registry:
+        if inject_registry is not None:
             self._adaptor_registry = dict()
             self._registry = {'adaptor_registry' : inject_registry}
 

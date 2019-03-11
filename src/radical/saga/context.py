@@ -148,8 +148,6 @@ class Context (sb.Base, sa.Attributes) :
     #
     def __deepcopy__(self, memo):
 
-        print self
-        
         ret = Context(self.type)
 
         for a in self.list_attributes():

@@ -12,7 +12,7 @@ __license__   = "MIT"
 """
 
 import sys
-import saga
+import radical.saga as rs
 
 
 # ----------------------------------------------------------------------------
@@ -30,23 +30,23 @@ def main():
 
     try:
         # Your ssh identity on the remote machine.
-        # ctx = saga.Context("ssh")
+        # ctx = rs.Context("ssh")
 
         # Change e.g., if you have a differnent username on the remote machine
         #ctx.user_id = "your_ssh_username"
 
-        session = saga.Session()
+        session = rs.Session()
         # session.add_context(ctx)
 
         # Create a job service object that represent a remote pbs cluster.
         # The keyword 'pbs' in the url scheme triggers the PBS adaptors
         # and '+ssh' enables PBS remote access via SSH.
-        js = saga.job.Service("pbspro://localhost/",
+        js = rs.job.Service("pbspro://localhost/",
                               session=session)
 
         # Next, we describe the job we want to run. A complete set of job
         # description attributes can be found in the API documentation.
-        jd = saga.job.Description()
+        jd = rs.job.Description()
         jd.wall_time_limit   = 1 # minutes
         jd.executable        = '/bin/date'
 
@@ -64,7 +64,7 @@ def main():
         job = js.create_job(jd)
 
         # Register our callback. We want it to 'fire' on job state change
-        job.add_callback(saga.STATE, job_state_change_cb)
+        job.add_callback(rs.STATE, job_state_change_cb)
 
         # Check our job's id and state
         print "Job ID      : %s" % (job.id)
@@ -96,7 +96,7 @@ def main():
         js.close()
         return 0
 
-    except saga.SagaException, ex:
+    except rs.SagaException, ex:
         # Catch all saga exceptions
         print "An exception occured: (%s) %s " % (ex.type, (str(ex)))
         # Get the whole traceback in case of an exception -

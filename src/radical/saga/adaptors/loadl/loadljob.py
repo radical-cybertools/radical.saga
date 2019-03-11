@@ -240,7 +240,7 @@ class LOADLJobService (cpi.job.Service):
         self.enforce_consumable_memory = False
         self.enforce_consumable_virtual_memory = False
         self.enforce_consumable_large_page_memory = False
-        self.temp_path = "$HOME/.saga/adaptors/loadl_job"
+        self.temp_path = "$HOME/.radical/saga/adaptors/loadl_job"
 
         # LoadLeveler has two ways of specifying the executable and arguments.
         # - Explicit: the executable and arguments are specified as parameters.
@@ -364,7 +364,7 @@ class LOADLJobService (cpi.job.Service):
 
         # purge temporary files
         if self._adaptor.purge_on_start:
-            cmd = "find $HOME/.saga/adaptors/loadl_job" \
+            cmd = "find $HOME/.radical/saga/adaptors/loadl_job" \
                   " -type f -mtime +%d -print -delete | wc -l" \
                 % self._adaptor.purge_older_than
             ret, out, _ = self.shell.run_sync(cmd)

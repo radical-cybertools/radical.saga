@@ -19,6 +19,6 @@
     # Setting this value to the GO endpoint name of your laptop/desktop/etc.,
     # allows you to refer to it by "localhost" in your code. This enables
     # consistency with using your code with other adaptors.
-    "localhost_endpoint" : "$env{RADICAL_SAGA_GLOBUS_ONLINE_LOCALHOST_ENDPOINT}"
+    "localhost_endpoint" : "${RADICAL_SAGA_GLOBUS_ONLINE_LOCALHOST_ENDPOINT}"
 }
 

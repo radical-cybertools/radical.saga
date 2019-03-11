@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 
 __author__    = "Andre Merzky, Ole Weidner"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
@@ -51,3 +52,17 @@ def test_environment ():
         assert (True)
     except rs.SagaException as se:
         assert (False), "expected BadParameter exception, got %s" % se
+
+
+# ------------------------------------------------------------------------------
+#
+if __name__ == '__main__':
+
+    test_deepcopy()
+    test_environment_list()
+    test_environment_dict()
+    test_environment()
+
+
+# ------------------------------------------------------------------------------
+

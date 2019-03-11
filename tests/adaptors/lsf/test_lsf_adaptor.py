@@ -11,8 +11,8 @@ import unittest
 
 from saga.adaptors.lsf.lsfjob import _lsfscript_generator
 
-import saga.url as surl
-import saga
+import radical.saga.url as surl
+import radical.saga     as rs
 
 
 # ------------------------------------------------------------------------------
@@ -21,7 +21,7 @@ class TestGenerator(unittest.TestCase):
 
     def setUp(self):
         self._url = surl.Url('gsissh://summit.ccs.ornl.gov')
-        self._jd                 = saga.job.Description()
+        self._jd                 = rs.job.Description()
         self._jd.name            = 'Test'
         self._jd.executable      = '/bin/sleep'
         self._jd.arguments       = 60

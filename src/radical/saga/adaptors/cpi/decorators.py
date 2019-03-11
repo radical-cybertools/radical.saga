@@ -24,7 +24,7 @@ def SYNC_CALL (sync_function) :
 
     def wrap_function (self, *args, **kwargs) :
 
-        if 'ttype' in kwargs and kwargs['ttype'] is None :
+        if 'ttype' in kwargs and kwargs['ttype']:
 
             if not kwargs['ttype'] in (T_SYNC, T_ASYNC, T_TASK) :
                 # cannot handle that ttype value, do not call async methods

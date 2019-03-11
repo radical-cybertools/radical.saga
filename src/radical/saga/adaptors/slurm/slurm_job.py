@@ -572,11 +572,9 @@ class SLURMJobService (cpi_job.Service) :
         # TODO: Could make this more efficient
         self.job_id = None
         for line in out.split("\n"):
-            print 'line: %s' % line
             if "Submitted batch job" in line:
                 self.job_id = "[%s]-[%s]" % \
                     (self.rm, int(line.split()[-1:][0]))
-                print 'match: %s' % self.job_id
                 break
 
         # if we have no job ID, there's a failure...

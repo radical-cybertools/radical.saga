@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 
 __author__    = "Andre Merzky"
 __copyright__ = "Copyright 2013, The SAGA Project"
@@ -132,4 +133,23 @@ def test_ptyprocess_restart () :
 
     pty.finalize ()
     assert (not pty.alive ())
+
+
+# ------------------------------------------------------------------------------
+#
+if __name__ == '__main__':
+
+    test_ptyprocess_ok()
+    test_ptyprocess_nok()
+    test_ptyprocess_term()
+    test_ptyprocess_kill()
+    test_ptyprocess_suspend_resume()
+    test_ptyprocess_stdout()
+    test_ptyprocess_stderr()
+    test_ptyprocess_write()
+    test_ptyprocess_find()
+    test_ptyprocess_restart()
+
+
+# ------------------------------------------------------------------------------
 

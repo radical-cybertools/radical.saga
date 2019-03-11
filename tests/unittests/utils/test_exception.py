@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 
 __author__    = "Andre Merzky, Ole Weidner"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
@@ -9,9 +10,9 @@ __license__   = "MIT"
 
 import radical.saga as saga
 
-import radical.utils as ru
 
-
+# ------------------------------------------------------------------------------
+#
 def test_Exceptions():
     """ Test if Exceptions work properly
     """
@@ -23,4 +24,12 @@ def test_Exceptions():
         assert (msg in str(se)), "'%s' not in '%s'" % (msg, se)
 
 
+# ------------------------------------------------------------------------------
+#
+if __name__ == '__main__':
+
+    test_Exceptions()
+
+
+# ------------------------------------------------------------------------------
 

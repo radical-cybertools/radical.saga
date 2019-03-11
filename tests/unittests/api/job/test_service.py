@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 
 __author__    = "Andre Merzky, Ole Weidner"
 __copyright__ = "Copyright 2013, The SAGA Project"
@@ -263,4 +264,21 @@ def test_jobid_viability ():
 
     except saga.SagaException as se:
         assert False, "Unexpected exception: %s" % se
+
+
+# ------------------------------------------------------------------------------
+#
+if __name__ == '__main__':
+
+    test_close()
+    test_open_close()
+    test_get_url()
+    test_list_jobs()
+    test_run_job()
+    test_get_job()
+    test_multiple_services()
+    test_jobid_viability()
+
+
+# ------------------------------------------------------------------------------
 

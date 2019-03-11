@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 
 __author__    = "Andre Merzky, Ole Weidner"
 __copyright__ = "Copyright 2013, The SAGA Project"
@@ -434,6 +435,26 @@ def test_get_id(job_service, cfg, tools):
 
     finally:
         tools.silent_cancel (j)
+
+
+# ------------------------------------------------------------------------------
+#
+if __name__ == '__main__':
+
+    test_job_service_get_url()
+    test_job_service_invalid_url()
+    test_job_service_create()
+    test_job_service_get_session()
+    test_job_run()
+    test_job_wait()
+    test_job_multiline_run()
+    test_job_suspend_resume()
+    test_job_cancel()
+    test_job_run_many()
+    test_get_exit_code()
+    test_get_stdio()
+    test_get_service_url()
+    test_get_id()
 
 
 # ------------------------------------------------------------------------------

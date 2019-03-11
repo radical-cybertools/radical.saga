@@ -10,7 +10,7 @@ export HISTIGNORE
 #
 # The invokation passes one (optional) parameter, the base workdir.  That
 # directory will be used to keep job state data. It' default value is set to
-# $HOME/.saga/adaptors/shell_job/
+# $HOME/.radical/saga/adaptors/shell_job/
 
 
 # --------------------------------------------------------------------
@@ -68,7 +68,7 @@ export GID
 BASE="$1"; shift
 if test -z "$BASE"
 then
-  BASE=$HOME/.saga/adaptors/shell_job/
+  BASE=$HOME/.radical/saga/adaptors/shell_job/
 fi
 NOTIFICATIONS="$BASE/notifications"
 LOG="$BASE/log"

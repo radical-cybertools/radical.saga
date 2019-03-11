@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 
 __author__    = "Andre Merzky"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
@@ -11,53 +12,55 @@ def my_cb (a, b, c) :
     print " ----- callback: [%s, %s, %s]" % (a, b, c)
     return True
 
-try :
-    c = saga.Context ('UserPass')
-    c.user_id   = 'tester'
-    c.user_pass = 'testtest'
+def test_jobs():
 
-    s = saga.Session (default=False)
-  # s.add_context (c)
+    try :
+    #   c = saga.Context ('UserPass')
+    #   c.user_id   = 'tester'
+    #   c.user_pass = 'testtest'
+
+        s = saga.Session (default=False)
+      # s.add_context (c)
 
 
-  # js = saga.job.Service ('gsissh://gsissh.kraken.nics.xsede.org', session=s)
-  # js = saga.job.Service ('ssh://localhost/', session=s)
-    js = saga.job.Service ('ssh://india.futuregrid.org/', session=s)
-  
-    jd = saga.job.Description ()
-    jd.executable = '/bin/echo'
-    jd.arguments  = ['hello world; date ; sleep 3; date -a']
- #  jd.output     = "/tmp/out"
- #  jd.error      = "/tmp/err"
-  
-    j = js.create_job (jd)
- #  j.add_callback ('State', my_cb)
-    print j.created
-    j.run ()
+      # js = saga.job.Service ('gsissh://gsissh.kraken.nics.xsede.org', session=s)
+        js = saga.job.Service ('ssh://localhost/', session=s)
+      # js = saga.job.Service ('ssh://india.futuregrid.org/', session=s)
 
-    print j.started
-    print "state: %s" % j.state
-    time.sleep (1)
-    print "state: %s" % j.state
+        jd = saga.job.Description ()
+        jd.executable = '/bin/echo'
+        jd.arguments  = ['hello world; date ; sleep 3; date -a']
+     #  jd.output     = "/tmp/out"
+     #  jd.error      = "/tmp/err"
 
-    while not j.wait (1.0) :
-        print "..."
+        j = js.create_job (jd)
+     #  j.add_callback ('State', my_cb)
+        print j.created
+        j.run ()
 
-    print "state: %s" % j.state
-    print j.finished
+        print j.started
+        print "state: %s" % j.state
+        time.sleep (1)
+        print "state: %s" % j.state
 
-    print "stdout: %s" % j.get_stdout_string ()
-    print "stderr: %s" % j.get_stderr_string ()
+        while not j.wait (1.0) :
+            print "..."
 
-    print 'exc: %s' % j.get_exception()
-    j.re_raise ()
+        print "state: %s" % j.state
+        print j.finished
 
-    # print "list : %s" % js.list ()
-    # for id in js.list () :
-    #     print "--%s--" % id
+        print "stdout: %s" % j.get_stdout_string ()
+        print "stderr: %s" % j.get_stderr_string ()
 
-except saga.SagaException as e :
-    print "Error: %s" % str(e)
+        print 'exc: %s' % j.get_exception()
+        j.re_raise ()
+
+        # print "list : %s" % js.list ()
+        # for id in js.list () :
+        #     print "--%s--" % id
+
+    except saga.SagaException as e :
+        print "Error: %s" % str(e)
 
 
 

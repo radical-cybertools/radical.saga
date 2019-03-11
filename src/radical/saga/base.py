@@ -5,12 +5,10 @@ __license__   = "MIT"
 
 
 import sys
-import string
 import inspect
 
 import radical.utils              as ru
 import radical.utils.signatures   as rus
-import radical.utils.logger       as rul
 
 from .adaptors import base        as sab
 from .         import engine
@@ -52,28 +50,29 @@ class SimpleBase (object) :
         # apitype for saga.job.service.Service should be saga.job.Service --
         # but we need to make sure that this actually exists and is equivalent.
 
-        mname_1 = self.__module__           # saga.job.service
-        cname   = self.__class__.__name__   # Service
+        mname_1 = self.__module__            # saga.job.service
+        cname   = self.__class__.__name__    # Service
 
-        mname_1_elems = mname_1.split ('.') # ['saga', 'job', 'service']
-        mname_1_elems.pop ()                # ['saga', 'job']
-        mname_2 = '.'.join (mname_1_elems)  #  'saga.job'
+        mname_1_elems = mname_1.split ('.')  # ['saga', 'job', 'service']
+        mname_1_elems.pop ()                 # ['saga', 'job']
+        mname_2 = '.'.join (mname_1_elems)   # 'saga.job'
 
         for mod_cname, mod_class in inspect.getmembers (sys.modules[mname_2]) :
             if  mod_cname == cname           and \
                 inspect.isclass (mod_class)  and \
                 isinstance (self, mod_class)     :
 
-                apitype = "%s.%s" % (mname_2, cname) # saga.job.Service
+                apitype = "%s.%s" % (mname_2, cname)  # saga.job.Service
                 return apitype
 
-        apitype = "%s.%s" % (mname_1, cname) # saga.job.service.Service
+        apitype = "%s.%s" % (mname_1, cname)  # saga.job.service.Service
         return apitype
 
-    
+
 # ------------------------------------------------------------------------------
 #
 class Base (SimpleBase) :
+
 
     # --------------------------------------------------------------------------
     #
@@ -89,9 +88,9 @@ class Base (SimpleBase) :
         SimpleBase.__init__ (self)
 
         _engine       = engine.Engine ()
-
         self._adaptor = adaptor
-        self._adaptor = _engine.bind_adaptor (self, self._apitype, schema, adaptor)
+        self._adaptor = _engine.bind_adaptor(self, self._apitype, schema,
+                                             adaptor)
 
         # Sync creation (normal __init__) will simply call the adaptor's
         # init_instance at this point.  _init_task should *not* be evaluated,
@@ -102,7 +101,8 @@ class Base (SimpleBase) :
         # on CPI level to provide the task instance itself, and point the task's
         # workload to the adaptor level init_instance method.
 
-        self._init_task = self._adaptor.init_instance (adaptor_state, *args, **kwargs)
+        self._init_task = self._adaptor.init_instance(adaptor_state, *args,
+                                                      **kwargs)
 
         if 'ttype' in kwargs and kwargs['ttype'] :
             # in this case we in in fact need the init_task later on, to return
@@ -130,9 +130,6 @@ class Base (SimpleBase) :
 
     session = property (get_session)
 
-#
+
 # ------------------------------------------------------------------------------
-
-
-
 

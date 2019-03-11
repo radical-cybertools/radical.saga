@@ -127,7 +127,6 @@ class Adaptor (a_base.Base):
     def parse_id (self, id) :
         # split the id '[manager-url]-[resource-url]' in its parts, and return them.
 
-        print id
         match = self.id_re.match (id)
 
         if  not match or len (match.groups()) != 2 :

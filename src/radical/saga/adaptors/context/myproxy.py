@@ -63,7 +63,6 @@ class Adaptor (base.Base):
     def __init__ (self) :
 
         base.Base.__init__ (self, _ADAPTOR_INFO)
-        print 'loaded!'
 
         # there are no default myproxy contexts
         self._default_contexts = []

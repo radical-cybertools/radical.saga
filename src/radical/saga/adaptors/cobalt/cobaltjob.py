@@ -339,7 +339,7 @@ _ADAPTOR_OPTIONS       = [
         'category'         : 'radical.saga.adaptors.cobaltjob',
         'name'             : 'base_workdir',
         'type'             : str,
-        'default'          : "$HOME/.saga/adaptors/cobaltjob/",
+        'default'          : "$HOME/.radical/saga/adaptors/cobaltjob/",
         'documentation'    : '''The adaptor stores job state information on the
                               filesystem on the target resource. This parameter
                               specified what location should be used.''',

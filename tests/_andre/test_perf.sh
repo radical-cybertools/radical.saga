@@ -31,61 +31,61 @@ done ; echo "QUIT") \
    | ssh amerzky@cyder.cct.lsu.edu "sh ~/.saga/adaptors/ssh_job/wrapper.sh" | wc -l) > /dev/null
 echo
 
-# echo "saga.job.Service ('fork://localhost/').create_job ()"
+# echo "rs.job.Service ('fork://localhost/').create_job ()"
 # time python -c "
-# import saga
-# jd = saga.job.Description ()
+# import radical.saga as rs
+# jd = rs.job.Description ()
 # jd.executable = '/bin/sleep'
 # jd.arguments  = ['1']
-# js = saga.job.Service ('fork://localhost/')
+# js = rs.job.Service ('fork://localhost/')
 # for i in range (0, $N) :
 #   j=js.create_job (jd)
 #   j.run ()
 # "
 # echo
 # 
-# echo "saga.job.Service ('fork://localhost/').run_job ()"
+# echo "rs.job.Service ('fork://localhost/').run_job ()"
 # time python -c "
-# import saga
-# js = saga.job.Service ('fork://localhost/')
+# import radical.saga as rs
+# js = rs.job.Service ('fork://localhost/')
 # for i in range (0, $N) :
 #   j=js.run_job ('/bin/echo %d; /bin/echo %s 1>&2' % (i, i+1))
 # "
 # echo
 # 
-# echo "saga.job.Service ('ssh://localhost/').create_job ()"
+# echo "rs.job.Service ('ssh://localhost/').create_job ()"
 # time python -c "
-# import saga
-# jd = saga.job.Description ()
+# import radical.saga as rs
+# jd = rs.job.Description ()
 # jd.executable = '/bin/sleep'
 # jd.arguments  = ['1']
-# js = saga.job.Service ('ssh://localhost/')
+# js = rs.job.Service ('ssh://localhost/')
 # for i in range (0, $N) :
 #   j=js.create_job (jd)
 #   j.run ()
 # "
 # echo
 # 
-# echo "saga.job.Service ('ssh://amerzky@cyder.cct.lsu.edu/').create_job()"
+# echo "rs.job.Service ('ssh://amerzky@cyder.cct.lsu.edu/').create_job()"
 # time python -c "
-# import saga
-# jd = saga.job.Description ()
+# import radical.saga as rs
+# jd = rs.job.Description ()
 # jd.executable = '/bin/sleep'
 # jd.arguments  = ['1']
-# js = saga.job.Service ('ssh://amerzky@cyder.cct.lsu.edu/')
+# js = rs.job.Service ('ssh://amerzky@cyder.cct.lsu.edu/')
 # for i in range (0, $N) :
 #   j=js.create_job (jd)
 #   j.run ()
 # "
 # echo
 
-# echo "saga.job.Service ('gsissh://trestles-login.sdsc.edu/').create_job"
+# echo "rs.job.Service ('gsissh://trestles-login.sdsc.edu/').create_job"
 # time python -c "
-# import saga
-# jd = saga.job.Description ()
+# import radical.saga as rs
+# jd = rs.job.Description ()
 # jd.executable = '/bin/sleep'
 # jd.arguments  = ['1']
-# js = saga.job.Service ('gsissh://trestles-login.sdsc.edu/')
+# js = rs.job.Service ('gsissh://trestles-login.sdsc.edu/')
 # for i in range (0, $N) :
 #   j=js.create_job (jd)
 #   j.run ()

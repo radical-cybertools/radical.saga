@@ -132,7 +132,7 @@ class PTYShell (object) :
     that purpose, the shell started on the first channel will create a named
     pipe, at::
 
-      $HOME/.saga/adaptors/shell/async.$$
+      $HOME/.radical/saga/adaptors/shell/async.$$
 
     ``$$`` here represents the pid of the shell process.  It will also set the
     environment variable ``SAGA_ASYNC_PIPE`` to point to that named pipe -- any
@@ -225,7 +225,7 @@ class PTYShell (object) :
 
         # we need a local dir for file staging caches.  At this point we use
         # $HOME, but should make this configurable (FIXME)
-        self.base = os.environ['HOME'] + '/.saga/adaptors/shell/'
+        self.base = os.environ['HOME'] + '/.radical/saga/adaptors/shell/'
 
         try:
             os.makedirs (self.base)
@@ -662,7 +662,7 @@ class PTYShell (object) :
                 redir = ""
                 _err  = "/tmp/saga-python.ssh-job.stderr.$$"
 
-                if iomode is None    : iomode =  STDOUT 
+                if iomode is None    : redir  =  ""
                 if iomode == IGNORE  : redir  =  " 1>>/dev/null 2>>/dev/null" 
                 if iomode == MERGED  : redir  =  " 2>&1" 
                 if iomode == SEPARATE: redir  =  " 2>%s" % _err 
