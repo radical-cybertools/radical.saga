@@ -13,7 +13,7 @@ import os
 import sys
 import shutil
 
-import radical.utils as ru
+import subprocess as sp
 
 name     = 'radical.saga'
 mod_root = 'src/radical/saga/'
@@ -66,20 +66,21 @@ def get_version(mod_root):
         # and the pip version used uses an install tmp dir in the ve space
         # instead of /tmp (which seems to happen with some pip/setuptools
         # versions).
-        out, err, ret = ru.sh_callout(
+        p = sp.Popen(
             'cd %s ; '
             'test -z `git rev-parse --show-prefix` || exit -1; '
             'tag=`git describe --tags --always` 2>/dev/null ; '
-            'branch=`git branch | grep -e "^*" | cut -f 2- -d " "` 2>/dev/null ; '
-            'echo $tag@$branch' % src_root, shell=True)
-        version_detail = out.strip()
+            'branch=`git branch | grep -e "^*" | cut -f 2- -d " "` 2>/dev/null;'
+            'echo $tag@$branch' % src_root,
+            stdout=sp.PIPE, stderr=sp.STDOUT, shell=True)
+        version_detail = str(p.communicate()[0].strip())
         version_detail = version_detail.replace('detached from ', 'detached-')
 
         # remove all non-alphanumeric (and then some) chars
         version_detail = re.sub('[/ ]+', '-', version_detail)
         version_detail = re.sub('[^a-zA-Z0-9_+@.-]+', '', version_detail)
 
-        if  ret            !=  0  or \
+        if  p.returncode   !=  0  or \
             version_detail == '@' or \
             'git-error'      in version_detail or \
             'not-a-git-repo' in version_detail or \
@@ -113,6 +114,7 @@ def get_version(mod_root):
             shutil.move("VERSION", "VERSION.bak")            # backup version
             shutil.copy("%s/VERSION" % path, "VERSION")      # use full version
             os.system  ("python setup.py sdist")             # build sdist
+            os.system  ("ls -la dist >> /tmp/t")
             shutil.copy('dist/%s' % sdist_name,
                         '%s/%s'   % (mod_root, sdist_name))  # copy into tree
             shutil.move("VERSION.bak", "VERSION")            # restore version
@@ -240,8 +242,8 @@ class RunTwine(Command):
 
 # ------------------------------------------------------------------------------
 #
-if  sys.hexversion < 0x02060000 or sys.hexversion >= 0x03000000:
-    raise RuntimeError("SETUP ERROR: %s requires Python 2.6 or higher" % name)
+if  sys.hexversion < 0x02070000 or sys.hexversion >= 0x03000000:
+    raise RuntimeError("SETUP ERROR: %s requires Python 2.7 or higher" % name)
 
 
 # -------------------------------------------------------------------------------
@@ -280,7 +282,7 @@ setup_args = {
     'package_data'       : {'': ['*.txt', '*.sh', '*.json', '*.gz',
                                  'VERSION', 'SDIST', sdist_name]},
   # 'setup_requires'     : ['pytest-runner'],
-    'install_requires'   : ['radical.utils>=0.60',
+    'install_requires'   : ['radical.utils>=0.50',
                             'apache-libcloud', 
                             'parse'
                            ],
