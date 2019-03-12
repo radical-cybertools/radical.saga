@@ -11,7 +11,7 @@ __license__   = "MIT"
 # --------------------------------------------------------------------
 #
 import re
-import saga.engine.registry
+import radical.saga.engine.registry
 
 
 # --------------------------------------------------------------------
@@ -93,7 +93,7 @@ def cleanup (text) :
 # --------------------------------------------------------------------
 #
 def make_adaptor_docs():
-    idx = "%s/%s.rst" % (DOCROOT, 'saga.adaptor.index')
+    idx = "%s/%s.rst" % (DOCROOT, 'radical.saga.adaptor.index')
     i   = open (idx, 'w')
 
     i.write (".. _chapter_adaptors:\n")
@@ -106,7 +106,7 @@ def make_adaptor_docs():
     i.write ("   :maxdepth: 1\n")
     i.write ("\n")
 
-    for a in saga.engine.registry.adaptor_registry :
+    for a in radical.saga.engine.registry.adaptor_registry :
 
         m = None
         try :
@@ -250,7 +250,7 @@ def make_adaptor_docs():
             is_context = True
             for cpi in m._ADAPTOR_INFO['cpis'] :
 
-                if cpi['type'] != 'saga.Context' :
+                if cpi['type'] != 'radical.saga.Context' :
                     is_context = False
 
                 if is_context :

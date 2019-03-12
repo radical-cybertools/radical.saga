@@ -17,37 +17,40 @@ __license__   = "MIT"
    script in order to get some debug output.
 
    If you think you have encountered a defect, please 
-   report it at: https://github.com/saga-project/saga-python/issues
+   report it at: https://github.com/radical-cybertools/saga-python/issues
 '''
 
 __author__    = "Ashley Zebrowski"
 __copyright__ = "Copyright 2012-2013, Ashley Zebrowski"
 __license__   = "MIT"
 
-import sys, time
-import saga
+import sys
 import os
 import logging
 import subprocess
-import saga.utils.pty_shell
 
-FILE_SIZE = 1 # in megs, approx
-NUM_REPLICAS = 1 # num replicas to create
-TEMP_FILENAME = "test.txt" # filename to create and use for testing
-TEMP_DIR      = "/irods_test_dir/" #directory to create and use for testing
+import radical.saga as rs
+
+
+FILE_SIZE     = 1                   # in megs, approx
+NUM_REPLICAS  = 1                   # num replicas to create
+TEMP_FILENAME = "test.txt"          # filename to create and use for testing
+TEMP_DIR      = "/irods_test_dir/"  # directory to create and use for testing
+
 
 def usage():
     print 'Usage: python %s ' % __file__
     print ' <IRODS_DIRECTORY> (e.x. /osg/home/username/)'
     print ' <IRODS_RESOURCE>  (e.x. osgGridFtpGroup)>'
     print
-    print "For example: python %s " % __file__ + "/irods/mydir/ irodsResourceGroup"
-    print "Please specify an iRODS resource group for <IRODS_RESOURCE> " +\
+    print "For example: python %s " % __file__ + "/irods/mydir/ irodsGroup"
+    print "Please specify an iRODS resource group for <IRODS_RESOURCE> " \
           "if possible in order to properly test replication."
 
+
 def main(args):
-    # handle args
-    if len(args)!=3:
+
+    if len(args) != 3:
         usage()
         exit(-1)
 
@@ -59,36 +62,40 @@ def main(args):
 
     # remove any intermediary files that may have been created on iRODS 
     # from an earlier, failed run of this script
+    #
     try:
-        subprocess.check_call(["irm", IRODS_DIRECTORY+TEMP_FILENAME])
-    except:
-        pass
-    try:
-        subprocess.check_call(["irm", '-r', IRODS_DIRECTORY+TEMP_DIR])
-    except:
-        pass
-    try:
-        subprocess.check_call(["rm", "/tmp/"+TEMP_FILENAME])
+        subprocess.check_call(["irm", IRODS_DIRECTORY + TEMP_FILENAME])
     except:
         pass
 
     try:
-        myfile = saga.replica.LogicalFile('irods://' + IRODS_DIRECTORY+TEMP_FILENAME)
+        subprocess.check_call(["irm", '-r', IRODS_DIRECTORY + TEMP_DIR])
+    except:
+        pass
+
+    try:
+        subprocess.check_call(["rm", "/tmp/" + TEMP_FILENAME])
+    except:
+        pass
+
+    try:
+        myfile = rs.replica.LogicalFile('irods://' + IRODS_DIRECTORY +
+                                                                  TEMP_FILENAME)
 
         # grab our home directory (tested on Linux)
-        home_dir = os.path.expanduser("~"+"/")
+        home_dir = os.path.expanduser("~" + "/")
         print "Creating temporary file of size %dM : %s" % \
-            (FILE_SIZE, home_dir+TEMP_FILENAME)
+            (FILE_SIZE, home_dir + TEMP_FILENAME)
 
         # create a file for us to use with iRODS
         with open(home_dir+TEMP_FILENAME, "wb") as f:
             f.write ("x" * (FILE_SIZE * pow(2,20)) )
 
         print "Creating iRODS directory object"
-        mydir = saga.replica.LogicalDirectory("irods://localhost/" + IRODS_DIRECTORY) 
+        mydir = rs.replica.LogicalDirectory("irods://localhost/" + IRODS_DIRECTORY) 
 
         print "Uploading file to iRODS"
-        myfile = saga.replica.LogicalFile('irods://localhost/'+IRODS_DIRECTORY+TEMP_FILENAME)
+        myfile = rs.replica.LogicalFile('irods://localhost/'+IRODS_DIRECTORY+TEMP_FILENAME)
         myfile.upload(home_dir + TEMP_FILENAME, \
                      "irods:///this/path/is/ignored/?resource="+IRODS_RESOURCE)
 
@@ -100,7 +107,7 @@ def main(args):
             print entry
 
         print "Creating iRODS file object"
-        myfile = saga.replica.LogicalFile('irods://localhost/' + IRODS_DIRECTORY+TEMP_FILENAME)
+        myfile = rs.replica.LogicalFile('irods://localhost/' + IRODS_DIRECTORY+TEMP_FILENAME)
         
         print "Creating",NUM_REPLICAS,"replicas for",IRODS_DIRECTORY+TEMP_FILENAME
         for i in range(NUM_REPLICAS):

@@ -5,7 +5,7 @@ __copyright__ = "Copyright 2013, The SAGA Project"
 __license__   = "MIT"
 
 
-'''This examples shows how to use the saga.Filesystem API
+'''This examples shows how to use the rs.Filesystem API
    with the SFTP file adaptor.
 
    If something doesn't work as expected, try to set
@@ -13,39 +13,40 @@ __license__   = "MIT"
    script in order to get some debug output.
 
    If you think you have encountered a defect, please 
-   report it at: https://github.com/saga-project/saga-python/issues
+   report it at: https://github.com/radical-cybertools/saga-python/issues
 '''
 
 import sys
-import saga
+
+import radical.saga as rs
 
 
 def main():
 
     try:
         # Your ssh identity on the remote machine.
-        ctx = saga.Context("ssh")
+        ctx = rs.Context("ssh")
 
         # Change e.g., if you have a differnent username on the remote machine
         #ctx.user_id = "your_ssh_username"
 
-        session = saga.Session()
+        session = rs.Session()
         session.add_context(ctx)
 
         # open home directory on a remote machine
-        remote_dir = saga.filesystem.Directory('sftp://localhost/',
+        remote_dir = rs.filesystem.Directory('sftp://localhost/',
                                                session=session)
 
         # copy .bash_history to /tmp/ on the local machine
         remote_dir.copy('/etc/hosts', 'file://localhost/tmp/')
 
         # list 'h*' in local /tmp/ directory
-        local_dir = saga.filesystem.Directory('file://localhost/tmp/')
+        local_dir = rs.filesystem.Directory('file://localhost/tmp/')
         for entry in local_dir.list(pattern='h*'):
             print entry
         return 0
 
-    except saga.SagaException, ex:
+    except rs.SagaException, ex:
         # Catch all saga exceptions
         print "An exception occured: (%s) %s " % (ex.type, (str(ex)))
         # Trace back the exception. That can be helpful for debugging.

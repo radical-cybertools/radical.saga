@@ -6,8 +6,11 @@ __license__   = "MIT"
 
 import sys
 import time
-import saga
+
 from PIL import Image
+
+import radica.saga as rs
+
 
 REMOTE_JOB_ENDPOINT = "condor://localhost"
 
@@ -24,7 +27,7 @@ if __name__ == "__main__":
         # list that holds the jobs
         jobs = []
 
-        jobservice = saga.job.Service(REMOTE_JOB_ENDPOINT)
+        jobservice = rs.job.Service(REMOTE_JOB_ENDPOINT)
 
         for x in range(0, TILESX):
             for y in range(0, TILESY):
@@ -32,7 +35,7 @@ if __name__ == "__main__":
                 # describe a single Mandelbrot job. we're using the
                 # directory created above as the job's working directory
                 outputfile = 'tile_x%s_y%s.gif' % (x, y)
-                jd = saga.job.Description()
+                jd = rs.job.Description()
                 # candidate hosts can be changed / and or commented out
                 # the list below seems to be a good working set for OSG
                 #jd.candidate_hosts = ["FNAL_FERMIGRID", "cinvestav", "SPRACE",
@@ -65,7 +68,7 @@ if __name__ == "__main__":
             for job in jobs:
                 jobstate = job.get_state()
                 print ' * Job %s status: %s' % (job.id, jobstate)
-                if jobstate in [saga.job.DONE, saga.job.FAILED]:
+                if jobstate in [rs.job.DONE, rs.job.FAILED]:
                     jobs.remove(job)
             time.sleep(5)
 
@@ -81,7 +84,7 @@ if __name__ == "__main__":
         fullimage.save("mandelbrot_full.gif", "GIF")
         sys.exit(0)
 
-    except saga.SagaException, ex:
+    except rs.SagaException, ex:
         # Catch all saga exceptions
         print "An exception occured: (%s) %s " % (ex.type, (str(ex)))
         # Trace back the exception. That can be helpful for debugging.

@@ -350,7 +350,7 @@ class SGEJobService (cpi.Service):
                 if ret != 0:
                     # fix for a bug in certain qstat versions that return
                     # '1' after a successfull qstat -help:
-                    # https://github.com/saga-project/saga-python/issues/163
+                    # https://github.com/radical-cybertools/saga-python/issues/163
                     if cmd == 'qstat':
                         version = out.strip().split('\n')[0]
                     else:

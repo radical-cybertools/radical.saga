@@ -215,7 +215,7 @@ The following context attributes are supported:
     # The same SSH key-pair as above, but this one will be picked up by the SSH
     # adaptor. While this is somewhat redundant, it is still necessary because
     # of current limitations imposed by 'liblcoud', the library which implements
-    # the saga-python EC2 adaptor. 
+    # the radical.saga EC2 adaptor. 
     ssh_ctx = saga.Context('SSH')
     ssh_ctx.user_id = 'root'
     ssh_ctx.user_key = '$HOME/.ssh/ec2_key'

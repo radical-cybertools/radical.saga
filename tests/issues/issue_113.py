@@ -4,7 +4,7 @@ __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
 
-""" https://github.com/saga-project/saga-python/issues/113
+""" https://github.com/radical-cybertools/saga-python/issues/113
 """
 
 import sys

@@ -2,7 +2,7 @@
 Part 1: Introduction
 ********************
 
-The SAGA Python module provides an object-oriented programming interface for job
+The RADICAL-SAGA module provides an object-oriented programming interface for job
 submission and management, resource allocation, file handling and coordination
 and communication - functionality that is required in the majority of
 distributed applications, frameworks and tool.
@@ -24,7 +24,7 @@ implement input and output file staging.
 Installation
 ============
 
-.. warning:: SAGA-Python requires **Python >= 2.5**. It won't work with an older version of Python.
+.. warning:: RADICAL-SAGA requires **Python >= 2.7**. It won't work with an older version of Python.
 
 Install Virtualenv
 ------------------
@@ -56,20 +56,20 @@ Next, you need to activate your Python environment in order to make it work:
 Activating the virtualenv is very important. If you don't activate your virtualenv, the rest of this tutorial will not work. You can usually tell that your environment is activated properly if your bash command-line prompt starts with ``(tutorial)``.
 
 
-Install SAGA Python
--------------------
+Install RADICAL-SAGA
+--------------------
 
-The latest saga-python module is available via the `Python Package Index <https://pypi.python.org/pypi/saga-python>`_  (PyPi). PyPi packages are installed very similar to Linux deb or rpm packages with a tool called ``pip`` (which stands for "pip installs packages"). Pip is installed by default in your virtualenv, so in order to install SAGA Python, the only thing you have to do is this:
+The latest radical.saga module is available via the `Python Package Index <https://pypi.python.org/pypi/radical.saga>`_  (PyPi). PyPi packages are installed very similar to Linux deb or rpm packages with a tool called ``pip`` (which stands for "pip installs packages"). Pip is installed by default in your virtualenv, so in order to install RADICAL-SAGA, the only thing you have to do is this:
 
 .. code-block:: bash
 
-   pip install saga-python
+   pip install radical.saga
 
 To make sure that your installation works, run the following command to check if
-the saga-python module can be imported by the interpreter (the output of the
-command below should be version number of the saga-python module):
+the radical.saga module can be imported by the interpreter (the output of the
+command below should be version number of the radical.saga module):
 
 .. code-block:: bash
 
-   python -c "import saga; print saga.version"
+   python -c "import radical.saga as rs; print rs.version"
 

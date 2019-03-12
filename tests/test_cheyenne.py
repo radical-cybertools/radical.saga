@@ -8,7 +8,7 @@ __license__   = "MIT"
     using the 'PBSPRO' job adaptor.
 
     More information about the saga-python job API can be found at:
-    http://saga-project.github.com/saga-python/doc/library/job/index.html
+    http://radical-cybertools.github.com/saga-python/doc/library/job/index.html
 """
 
 import sys

@@ -2,7 +2,7 @@
 
 title SAGA Startup Sequence
 
-Application->+core.Core: import saga
+Application->+core.Core: import radical.saga
 
 core.Core->+core.GlobalConfig: setup config
 
