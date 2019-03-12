@@ -9,8 +9,6 @@ __license__ = "MIT"
 """
 import unittest
 
-from saga.adaptors.lsf.lsfjob import _lsfscript_generator
-
 import radical.saga.url as surl
 import radical.saga     as rs
 
@@ -20,7 +18,8 @@ import radical.saga     as rs
 class TestGenerator(unittest.TestCase):
 
     def setUp(self):
-        self._url = surl.Url('gsissh://summit.ccs.ornl.gov')
+      # self._url = surl.Url('gsissh://summit.ccs.ornl.gov')
+        self._url = surl.Url('gsissh://localhost')
         self._jd                 = rs.job.Description()
         self._jd.name            = 'Test'
         self._jd.executable      = '/bin/sleep'
@@ -32,7 +31,7 @@ class TestGenerator(unittest.TestCase):
         self._jd.project         = 'TestProject'
         self._jd.wall_time_limit = 70
         self._jd.total_cpu_count = 65
-        
+
         self._script = "\n#!/bin/bash \n" \
                      + "#BSUB -J Test \n" \
                      + "#BSUB -o output.log \n" \
@@ -46,6 +45,9 @@ class TestGenerator(unittest.TestCase):
                      + "/bin/sleep 60 "
 
     def test_lsfscript_generator(self):
+
+        from radical.saga.adaptors.lsf.lsfjob import _lsfscript_generator
+
         script = _lsfscript_generator(url=self._url, logger=None, jd=self._jd,
                                       ppn=None, lsf_version=None, queue=None,
                                       span=None)
