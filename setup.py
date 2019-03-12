@@ -279,7 +279,7 @@ setup_args = {
     'scripts'            : ['bin/radical-saga-version'],
     'package_data'       : {'': ['*.txt', '*.sh', '*.json', '*.gz',
                                  'VERSION', 'SDIST', sdist_name]},
-    'setup_requires'     : ['pytest-runner'],
+  # 'setup_requires'     : ['pytest-runner'],
     'install_requires'   : ['radical.utils>=0.60',
                             'apache-libcloud', 
                             'parse'
