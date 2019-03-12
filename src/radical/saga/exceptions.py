@@ -42,7 +42,7 @@ class SagaException (Exception) :
           print "Exception occurred: %s %s" % (e, e.traceback)
 
     There are cases where multiple backends can report errors at the same time.
-    In that case, the saga-python implementation will collect the exceptions,
+    In that case, the radical.saga implementation will collect the exceptions,
     sort them by their 'rank', and return the highest ranked one.  All other
     catched exceptions are available via :func:`get_all_exceptions`, or via the
     `exceptions` property.
@@ -265,7 +265,7 @@ class SagaException (Exception) :
     #
     def _get_exception_stack (self) :
         """ 
-        This method is internally used by the saga-python engine, and is only
+        This method is internally used by the radical.saga engine, and is only
         relevant for operations which (potentially) bind to more than one
         adaptor.
         """
@@ -322,7 +322,7 @@ class SagaException (Exception) :
 # ------------------------------------------------------------------------------
 #
 class NotImplemented(SagaException, NotImplementedError):
-    """ SAGA-Python does not implement this method or class. (rank: 11)"""
+    """ radical.saga does not implement this method or class. (rank: 11)"""
 
     _rank = 11
 

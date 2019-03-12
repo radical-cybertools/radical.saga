@@ -334,7 +334,7 @@ class EC2Keypair (cpi_context.Context) :
     error occurs, the context will not be added to the session.
 
     The `UserKey` attribute can point to either the public or private key of the
-    ssh keypair -- the SAGA-Python implementation will internally complete the
+    ssh keypair -- the RADICAL-SAGA implementation will internally complete the
     respective other key (public key file names are expected to be derived from
     the private key, by appending the suffix `.pub`).
 

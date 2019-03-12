@@ -26,7 +26,7 @@ from .  import constants           as c
 # 
 class Manager (sb.Base, async.Async) :
     """
-    In the context of SAGA-Python, a *ResourceManager* is a service which
+    In the context of RADICAL-SAGA, a *ResourceManager* is a service which
     asserts control over a set of resources.  That manager can, on request,
     render control over subsets of those resources (resource slices) to an
     application.

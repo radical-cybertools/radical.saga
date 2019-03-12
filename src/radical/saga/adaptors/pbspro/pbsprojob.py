@@ -265,7 +265,7 @@ def _script_generator(url, logger, jd, ppn, gres, version, is_cray=False,
     # argument in the resource_list).  This is currently only implemented for
     # "bigflash" on Gordon@SDSC
     #
-    # https://github.com/radical-cybertools/saga-python/issues/406
+    # https://github.com/radical-cybertools/radical.saga/issues/406
 
     queue_spec      = ''
     node_properties = []
@@ -317,7 +317,7 @@ def _script_generator(url, logger, jd, ppn, gres, version, is_cray=False,
     # Parse candidate_hosts
     #
     # Currently only implemented for "bigflash" on Gordon@SDSC
-    # https://github.com/radical-cybertools/saga-python/issues/406
+    # https://github.com/radical-cybertools/radical.saga/issues/406
     #
     if jd.candidate_hosts:
         if 'BIG_FLASH' in jd.candidate_hosts:

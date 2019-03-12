@@ -530,7 +530,7 @@ class LSFJobService (cpi.job.Service):
         # (1) we create a temporary file with 'mktemp' and write the contents of 
         #     the generated PBS script into it
         # (2) we call 'qsub <tmpfile>' to submit the script to the queueing system
-        cmdline = """SCRIPTFILE=`mktemp -t SAGA-Python-LSFJobScript.XXXXXX` && echo "%s" > $SCRIPTFILE && %s < $SCRIPTFILE && rm -f $SCRIPTFILE""" % (script, self._commands['bsub']['path'])
+        cmdline = """SCRIPTFILE=`mktemp -t RS-LSFJobScript.XXXXXX` && echo "%s" > $SCRIPTFILE && %s < $SCRIPTFILE && rm -f $SCRIPTFILE""" % (script, self._commands['bsub']['path'])
         ret, out, _ = self.shell.run_sync(cmdline)
 
         if ret != 0:

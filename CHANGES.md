@@ -685,7 +685,7 @@ Version 0.2.5 released 2012-10-24
     dependencies on 3rd party modules cannot be fulfilled, the plug-in
     will just get skipped and the remaining ones will still get
     loaded. Previously, a single problem during plug-in loading would
-    take Bliss down.
+    take radical.saga down.
 
 Version 0.2.4 released 2012-7-10
 --------------------------------------------------------------------------------
@@ -719,15 +719,15 @@ Version 0.2.2 released 2012-6-12
 Version 0.2.1 released 2012-5-16
 --------------------------------------------------------------------------------
 
-  - Fixed https://github.com/radical-cybertools/bliss/issues/5
-  - Fixed https://github.com/radical-cybertools/bliss/issues/13
+  - Fixed https://github.com/radical-cybertools/radical.saga/issues/5
+  - Fixed https://github.com/radical-cybertools/radical.saga/issues/13
 
 Version 0.2.0 released 2012-5-15
 --------------------------------------------------------------------------------
 
   - SFTP support for local <-> remote copy operations, mkdir, get_size
   - Added supoprt for ssh re-connection after timeout (issue #29)
-  - Abandoned 'Exception' filenames and API inheritance. The Bliss
+  - Abandoned 'Exception' filenames and API inheritance. The radical.saga
     interface looks much cleaner now. Compatibility with previous
     versions has been ensured
   - Improved (inline) API documentation
@@ -736,7 +736,7 @@ Version 0.2.0 released 2012-5-15
     versions
   - Added SGE (Sun Grid Engine) plug-in (issue #11)
   - Removed sagacompat compatibility API
-  - Log source names now all start with 'bliss.'. This should make
+  - Log source names now all start with 'radical.saga.'. This should make
     filtering much easier
   - Moved SD package into development branch features/servicediscovery
 
@@ -759,13 +759,13 @@ Version 0.1.17 released 2012-01-04
 Version 0.1.16 released 2012-01-03
 --------------------------------------------------------------------------------
 
-  - Fixed issue: https://github.com/oweidner/bliss/issues/9
+  - Fixed issue: https://github.com/oweidner/radical.saga/issues/9
 
 Version 0.1.15 released 2012-01-03
 --------------------------------------------------------------------------------
 
-  - Fixed issue: https://github.com/oweidner/bliss/issues/8
-  - Fixed issue: https://github.com/oweidner/bliss/issues/6
+  - Fixed issue: https://github.com/oweidner/radical.saga/issues/8
+  - Fixed issue: https://github.com/oweidner/radical.saga/issues/6
   - First version of a bigjob plugin. See wiki for details.
   - Fixed Python 2.4 compatibility issue
 

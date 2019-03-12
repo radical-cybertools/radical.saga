@@ -635,7 +635,7 @@ class LOADLJobService (cpi.job.Service):
         # (1) we create a temporary file with 'mktemp' and write the contents of
         #     the generated Load Leveler script into it
         # (2) we call 'llsubmit <tmpfile>' to submit the script to the queueing system
-        cmdline = """SCRIPTFILE=`mktemp -t SAGA-Python-LOADLJobScript.XXXXXX` &&  echo "%s" > $SCRIPTFILE && %s%s $SCRIPTFILE && rm -f $SCRIPTFILE""" %  (script, self._commands['llsubmit']['path'], self.cluster_option)
+        cmdline = """SCRIPTFILE=`mktemp -t RS-LOADLJobScript.XXXXXX` &&  echo "%s" > $SCRIPTFILE && %s%s $SCRIPTFILE && rm -f $SCRIPTFILE""" %  (script, self._commands['llsubmit']['path'], self.cluster_option)
         self._logger.info("cmdline: %r", cmdline)
         ret, out, _ = self.shell.run_sync(cmdline)
 

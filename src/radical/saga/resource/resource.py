@@ -33,7 +33,7 @@ class Resource (sb.Base, sa.Attributes, async.Async) :
     data storage for :class:`saga.resource.Storage`, and network connectivity
     for :class:`saga.resource.Network`.  The exact mechanism how those usage
     requests are communicated are not part of the resource's class interface,
-    but are instead served by other SAGA-Python classes -- typically those are
+    but are instead served by other RADICAL-SAGA classes -- typically those are
     :class:`saga.job.Service` for Compute resources, and
     :class:`saga.filesystem.Directory` for Storage resources (Network resources
     provide implicit connectivity, but do not have explicit, public entry points

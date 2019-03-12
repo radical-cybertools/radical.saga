@@ -660,7 +660,7 @@ class PTYShell (object) :
                                        "('%s')" % command)
 
                 redir = ""
-                _err  = "/tmp/saga-python.ssh-job.stderr.$$"
+                _err  = "/tmp/radical.saga.ssh-job.stderr.$$"
 
                 if iomode is None    : redir  =  ""
                 if iomode == IGNORE  : redir  =  " 1>>/dev/null 2>>/dev/null" 

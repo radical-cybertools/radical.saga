@@ -30,7 +30,7 @@ REMOTE_DIR = "/tmp/"  # change this to your home directory
 # that particualr host.
 REMOTE_JOB_ENDPOINT = "ssh://" + REMOTE_HOST
 
-# At the moment saga-python only provides an sftp file adaptor, so changing
+# At the moment radical.saga only provides an sftp file adaptor, so changing
 # the URL scheme here wouldn't make any sense.
 REMOTE_FILE_ENDPOINT = "sftp://" + REMOTE_HOST + "/" + REMOTE_DIR
 

@@ -119,7 +119,7 @@ _ADAPTOR_CAPABILITIES  = {
         # Will return something similar to (personal account information
         # removed)::
 
-        #   (saga-python-env)ashleyz@login1:~$ scontrol show job 309684
+        #   (ve) ashleyz@login1:~$ scontrol show job 309684
         #   JobId=309684 Name=SlurmJob
         #      UserId=_____ GroupId=__________
         #      Priority=3000 Account=_____ QOS=normal

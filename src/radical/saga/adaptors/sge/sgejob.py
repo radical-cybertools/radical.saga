@@ -350,7 +350,7 @@ class SGEJobService (cpi.Service):
                 if ret != 0:
                     # fix for a bug in certain qstat versions that return
                     # '1' after a successfull qstat -help:
-                    # https://github.com/radical-cybertools/saga-python/issues/163
+                    # https://github.com/radical-cybertools/radical.saga/issues/163
                     if cmd == 'qstat':
                         version = out.strip().split('\n')[0]
                     else:
@@ -872,7 +872,7 @@ as a separator.
         #     the generated PBS script into it
         # (2) we call 'qsub <tmpfile>' to submit the script to the queueing
         #     system
-        cmdline = 'SCRIPTFILE=`mktemp -t SAGA-Python-SGEJobScript.XXXXXX` ' \
+        cmdline = 'SCRIPTFILE=`mktemp -t RS-SGEJobScript.XXXXXX` ' \
                   ' && echo "%s" > $SCRIPTFILE ' \
                   ' && %s -notify $SCRIPTFILE ' \
                   ' && rm -f $SCRIPTFILE' \

@@ -7,8 +7,8 @@ __license__   = "MIT"
 
 """ This examples shows how to run a job on a remote LSF cluster.
 
-    More information about the saga-python job API can be found at:
-    http://radical-cybertools.github.com/saga-python/doc/library/job/index.html
+    More information about the radical.saga job API can be found at:
+    http://radical-cybertools.github.com/radical.saga/doc/library/job/index.html
 """
 
 import sys

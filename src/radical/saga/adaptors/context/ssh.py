@@ -49,7 +49,7 @@ example, the ``c.user_id`` will default to the local user id, and the default
 passphrase in ``c.user_pass`` will be empty.
 
 The `UserKey` and `UserCert` attributes can point to either the public or
-private key of the ssh keypair -- the SAGA-Python implementation will internally
+private key of the ssh keypair -- the RADICAL-SAGA implementation will internally
 complete the respective other key (public key file names are expected to be
 derived from the private key, by appending the suffix `.pub` -- `.pem` files are
 expected to contain both public and private key.).

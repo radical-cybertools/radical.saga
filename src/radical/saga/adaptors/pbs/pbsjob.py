@@ -262,7 +262,7 @@ def _pbscript_generator(url, logger, jd, ppn, gres, pbs_version, is_cray=False,
     # Parse candidate_hosts
     #
     # Currently only implemented for "bigflash" on Gordon@SDSC
-    # https://github.com/radical-cybertools/saga-python/issues/406
+    # https://github.com/radical-cybertools/radical.saga/issues/406
     #
     if jd.candidate_hosts:
         if 'BIG_FLASH' in jd.candidate_hosts:
@@ -696,7 +696,7 @@ class PBSJobService (cpi_job.Service):
         #     the generated PBS script into it
         # (2) we call 'qsub <tmpfile>' to submit the script to the
         #     queueing system
-        cmdline = "SCRIPTFILE=`mktemp -t SAGA-Python-PBSJobScript.XXXXXX` " \
+        cmdline = "SCRIPTFILE=`mktemp -t RS-PBSJobScript.XXXXXX` " \
                   "&&  echo '%s' > $SCRIPTFILE " \
                   "&& %s $SCRIPTFILE " \
                   "&& rm -f $SCRIPTFILE" \

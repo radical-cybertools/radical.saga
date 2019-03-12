@@ -51,7 +51,7 @@ class Monitorable (sa.Attributes) :
 
     # --------------------------------------------------------------------------
     #
-    # Metrics are not implemented in SAGA-Python
+    # Metrics are not implemented in RADICAL-SAGA
     #
   # @rus.takes   ('Monitorable', basestring)
   # @rus.returns ('Metric')

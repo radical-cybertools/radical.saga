@@ -705,7 +705,7 @@ class CobaltJobService (cpi_job.Service):
         self._logger.info("Creating Cobalt script file at %s"
                          % jd.working_directory)
         ret, out, _ = self.shell.run_sync("SCRIPTFILE=`mktemp -p %s \
-                -t SAGA-Python-PBSProJobScript.XXXXXX` && echo $SCRIPTFILE"
+                -t RS-PBSProJobScript.XXXXXX` && echo $SCRIPTFILE"
                 % (self._adaptor.base_workdir))
         if ret != 0:
             message = "Couldn't create Cobalt script file - %s" % (out)
