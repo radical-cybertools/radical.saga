@@ -8,7 +8,6 @@ import re
 import os
 import sys
 import pty
-import tty
 import time
 import errno
 import shlex
@@ -16,18 +15,16 @@ import select
 import signal
 import termios
 
-import radical.utils           as ru
-import radical.utils.logger    as rul
+import radical.utils            as ru
 
-from   . import pty_exceptions as ptye
-
-from   ..exceptions import *
+from   .  import pty_exceptions as ptye
+from   .. import exceptions     as se
 
 
 # --------------------------------------------------------------------
 #
-_CHUNKSIZE = 1024*1024  # default size of each read
-_POLLDELAY = 0.01       # seconds in between read attempts
+_CHUNKSIZE = 1024 * 1024  # default size of each read
+_POLLDELAY = 0.01         # seconds in between read attempts
 _DEBUG_MAX = 600
 
 
@@ -114,14 +111,14 @@ class PTYProcess (object) :
             command = shlex.split (command)
 
         if not isinstance (command, list) :
-            raise BadParameter ("PTYProcess expects string or list command")
+            raise se.BadParameter ("PTYProcess expects string or list command")
 
         if len(command) < 1 :
-            raise BadParameter ("PTYProcess expects non-empty command")
+            raise se.BadParameter ("PTYProcess expects non-empty command")
 
         self.rlock   = ru.RLock ("pty process %s" % command)
 
-        self.command = command # list of strings too run()
+        self.command = command  # list of strings too run()
 
 
         self.cache   = ""      # data cache
@@ -135,12 +132,12 @@ class PTYProcess (object) :
         self.recover_max      = 3  # TODO: make configure option.  This does not
         self.recover_attempts = 0  # apply for recovers triggered by gc_timeout!
 
-
         try :
             self.initialize ()
 
         except Exception as e :
             raise ptye.translate_exception (e, "pty or process creation failed")
+
 
     # --------------------------------------------------------------------
     #
@@ -161,38 +158,34 @@ class PTYProcess (object) :
 
     # ----------------------------------------------------------------------
     #
-    def flush (self) :
+    def flush(self):
 
         # clean the *read* data cache -- only use when you know what you are
         # doing!
 
-        try :
-             if not self.parent_out :
-                 # nothing to read, yet, so there is nothing to cache, so tehre is
-                 # nothing to flush...
-                 return
+        if not self.parent_out:
+            # nothing to read, yet, so there is nothing to cache, nor to flush
+            return
 
-             self.logger.debug ("flush: [%5d] [     ] (flush pty read cache)"  \
-                     % (self.parent_out))
+        self.logger.debug("flush: [%5d] [     ] (flush pty read cache)",
+                          self.parent_out)
 
-             # lets see if there are still things to read
-             while True :
-                 tmp = self.read (timeout=0.1)
-                 if tmp :
-                     self.logger.warn ("flush: [%5d] [%5d] (discard data: '%s')" \
-                             % (self.parent_out, len(tmp), tmp))
-                     continue
-                 break
+        # lets see if there are still things to read
+        while True:
+            try:
+                tmp = self.read(timeout=0.1)
+                if tmp :
+                    self.logger.warn("flush: [%5d] [%5d] (discard data : '%s')",
+                                     self.parent_out, len(tmp), tmp)
+                    continue
+            except:
+                self.logger.warn('read error on flush')
+            break
 
-             if len(self.cache) :
-                  self.logger.warn ("flush: [%5d] [%5d] (discard cache: '%s')" \
-                          % (self.parent_out, len(self.cache), self.cache))
-             self.cache = ""
-
-        except Exception as e :
-            self.logger.exception ('flushing failed')
-            raise
-
+        if len(self.cache):
+            self.logger.warn("flush: [%5d] [%5d] (discard cache: '%s')",
+                             self.parent_out, len(self.cache), self.cache)
+        self.cache = ""
 
 
     # ----------------------------------------------------------------------
@@ -217,7 +210,7 @@ class PTYProcess (object) :
 
             # already initialized?
             if  self.child :
-                self.logger.warn ("initialization race: %s" % ' '.join (self.command))
+                self.logger.warn ("init race: %s" % ' '.join (self.command))
                 return
 
 
@@ -227,7 +220,7 @@ class PTYProcess (object) :
             try :
                 self.child, self.child_fd = pty.fork ()
             except Exception as e:
-                raise NoSuccess ("Could not run (%s): %s" \
+                raise se.NoSuccess ("Could not run (%s): %s"
                                  % (' '.join (self.command), e))
 
             if  not self.child :
@@ -238,7 +231,7 @@ class PTYProcess (object) :
                     os.execvpe (self.command[0], self.command, os.environ)
 
                 except OSError as e:
-                    self.logger.error ("Could not execute (%s): %s" \
+                    self.logger.error ("Could not execute (%s): %s"
                                     % (' '.join (self.command), e))
                     sys.exit (-1)
 
@@ -261,8 +254,9 @@ class PTYProcess (object) :
 
         with self.rlock :
 
-            # now we can safely kill the process -- unless some wait did that before
-            if  wstat == None :
+            # now we can safely kill the process
+            # (unless some wait did that before)
+            if  wstat is None :
 
                 if  self.child :
                     # yes, we have something to kill!
@@ -289,7 +283,7 @@ class PTYProcess (object) :
                             else :
                                 # other errors are bad, but there is not much to
                                 # be done at this point
-                                self.logger.warning ("ignore waitpid failure on finalize (%s)" % e)
+                                self.logger.warn("ignore waitpid error %s" % e)
                                 break
 
                         if  wpid :
@@ -303,7 +297,7 @@ class PTYProcess (object) :
             self.child = None
 
             # lets see if we can perform some post-mortem analysis
-            if  wstat != None :
+            if  wstat is not None :
 
                 if  os.WIFEXITED (wstat) :
                     # child died of natural causes - perform autopsy...
@@ -334,7 +328,6 @@ class PTYProcess (object) :
           #     os.close (self.parent_err)
           # except OSError :
           #     pass
-
 
 
     # --------------------------------------------------------------------
@@ -384,7 +377,7 @@ class PTYProcess (object) :
 
                     # no idea what happened -- it is likely bad
                   # print "waitpid failed"
-                    raise NoSuccess ("waitpid failed on wait")
+                    raise se.NoSuccess ("waitpid failed on wait")
 
 
                 # did we get a note about child termination?
@@ -398,8 +391,9 @@ class PTYProcess (object) :
                 # Well, maybe the child fooled us and is just playing dead?
                 if os.WIFSTOPPED   (wstat) or \
                    os.WIFCONTINUED (wstat)    :
-                    # we don't care if someone stopped/resumed the child -- that is up
-                    # to higher powers.  For our purposes, the child is alive.  Ha!
+                    # we don't care if someone stopped/resumed the child -- that
+                    # is up to higher powers.  For our purposes, the child is
+                    # alive.  Ha!
                     continue
 
 
@@ -409,7 +403,6 @@ class PTYProcess (object) :
                 self.child = None
                 self.finalize (wstat=wstat)
 
-              # print "child is done"
                 return output
 
 
@@ -457,7 +450,8 @@ class PTYProcess (object) :
 
                     # did we get a note about child termination?
                     if 0 == wpid :
-                      # print 'waitpid %s : %s - %s -- none' % (self.child, wpid, wstat)
+                      # print 'waitpid %s : %s - %s -- none' \
+                      #       % (self.child, wpid, wstat)
                         # nope, all is well - carry on
                         return True
 
@@ -466,9 +460,11 @@ class PTYProcess (object) :
                     # Well, maybe the child fooled us and is just playing dead?
                     if os.WIFSTOPPED   (wstat) or \
                        os.WIFCONTINUED (wstat)    :
-                      # print 'waitpid %s : %s - %s -- stop/cont' % (self.child, wpid, wstat)
-                        # we don't care if someone stopped/resumed the child -- that is up
-                        # to higher powers.  For our purposes, the child is alive.  Ha!
+                      # print 'waitpid %s : %s - %s -- stop/cont' \
+                      #         % (self.child, wpid, wstat)
+                        # we don't care if someone stopped/resumed the child --
+                        # that is up to higher powers.  For our purposes, the
+                        # child is alive.  Ha!
                         continue
 
                     break
@@ -486,9 +482,9 @@ class PTYProcess (object) :
                 # nope, we are on holy ground - revival not allowed.
                 return False
 
-            # we are allowed to revive!  So can we try one more time...  pleeeease??
-            # (for cats, allow up to 9 attempts; for Buddhists, always allow to
-            # reincarnate, etc.)
+            # we are allowed to revive!  So can we try one more time...
+            # pleeeease??  (for cats, allow up to 9 attempts; for Buddhists,
+            # always allow to reincarnate, etc.)
             if self.recover_attempts >= self.recover_max :
                 # nope, its gone for good - just report the sad news
               # print 'not alive, no recover anymore'
@@ -498,10 +494,10 @@ class PTYProcess (object) :
             self.recover_attempts += 1
             self.initialize ()
 
-            # well, now we don't trust the child anymore, of course!  So we check
-            # again.  Yes, this is recursive -- but note that recover_attempts get
-            # incremented on every iteration, and this will eventually lead to
-            # call termination (tm).
+            # well, now we don't trust the child anymore, of course!  So we
+            # check again.  Yes, this is recursive -- but note that
+            # recover_attempts get incremented on every iteration, and this will
+            # eventually lead to call termination (tm).
           # print 'alive, or not alive?  Check again!'
             return self.alive (recover=True)
 
@@ -564,16 +560,17 @@ class PTYProcess (object) :
             found_eof = False
 
             try:
-                # start the timeout timer right now.  Note that even if timeout is
-                # short, and child.poll is slow, we will nevertheless attempt at least
-                # one read...
+                # start the timeout timer right now.  Note that even if timeout
+                # is short, and child.poll is slow, we will nevertheless attempt
+                # at least one read...  
                 start = time.time ()
                 ret   = ""
 
                 # read until we have enough data, or hit timeout ceiling...
                 while True :
 
-                    # first, lets see if we still have data in the cache we can return
+                    # first, lets see if we still have data in the cache we
+                    # can return
                     if len (self.cache) :
 
                         if  not size :
@@ -591,26 +588,25 @@ class PTYProcess (object) :
                             self.tail  = self.tail[-256:]
                             return ret
 
-                    # otherwise we need to read some more data, right?
-                    # idle wait 'til the next data chunk arrives, or 'til _POLLDELAY
-                    rlist, _, _ = select.select ([self.parent_out], [], [], _POLLDELAY)
-
+                    # otherwise we need to read some more data, right?  idle
+                    # wait 'til the next data chunk arrives, or 'til _POLLDELAY
+                    rlist, _, _ = select.select ([self.parent_out], [], [],
+                                                 _POLLDELAY)
                     # got some data?
                     for f in rlist:
                         # read whatever we still need
 
                         readsize = _CHUNKSIZE
                         if  size:
-                            readsize = size-len(ret)
+                            readsize = size - len(ret)
 
-                        buf  = os.read (f, _CHUNKSIZE)
+                        buf = os.read (f, readsize)
 
                         if  len(buf) == 0 and sys.platform == 'darwin' :
                             self.logger.debug ("read : MacOS EOF")
                             self.finalize ()
                             found_eof = True
-                            raise NoSuccess ("unexpected EOF (%s)" % self.tail)
-
+                            raise se.NoSuccess("unexpected EOF: %s" % self.tail)
 
                         self.cache += buf.replace ('\r', '')
                         log         = buf.replace ('\r', '')
@@ -618,16 +614,17 @@ class PTYProcess (object) :
                       # print "buf: --%s--" % buf
                       # print "log: --%s--" % log
                         if  len(log) > _DEBUG_MAX :
-                            self.logger.debug ("read : [%5d] [%5d] (%s ... %s)" \
-                                            % (f, len(log), log[:30], log[-30:]))
+                            self.logger.debug("read : [%5d] [%5d] (%s ... %s)"
+                                           % (f, len(log), log[:30], log[-30:]))
                         else :
-                            self.logger.debug ("read : [%5d] [%5d] (%s)" \
+                            self.logger.debug ("read : [%5d] [%5d] (%s)"
                                             % (f, len(log), log))
                           # for c in log :
                           #     print '%s' % c
 
 
-                    # lets see if we still got any data in the cache we can return
+                    # lets see if we still got any data in the cache we
+                    # can return
                     if len (self.cache) :
 
                         if  not size :
@@ -665,10 +662,10 @@ class PTYProcess (object) :
                         self.tail  = self.tail[-256:]
                         return ret
 
-                    else : # timeout > 0
+                    else :  # timeout > 0
                         # return if timeout is reached
                         now = time.time ()
-                        if (now-start) > timeout :
+                        if (now - start) > timeout :
                             ret        = self.cache
                             self.cache = ""
                             self.tail += ret
@@ -681,7 +678,7 @@ class PTYProcess (object) :
                 if  found_eof :
                     raise e
 
-                raise NoSuccess ("read from process failed '%s' : (%s)" \
+                raise se.NoSuccess ("read from process failed '%s' : (%s)"
                                  % (e, self.tail))
 
 
@@ -725,18 +722,18 @@ class PTYProcess (object) :
         with self.rlock :
 
             try :
-                start = time.time ()                       # startup timestamp
-                ret   = []                                 # array of read lines
-                patts = []                                 # compiled patterns
-                data  = self.cache                         # initial data to check
+                start = time.time ()   # startup timestamp
+                ret   = []             # array of read lines
+                patts = []             # compiled patterns
+                data  = self.cache     # initial data to check
                 self.cache = ""
 
-                if  not data : # empty cache?
+                if  not data :  # empty cache?
                     data = self.read (timeout=_POLLDELAY)
 
                 # pre-compile the given pattern, to speed up matching
                 for pattern in patterns :
-                    patts.append (re.compile (pattern, re.MULTILINE | re.DOTALL))
+                    patts.append(re.compile (pattern, re.MULTILINE | re.DOTALL))
 
                 # we wait forever -- there are two ways out though: data matches
                 # a pattern, or timeout passes
@@ -765,16 +762,19 @@ class PTYProcess (object) :
                         if _debug : print match
 
                         if match :
-                            # a pattern matched the current data: return a tuple of
-                            # pattern index and matching data.  The remainder of the
-                            # data is cached.
+                            # a pattern matched the current data: return a tuple
+                            # of pattern index and matching data.  The remainder
+                            # of the data is cached.
                             ret  = escaped[0:match.end()]
                             self.cache = escaped[match.end():]
 
-                            if _debug : print "~~match!~~ %s" % escaped[match.start():match.end()]
-                            if _debug : print "~~match!~~ %s" % (len(escaped))
-                            if _debug : print "~~match!~~ %s" % (str(match.span()))
-                            if _debug : print "~~match!~~ %s" % (ret)
+                            if _debug:
+                                m = match
+                                e = escaped
+                                print "~~match!~~ %s" % e[m.start():m.end()]
+                                print "~~match!~~ %s" % (len(e))
+                                print "~~match!~~ %s" % (str(m.span()))
+                                print "~~match!~~ %s" % (ret)
 
                             return (n, ret.replace('\r', ''))
 
@@ -785,14 +785,14 @@ class PTYProcess (object) :
 
                     if timeout > 0 :
                         now = time.time ()
-                        if (now-start) > timeout :
+                        if (now - start) > timeout :
                             self.cache = escaped
                             return (None, str(escaped))
 
                     # no match yet, still time -- read more data
                     data += self.read (timeout=_POLLDELAY)
 
-            except NoSuccess as e :
+            except se.NoSuccess as e :
                 raise ptye.translate_exception (e, "(%s)" % data)
 
 
@@ -807,26 +807,28 @@ class PTYProcess (object) :
         with self.rlock :
 
             if not self.alive (recover=False) :
-                raise ptye.translate_exception (NoSuccess ("cannot write to dead process (%s) [%5d]" \
-                                                % (self.cache[-256:], self.parent_in)))
+                raise ptye.translate_exception(
+                        se.NoSuccess("cannot write to dead process (%s) [%5d]"
+                                     % (self.cache[-256:], self.parent_in)))
 
             try :
-
                 log = self._hide_data (data, nolog)
                 log =  log.replace ('\n', '\\n')
                 log =  log.replace ('\r', '')
                 if  len(log) > _DEBUG_MAX :
-                    self.logger.debug ("write: [%5d] [%5d] (%s ... %s)" \
-                                    % (self.parent_in, len(data), log[:30], log[-30:]))
+                    self.logger.debug ("write: [%5d] [%5d] (%s ... %s)"
+                                    % (self.parent_in, len(data),
+                                       log[:30], log[-30:]))
                 else :
-                    self.logger.debug ("write: [%5d] [%5d] (%s)" \
+                    self.logger.debug ("write: [%5d] [%5d] (%s)"
                                     % (self.parent_in, len(data), log))
 
                 # attempt to write forever -- until we succeeed
                 while data :
 
                     # check if the pty pipe is ready for data
-                    _, wlist, _ = select.select ([], [self.parent_in], [], _POLLDELAY)
+                    _, wlist, _ = select.select ([], [self.parent_in], [],
+                                                 _POLLDELAY)
 
                     for f in wlist :
 
@@ -840,9 +842,9 @@ class PTYProcess (object) :
                             self.logger.info ("write: [%5d] [%5d]" % (f, size))
 
 
-            except Exception as e :
-                raise ptye.translate_exception (e, "write to process failed (%s)" % e)
+            except Exception as e:
+                raise ptye.translate_exception(e, "write failed (%s)" % e)
 
 
-
+# ------------------------------------------------------------------------------
 

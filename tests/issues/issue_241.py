@@ -6,8 +6,8 @@
 # """ This examples shows how to run a job on a remote PBS/TORQUE cluster
 #     using the 'PBS' job adaptor.
 
-#     More information about the saga-python job API can be found at:
-#     http://saga-project.github.com/saga-python/doc/library/job/index.html
+#     More information about the radical.saga job API can be found at:
+#     http://radical-cybertools.github.com/radical.saga/doc/library/job/index.html
 # """
 
 import sys

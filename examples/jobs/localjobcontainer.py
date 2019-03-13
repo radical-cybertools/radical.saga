@@ -25,7 +25,9 @@ __license__   = "MIT"
 import sys
 import random
 import time
-import saga
+
+import radical.saga as rs
+
 
 URL = "condor+gsissh://xd-login.opensciencegrid.org"
 URL = "fork://locahost/"
@@ -40,7 +42,7 @@ def main():
     try:
         # all jobs in this example are running on the same job service
         # this is not a requirement though. s
-        service = saga.job.Service(URL)
+        service = rs.job.Service(URL)
         print service.url
 
         t1 = time.time()
@@ -48,11 +50,11 @@ def main():
         containers = list()
         for c in range(0, num_job_groups):
             # create containers
-            containers.append(saga.job.Container())
+            containers.append(rs.job.Container())
             for j in range(0, jobs_per_group):
                 # add jobs to container. to make things a bit more
                 # interesting, we give each job a random runtime (1-60s)
-                jd = saga.job.Description()
+                jd = rs.job.Description()
                 jd.environment = {'RUNTIME': random.randrange(10, 60)}
                 jd.executable  = '/bin/sleep'
                 jd.arguments   = ['$RUNTIME']
@@ -86,7 +88,7 @@ def main():
         service.close()
         return 0
 
-    except saga.SagaException, ex:
+    except rs.SagaException, ex:
         print "An exception occured: %s " % ((str(ex)))
         # get the whole traceback in case of an exception -
         # this can be helpful for debugging the problem

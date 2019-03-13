@@ -6,17 +6,16 @@ __license__   = "MIT"
 
 """ Redis advert adaptor implementation """
 
-import radical.utils as ru
+from . import redis_namespace as rns
 
-from ...exceptions       import *
-from ...                 import utils      as rsu
-from ...utils            import pty_shell  as rsups
+from ...url              import Url
+from ...task             import Task
+from ...                 import exceptions as rse
+from ...                 import advert     as api
 from ...utils            import misc       as rsumisc
-from ...                 import advert     as api_advert
 from ...adaptors         import base       as a_base
-from ...adaptors.cpi     import advert     as cpi_advert
+from ...adaptors.cpi     import advert     as cpi
 from ...adaptors.cpi     import decorators as cpi_decs
-from ...advert.constants import *
 
 
 SYNC_CALL  = cpi_decs.SYNC_CALL
@@ -46,15 +45,16 @@ _ADAPTOR_INFO          = {
     'name'             : _ADAPTOR_NAME,
     'version'          : 'v0.2.beta',
     'schemas'          : _ADAPTOR_SCHEMAS,
-    'cpis'             : [{
-        'type'         : 'radical.saga.advert.Directory',
-        'class'        : 'RedisDirectory'
-        }, 
-        {
-        'type'         : 'radical.saga.advert.Entry',
-        'class'        : 'RedisEntry'
-        }
-    ]
+    'cpis'             : [
+                             {
+                                 'type'  : 'radical.saga.advert.Directory',
+                                 'class' : 'RedisDirectory'
+                             }, 
+                             {
+                                 'type'  : 'radical.saga.advert.Entry',
+                                 'class' : 'RedisEntry'
+                             }
+                         ]
 }
 
 
@@ -68,7 +68,7 @@ class Adaptor (a_base.Base):
     provide the adaptor's functionality.
     """
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     def __init__ (self) :
 
@@ -80,7 +80,7 @@ class Adaptor (a_base.Base):
         self._redis = {}
 
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     def get_redis (self, url) :
 
@@ -88,7 +88,7 @@ class Adaptor (a_base.Base):
         port     = 6379
         username = None
         password = None
-     
+
         if url.host     : host     = url.host
         if url.port     : port     = url.port
         if url.username : username = url.username
@@ -96,33 +96,31 @@ class Adaptor (a_base.Base):
 
         if username :
             if password :
-                hash = "redis://%s:%s@%s:%d"  %  (username, password, host, port)
+                hash = "redis://%s:%s@%s:%d" % (username, password, host, port)
             else :
-                hash = "redis://%s@%s:%d"     %  (username,           host, port)
+                hash = "redis://%s@%s:%d"    % (username,           host, port)
         else :
             if password :
-                hash = "redis://%s@%s:%d"     %  (password,       host, port)
+                hash = "redis://%s@%s:%d"    % (password,       host, port)
             else :
-                hash = "redis://%s:%d"        %  (                host, port)
-       
-        if not hash in self._redis :
+                hash = "redis://%s:%d"       %                 (host, port)
+
+        if hash not in self._redis :
             self._redis[hash] = rns.redis_ns_server (url)
 
         return self._redis[hash]
 
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     def sanity_check (self) :
         # nothing to check for, redis entry system should always be accessible
         pass
 
 
-
-
 ###############################################################################
 #
-class BulkDirectory (cpi_advert.Directory) :
+class BulkDirectory (cpi.Directory) :
     """
     Well, this implementation can handle bulks, but cannot optimize them.
     We leave that code here anyway, for demonstration -- but those methods
@@ -130,23 +128,23 @@ class BulkDirectory (cpi_advert.Directory) :
     not implement the bulk container_* methods at all.
     """
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     def __init__ (self) : 
         pass
 
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     def container_wait (self, tasks, mode, timeout) :
 
         if timeout >= 0 :
-            raise se.BadParameter ("Cannot handle timeouts > 0")
+            raise rse.BadParameter ("Cannot handle timeouts > 0")
         for task in tasks :
             task.wait ()
 
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     def container_cancel (self, tasks, timeout) :
 
@@ -154,7 +152,7 @@ class BulkDirectory (cpi_advert.Directory) :
             task.cancel (timeout)
 
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     def container_copy (self, tasks) :
         """
@@ -172,12 +170,11 @@ class BulkDirectory (cpi_advert.Directory) :
     # to the non-bulk async calls for all then.
 
 
-
 ###############################################################################
 #
-class RedisDirectory (cpi_advert.Directory) :
+class RedisDirectory (cpi.Directory) :
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     def __init__ (self, api, adaptor) :
 
@@ -185,12 +182,12 @@ class RedisDirectory (cpi_advert.Directory) :
         self._cpi_base.__init__ (api, adaptor)
 
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     @SYNC_CALL
     def init_instance (self, adaptor_state, url, flags, session) :
 
-        self._url       = sumisc.url_normalize (url)
+        self._url       = rsumisc.url_normalize (url)
         self._flags     = flags
         self._container = self._adaptor._bulk
 
@@ -200,31 +197,32 @@ class RedisDirectory (cpi_advert.Directory) :
         return self.get_api ()
 
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     @ASYNC_CALL
     def init_instance_async (self, adaptor_state, url, flags, session, ttype) :
 
-        self._url     = sumisc.url_normalize (url)
+        self._url     = rsumisc.url_normalize (url)
         self._flags   = flags
-        
+
         self._set_session (session)
-        
-        c = { 'url'     : self._url, 
-              'flags'   : self._flags }
 
-        return saga.task.Task (self, 'init_instance', c, ttype)
+        c = {'url'     : self._url, 
+             'flags'   : self._flags }
+
+        return Task (self, 'init_instance', c, ttype)
 
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     def _init_check (self) :
 
         self._r       = self._adaptor.get_redis (self._url)
-        self._nsdir   = rns.redis_ns_entry.opendir (self._r, self._url.path, self._flags)
+        self._nsdir   = rns.redis_ns_entry.opendir(self._r, self._url.path,
+                                                  self._flags)
 
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     @SYNC_CALL
     def attribute_getter (self, key) :
@@ -237,7 +235,7 @@ class RedisDirectory (cpi_advert.Directory) :
             raise e
 
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     @SYNC_CALL
     def attribute_setter (self, key, val) :
@@ -250,7 +248,7 @@ class RedisDirectory (cpi_advert.Directory) :
             raise e
 
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     @SYNC_CALL
     def attribute_lister (self) :
@@ -261,7 +259,7 @@ class RedisDirectory (cpi_advert.Directory) :
             self._api ()._attributes_i_set (key, data[key], self._api ()._UP)
 
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     @SYNC_CALL
     def attribute_caller (self, key, id, cb) :
@@ -269,7 +267,7 @@ class RedisDirectory (cpi_advert.Directory) :
         self._nsdir.manage_callback (key, id, cb, self.get_api ())
 
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     @SYNC_CALL
     def get_url (self) :
@@ -277,26 +275,26 @@ class RedisDirectory (cpi_advert.Directory) :
         return self._url
 
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     @SYNC_CALL
     def is_dir (self, name) :
 
         try :
-            api_advert.Directory (sumisc.url_make_absolute (self._url, name))
-        except Exception as e:
+            api.Directory (rsumisc.url_make_absolute (self._url, name))
+        except Exception:
             return False
 
         return True
 
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     @SYNC_CALL
     def list (self, pattern, flags) :
 
         if  pattern :
-            raise se.BadParameter ("pattern for list() not supported")
+            raise rse.BadParameter ("pattern for list() not supported")
 
 
         ret = []
@@ -306,12 +304,12 @@ class RedisDirectory (cpi_advert.Directory) :
             ret = self._nsdir.list ()
 
 
-        elif flags == RECURSIVE :
+        elif flags == api.RECURSIVE :
 
             # ------------------------------------------------------------------
             def get_kids (path) :
 
-                d    = api_advert.Directory (path)
+                d    = api.Directory (path)
                 kids = d.list ()
 
                 for kid in kids :
@@ -329,13 +327,13 @@ class RedisDirectory (cpi_advert.Directory) :
 
 
         else :
-            raise se.BadParameter ("list() only supports the RECURSIVE flag")
+            raise rse.BadParameter ("list() only supports the RECURSIVE flag")
 
 
         return ret
 
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     @SYNC_CALL
     def change_dir (self, tgt) :
@@ -344,10 +342,11 @@ class RedisDirectory (cpi_advert.Directory) :
         orig_url = self._url
 
         try :
-            if  not sumisc.url_is_compatible (tgt, self._url) :
-                raise se.BadParameter ("cannot chdir to %s, leaves namespace" % tgt)
+            if  not rsumisc.url_is_compatible (tgt, self._url) :
+                raise rse.BadParameter("cannot chdir to %s, leaves namespace"
+                                      % tgt)
 
-            self._url = sumisc.url_make_absolute (tgt, self._url)
+            self._url = rsumisc.url_make_absolute (tgt, self._url)
             self._init_check ()
 
 
@@ -357,26 +356,26 @@ class RedisDirectory (cpi_advert.Directory) :
 
 
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     @SYNC_CALL
     def open (self, url, flags) :
 
         if not url.scheme and not url.host : 
-            url = rsurl.Url (str(self._url) + '/' + str(url))
+            url = Url (str(self._url) + '/' + str(url))
 
-        return api_advert.Entry (url, flags, self._session, _adaptor=self._adaptor)
+        return api.Entry (url, flags, self._session, _adaptor=self._adaptor)
 
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     @SYNC_CALL
     def open_dir (self, url, flags) :
 
         if not url.scheme and not url.host : 
-            url = rsurl.Url (str(self._url) + '/' + str(url))
+            url = Url (str(self._url) + '/' + str(url))
 
-        return api_advert.Directory (url, flags, self._session, _adaptor=self._adaptor)
+        return api.Directory (url, flags, self._session, _adaptor=self._adaptor)
 
 
   # ##################################################################
@@ -385,19 +384,21 @@ class RedisDirectory (cpi_advert.Directory) :
   # def copy (self, source, target, flags) :
   #     return
   # 
-  #     src_url = rsurl.Url (source)
+  #     src_url = Url (source)
   #     src     = src_url.path
-  #     tgt_url = rsurl.Url (target)
+  #     tgt_url = Url (target)
   #     tgt     = tgt_url.path
   # 
   # 
   #     if src_url.schema :
   #         if not src_url.schema.lower () in _ADAPTOR_SCHEMAS :
-  #             raise se.BadParameter ("Cannot handle url %s (not redis)" %  source)
+  #             raise rse.BadParameter ("Cannot handle url %s (not redis)" 
+  #                                    % source)
   # 
   #     if tgt_url.schema :
   #         if not tgt_url.schema.lower () in _ADAPTOR_SCHEMAS :
-  #             raise se.BadParameter ("Cannot handle url %s (not redis)" %  target)
+  #             raise rse.BadParameter ("Cannot handle url %s (not redis)" 
+  #                                    % target)
   # 
   # 
   #     # make paths absolute
@@ -423,14 +424,13 @@ class RedisDirectory (cpi_advert.Directory) :
   #     pass
 
 
-
 ######################################################################
 #
 # entry adaptor class
 #
-class RedisEntry (cpi_advert.Entry) :
+class RedisEntry (cpi.Entry) :
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     def __init__ (self, api, adaptor) :
 
@@ -438,7 +438,7 @@ class RedisEntry (cpi_advert.Entry) :
         self._cpi_base.__init__ (api, adaptor)
 
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     def _dump (self) :
 
@@ -446,7 +446,7 @@ class RedisEntry (cpi_advert.Entry) :
         self._logger.debug ("flags: %s"  % self._flags)
 
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     @SYNC_CALL
     def init_instance (self, adaptor_state, url, flags, session) :
@@ -460,15 +460,16 @@ class RedisEntry (cpi_advert.Entry) :
         return self
 
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     def _init_check (self) :
 
         self._r       = self._adaptor.get_redis (self._url)
-        self._nsentry = rns.redis_ns_entry.open (self._r, self._url.path, self._flags)
+        self._nsentry = rns.redis_ns_entry.open (self._r, self._url.path,
+                                                 self._flags)
 
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     @SYNC_CALL
     def attribute_getter (self, key) :
@@ -476,7 +477,7 @@ class RedisEntry (cpi_advert.Entry) :
         return self._nsentry.get_key (key)
 
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     @SYNC_CALL
     def attribute_setter (self, key, val) :
@@ -484,7 +485,7 @@ class RedisEntry (cpi_advert.Entry) :
         return self._nsentry.set_key (key, val)
 
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     @SYNC_CALL
     def attribute_lister (self) :
@@ -495,7 +496,7 @@ class RedisEntry (cpi_advert.Entry) :
             self._api ()._attributes_i_set (key, data[key], self._api ()._UP)
 
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     @SYNC_CALL
     def attribute_caller (self, key, id, cb) :
@@ -503,7 +504,7 @@ class RedisEntry (cpi_advert.Entry) :
         return self._nsentry.manage_callback (key, id, cb, self.get_api ())
 
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     @SYNC_CALL
     def get_url (self) :
@@ -516,16 +517,18 @@ class RedisEntry (cpi_advert.Entry) :
   # @SYNC_CALL
   # def copy_self (self, target, flags) :
   # 
-  #     tgt_url = rsurl.Url (target)
+  #     tgt_url = Url (target)
   #     tgt     = tgt_url.path
   #     src     = self._url.path
   # 
   #     if tgt_url.schema :
   #         if not tgt_url.schema.lower () in _ADAPTOR_SCHEMAS :
-  #             raise se.BadParameter ("Cannot handle url %s (not redis)" %  target)
+  #             raise rse.BadParameter ("Cannot handle url %s (not redis)"
+  #                                    %  target)
   # 
-  #     if not sumisc.url_is_redis (tgt_url) :
-  #         raise se.BadParameter ("Cannot handle url %s (not redis)"     %  target)
+  #     if not rsumisc.url_is_redis (tgt_url) :
+  #         raise rse.BadParameter ("Cannot handle url %s (not redis)"    
+  #                                %  target)
   # 
   #     # make path absolute
   #     if tgt[0] != '/'  :  tgt = "%s/%s"   % (os.path.dirname (src), tgt)
@@ -533,5 +536,6 @@ class RedisEntry (cpi_advert.Entry) :
   #     shutil.copy2 (src, tgt)
 
 
+# ------------------------------------------------------------------------------
 
 

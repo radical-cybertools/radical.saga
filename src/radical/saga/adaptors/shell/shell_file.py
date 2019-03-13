@@ -6,16 +6,11 @@ __license__   = "MIT"
 
 """ shell based file adaptor implementation """
 
-import re
 import os
 import errno
 
-import shell_wrapper
 
-import radical.utils as ru
-
-from ...exceptions           import *
-from ...                     import utils      as rsu
+from ...                     import exceptions as rse
 from ...                     import url        as rsurl
 from ...utils                import pty_shell  as rsups
 from ...utils                import misc       as rsumisc
@@ -23,7 +18,7 @@ from ...                     import filesystem as api_fs
 from ...adaptors             import base       as a_base
 from ...adaptors.cpi         import filesystem as cpi_fs
 from ...adaptors.cpi         import decorators as cpi_decs
-from ...filesystem.constants import *
+from ...filesystem           import constants  as c
 
 
 SYNC_CALL  = cpi_decs.SYNC_CALL
@@ -35,19 +30,7 @@ ASYNC_CALL = cpi_decs.ASYNC_CALL
 #
 _ADAPTOR_NAME          = "radical.saga.adaptors.shell_file"
 _ADAPTOR_SCHEMAS       = ["file", "local", "sftp", "gsisftp", "ssh", "gsissh"]
-_ADAPTOR_OPTIONS       = [
-  # { 
-  # 'category'         : 'radical.saga.adaptors.shell_file',
-  # 'name'             : 'enable_notifications', 
-  # 'type'             : bool, 
-  # 'default'          : False,
-  # 'valid_options'    : [True, False],
-  # 'documentation'    : '''Enable support for filesystem notifications.  Note that
-  #                       enabling this option will create a local thread and a remote
-  #                       shell process.''',
-  # 'env_variable'     : None
-  # }
-]
+_ADAPTOR_OPTIONS       = []
 
 # ------------------------------------------------------------------------------
 # the adaptor capabilities & supported attributes
@@ -170,7 +153,7 @@ def _mkdir_p(path):
             pass
 
     except Exception as e:
-        raise NoSuccess("mkdir failed for '%s': %s" % (path, e))
+        raise rse.NoSuccess("mkdir failed for '%s': %s" % (path, e))
 
 
 ###############################################################################
@@ -189,8 +172,6 @@ class Adaptor(a_base.Base):
     def __init__(self):
 
         a_base.Base.__init__(self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
-
-        self.opts  = ru.Config(module='radical.saga', name=_ADAPTOR_NAME)
 
 
     # --------------------------------------------------------------------------
@@ -242,7 +223,7 @@ class ShellDirectory(cpi_fs.Directory):
     def _is_valid(self):
 
         if  not self.valid:
-            raise IncorrectState("this instance was closed or removed")
+            raise rse.IncorrectState("this instance was closed or removed")
 
     # --------------------------------------------------------------------------
     #
@@ -257,13 +238,13 @@ class ShellDirectory(cpi_fs.Directory):
             ret, out, _ = self._command(" mkdir -p '%s'\n" % (dirname),
                                         make_location=True)
             if  ret:
-                raise NoSuccess("failed at mkdir '%s': (%s) (%s)"
+                raise rse.NoSuccess("failed at mkdir '%s': (%s) (%s)"
                                    % (dirname, ret, out))
 
         elif rsumisc.url_is_local(tgt):
 
             if  tgt.scheme and not tgt.scheme.lower() in _ADAPTOR_SCHEMAS:
-                raise BadParameter("unsupported mkdir schema (%s)" % tgt)
+                raise rse.BadParameter("unsupported mkdir schema (%s)" % tgt)
             _mkdir_p(dirname)
 
         else:
@@ -322,7 +303,8 @@ class ShellDirectory(cpi_fs.Directory):
             else:
                 pre_cmd = ""
 
-            return cmd_shell.run_sync("%s cd %s && %s" % (pre_cmd, location.path, command))
+            return cmd_shell.run_sync("%s cd %s && %s"
+                                     % (pre_cmd, location.path, command))
 
 
     # --------------------------------------------------------------------------
@@ -338,10 +320,10 @@ class ShellDirectory(cpi_fs.Directory):
         if not path:
             path = '.'
 
-        if  self.flags & CREATE_PARENTS:
+        if  self.flags & c.CREATE_PARENTS:
             cmd = " mkdir -p '%s' ;  cd '%s'" % (path, path)
             mkl = True
-        elif self.flags & CREATE:
+        elif self.flags & c.CREATE:
             cmd = " mkdir    '%s' ;  cd '%s'" % (path, path)
             mkl = False
         else:
@@ -358,7 +340,7 @@ class ShellDirectory(cpi_fs.Directory):
             ret, out, _ = self._command(cmd, make_location=mkl)
 
         if  ret:
-            raise BadParameter("invalid dir '%s': %s" % (path, out))
+            raise rse.BadParameter("invalid dir '%s': %s" % (path, out))
 
         self._logger.debug("initialized directory (%s)(%s)" % (ret, out))
 
@@ -418,7 +400,7 @@ class ShellDirectory(cpi_fs.Directory):
             path = '.'
 
         if  not rsumisc.url_is_compatible(cwdurl, tgturl):
-            raise BadParameter("target dir outside of namespace '%s': %s"
+            raise rse.BadParameter("target dir outside of namespace '%s': %s"
                                   % (cwdurl, tgturl))
 
         cmd = None
@@ -427,9 +409,9 @@ class ShellDirectory(cpi_fs.Directory):
             self._logger.debug("change directory optimized away (%s) == (%s)"
                                % (cwdurl, tgturl))
 
-        if  flags & CREATE_PARENTS:
+        if  flags & c.CREATE_PARENTS:
             cmd = " mkdir -p '%s' ;  cd '%s'" % (path, path)
-        elif flags & CREATE:
+        elif flags & c.CREATE:
             cmd = " mkdir    '%s' ;  cd '%s'" % (path, path)
         else:
             cmd = " test -d  '%s' && cd '%s'" % (path, path)
@@ -437,7 +419,7 @@ class ShellDirectory(cpi_fs.Directory):
         ret, out, _ = self._command(cmd)
 
         if  ret:
-            raise BadParameter("invalid dir '%s': %s" % (cwdurl, tgturl))
+            raise rse.BadParameter("invalid dir '%s': %s" % (cwdurl, tgturl))
 
         self._logger.debug("changed directory (%s)(%s)" % (ret, out))
 
@@ -450,7 +432,7 @@ class ShellDirectory(cpi_fs.Directory):
     def close(self, timeout=None):
 
         if  timeout:
-            raise BadParameter("timeout for close not supported")
+            raise rse.BadParameter("timeout for close not supported")
 
         self.finalize(kill=True)
 
@@ -481,7 +463,7 @@ class ShellDirectory(cpi_fs.Directory):
         ret, out, _ = self._command(" /bin/ls -C1 %s\n" % npat)
 
         if  ret:
-            raise NoSuccess("failed to list(): (%s)(%s)"
+            raise rse.NoSuccess("failed to list(): (%s)(%s)"
                            % (ret, out))
 
         lines = filter(None, out.split("\n"))
@@ -520,11 +502,13 @@ class ShellDirectory(cpi_fs.Directory):
         src    = rsurl.Url(src_in)    # deep copy
         tgt    = rsurl.Url(tgt_in)    # deep copy
 
-        if rsumisc.url_is_relative(src): src = rsumisc.url_make_absolute(cwdurl, src)
-        if rsumisc.url_is_relative(tgt): tgt = rsumisc.url_make_absolute(cwdurl, tgt)
-    
+        if rsumisc.url_is_relative(src):
+            src = rsumisc.url_make_absolute(cwdurl, src)
+        if rsumisc.url_is_relative(tgt):
+            tgt = rsumisc.url_make_absolute(cwdurl, tgt)
+
         rec_flag = ""
-        if  flags & RECURSIVE: 
+        if  flags & c.RECURSIVE: 
             rec_flag  += "-r "
 
         files_copied = list()
@@ -534,13 +518,13 @@ class ShellDirectory(cpi_fs.Directory):
         if  rsumisc.url_is_compatible(cwdurl, src) and \
             rsumisc.url_is_compatible(cwdurl, tgt):
 
-            if  flags & CREATE_PARENTS: 
+            if  flags & c.CREATE_PARENTS: 
                 self._create_parent(cwdurl, tgt)
 
             ret, out, err = self._command(" cp %s '%s' '%s'\n"
                                          % (rec_flag, src.path, tgt.path))
             if  ret:
-                raise NoSuccess("copy (%s -> %s) failed (%s): %s (%s)"
+                raise rse.NoSuccess("copy (%s -> %s) failed (%s): %s (%s)"
                                % (src, tgt, ret, out, err))
 
 
@@ -551,7 +535,7 @@ class ShellDirectory(cpi_fs.Directory):
 
             # for a remote target, we need to manually create the target dir (if
             # needed)
-            if  flags & CREATE_PARENTS: 
+            if  flags & c.CREATE_PARENTS: 
                 self._create_parent(cwdurl, tgt)
 
 
@@ -579,7 +563,7 @@ class ShellDirectory(cpi_fs.Directory):
 
                 else:
                     # we cannot support the combination of URLs
-                    raise BadParameter("unsupported copy %s to %s" % (src, tgt))
+                    raise rse.BadParameter("unsupported copy %s to %s" % (src, tgt))
 
 
             # if cwd is local, and src or tgt are remote, we need to actually
@@ -593,7 +577,7 @@ class ShellDirectory(cpi_fs.Directory):
                     # need a compatible target scheme
                     if  tgt.scheme and \
                         tgt.scheme.lower() not in _ADAPTOR_SCHEMAS:
-                        raise BadParameter("unsupported schema (%s)" % (tgt))
+                        raise rse.BadParameter("unsupported schema (%s)" % tgt)
 
                     # print "from local to remote"
                     lease_tgt = self._adaptor.get_lease_target(tgt)
@@ -607,7 +591,7 @@ class ShellDirectory(cpi_fs.Directory):
                     # need a compatible source scheme
                     if  src.scheme and \
                         src.scheme.lower() not in _ADAPTOR_SCHEMAS:
-                        raise BadParameter("unsupported source (%s)" % (src))
+                        raise rse.BadParameter("unsupported source (%s)" % src)
 
                     # print "from remote to local"
                     lease_tgt = self._adaptor.get_lease_target(tgt)
@@ -620,7 +604,8 @@ class ShellDirectory(cpi_fs.Directory):
 
                     # print "from remote to other remote -- fail"
                     # we cannot support the combination of URLs
-                    raise BadParameter("unsupported copy %s to %s" % (src, tgt))
+                    raise rse.BadParameter("unsupported copy %s to %s"
+                                          % (src, tgt))
 
         if  _from_task:
             _from_task._set_metric('files_copied', files_copied)
@@ -651,10 +636,10 @@ class ShellDirectory(cpi_fs.Directory):
         src    = rsurl.Url(src_in)    # deep copy
         tgt    = rsurl.Url(tgt_in)    # deep copy
 
-        if  flags & RECURSIVE: 
-            raise BadParameter("'RECURSIVE' flag not  supported for link()")
+        if  flags & c.RECURSIVE: 
+            raise rse.BadParameter("'RECURSIVE' flag not  supported for link()")
 
-        if  flags & CREATE_PARENTS: 
+        if  flags & c.CREATE_PARENTS: 
             self._create_parent(cwdurl, tgt)
 
         # if src and tgt point to the same host, we just run a shell link
@@ -665,12 +650,12 @@ class ShellDirectory(cpi_fs.Directory):
             ret, out, err = self._command(" ln -s '%s' '%s'\n" 
                                          % (src.path, tgt.path))
             if ret:
-                raise NoSuccess("link (%s -> %s) failed (%s): %s [%s]"
+                raise rse.NoSuccess("link (%s -> %s) failed (%s): %s [%s]"
                                     % (src, tgt, ret, out, err))
 
         # src and tgt are on different hosts, this is not supported
         else:
-            raise saga.BadParameter("link unsupported on FS other than cwd")
+            raise rse.BadParameter("link unsupported on FS other than cwd")
 
 
     # --------------------------------------------------------------------------
@@ -727,7 +712,7 @@ class ShellDirectory(cpi_fs.Directory):
         tgt    = rsurl.Url(tgt_in)    # deep copy
 
         rec_flag = ""
-        if  flags & RECURSIVE: 
+        if  flags & c.RECURSIVE: 
             rec_flag += "-r "
 
         if  rsumisc.url_is_compatible(cwdurl, tgt):
@@ -735,12 +720,12 @@ class ShellDirectory(cpi_fs.Directory):
             ret, out, err = self._command(" rm -f %s '%s'\n"
                                          % (rec_flag, tgt.path))
             if ret:
-                raise NoSuccess("remove (%s) failed (%s): %s [%s]"
+                raise rse.NoSuccess("remove (%s) failed (%s): %s [%s]"
                                % (tgt, ret, out, err))
 
         # we cannot support the URL
         else:
-            raise BadParameter("remove of %s is not supported" % tgt)
+            raise rse.BadParameter("remove of %s is not supported" % tgt)
 
 
     # --------------------------------------------------------------------------
@@ -758,26 +743,27 @@ class ShellDirectory(cpi_fs.Directory):
         if not path:
             path = '.'
 
-        if flags & EXCLUSIVE: 
+        if flags & c.EXCLUSIVE: 
 
             # FIXME: this creates a race condition between testing for exclusive
             # mkdir and creating the dir.
             chk = ' test -d %s && echo "RS_EXISTS" || ' % path
 
-            if ret:
-                raise AlreadyExists("target (%s) exists (%s)" % (tgt_in, out))
-
-        if flags & CREATE_PARENTS:
+        if flags & c.CREATE_PARENTS:
             opt = "-p"
 
         ret, out, err = self._command(" %s mkdir %s '%s'"
                                      % (chk, opt, path), make_location=True)
 
+        if ret:
+            raise rse.AlreadyExists("target (%s) exists (%s)" % (tgt_in, out))
+
         if '_EXISTS' in out:
-            raise AlreadyExists("make_dir target (%s) exists" % tgt_in)
+            raise rse.AlreadyExists("make_dir target (%s) exists" % tgt_in)
 
         if ret:
-            raise NoSuccess("make_dir (%s) error: %s [%s]" % (tgt_in, out, err))
+            raise rse.NoSuccess("make_dir (%s) error: %s [%s]"
+                               % (tgt_in, out, err))
 
 
     # --------------------------------------------------------------------------
@@ -801,13 +787,13 @@ class ShellDirectory(cpi_fs.Directory):
         ret, out, err = self._command(" du -ks '%s' | xargs | cut -f 1 -d ' '\n"
                                      % tgt.path)
         if ret:
-            raise saga.NoSuccess("get size for (%s) failed (%s): %s [%s]"
+            raise rse.NoSuccess("get size for (%s) failed (%s): %s [%s]"
                                 % (tgt, ret, out, err))
 
         try:
             return int(out) * 1024  # see '-k' option to 'du'
         except Exception as e:
-            raise saga.NoSuccess("could not get file size: %s (%s)" % (out, e))
+            raise rse.NoSuccess("could not get file size: %s (%s)" % (out, e))
 
 
     # --------------------------------------------------------------------------
@@ -955,7 +941,7 @@ class ShellFile(cpi_fs.File):
     def _is_valid(self):
 
         if not self.valid:
-            raise IncorrectState("this instance was closed or removed")
+            raise rse.IncorrectState("this instance was closed or removed")
 
 
     # --------------------------------------------------------------------------
@@ -968,14 +954,14 @@ class ShellFile(cpi_fs.File):
 
             ret, out, _ = self._run_sync(" mkdir -p '%s'\n" % (dirname))
             if ret:
-                raise NoSuccess("mkdir failed '%s': (%s) (%s)"
+                raise rse.NoSuccess("mkdir failed '%s': (%s) (%s)"
                                    % (dirname, ret, out))
 
         elif rsumisc.url_is_local(tgt):
 
             if  tgt.scheme and \
                 tgt.scheme.lower() not in _ADAPTOR_SCHEMAS:
-                raise BadParameter("unsupported mkdir schema (%s)" % (tgt))
+                raise rse.BadParameter("unsupported mkdir schema (%s)" % (tgt))
 
             _mkdir_p(dirname)
 
@@ -1029,7 +1015,7 @@ class ShellFile(cpi_fs.File):
         else:
 
             if  rsumisc.url_is_relative(url):
-                raise BadParameter("cannot handle relative URL (%s)" % url)
+                raise rse.BadParameter("cannot handle relative URL (%s)" % url)
 
             self.url         = url
             self.flags       = flags
@@ -1077,11 +1063,11 @@ class ShellFile(cpi_fs.File):
         cmd = ""
         dirname = rsumisc.url_get_dirname(self.url)
 
-        if  self.flags & CREATE_PARENTS:
+        if  self.flags & c.CREATE_PARENTS:
             cmd = " mkdir -p '%s'; touch '%s'"   % (dirname, self.url.path)
             self._logger.info("mkdir '%s'; '%s'" % (dirname, self.url.path))
 
-        elif self.flags & CREATE:
+        elif self.flags & c.CREATE:
             cmd = " touch '%s'" % (self.url.path)
             self._logger.info("touch %s" % self.url.path)
 
@@ -1089,23 +1075,23 @@ class ShellFile(cpi_fs.File):
             cmd = " true"
 
 
-        if  self.flags & READ:
+        if  self.flags & c.READ:
             cmd += "; test -r '%s'" % (self.url.path)
 
-        if  self.flags & WRITE:
+        if  self.flags & c.WRITE:
             cmd += "; test -w '%s'" % (self.url.path)
 
         ret, out, _ = self._run_sync(cmd)
 
         if  ret:
-            if  self.flags & CREATE_PARENTS:
-                raise BadParameter("cannot open/create: '%s' - %s" 
+            if  self.flags & c.CREATE_PARENTS:
+                raise rse.BadParameter("cannot open/create: '%s' - %s" 
                                   % (self.url.path, out))
-            elif self.flags & CREATE:
-                raise BadParameter("cannot open/create: '%s' - %s"
+            elif self.flags & c.CREATE:
+                raise rse.BadParameter("cannot open/create: '%s' - %s"
                                   % (self.url.path, out))
             else:
-                raise DoesNotExist("File does not exist: '%s' - %s"
+                raise rse.DoesNotExist("File does not exist: '%s' - %s"
                                   % (self.url.path, out))
 
         self._logger.info("file initialized (%s)(%s)" % (ret, out))
@@ -1126,7 +1112,7 @@ class ShellFile(cpi_fs.File):
     def close(self, timeout=None):
 
         if timeout:
-            raise BadParameter("timeout for close not supported")
+            raise rse.BadParameter("timeout for close not supported")
 
         self.finalize(kill=True)
 
@@ -1156,14 +1142,16 @@ class ShellFile(cpi_fs.File):
         src    = rsurl.Url(self.url)     # deep copy
         tgt    = rsurl.Url(tgt_in)       # deep copy
 
-        if rsumisc.url_is_relative(src): src = rsumisc.url_make_absolute(cwdurl, src)
-        if rsumisc.url_is_relative(tgt): tgt = rsumisc.url_make_absolute(cwdurl, tgt)
+        if rsumisc.url_is_relative(src):
+            src = rsumisc.url_make_absolute(cwdurl, src)
+        if rsumisc.url_is_relative(tgt):
+            tgt = rsumisc.url_make_absolute(cwdurl, tgt)
 
         rec_flag = ""
-        if  flags & RECURSIVE:
+        if  flags & c.RECURSIVE:
             rec_flag += "-r "
 
-        if  flags & CREATE_PARENTS:
+        if  flags & c.CREATE_PARENTS:
             self._create_parent(cwdurl, tgt)
 
         # if cwd, src and tgt point to the same host, we just run a shell cp
@@ -1174,7 +1162,7 @@ class ShellFile(cpi_fs.File):
             ret, out, _ = self._run_sync(" cp %s '%s' '%s'\n"
                                         % (rec_flag, src.path, tgt.path))
             if  ret:
-                raise NoSuccess("copy (%s -> %s) failed (%s): (%s)"
+                raise rse.NoSuccess("copy (%s -> %s) failed (%s): (%s)"
                                     % (src, tgt, ret, out))
 
 
@@ -1208,7 +1196,8 @@ class ShellFile(cpi_fs.File):
                 else:
                     # print "from remote to other remote -- fail"
                     # we cannot support the combination of URLs
-                    raise BadParameter("unsupported copy %s to %s" % (src, tgt))
+                    raise rse.BadParameter("unsupported copy %s to %s"
+                            % (src, tgt))
 
 
             # if cwd is local, and src or tgt are remote, we need to actually
@@ -1222,7 +1211,7 @@ class ShellFile(cpi_fs.File):
                     # need a compatible target scheme
                     if  tgt.scheme and \
                         tgt.scheme.lower() not in _ADAPTOR_SCHEMAS:
-                        raise BadParameter("unsupported schema (%s)" % (tgt))
+                        raise rse.BadParameter("unsupported schema (%s)" % tgt)
 
                     # print "from local to remote"
                     lease_tgt = self._adaptor.get_lease_target(tgt)
@@ -1236,18 +1225,19 @@ class ShellFile(cpi_fs.File):
                     # need a compatible source scheme
                     if  src.scheme and \
                         src.scheme.lower() not in _ADAPTOR_SCHEMAS:
-                        raise BadParameter("unsupported schema (%s)" % (src))
+                        raise rse.BadParameter("unsupported schema (%s)" % src)
 
                     # print "from remote to local"
                     lease_tgt = self._adaptor.get_lease_target(tgt)
                     with self.lm.lease(lease_tgt, self.shell_creator, tgt) \
                         as copy_shell:
-                        files_copied = copy_shell.stage_from_remote(src.path,
-                                                           tgt.path, rec_flag)
+                        copy_shell.stage_from_remote(src.path, 
+                                                     tgt.path, rec_flag)
                 else:
 
                     # we cannot support two remote URLs
-                    raise BadParameter("unsupported copy %s to %s" % (src, tgt))
+                    raise rse.BadParameter("unsupported copy %s to %s"
+                                          % (src, tgt))
 
 
     # --------------------------------------------------------------------------
@@ -1263,10 +1253,10 @@ class ShellFile(cpi_fs.File):
         src    = rsurl.Url(self.url)  # deep copy
         tgt    = rsurl.Url(tgt_in)    # deep copy
 
-        if  flags & RECURSIVE:
-            raise BadParameter("'RECURSIVE' flag not  supported for link()")
+        if  flags & c.RECURSIVE:
+            raise rse.BadParameter("'RECURSIVE' flag not  supported for link()")
 
-        if  flags & CREATE_PARENTS:
+        if  flags & c.CREATE_PARENTS:
             self._create_parent(cwdurl, tgt)
 
         # if src and tgt point to the same host, we just run a shell link
@@ -1277,12 +1267,12 @@ class ShellFile(cpi_fs.File):
             ret, out, err = self._run_sync(" ln -s '%s' '%s'\n"
                                           % (src.path, tgt.path))
             if  ret:
-                raise NoSuccess("link (%s -> %s) failed (%s): %s [%s]"
+                raise rse.NoSuccess("link (%s -> %s) failed (%s): %s [%s]"
                                    % (src, tgt, ret, out, err))
 
         # src and tgt are on different hosts, this is not supported
         else:
-            raise BadParameter("link only supported on same FS as cwd")
+            raise rse.BadParameter("link only supported on same FS as cwd")
 
 
     # --------------------------------------------------------------------------
@@ -1321,7 +1311,7 @@ class ShellFile(cpi_fs.File):
         tgt = rsurl.Url(self.url)  # deep copy, is absolute
 
         # FIXME: AM: this is stupid and wrong
-        if  flags == APPEND:
+        if  flags == c.APPEND:
             string = self.read() + string
 
         lease_tgt = self._adaptor.get_lease_target(self.cwdurl)
@@ -1372,12 +1362,13 @@ class ShellFile(cpi_fs.File):
         tgt = rsurl.Url(self.url)  # deep copy, is absolute
 
         rec_flag = ""
-        if  flags & RECURSIVE:
+        if  flags & c.RECURSIVE:
             rec_flag += "-r "
 
         ret, out, _ = self._run_sync(" rm -f %s '%s'\n" % (rec_flag, tgt.path))
         if  ret:
-            raise NoSuccess("remove (%s) failed (%s): (%s)" % (tgt, ret, out))
+            raise rse.NoSuccess("remove (%s) failed (%s): (%s)"
+                               % (tgt, ret, out))
 
 
     # --------------------------------------------------------------------------
@@ -1393,20 +1384,22 @@ class ShellFile(cpi_fs.File):
 
         if  self.is_dir_self():
             size_mult   = 1024   # see '-k' option to 'du'
-            ret, out, _ = self._run_sync(" du -ks '%s'  | xargs | cut -f 1 -d ' '\n"
-                                        % self.url.path)
+            ret, out, _ = self._run_sync(
+                          " du -ks '%s' | xargs | cut -f 1 -d ' '\n"
+                          % self.url.path)
         else:
-            ret, out, _ = self._run_sync(" wc -c '%s' | xargs | cut -f 1 -d ' '\n"
-                                        % self.url.path)
+            ret, out, _ = self._run_sync(
+                          " wc -c '%s' | xargs | cut -f 1 -d ' '\n"
+                          % self.url.path)
 
         if  ret:
-            raise NoSuccess("get size for (%s) failed (%s): (%s)"
+            raise rse.NoSuccess("get size for (%s) failed (%s): (%s)"
                            % (self.url, ret, out))
 
         try:
             size = int(out) * size_mult
         except Exception as e:
-            raise NoSuccess("could not get file size: %s (%s)" % (out, e))
+            raise rse.NoSuccess("could not get file size: %s (%s)" % (out, e))
 
         return size
 

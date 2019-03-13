@@ -1,16 +1,16 @@
 
 .. _chapter_adaptor_writing
 
-***************************
-Writing SAGA-Python Adaptors
-***************************
+*****************************
+Writing RADICAL-SAGA Adaptors
+*****************************
 
 .. note::
 
-   This part of the SAGA-Python documentation is not for *users* of SAGA-Python,
-   but rather for implementors of backend adaptors (although it may be
-   beneficial for users to skim over section :ref:`adaptor_binding` to gain
-   some insight into SAGA-Python's  mode of operation).
+   This part of the RADICAL-SAGA documentation is not for *users* of
+   RADICAL-SAGA, but rather for implementors of backend adaptors (although it
+   may be beneficial for users to skim over section :ref:`adaptor_binding` to
+   gain some insight into RADICAL-SAGA's  mode of operation).
 
 
 
@@ -19,19 +19,19 @@ Writing SAGA-Python Adaptors
 Adaptor Structure
 -----------------
 
-A SAGA-Python adaptor is a Python module with well defined structure.  The
+A RADICAL-SAGA adaptor is a Python module with well defined structure.  The
 module must expose a class ``Adaptor``, which (a) must be a singleton, (b) must
 provide a ``sanity_check()`` method, and (c) must inherit from
-:class:`saga.cpi.AdaptorBase`.  That base class' constructor (``__init__``)
+:class:`radical.saga.cpi.AdaptorBase`.  That base class' constructor (``__init__``)
 must be called like this::
 
 
-  class Adaptor (saga.cpi.AdaptorBase):
+  class Adaptor (rs.cpi.AdaptorBase):
 
     __metaclass__ = Singleton
 
     def __init__ (self) :
-      saga.cpi.AdaptorBase.__init__ (self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
+      rs.cpi.AdaptorBase.__init__ (self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
 
 
     def sanity_check (self) :
@@ -45,7 +45,7 @@ must be called like this::
 following layout::
 
 
-  _ADAPTOR_NAME          = 'saga.adaptor.gsissh.job'
+  _ADAPTOR_NAME          = 'rs.adaptor.gsissh.job'
   _ADAPTOR_SCHEMAS       = ['ssh', 'gsissh']
   _ADAPTOR_OPTIONS       = [
     { 
@@ -63,12 +63,12 @@ following layout::
     'version'          : 'v0.1',
     'cpis'             : [
       { 
-      'type'         : 'saga.job.Service',
+      'type'         : 'rs.job.Service',
       'class'        : 'GSISSHJobService',
       'schemas'      : _ADAPTOR_SCHEMAS
       }, 
       { 
-      'type'         : 'saga.job.Job',
+      'type'         : 'rs.job.Job',
       'class'        : 'GSISSHJob',
       'schemas'      : _ADAPTOR_SCHEMAS
       }
@@ -86,10 +86,10 @@ to a SAGA API object, and provide its functionality.  For that purpose, those
 classes must inherit the respective object's Capability Provider Interface
 (CPI), as shown in the stub below::
 
-  class GSISSHJobService (saga.cpi.job.Service) :
+  class GSISSHJobService (rs.cpi.job.Service) :
 
     def __init__ (self, api, adaptor) :
-      saga.cpi.Base.__init__ (self, api, adaptor, 'GSISSHJobService')
+      rs.cpi.Base.__init__ (self, api, adaptor, 'GSISSHJobService')
   
   
     @SYNC
@@ -98,7 +98,7 @@ classes must inherit the respective object's Capability Provider Interface
       self._session = session
   
   
-The :class:`saga.cpi.Base` class will make sure that the adaptor classes keep
+The :class:`radical.saga.cpi.Base` class will make sure that the adaptor classes keep
 a ``self._adaptor`` member, pointing to the adaptor singleton instance (i.e. the
 module's ``Adaptor`` class instance).  It will further initialize a logging module
 (available as ``self._logger``).
@@ -119,27 +119,27 @@ Adaptor Registration
 
 Any SAGA adaptor must be registered in the :ref:``Engine`` in order to be
 usable.  That process is very simple, and performed by the
-:class:`saga.cpi.AdaptorBase` class -- so all the adaptor has to take care
+:class:`radical.saga.cpi.AdaptorBase` class -- so all the adaptor has to take care
 of is the correct initialization of that base class, as described in
 :ref:`adaptor_structure`.  The ``AdaptorBase`` will forward the
-``_ADAPTOR_INFO`` to the :class:`saga.engine.Engine` class, where the adaptor
+``_ADAPTOR_INFO`` to the :class:`radical.saga.engine.Engine` class, where the adaptor
 will be added to a registry of adaptor classes, hierarchically sorted like
 this (simplified)::
 
   Engine._adaptor_registry = 
   { 
-    'saga.job.Service' : 
+    'rs.job.Service' : 
     { 
-      'gshiss' : [saga.adaptors.gsissh.job.GSISSHJobService, ...]
-      'ssh'    : [saga.adaptors.gsissh.job.GSISSHJobService, ...]
-      'gram'   : [saga.adaptors.globus.job.GRAMJobService, ...]
+      'gshiss' : [rs.adaptors.gsissh.job.GSISSHJobService, ...]
+      'ssh'    : [rs.adaptors.gsissh.job.GSISSHJobService, ...]
+      'gram'   : [rs.adaptors.globus.job.GRAMJobService, ...]
       ...
     },
-    'saga.job.Job' : 
+    'rs.job.Job' : 
     { 
-      'gshiss' : [saga.adaptors.gsissh.job.GSISSHJob, ...]
-      'ssh'    : [saga.adaptors.gsissh.job.GSISSHJob, ...]
-      'gram'   : [saga.adaptors.globus.job.GRAMJob, ...]
+      'gshiss' : [rs.adaptors.gsissh.job.GSISSHJob, ...]
+      'ssh'    : [rs.adaptors.gsissh.job.GSISSHJob, ...]
+      'gram'   : [rs.adaptors.globus.job.GRAMJob, ...]
       ...
     },
     ...
@@ -156,12 +156,12 @@ Adaptor Binding
 ---------------
 
 Whenever a SAGA API object is created, or whenever any method is invoked on that
-object, the SAGA-Python implementation needs to (a) select a suitable backend
+object, the RADICAL-SAGA implementation needs to (a) select a suitable backend
 adaptor to perform that operation, and (b) invoke the respective adaptor
 functionality.  
 
 The first part, selecting a specific adaptor for a specific API
-object instance, is called *binding* -- SAGA-Python binds an adaptor to an
+object instance, is called *binding* -- RADICAL-SAGA binds an adaptor to an
 object exactly once, at creation time, and the bond remains valid for the
 lifetime of the API object: on API creation, the API object will request
 a suitable adaptor from the engine, and will keep it for further method
@@ -171,7 +171,7 @@ invocations (code simplified)::
   
     def __init__ (self, url=None, session=None) : 
       self._engine  = getEngine ()
-      self._adaptor = self._engine.get_adaptor (self, 'saga.job.Service', url.scheme, ...,
+      self._adaptor = self._engine.get_adaptor (self, 'rs.job.Service', url.scheme, ...,
                                                   url, session)
 
     def run_job (self, cmd, host="", ttype=None) :
@@ -187,10 +187,10 @@ adaptor class instance can successfully be created, the engine will further
 attempt to call the adaptor class' ``init_instance`` method, which will in fact
 construct an adaptor level representation of the API level object::
 
-  class GSISSHJobService (saga.cpi.job.Service) :
+  class GSISSHJobService (rs.cpi.job.Service) :
 
     def __init__ (self, api, adaptor) :
-      saga.cpi.Base.__init__ (self, api, adaptor, 'GSISSHJobService')
+      rs.cpi.Base.__init__ (self, api, adaptor, 'GSISSHJobService')
 
     def init_instance (self, url, session) :
       # - check if session contains suitable security tokens for (gsi)ssh
@@ -213,7 +213,7 @@ Adaptor State
 -------------
 
 Instances of adaptor classes will often need to share some state.  For example,
-different instances of ``saga.job.Job`` running via ssh on a specific host may
+different instances of ``rs.job.Job`` running via ssh on a specific host may
 want to share a single ssh connection; asynchronous operations on a specific
 adaptor may want to share a thread pool; adaptor class instances of a specific
 resource adaptor may want to share a notification endpoint.  State sharing
@@ -227,35 +227,35 @@ created by the engine while loading the adaptor's module) for state exchange
 spawning adaptor instance passed at creation time::
 
 
-  class GSISSHJobService (saga.cpi.job.Service) :
+  class GSISSHJobService (rs.cpi.job.Service) :
 
     def __init__ (self, api, adaptor) :
-      saga.cpi.Base.__init__ (self, api, adaptor, 'GSISSHJobService')
+      rs.cpi.Base.__init__ (self, api, adaptor, 'GSISSHJobService')
 
 
-:class:`saga.cpi.Base` will make that instance available as ``self._adaptor``.
+:class:`radical.saga.cpi.Base` will make that instance available as ``self._adaptor``.
 As that adaptor class is part of the adaptor modules code base, and thus under
 full control of the adaptor developer, it is straight forward to use it for
 state caching and state exchange.  Based on the example code in section
 :ref:`adaptor_structure`, a connection caching adaptor class could look like
 this::
 
-  class Adaptor (saga.cpi.base.AdaptorBase):
+  class Adaptor (rs.cpi.base.AdaptorBase):
 
     __metaclass__ = Singleton
 
     def __init__ (self) :
-      saga.cpi.AdaptorBase.__init__ (self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
+      rs.cpi.AdaptorBase.__init__ (self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
       self._cache = {}
       ...
     ...
 
 
-  class GSISSHJobService (saga.cpi.job.Service) :
+  class GSISSHJobService (rs.cpi.job.Service) :
 
     def __init__ (self, api, adaptor) :
       ...
-      saga.cpi.Base.__init__ (self, api, adaptor, 'GSISSHJobService')
+      rs.cpi.Base.__init__ (self, api, adaptor, 'GSISSHJobService')
       self._cache = self._adaptor._cache
   
   
@@ -298,17 +298,17 @@ many cases, however, an implementation of a factory-like API method will want to
 make sure that the resulting API object is bound to the same adaptor instance as
 the spawning adaptor class instance itself.  For that purpose, all API object
 constructors will accept two additional parameters: ``_adaptor`` (type:
-:class:`saga.cpi.Base` or derivative), and ``_adaptor_state`` (type:
+:class:`radical.saga.cpi.Base` or derivative), and ``_adaptor_state`` (type:
 :class:`dict`).  This is also provided for API objects which normally have no
 public constructor at all::
 
 
-  class Job (saga.attributes.Attributes, saga.task.Async) :
+  class Job (rs.attributes.Attributes, rs.task.Async) :
       
     def __init__ (self, _adaptor=None, _adaptor_state={}) :
   
       if not _adaptor :
-          raise saga.exceptions.IncorrectState ("saga.job.Job constructor is private")
+          raise rs.exceptions.IncorrectState ("rs.job.Job constructor is private")
       ...
     
       # bind to the given adaptor -- this will create the required adaptor
@@ -316,8 +316,8 @@ public constructor at all::
       # simply choose the first one the adaptor offers.
       engine         = getEngine ()
       adaptor_schema = _adaptor.get_schemas()[0]
-      self._adaptor  = engine.bind_adaptor (self, 'saga.job.Job', adaptor_schema, 
-                                            saga.task.NOTASK, _adaptor, _adaptor_state)
+      self._adaptor  = engine.bind_adaptor (self, 'rs.job.Job', adaptor_schema, 
+                                            rs.task.NOTASK, _adaptor, _adaptor_state)
 
 
 As shown above, ``_adaptor`` and ``_adaptor_state`` are forwarded to the
@@ -325,13 +325,13 @@ Engine\'s ``bind_adaptor()`` method, and if present will ensure that the
 resulting API object is bound to the given adaptor.  The ``_adaptor_state`` dict
 will be forwarded to the adaptor class level ``init_instance()`` call, and can
 be used to correctly initialize the state of the new adaptor class.  An example
-of adaptor level code for creating an :class:`saga.job.Job` instance via
-:class:`saga.job.Service`\ ``.create_job()`` is below::
+of adaptor level code for creating an :class:`radical.saga.job.Job` instance via
+:class:`radical.saga.job.Service`\ ``.create_job()`` is below::
 
-  class GSISSHJobService (saga.cpi.job.Service) :
+  class GSISSHJobService (rs.cpi.job.Service) :
       
     def __init__ (self, api, adaptor) :
-        saga.cpi.Base.__init__ (self, api, adaptor, 'GSISSHJobService')
+        rs.cpi.Base.__init__ (self, api, adaptor, 'GSISSHJobService')
   
     @SYNC
     def init_instance (self, rm_url, session) :
@@ -344,12 +344,12 @@ of adaptor level code for creating an :class:`saga.job.Job` instance via
                 'job_description' : jd, 
                 'session'         : self._session}
   
-      return saga.job.Job (_adaptor=self._adaptor, _adaptor_state=state)
+      return rs.job.Job (_adaptor=self._adaptor, _adaptor_state=state)
   
   
-  class GSISSHJob (saga.cpi.job.Job) :
+  class GSISSHJob (rs.cpi.job.Job) :
     def __init__ (self, api, adaptor) :
-      saga.cpi.Base.__init__ (self, api, adaptor, 'GSISSHJob')
+      rs.cpi.Base.__init__ (self, api, adaptor, 'GSISSHJob')
       ...
   
     @SYNC
@@ -360,7 +360,7 @@ of adaptor level code for creating an :class:`saga.job.Job` instance via
       self._parent_service = job_info['job_service'] 
   
       self._id             = None # is assigned when calling job.run()
-      self._state          = saga.job.NEW
+      self._state          = rs.job.NEW
   
       # register ourselves with the parent service
       self._parent_service._update_jobid (self, self._id)
@@ -373,11 +373,11 @@ of adaptor level code for creating an :class:`saga.job.Job` instance via
 Exception Handling
 ------------------
 
-SAGA-Python defines a set of exceptions which can be thrown on the various
+RADICAL-SAGA defines a set of exceptions which can be thrown on the various
 method invocations (see section :ref:`api_exceptions`.  Adaptor implementors
 must ensure, that the correct exception types are thrown on the corresponding
 error conditions.  If the API layer encounters a non-SAGA exception from the
-adaptor layer, it will convert it to a ``saga.NoSuccess`` exception.  While that
+adaptor layer, it will convert it to a ``rs.NoSuccess`` exception.  While that
 will reliably shield the user layer from non-SAGA exception types, it is a lossy
 translation, and likely to hide the underlying cause of the error.  This feature
 is thus to be considered as a safe guard, not as a preferred method of error
@@ -385,15 +385,15 @@ state communication!
 
 An example of adaptor level error handling is below::
 
-  class ContextX509 (saga.cpi.Context) :
+  class ContextX509 (rs.cpi.Context) :
   
     def __init__ (self, api, adaptor) :
-      saga.cpi.Base.__init__ (self, api, adaptor, 'ContextX509')
+      rs.cpi.Base.__init__ (self, api, adaptor, 'ContextX509')
   
     @SYNC
     def init_instance (self, type) :
       if not type.lower () in (schema.lower() for schema in _ADAPTOR_SCHEMAS) :
-        raise saga.exceptions.BadParameter \
+        raise rs.exceptions.BadParameter \
                 ("the x509 context adaptor only handles x509 contexts - duh!")
   
     @SYNC
@@ -404,13 +404,13 @@ An example of adaptor level error handling is below::
 
       if not os.path.exists (self._api.user_proxy) or \
          not os.path.isfile (self._api.user_proxy)    :
-        raise saga.exceptions.BadParameter ("X509 proxy does not exist: %s"
+        raise rs.exceptions.BadParameter ("X509 proxy does not exist: %s"
                                                  % self._api.user_proxy)
   
       try :
         fh = open (self._api.user_proxy)
       except Exception as e:
-        raise saga.exceptions.PermissionDenied ("X509 proxy '%s' not readable: %s"
+        raise rs.exceptions.PermissionDenied ("X509 proxy '%s' not readable: %s"
                                              % (self._api.user_proxy, str(e)))
       else :
         fh.close ()
@@ -426,16 +426,16 @@ Asynchronous Methods
 The SAGA API features several objects which implement both synchronous and
 asynchronous versions of their respective methods.  Synchronous calls will
 return normal objects or values; asynchronous calls will return
-:class:`saga.Task` instances, which represent the ongoing asynchronous method,
+:class:`radical.saga.Task` instances, which represent the ongoing asynchronous method,
 and can later be inspected for state and return values.
 
 On adaptor level, both method types are differences by the method decorators
 ``@SYNC`` and ``@ASYNC``, like this::
 
-  class LocalFile (saga.cpi.filesystem.File) :
+  class LocalFile (rs.cpi.filesystem.File) :
   
     def __init__ (self, api, adaptor) :
-        saga.cpi.Base.__init__ (self, api, adaptor, 'LocalFile')
+        rs.cpi.Base.__init__ (self, api, adaptor, 'LocalFile')
   
     @SYNC
     def init_instance (self, url, flags, session) :
@@ -451,9 +451,9 @@ On adaptor level, both method types are differences by the method decorators
       self._flags   = flags
       self._session = session
 
-      t = saga.task.Task ()
-      t._set_result (saga.filesystem.File (url, flags, session, _adaptor_name=_ADAPTOR_NAME))
-      t._set_state  (saga.task.DONE)
+      t = rs.task.Task ()
+      t._set_result (rs.filesystem.File (url, flags, session, _adaptor_name=_ADAPTOR_NAME))
+      t._set_state  (rs.task.DONE)
 
       return t
 
@@ -465,9 +465,9 @@ On adaptor level, both method types are differences by the method decorators
     @ASYNC
     def get_url_async (self, ttype) :
   
-      t = saga.task.Task ()
+      t = rs.task.Task ()
       t._set_result (self._url)
-      t._set_state  (saga.task.DONE)
+      t._set_state  (rs.task.DONE)
   
       return t
 
@@ -484,13 +484,13 @@ Also note that there exists an asynchronous version for the ``init_instance()``
 method, which is used for the asynchronous API object creation, i.e. on::
 
   #import sys
-  #import saga
+  #import radical.saga as rs
 
-  t = saga.job.Service.create ('ssh://host.net')
+  t = rs.job.Service.create ('ssh://host.net')
   
   t.wait ()
 
-  if t.state != saga.task.DONE :
+  if t.state != rs.task.DONE :
     print "no job service: " + str(t.exception)
     sys.exit (0)
 
@@ -501,9 +501,9 @@ method, which is used for the asynchronous API object creation, i.e. on::
 The exact semantics of SAGA's asynchronous operations is described elsewhere
 (see section :ref:`api_tasks`).  Relevant for this discussion is to note that
 the asynchronous adaptor methods all receive a task type parameter (``ttype``)
-which determines the state of the task to return: on ``ttype==saga.task.TASK``,
-the returned task should be in ``New`` state; on ``ttype==saga.task.ASYNC`` the
-task is in ``Running`` state, and on ``ttype==saga.task.SYNC`` the returned task
+which determines the state of the task to return: on ``ttype==rs.task.TASK``,
+the returned task should be in ``New`` state; on ``ttype==rs.task.ASYNC`` the
+task is in ``Running`` state, and on ``ttype==rs.task.SYNC`` the returned task
 is already ``Done``.  It is up to the adaptor implementor to ensure that
 semantics -- the examples above do not follow it, and are thus incomplete.
 
@@ -518,33 +518,33 @@ On API level, there exists no explicit support for bulk operations.  Those can,
 however, be rendered implicitly, by collecting asynchronous operations in a task
 container, and calling ``run()`` on that container::
 
-  bulk  = saga.task.Container ()
+  bulk  = rs.task.Container ()
 
-  dir_1 = saga.filesystem.Directory ("gridftp://remote.host1.net/")
+  dir_1 = rs.filesystem.Directory ("gridftp://remote.host1.net/")
   for i in ranger (0, 1000) :
 
     src = "gridftp://remote.host1.net/data/file_%4d.dat"  %  i
     tgt = "gridftp://other.hostx.net/share/file_%4d.dat"  %  i
 
-    bulk.add (dir1.copy (src, tgt, saga.task.TASK))
+    bulk.add (dir1.copy (src, tgt, rs.task.TASK))
 
 
-  dir_2 = saga.filesystem.Directory ("ssh://remote.host2.net/")
+  dir_2 = rs.filesystem.Directory ("ssh://remote.host2.net/")
   for i in ranger (0, 1000) :
 
     src = "ssh://remote.host2.net/data/file_%4d.info"  %  i
     tgt = "ssh://other.hostx.net/share/file_%4d.info"  %  i
 
-    bulk.add (dir2.copy (src, tgt, saga.task.TASK))
+    bulk.add (dir2.copy (src, tgt, rs.task.TASK))
 
 
   bulk.run  ()
-  bulk.wait (saga.task.ALL)
+  bulk.wait (rs.task.ALL)
 
 
 The above task container gets filled by file copy tasks which are addressing two
 different file transfer protocols, and are thus likely mapped to two different
-adaptors.  The SAGA-Python API implementation will inspect the task container
+adaptors.  The RADICAL-SAGA API implementation will inspect the task container
 upon ``bulk.run()``, and will attempt to sort the contained tasks by adaptor,
 i.e. all tasks operating on API objects which bind to the same adaptor instance
 (not adaptor class instance) will be lumped together into a task *bucket*.  For
@@ -565,11 +565,11 @@ it will inspect
 Adaptor Logging
 ---------------
 
-Based on Python\'s ``logging`` facility, SAGA-Python also supports logging, both
+Based on Python\'s ``logging`` facility, RADICAL-SAGA also supports logging, both
 as an internal auditing and debugging mechanism, and as application supporting
 capability (see section :ref:`util_logging`.  Adaptor implementors are
 encouraged to use logging as well -- for that purposed, the
-:class:`saga.cpi.AdaptorBase` and :class:`saga.cpi.Base` classes will initialize
+:class:`radical.saga.cpi.AdaptorBase` and :class:`radical.saga.cpi.Base` classes will initialize
 a ``self._logger`` member for all adaptor and adaptor class implementations,
 respectively.
 
@@ -608,13 +608,13 @@ External Processes
 For many adaptor implementations, it is beneficial to interface to external
 processes.  In particular, all adaptors performing remote interactions over ssh
 or gsissh secured connections will likely need to interact with the remote user
-shell.  The classes :class:`saga.utils.pty_process.PTYProcess` and (on top of
-PTYProcess) :class:`saga.utils.pty_shell.PTYShell` are designed to simplify
+shell.  The classes :class:`radical.saga.utils.pty_process.PTYProcess` and (on top of
+PTYProcess) :class:`radical.saga.utils.pty_shell.PTYShell` are designed to simplify
 those interactions, and at the same time be more performant than, for example,
 pexpect.
 
-.. autoclass:: saga.utils.pty_shell.PTYShell
+.. autoclass:: rs.utils.pty_shell.PTYShell
 
-.. autoclass:: saga.utils.pty_process.PTYProcess
+.. autoclass:: rs.utils.pty_process.PTYProcess
 
 

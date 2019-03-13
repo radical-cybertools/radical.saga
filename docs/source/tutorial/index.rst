@@ -6,7 +6,7 @@ Tutorial
 ********
 
 This tutorial explains the job and filesystem packages,  arguably the most
-widely used capabilities in saga-python. It covers local
+widely used capabilities in radical.saga. It covers local
 as well as remote job submission and  management (ssh, pbs, sge) and file
 operations (sftp).
 

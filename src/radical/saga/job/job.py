@@ -21,11 +21,12 @@ from .. import base             as sb
 
 from .  import description      as descr
 
+
 # ------------------------------------------------------------------------------
 #
 class Job (sb.Base, st.Task, sasync.Async) :
     '''Represents a SAGA job as defined in GFD.90
-    
+
     A 'Job' represents a running application instance, which may consist of one
     or more processes.  Jobs are created by submitting a Job description to
     a Job submission system -- usually a queuing system, or some other service
@@ -50,7 +51,7 @@ class Job (sb.Base, st.Task, sasync.Async) :
     job's state, and initiating job state transitions.
 
     '''
-    
+
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Job',
@@ -123,7 +124,7 @@ class Job (sb.Base, st.Task, sasync.Async) :
         self._attributes_set_getter (SERVICE_URL    , self._get_service_url)
 
         self._valid = True
- 
+
 
     # --------------------------------------------------------------------------
     #
@@ -179,9 +180,9 @@ class Job (sb.Base, st.Task, sasync.Async) :
     def get_description (self, ttype=None) :
         """
         get_description()
-          
+
         Return the job description this job was created from.
-        
+
         The returned description can be used to inspect job properties
         (executable name, arguments, etc.).  It can also be used to start
         identical job instances.
@@ -222,7 +223,7 @@ class Job (sb.Base, st.Task, sasync.Async) :
 
         ttype:     saga.task.type enum
         ret:       string / saga.Task
-    
+
         Return the job's STDIN as string. 
         """
 
@@ -385,7 +386,7 @@ class Job (sb.Base, st.Task, sasync.Async) :
     def checkpoint (self, ttype=None) :
         """
         checkpoint()
-    
+
         Checkpoint the job.
         """
         return self._adaptor.checkpoint (ttype=ttype)
@@ -446,7 +447,7 @@ class Job (sb.Base, st.Task, sasync.Async) :
         run()
 
         Run (start) the job. 
-        
+
         Request that the job is being executed by the backend.  If the backend
         is accepting this run request, the job will move to the 'Pending' or
         'Running' state -- otherwise this method will raise an error, and the
@@ -536,7 +537,7 @@ class Job (sb.Base, st.Task, sasync.Async) :
 
         :param timeout: `wait` will return after timeout
         :type  timeout: float
-        
+
         Wait for a running job to finish execution.
 
         The optional timeout parameter specifies the time to wait, and accepts
@@ -596,23 +597,23 @@ class Job (sb.Base, st.Task, sasync.Async) :
     def get_state (self, ttype=None) :
         """
         get_state()
-        
+
         Return the current state of the job.
-    
+
         **Example**::
-    
+
           js = saga.job.Service("fork://localhost")
           jd = saga.job.Description ()
           jd.executable = '/bin/date'
           j  = js.create_job(jd)
-    
+
           if   j.get_state() == saga.job.NEW : 
               print "new"
           else : 
               print "oops!"
-    
+
           j.run()
-    
+
           if   j.get_state() == saga.job.PENDING : 
               print "pending"
           elif j.get_state() == saga.job.RUNNING : 
@@ -657,7 +658,7 @@ class Job (sb.Base, st.Task, sasync.Async) :
             :note: if job failed, that will get an exception describing 
                    why, if that exists.  Otherwise, the call returns None.
         """
-        
+
         if  self.state == FAILED :
             return se.NoSuccess ("job stderr: %s" % self.get_stderr_string ())
         else :
@@ -693,8 +694,6 @@ class Job (sb.Base, st.Task, sasync.Async) :
         if ec in [None, ""]:
             return None
         else:
-            # Exit code is always an int. If this 'cast' fails, 
-            # the adaptor is doing something stupid.
             return ec
 
     # --------------------------------------------------------------------------
@@ -822,7 +821,7 @@ class Self (Job) :
     @rus.returns (rus.nothing)
     def __init__ (self, _method_type='run', _adaptor=None, _adaptor_state={}, _ttype=None) : 
 
-    
+
         self._base = super  (Job, self)
         self._base.__init__ (_method_type, _adaptor, _adaptor_state, _ttype=_ttype)
 

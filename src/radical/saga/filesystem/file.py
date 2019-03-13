@@ -25,10 +25,10 @@ class File (nsentry.Entry) :
     The saga.filesystem.File class represents, as the name indicates,
     a file on some (local or remote) filesystem.  That class offers
     a number of operations on that file, such as copy, move and remove::
-    
+
         # get a file handle
         file = saga.filesystem.File("sftp://localhost/tmp/data/data.bin")
-    
+
         # copy the file
         file.copy ("sftp://localhost/tmp/data/data.bak")
 
@@ -67,7 +67,7 @@ class File (nsentry.Entry) :
 
             # get a file handle
             file = saga.filesystem.File("sftp://localhost/tmp/data/data.bin")
-    
+
             # print the file's size
             print file.get_size ()
         """
@@ -127,7 +127,7 @@ class File (nsentry.Entry) :
         """
         return self._adaptor.is_file_self (ttype=ttype)
 
-  
+
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('File', 
@@ -136,21 +136,21 @@ class File (nsentry.Entry) :
     def get_size (self, ttype=None) :
         '''
         get_size()
-        
+
         Returns the size (in bytes) of a file.
 
            Example::
 
                # get a file handle
                file = saga.filesystem.File("sftp://localhost/tmp/data/data.bin")
-    
+
                # print the file's size
                print file.get_size ()
 
         '''
         return self._adaptor.get_size_self (ttype=ttype)
 
-  
+
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('File', 
@@ -177,7 +177,7 @@ class File (nsentry.Entry) :
         ret:      string / bytearray / saga.Task
         '''
         return self._adaptor.close ()
-  
+
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('File', 
@@ -192,7 +192,7 @@ class File (nsentry.Entry) :
         '''
         return self._adaptor.write (data, ttype=ttype)
 
-  
+
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('File', 
@@ -209,7 +209,7 @@ class File (nsentry.Entry) :
         '''
         return self._adaptor.seek (offset, whence, ttype=ttype)
 
-  
+
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('File', 
@@ -224,7 +224,7 @@ class File (nsentry.Entry) :
         '''
         return self._adaptor.read_v (iovecs, ttype=ttype)
 
-  
+
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('File', 
@@ -239,7 +239,7 @@ class File (nsentry.Entry) :
         '''
         return self._adaptor.write_v (data, ttype=ttype)
 
-  
+
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('File', 
@@ -253,7 +253,7 @@ class File (nsentry.Entry) :
         ret:      int / saga.Task
         '''
         return self._adaptor.size_p (pattern, ttype=ttype)
-  
+
 
     # --------------------------------------------------------------------------
     #
@@ -269,7 +269,7 @@ class File (nsentry.Entry) :
         '''
         return self._adaptor.read_p (pattern, ttype=ttype)
 
-  
+
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('File', 
@@ -286,7 +286,7 @@ class File (nsentry.Entry) :
         '''
         return self._adaptor.write_p (pattern, data, ttype=ttype)
 
-  
+
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('File', 
@@ -299,7 +299,7 @@ class File (nsentry.Entry) :
         '''
         return self._adaptor.modes_e (ttype=ttype)
 
-  
+
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('File', 
@@ -316,7 +316,7 @@ class File (nsentry.Entry) :
         '''
         return self._adaptor.size_e (emode, spec, ttype=ttype)
 
-  
+
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('File', 
@@ -333,7 +333,7 @@ class File (nsentry.Entry) :
         '''
         return self._adaptor.read_e (emode, spec, ttype=ttype)
 
-  
+
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('File', 
@@ -352,10 +352,10 @@ class File (nsentry.Entry) :
         '''
         return self._adaptor.read_e (emode, spec, data, ttype=ttype)
 
-  
+
     size    = property (get_size)  # int
     modes_e = property (modes_e)   # list [string]
-  
-  
+
+
 
 

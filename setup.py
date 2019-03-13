@@ -12,6 +12,7 @@ import re
 import os
 import sys
 import shutil
+
 import subprocess as sp
 
 name     = 'radical.saga'
@@ -22,6 +23,7 @@ try:
 except ImportError as e:
     print("%s needs setuptools to install" % name)
     sys.exit(1)
+
 
 # ------------------------------------------------------------------------------
 #
@@ -36,12 +38,12 @@ except ImportError as e:
 #     tree.
 #   - The VERSION file is used to provide the runtime version information.
 #
-def get_version (mod_root):
+def get_version(mod_root):
     """
     mod_root
         a VERSION file containes the version strings is created in mod_root,
         during installation.  That file is used at runtime to get the version
-        information.  
+        information.
         """
 
     try:
@@ -50,26 +52,27 @@ def get_version (mod_root):
         version_detail = None
 
         # get version from './VERSION'
-        src_root = os.path.dirname (__file__)
+        src_root = os.path.dirname(__file__)
         if  not src_root:
             src_root = '.'
 
-        with open (src_root + '/VERSION', 'r') as f:
-            version_base = f.readline ().strip()
+        with open(src_root + '/VERSION', 'r') as f:
+            version_base = f.readline().strip()
 
         # attempt to get version detail information from git
-        # We only do that though if we are in a repo root dir, 
+        # We only do that though if we are in a repo root dir,
         # ie. if 'git rev-parse --show-prefix' returns an empty string --
         # otherwise we get confused if the ve lives beneath another repository,
         # and the pip version used uses an install tmp dir in the ve space
-        # instead of /tmp (which seems to happen with some pip/setuptools 
+        # instead of /tmp (which seems to happen with some pip/setuptools
         # versions).
-        p = sp.Popen('cd %s ; '
-                     'test -z `git rev-parse --show-prefix` || exit -1; '
-                     'tag=`git describe --tags --always` 2>/dev/null ; '
-                     'branch=`git branch | grep -e "^*" | cut -f 2- -d " "` 2>/dev/null ; '
-                     'echo $tag@$branch'  % src_root,
-                     stdout=sp.PIPE, stderr=sp.STDOUT, shell=True)
+        p = sp.Popen(
+            'cd %s ; '
+            'test -z `git rev-parse --show-prefix` || exit -1; '
+            'tag=`git describe --tags --always` 2>/dev/null ; '
+            'branch=`git branch | grep -e "^*" | cut -f 2- -d " "` 2>/dev/null;'
+            'echo $tag@$branch' % src_root,
+            stdout=sp.PIPE, stderr=sp.STDOUT, shell=True)
         version_detail = str(p.communicate()[0].strip())
         version_detail = version_detail.replace('detached from ', 'detached-')
 
@@ -82,7 +85,7 @@ def get_version (mod_root):
             'git-error'      in version_detail or \
             'not-a-git-repo' in version_detail or \
             'not-found'      in version_detail or \
-            'fatal'          in version_detail :
+            'fatal'          in version_detail    :
             version = version_base
         elif '@' not in version_base:
             version = '%s-%s' % (version_base, version_detail)
@@ -91,13 +94,14 @@ def get_version (mod_root):
 
         # make sure the version files exist for the runtime version inspection
         path = '%s/%s' % (src_root, mod_root)
-        with open (path + "/VERSION", "w") as f: f.write (version + "\n")
+        with open(path + "/VERSION", "w") as f:
+            f.write(version + "\n")
 
         sdist_name = "%s-%s.tar.gz" % (name, version)
-        sdist_name = sdist_name.replace ('/', '-')
-        sdist_name = sdist_name.replace ('@', '-')
-        sdist_name = sdist_name.replace ('#', '-')
-        sdist_name = sdist_name.replace ('_', '-')
+        sdist_name = sdist_name.replace('/', '-')
+        sdist_name = sdist_name.replace('@', '-')
+        sdist_name = sdist_name.replace('#', '-')
+        sdist_name = sdist_name.replace('_', '-')
 
         if '--record'    in sys.argv or \
            'bdist_egg'   in sys.argv or \
@@ -107,20 +111,21 @@ def get_version (mod_root):
            # pip install will untar the sdist in a tmp tree.  In that tmp
            # tree, we won't be able to derive git version tags -- so we pack the
            # formerly derived version as ./VERSION
-            shutil.move ("VERSION", "VERSION.bak")           # backup version
-            shutil.copy ("%s/VERSION" % path, "VERSION")     # use full version instead
-            os.system   ("python setup.py sdist")            # build sdist
-            shutil.copy ('dist/%s' % sdist_name,
-                         '%s/%s'   % (mod_root, sdist_name)) # copy into tree
-            shutil.move ("VERSION.bak", "VERSION")           # restore version
+            shutil.move("VERSION", "VERSION.bak")            # backup version
+            shutil.copy("%s/VERSION" % path, "VERSION")      # use full version
+            os.system  ("python setup.py sdist")             # build sdist
+            os.system  ("ls -la dist >> /tmp/t")
+            shutil.copy('dist/%s' % sdist_name,
+                        '%s/%s'   % (mod_root, sdist_name))  # copy into tree
+            shutil.move("VERSION.bak", "VERSION")            # restore version
 
-        print('creating %s/SDIST' % path)
-        with open (path + "/SDIST", "w") as f : f.write (sdist_name + "\n")
+        with open(path + "/SDIST", "w") as f:
+            f.write(sdist_name + "\n")
 
         return version_base, version_detail, sdist_name
 
-    except Exception as e :
-        raise RuntimeError ('Could not extract/set version: %s' % e)
+    except Exception as e:
+        raise RuntimeError('Could not extract/set version: %s' % e)
 
 
 # ------------------------------------------------------------------------------
@@ -131,34 +136,16 @@ if  sys.hexversion < 0x02070000 or sys.hexversion >= 0x03000000:
 
 # ------------------------------------------------------------------------------
 # get version info -- this will create VERSION and srcroot/VERSION
-version, version_detail, sdist_name = get_version (mod_root)
-
-print('version: %s' % version)
-print('detail : %s' % version_detail)
-print('sdist  : %s' % sdist_name)
-
-
-# ------------------------------------------------------------------------------
-class our_test(Command):
-    user_options = []
-    def initialize_options (self) : pass
-    def finalize_options   (self) : pass
-    def run (self) :
-        testdir = "%s/tests/" % os.path.dirname(os.path.realpath(__file__))
-        retval  = sp.call(['coverage',
-                           'run',
-                           '--include="./src/*"',
-                           '%s/run_tests.py'          % testdir,
-                           '%s/configs/basetests.cfg' % testdir])
-        raise SystemExit(retval)
+version, version_detail, sdist_name = get_version(mod_root)
 
 
 # ------------------------------------------------------------------------------
 #
 def read(*rnames):
-    try :
+    try:
         return open(os.path.join(os.path.dirname(__file__), *rnames)).read()
-    except Exception :
+
+    except Exception:
         return ''
 
 
@@ -186,11 +173,11 @@ def makeDataFiles(prefix, dir):
                 subdir
                     file
 
-    makeDataFiles('prefix', 'root')  will create this distutil data_files structure:
+    makeDataFiles('prefix', 'root')  will create this distutil
+    data_files structure:
         [('prefix', ['file1', 'file2']),
          ('prefix/dir', ['file']),
          ('prefix/dir/subdir', ['file'])]
-
     """
     # Strip 'dir/' from of path before joining with prefix
     dir = dir.rstrip('/')
@@ -198,6 +185,7 @@ def makeDataFiles(prefix, dir):
     found = []
     os.path.walk(dir, visit, (prefix, strip, found))
     return found
+
 
 def visit((prefix, strip, found), dirname, names):
     """ Visit directory, create distutil tuple
@@ -222,6 +210,7 @@ def visit((prefix, strip, found), dirname, names):
     destination = os.path.join(prefix, dirname[strip:])
     found.append((destination, files))
 
+
 def isbad(name):
     """ Whether name should not be installed """
     return (name.startswith('.') or
@@ -229,12 +218,32 @@ def isbad(name):
             name.endswith('.pickle') or
             name == 'CVS')
 
+
 def isgood(name):
     """ Whether name should be installed """
     if not isbad(name):
-        if name.endswith('.py') or name.endswith('.json'):
+        if  name.endswith('.py')   or \
+            name.endswith('.json') or \
+            name.endswith('.tar'):
             return True
     return False
+
+
+# ------------------------------------------------------------------------------
+#
+class RunTwine(Command):
+    user_options = []
+    def initialize_options (self) : pass
+    def finalize_options   (self) : pass
+    def run (self) :
+        out,  err, ret = ru.sh_callout('python setup.py sdist upload -r pypi')
+        raise SystemExit(ret)
+
+
+# ------------------------------------------------------------------------------
+#
+if  sys.hexversion < 0x02070000 or sys.hexversion >= 0x03000000:
+    raise RuntimeError("SETUP ERROR: %s requires Python 2.7 or higher" % name)
 
 
 # -------------------------------------------------------------------------------
@@ -248,7 +257,7 @@ setup_args = {
     'author_email'       : 'radical@rutgers.edu',
     'maintainer'         : 'The RADICAL Group',
     'maintainer_email'   : 'radical@rutgers.edu',
-    'url'                : 'http://radical-cybertools.github.io/saga-python/',
+    'url'                : 'http://radical-cybertools.github.io/radical.saga/',
     'license'            : 'MIT',
     'keywords'           : 'radical job saga',
     'classifiers'        : [
@@ -258,8 +267,6 @@ setup_args = {
         'License :: OSI Approved :: MIT License',
         'Programming Language :: Python',
         'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 2.5',
-        'Programming Language :: Python :: 2.6',
         'Programming Language :: Python :: 2.7',
         'Topic :: Utilities',
         'Topic :: System :: Distributed Computing',
@@ -271,38 +278,28 @@ setup_args = {
     'namespace_packages' : ['radical'],
     'packages'           : find_packages('src'),
     'package_dir'        : {'': 'src'},
-    'scripts'            : ['bin/radical-saga-version'
-                           ],
+    'scripts'            : ['bin/radical-saga-version'],
     'package_data'       : {'': ['*.txt', '*.sh', '*.json', '*.gz',
                                  'VERSION', 'SDIST', sdist_name]},
-    'cmdclass'           : {
-        'test'           : our_test,
-    },
-    'install_requires'   : ['apache-libcloud', 
-                            'radical.utils',
-                            'parse'],
-    'tests_require'      : ['nose', 'coverage'],
+  # 'setup_requires'     : ['pytest-runner'],
+    'install_requires'   : ['radical.utils>=0.50',
+                            'apache-libcloud', 
+                            'parse'
+                           ],
+    'tests_require'      : ['pytest', 'coverage'],
     'test_suite'         : '%s.tests' % name,
     'zip_safe'           : False,
-#   'build_sphinx'       : {
-#       'source-dir'     : 'docs/',
-#       'build-dir'      : 'docs/build',
-#       'all_files'      : 1,
-#   },
-#   'upload_sphinx'      : {
-#       'upload-dir'     : 'docs/build/html',
-#   },
-    # This copies the contents of the examples/ dir under
-    # sys.prefix/share/$name
-    # It needs the MANIFEST.in entries to work.
     'data_files'         : makeDataFiles('share/%s/examples/' % name, 'examples'),
+    'cmdclass'           : {'upload': RunTwine},
 }
 
-# ------------------------------------------------------------------------------
 
-setup (**setup_args)
+# ------------------------------------------------------------------------------
+#
+setup(**setup_args)
 
 os.system('rm -rf src/%s.egg-info' % name)
+
 
 # ------------------------------------------------------------------------------
 

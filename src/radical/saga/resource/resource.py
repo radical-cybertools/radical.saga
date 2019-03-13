@@ -7,7 +7,6 @@ __license__   = "MIT"
 import radical.utils               as ru
 import radical.utils.signatures    as rus
 
-from .constants  import *
 from ..constants import SYNC, ASYNC, TASK
 from ..adaptors  import base       as sab
 
@@ -20,6 +19,8 @@ from .. import attributes          as sa
 from .. import constants           as sc
 
 from .  import description         as descr
+from .  import constants           as c
+
 
 # ------------------------------------------------------------------------------
 #
@@ -32,7 +33,7 @@ class Resource (sb.Base, sa.Attributes, async.Async) :
     data storage for :class:`saga.resource.Storage`, and network connectivity
     for :class:`saga.resource.Network`.  The exact mechanism how those usage
     requests are communicated are not part of the resource's class interface,
-    but are instead served by other SAGA-Python classes -- typically those are
+    but are instead served by other RADICAL-SAGA classes -- typically those are
     :class:`saga.job.Service` for Compute resources, and
     :class:`saga.filesystem.Directory` for Storage resources (Network resources
     provide implicit connectivity, but do not have explicit, public entry points
@@ -93,7 +94,7 @@ class Resource (sb.Base, sa.Attributes, async.Async) :
 
         :param id: id of the resource
         :type  id: :class:`saga.Url`
-        
+
         :param session: :class:`saga.Session`
 
         Resource class instances are usually created by calling :func:`acquire`
@@ -120,46 +121,46 @@ class Resource (sb.Base, sa.Attributes, async.Async) :
 
         # register properties with the attribute interface
 
-        self._attributes_register  (ID          , None, sa.ENUM,   sa.SCALAR, sa.READONLY)
-        self._attributes_register  (RTYPE       , None, sa.ENUM,   sa.SCALAR, sa.READONLY)
-        self._attributes_register  (STATE       , None, sa.ENUM,   sa.SCALAR, sa.READONLY)
-        self._attributes_register  (STATE_DETAIL, None, sa.STRING, sa.SCALAR, sa.READONLY)
-        self._attributes_register  (ACCESS      , None, sa.URL,    sa.SCALAR, sa.READONLY)
-        self._attributes_register  (MANAGER     , None, sa.URL,    sa.SCALAR, sa.READONLY)
-        self._attributes_register  (DESCRIPTION , None, sa.ANY,    sa.SCALAR, sa.READONLY)
+        self._attributes_register(c.ID          , None, sa.ENUM,   sa.SCALAR, sa.READONLY)
+        self._attributes_register(c.RTYPE       , None, sa.ENUM,   sa.SCALAR, sa.READONLY)
+        self._attributes_register(c.STATE       , None, sa.ENUM,   sa.SCALAR, sa.READONLY)
+        self._attributes_register(c.STATE_DETAIL, None, sa.STRING, sa.SCALAR, sa.READONLY)
+        self._attributes_register(c.ACCESS      , None, sa.URL,    sa.SCALAR, sa.READONLY)
+        self._attributes_register(c.MANAGER     , None, sa.URL,    sa.SCALAR, sa.READONLY)
+        self._attributes_register(c.DESCRIPTION , None, sa.ANY,    sa.SCALAR, sa.READONLY)
 
-        self._attributes_set_enums (STATE, [UNKNOWN ,
-                                            PENDING ,
-                                            ACTIVE  ,
-                                            CANCELED,
-                                            EXPIRED ,
-                                            FAILED  ,
-                                            FINAL   ])
+        self._attributes_set_enums (c.STATE, [c.UNKNOWN ,
+                                              c.PENDING ,
+                                              c.ACTIVE  ,
+                                              c.CANCELED,
+                                              c.EXPIRED ,
+                                              c.FAILED  ,
+                                              c.FINAL   ])
 
-        self._attributes_set_enums (RTYPE, [COMPUTE ,
-                                            STORAGE ,
-                                            NETWORK ])
+        self._attributes_set_enums (c.RTYPE, [c.COMPUTE ,
+                                              c.STORAGE ,
+                                              c.NETWORK ])
 
 
-        self._attributes_set_getter (ID          , self.get_id          )
-        self._attributes_set_getter (RTYPE       , self.get_rtype       )
-        self._attributes_set_getter (STATE       , self.get_state       )
-        self._attributes_set_getter (STATE_DETAIL, self.get_state_detail)
-        self._attributes_set_getter (ACCESS      , self.get_access      )
-        self._attributes_set_getter (MANAGER     , self.get_manager     )
-        self._attributes_set_getter (DESCRIPTION , self.get_description )
+        self._attributes_set_getter (c.ID          , self.get_id          )
+        self._attributes_set_getter (c.RTYPE       , self.get_rtype       )
+        self._attributes_set_getter (c.STATE       , self.get_state       )
+        self._attributes_set_getter (c.STATE_DETAIL, self.get_state_detail)
+        self._attributes_set_getter (c.ACCESS      , self.get_access      )
+        self._attributes_set_getter (c.MANAGER     , self.get_manager     )
+        self._attributes_set_getter (c.DESCRIPTION , self.get_description )
 
 
         # FIXME: we need the ID to be or to include an URL, as we don't have
         # a scheme otherwise, which means we can't select an adaptor.  Duh! :-/
-        
+
         # FIXME: documentation for attributes is missing.
 
         # param checks
         scheme = None
         if  not id :
-            if  not 'resource_schema' in _adaptor_state :
-                raise se.BadParameter ("Cannot initialize resource without id" \
+            if  'resource_schema' not in _adaptor_state :
+                raise se.BadParameter ("Cannot initialize resource without id"
                                     % self.rtype)
             else :
                 scheme = _adaptor_state['resource_schema']
@@ -167,15 +168,15 @@ class Resource (sb.Base, sa.Attributes, async.Async) :
             # ID is formatted as '[manager-url]-[resource-id]'
             import parse
             res      = parse.parse('[{}]-[{}]', id)
-            url, rid = ru.Url(res[0]), res[1]
+            url      = ru.Url(res[0])
             scheme   = url.scheme.lower ()
 
         if not session :
             session = ss.Session (default=True)
 
         self._base  = super (Resource, self)
-        self._base.__init__ (scheme, _adaptor, _adaptor_state, 
-                             id, session, ttype=_ttype)
+        self._base.__init__ (scheme, _adaptor, _adaptor_state, id, session,
+                             ttype=_ttype)
 
 
     # --------------------------------------------------------------------------
@@ -243,18 +244,20 @@ class Resource (sb.Base, sa.Attributes, async.Async) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Resource', 
-                  rus.optional (rus.one_of (UNKNOWN, NEW, PENDING, ACTIVE, DONE,
-                                            FAILED, EXPIRED, CANCELED, FINAL)),
+                  rus.optional (rus.one_of (c.UNKNOWN, c.NEW,      c.PENDING,
+                                            c.ACTIVE,  c.DONE,     c.FAILED,
+                                            c.EXPIRED, c.CANCELED, c.FINAL)),
                   rus.optional (float),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((rus.nothing, st.Task))
-    def wait (self, state=FINAL, timeout=None, ttype=None) :
+    def wait (self, state=c.FINAL, timeout=None, ttype=None) :
         """
         wait(state=FINAL, timeout=None)
 
         Wait for a resource to enter a specific state.
 
-        :param state: resource state to wait for (UNKNOWN, NEW, PENDING, ACTIVE, DONE, FAILED, EXPIRED, CANCELED, FINAL)
+        :param state: resource state to wait for (UNKNOWN, NEW, PENDING, ACTIVE,
+                      DONE, FAILED, EXPIRED, CANCELED, FINAL)
 
         :type  state: float
         :param state: time to block while waiting.
@@ -274,7 +277,7 @@ class Resource (sb.Base, sa.Attributes, async.Async) :
         #     hierarchy, and then inherit a `ResourceContainer` from
         #     `TaskContainer` (see job); or we implement a `ResourceContainer`
         #     from scratch...
-    
+
         return self._adaptor.wait (state, timeout, ttype=ttype)
 
 
@@ -294,9 +297,9 @@ class Resource (sb.Base, sa.Attributes, async.Async) :
     # --------------------------------------------------------------------------
     #
     @rus.takes    ('Resource', rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
-    @rus.returns  ((rus.one_of (COMPUTE, 
-                                STORAGE, 
-                                NETWORK), st.Task))
+    @rus.returns  ((rus.one_of (c.COMPUTE, 
+                                c.STORAGE, 
+                                c.NETWORK), st.Task))
     def get_rtype (self, ttype=None) : 
         """
         get_rtype()
@@ -309,15 +312,15 @@ class Resource (sb.Base, sa.Attributes, async.Async) :
     # --------------------------------------------------------------------------
     #
     @rus.takes    ('Resource', rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
-    @rus.returns  ((rus.one_of (UNKNOWN ,
-                                NEW     ,
-                                PENDING ,
-                                ACTIVE  ,
-                                CANCELED,
-                                EXPIRED ,
-                                DONE    ,
-                                FAILED  ,
-                                FINAL   ), st.Task))
+    @rus.returns  ((rus.one_of (c.UNKNOWN ,
+                                c.NEW     ,
+                                c.PENDING ,
+                                c.ACTIVE  ,
+                                c.CANCELED,
+                                c.EXPIRED ,
+                                c.DONE    ,
+                                c.FAILED  ,
+                                c.FINAL   ), st.Task))
     def get_state (self, ttype=None) : 
         """
         get_state()
@@ -377,9 +380,6 @@ class Resource (sb.Base, sa.Attributes, async.Async) :
         Return the description that was used to aquire this resource.
         """
         return self._adaptor.get_description   (ttype=ttype)
-# 
-# ------------------------------------------------------------------------------
-
 
 
 # ------------------------------------------------------------------------------
@@ -409,8 +409,8 @@ class Compute (Resource) :
         self._resrc = super  (Compute, self)
         self._resrc.__init__ (id, session, _adaptor, _adaptor_state, _ttype)
 
-        if  self.rtype != COMPUTE :
-            raise se.BadParameter ("Cannot initialize Compute resource with %s id" \
+        if  self.rtype != c.COMPUTE :
+            raise se.BadParameter ("Cannot init Compute resource type %s"
                                 % self.rtype)
 
 
@@ -436,12 +436,12 @@ class Storage (Resource) :
     @rus.returns (rus.nothing)
     def __init__ (self, id=None, session=None,
                   _adaptor=None, _adaptor_state={}, _ttype=None) : 
-        
+
         self._resrc = super  (Storage, self)
         self._resrc.__init__ (id, session, _adaptor, _adaptor_state, _ttype)
 
-        if  self.rtype != STORAGE :
-            raise se.BadParameter ("Cannot initialize Storage resource with %s id" \
+        if  self.rtype != c.STORAGE :
+            raise se.BadParameter ("Cannot init Storage resource type %s"
                                 % self.rtype)
 
 
@@ -463,12 +463,12 @@ class Network (Resource) :
     @rus.returns (rus.nothing)
     def __init__ (self, id=None, session=None,
                   _adaptor=None, _adaptor_state={}, _ttype=None) : 
-        
+
         self._resrc = super  (Network, self)
         self._resrc.__init__ (id, session, _adaptor, _adaptor_state, _ttype)
 
-        if  self.rtype != NETWORK :
-            raise se.BadParameter ("Cannot initialize Network resource with %s id" \
+        if  self.rtype != c.NETWORK :
+            raise se.BadParameter ("Cannot init Network resource type %s"
                                 % self.rtype)
 # 
 # ------------------------------------------------------------------------------

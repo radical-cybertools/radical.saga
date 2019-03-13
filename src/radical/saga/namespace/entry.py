@@ -7,11 +7,9 @@ __license__   = "MIT"
 import radical.utils            as ru
 import radical.utils.signatures as rus
 
-from .constants  import *
 from ..constants import SYNC, ASYNC, TASK
 from ..adaptors  import base    as sab
 
-from .. import exceptions       as se
 from .. import session          as ss
 from .. import task             as st
 from .. import base             as sb
@@ -27,10 +25,10 @@ class Entry (sb.Base, sasync.Async) :
     The saga.namespace.Entry class represents, as the name indicates,
     an entry in some (local or remote) namespace.  That class offers
     a number of operations on that entry, such as copy, move and remove::
-    
+
         # get an entry handle
         entry = saga.namespace.Entry ("sftp://localhost/tmp/data/data.bin")
-    
+
         # copy the entry
         entry.copy ("sftp://localhost/tmp/data/data.bak")
 
@@ -68,13 +66,13 @@ class Entry (sb.Base, sasync.Async) :
 
             # get an entry handle
             entry = saga.namespace.Entry("sftp://localhost/tmp/data/data.bin")
-    
+
             # print the entry's url
             print entry.get_url ()
         '''
 
         self._session      = session
-        self._is_recursive = False # recursion guard (FIXME: NOT THREAD SAFE)
+        self._is_recursive = False  # recursion guard (FIXME: NOT THREAD SAFE)
 
         # param checks
         if not session :
@@ -127,7 +125,7 @@ class Entry (sb.Base, sasync.Async) :
         '''
         ttype:         saga.task.type enum
         ret:           saga.Url / saga.Task
-        
+
         Return the complete url pointing to the entry.
 
         The call will return the complete url pointing to
@@ -139,7 +137,7 @@ class Entry (sb.Base, sasync.Async) :
         '''
         return self._adaptor.get_url (ttype=ttype)
 
-  
+
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Entry',
@@ -151,8 +149,8 @@ class Entry (sb.Base, sasync.Async) :
         ret:           string / saga.Task
         '''
         return self._adaptor.get_cwd (ttype=ttype)
-  
-    
+
+
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Entry',
@@ -164,8 +162,8 @@ class Entry (sb.Base, sasync.Async) :
         ret:           string / saga.Task
         '''
         return self._adaptor.get_name (ttype=ttype)
-  
-    
+
+
     # ----------------------------------------------------------------
     #
     # namespace entry / directory methods
@@ -201,8 +199,8 @@ class Entry (sb.Base, sasync.Async) :
         ret:           bool / saga.Task
         '''
         return self._adaptor.is_entry_self (ttype=ttype)
-  
-    
+
+
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Entry',
@@ -215,8 +213,8 @@ class Entry (sb.Base, sasync.Async) :
         ret:           bool / saga.Task
         '''
         return self._adaptor.is_link_self (ttype=ttype)
-  
-    
+
+
     # --------------------------------------------------------------------------
     #
     @rus.takes    ('Entry',
@@ -230,9 +228,9 @@ class Entry (sb.Base, sasync.Async) :
         '''
 
         return self._adaptor.read_link_self (ttype=ttype)
-  
 
-    
+
+
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Entry',
@@ -246,26 +244,26 @@ class Entry (sb.Base, sasync.Async) :
         flags:         enum flags
         ttype:         saga.task.type enum
         ret:           None / saga.Task
-        
+
         Copy the entry to another location
-    
+
         :param target: Url of the copy target.
         :param flags: Flags to use for the operation.
-    
+
         The entry is copied to the given target location.  The target URL must
         be an absolute path, and can be a target entry name or target
         directory name.  If the target entry exists, it is overwritten::
-    
+
             # copy an entry
             entry = saga.namespace.Entry("sftp://localhost/tmp/data/data.bin")
             entry.copy ("sftp://localhost/tmp/data/data.bak")
         '''
-        
+
         # parameter checks
         if  not flags : flags = 0
         return self._adaptor.copy_self (tgt, flags, ttype=ttype) 
-     
-    
+
+
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Entry',
@@ -299,7 +297,7 @@ class Entry (sb.Base, sasync.Async) :
 
         ttype:         saga.task.type enum
         ret:           None / saga.Task
-        
+
         Move the entry to another location
 
         The entry is copied to the given target location.  The target URL must
@@ -307,14 +305,14 @@ class Entry (sb.Base, sasync.Async) :
         directory name.  If the target entry exists, it is overwritten::
 
             # copy an entry
-            entry = saga.namespace.Directory("sftp://localhost/tmp/data/data.bin")
+            entry = rs.namespace.Directory("sftp://localhost/tmp/data/data.bin")
             entry.move ("sftp://localhost/tmp/data/data.bak")
         '''
         if  not flags : flags = 0
         return self._adaptor.move_self (tgt, flags, ttype=ttype) 
-  
-    
-    
+
+
+
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Entry',
@@ -327,21 +325,20 @@ class Entry (sb.Base, sasync.Async) :
 
         ttype:         saga.task.type enum
         ret:           None / saga.Task
-        
+
         Reove the entry.
 
         The entry is removed, and this object instance is then invalid for
         further operations.
 
             # remove an entry
-            entry = saga.namespace.Directory("sftp://localhost/tmp/data/data.bin")
+            entry = rs.namespace.Directory("sftp://localhost/tmp/data/data.bin")
             entry.remove ()
         '''
         if  not flags : flags = 0
         return self._adaptor.remove_self (flags, ttype=ttype) 
-  
-    
-    
+
+
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Entry',
@@ -356,7 +353,7 @@ class Entry (sb.Base, sasync.Async) :
         '''
         return self._adaptor.close (timeout, ttype=ttype)
 
-    
+
     # --------------------------------------------------------------------------
     #
     url  = property (get_url)   # saga.Url
@@ -364,5 +361,5 @@ class Entry (sb.Base, sasync.Async) :
     name = property (get_name)  # string
 
 
-
+# ------------------------------------------------------------------------------
 

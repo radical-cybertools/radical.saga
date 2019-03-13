@@ -9,7 +9,7 @@
    script in order to get some debug output.
 
    If you think you have encountered a defect, please 
-   report it at: https://github.com/saga-project/saga-python/issues
+   report it at: https://github.com/radical-cybertools/radical.saga/issues
 '''
 
 __author__    = "Ashley Zebrowski"

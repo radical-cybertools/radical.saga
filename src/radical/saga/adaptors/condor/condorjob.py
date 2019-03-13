@@ -10,6 +10,7 @@ __license__   = "MIT"
 import re
 import os
 import time
+import datetime
 
 from urlparse import parse_qs
 from tempfile import NamedTemporaryFile
@@ -22,7 +23,7 @@ from .. import cpi
 from ...exceptions    import *
 from ...job.constants import *
 from ...exceptions    import *
-from ...              import job        as sj
+from ...              import job        as api
 from ...              import filesystem as sfs
 from ...utils         import pty_shell  as sups
 from ...utils.job     import TransferDirectives
@@ -55,14 +56,14 @@ def _condor_to_saga_jobstate(condorjs):
     # 5   Held            H
     # 6   Submission_err  E
 
-    if   int(condorjs) == 0: return saga.job.PENDING
-    elif int(condorjs) == 1: return saga.job.PENDING
-    elif int(condorjs) == 2: return saga.job.RUNNING
-    elif int(condorjs) == 3: return saga.job.CANCELED
-    elif int(condorjs) == 4: return saga.job.DONE
-    elif int(condorjs) == 5: return saga.job.PENDING
-    elif int(condorjs) == 6: return saga.job.FAILED
-    else                   : return saga.job.UNKNOWN
+    if   int(condorjs) == 0: return api.PENDING
+    elif int(condorjs) == 1: return api.PENDING
+    elif int(condorjs) == 2: return api.RUNNING
+    elif int(condorjs) == 3: return api.CANCELED
+    elif int(condorjs) == 4: return api.DONE
+    elif int(condorjs) == 5: return api.PENDING
+    elif int(condorjs) == 6: return api.FAILED
+    else                   : return api.UNKNOWN
 
 
 # --------------------------------------------------------------------
@@ -339,6 +340,8 @@ class Adaptor (base.Base):
 
         self.id_re    = re.compile('^\[(.*)\]-\[(.*?)\]$')
         self.use_hist = self._cfg.get('use_history', False)
+        self.epoch    = datetime.datetime(1970,1,1)
+
         self._logger.info("use condor_history: %s", self.use_hist)
 
 
@@ -762,7 +765,7 @@ class CondorJobService (cpi.job.Service):
                 raise Exception('File append (<<) not supported')
 
             if td.in_overwrite:
-                
+
                 for (local, remote) in td.in_overwrite:
 
                     source = local
@@ -905,10 +908,10 @@ class CondorJobService (cpi.job.Service):
 
                 # look the other way and pray...
                 info['returncode'] = 0
-                info['state']      = saga.job.DONE
+                info['state']      = api.DONE
 
 
-            elif info['state'] in [saga.job.RUNNING, saga.job.PENDING]:
+            elif info['state'] in [api.RUNNING, api.PENDING]:
 
                 # run the Condor 'condor_history' command to get info about
                 # finished jobs
@@ -1107,7 +1110,7 @@ class CondorJobService (cpi.job.Service):
                     if not matched:
                         self._logger.warn('cannot match job info to any known job (%s)', row)
 
-   
+
         # are still any jobs missing?
         missing = [x for x in job_ids if x not in found]
         if missing:
@@ -1297,6 +1300,7 @@ class CondorJobService (cpi.job.Service):
             (self.jobs[job_id]['end_time'] is     None):
             self._job_get_info(job_id=job_id)
 
+        # FIXME: convert to EPOCH
         return self.jobs[job_id]['end_time']
 
 
@@ -1358,7 +1362,7 @@ class CondorJobService (cpi.job.Service):
                          "reconnect":       False
                         }
 
-        return sj.Job(_adaptor=self._adaptor, _adaptor_state=adaptor_state)
+        return api.Job(_adaptor=self._adaptor, _adaptor_state=adaptor_state)
 
 
 
@@ -1377,13 +1381,13 @@ class CondorJobService (cpi.job.Service):
         # state information you need there.
         adaptor_state = {"job_service":     self,
                          # TODO: fill job description
-                         "job_description": sj.Description(),
+                         "job_description": api.Description(),
                          "job_schema":      self.rm.schema,
                          "reconnect":       True,
                          "reconnect_jobid": jobid
                         }
 
-        return sj.Job(_adaptor=self._adaptor, _adaptor_state=adaptor_state)
+        return api.Job(_adaptor=self._adaptor, _adaptor_state=adaptor_state)
 
 
 
@@ -1448,7 +1452,7 @@ class CondorJobService (cpi.job.Service):
 
                 if len(elems) > 1:
 
-                    rm_clone = surl.Url(self.rm)  # TODO: this is costly
+                    rm_clone = ru.Url(self.rm)  # TODO: this is costly
                     rm_clone.query = ""
                     rm_clone.path  = ""
 
@@ -1675,7 +1679,7 @@ class CondorJob (cpi.job.Job):
     def init_instance(self, job_info):
         """ implements cpi.job.Job.init_instance()
         """
-        # init_instance is called for every new sj.Job object
+        # init_instance is called for every new api.Job object
         # that is created
         self.jd = job_info["job_description"]
         self.js = job_info["job_service"]
@@ -1792,20 +1796,13 @@ class CondorJob (cpi.job.Job):
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
-    def get_name(self):
-        """ implements cpi.job.Job.get_name()
-        """
-        return self._name
-
-    # ----------------------------------------------------------------
-    #
-    @SYNC_CALL
     def get_created(self):
         """ implements cpi.job.Job.get_created()
         """
         if self._started is False:
             return None
         else:
+            # FIXME: convert to EPOCH
             return self.js._job_get_create_time(self._id)
 
 
@@ -1818,6 +1815,7 @@ class CondorJob (cpi.job.Job):
         if self._started is False:
             return None
         else:
+            # FIXME: convert to EPOCH
             return self.js._job_get_start_time(self._id)
 
 

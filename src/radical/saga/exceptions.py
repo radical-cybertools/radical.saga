@@ -12,13 +12,11 @@ import weakref
 import operator
 import traceback
 
+
 # We have the choice of doing signature checks in exceptions, or to raise saga
 # exceptions on signature checks -- we cannot do both.  At this point, we use
 # the saga.exceptions in signatures, thus can *not* have signature checks
 # here...
-#
-# import radical.saga.base             as sb
-
 
 # ------------------------------------------------------------------------------
 #
@@ -34,7 +32,7 @@ class SagaException (Exception) :
     B{Example}::
 
       try :
-          file = saga.filesystem.File ("sftp://alamo.futuregrid.org/tmp/data1.dat")
+          file = saga.filesystem.File ("sftp://comet.xsede.org/tmp/data1.dat")
 
       except saga.Timeout as to :
           # maybe the network is down?
@@ -44,7 +42,7 @@ class SagaException (Exception) :
           print "Exception occurred: %s %s" % (e, e.traceback)
 
     There are cases where multiple backends can report errors at the same time.
-    In that case, the saga-python implementation will collect the exceptions,
+    In that case, the radical.saga implementation will collect the exceptions,
     sort them by their 'rank', and return the highest ranked one.  All other
     catched exceptions are available via :func:`get_all_exceptions`, or via the
     `exceptions` property.
@@ -103,23 +101,23 @@ class SagaException (Exception) :
                 self._message   = "  %-20s: %s (%s)\n%s" \
                                 % (self._stype, msg, line, parent.msg)
 
-            else :
+            else:
                 if self._stype != "NoneType" :
-                    # ... but if parent is a native (or any other) exception type,
-                    # we don't have a traceback really -- so we dig it out of
-                    # sys.exc_info. 
+                    # ... but if parent is a native (or any other) exception
+                    # type, we don't have a traceback really -- so we dig it
+                    # out of sys.exc_info. 
                     trace           = sys.exc_info ()[2]
                     stack           = traceback.extract_tb  (trace)
                     traceback_list  = traceback.format_list (stack)
                     self._traceback = "".join (traceback_list)
 
-                    # the message composition is very similar -- we just inject the
-                    # parent exception type inconspicuously somewhere (above that
-                    # was part of 'parent.message' already).
-                    frame           = traceback.extract_stack ()[- ignore_stack]
-                    line            = "%s +%s (%s)  :  %s" % frame 
-                    self._message   = "  %-20s: %s (%s)\n  %-20s: %s" \
-                                    % (self._stype, msg, line, self._ptype, parent)
+                    # the message composition is very similar -- we just inject
+                    # the parent exception type inconspicuously somewhere (above
+                    # that was part of 'parent.message' already).
+                    frame          = traceback.extract_stack ()[- ignore_stack]
+                    line           = "%s +%s (%s)  :  %s" % frame 
+                    self._message  = "  %-20s: %s (%s)\n  %-20s: %s" \
+                                % (self._stype, msg, line, self._ptype, parent)
 
         else :
 
@@ -154,7 +152,7 @@ class SagaException (Exception) :
     # --------------------------------------------------------------------------
     #
     def _clone (self) :
-        """ This method is used internally -- see :func:`_get_exception_stack`."""
+        """ method is used internally -- see :func:`_get_exception_stack`."""
 
         clone = self.__class__ ("")
 
@@ -173,21 +171,22 @@ class SagaException (Exception) :
     #
     @classmethod
     def _log (cls, logger, msg, parent=None, api_object=None, level='error'):
-        """ this class method allows to log the exception message while
-            constructing a SAGA exception, like::
+        """
+        This class method allows to log the exception message while
+        constructing a SAGA exception, like::
 
-              # raise an exception, no logging
-              raise saga.IncorrectState ("File is not open")
+          # raise an exception, no logging
+          raise saga.IncorrectState("File closed")
 
-              # raise an exception, log as error event (error level is default)
-              raise saga.IncorrectState._log (self._logger, "File is not open")
+          # raise an exception, log as error event (error level is default)
+          raise saga.IncorrectState._log(logger, "File closed")
 
-              # raise an exception, log as warning event
-              raise saga.IncorrectState._log (self._logger, "File is not open", level=warning)
-              raise saga.IncorrectState._log (self._logger, "File is not open", warning) # same
+          # raise an exception, log as warning event
+          raise saga.IncorrectState._log(logger, "File closed", level=warning)
+          raise saga.IncorrectState._log(logger, "File closed", warning) # same
 
-            This way, the 'raise' remains clearly in the code, as that is the
-            dominating semantics of the call.
+        This way, the 'raise' remains clearly in the code, as that is the
+        dominating semantics of the call.
         """
 
         log_method = logger.error
@@ -245,13 +244,13 @@ class SagaException (Exception) :
     #
     def _add_exception (self, e) :
         """
-        Some sub-operation raised a SAGA exception, but other exceptions may
-        be catched later on.  In that case the later exceptions can be added to
-        the original one with :func:`_add_exception`\(e).  Once all exceptions are
+        Some sub-operation raised a SAGA exception, but other exceptions may be
+        catched later on.  In that case the later exceptions can be added to the
+        original one with :func:`_add_exception`\(e).  Once all exceptions are
         collected, a call to :func:`_get_exception_stack`\() will return a new
         exception which is selected from the stack by rank and order.  All other
         exceptions can be accessed from the returned exception by
-        :func:`get_all_exceptions`\() -- those exceptions are then also ordered 
+        :func:`get_all_exceptions`\() -- those exceptions are then also ordered
         by rank.
         """
 
@@ -266,14 +265,14 @@ class SagaException (Exception) :
     #
     def _get_exception_stack (self) :
         """ 
-        This method is internally used by the saga-python engine, and is only
+        This method is internally used by the radical.saga engine, and is only
         relevant for operations which (potentially) bind to more than one
         adaptor.
         """
 
         if self._top_exception == self :
             return self
-        
+
         # damned, we can't simply recast ourself to the top exception type -- so
         # we have to create a new exception with that type, and copy all state
         # over...
@@ -284,13 +283,14 @@ class SagaException (Exception) :
         clone._messages   = []
 
         # copy all state over
-        for e in sorted (self._exceptions, key=operator.attrgetter ('_rank'), reverse=True) :
+        for e in sorted(self._exceptions, key=operator.attrgetter ('_rank'),
+                                          reverse=True):
             clone._exceptions.append (e)
             clone._messages.append (e._message)
 
         return clone
 
-                
+
     # --------------------------------------------------------------------------
     #
     def get_all_exceptions (self) :
@@ -321,8 +321,8 @@ class SagaException (Exception) :
 
 # ------------------------------------------------------------------------------
 #
-class NotImplemented(SagaException):
-    """ SAGA-Python does not implement this method or class. (rank: 11)"""
+class NotImplemented(SagaException, NotImplementedError):
+    """ radical.saga does not implement this method or class. (rank: 11)"""
 
     _rank = 11
 
@@ -332,114 +332,116 @@ class NotImplemented(SagaException):
 
 # ------------------------------------------------------------------------------
 #
-class IncorrectURL(SagaException): 
+class IncorrectURL(SagaException, ValueError): 
     """ The given URL could not be interpreted, for example due to an incorrect
         / unknown schema. (rank: 10)"""
 
     _rank = 10
-    
+
     def __init__ (self, msg, parent=None, api_object=None, from_log=False) :
         SagaException.__init__ (self, msg, parent, api_object, from_log)
 
 
 # ------------------------------------------------------------------------------
 #
-class BadParameter(SagaException): 
+class BadParameter(SagaException, ValueError): 
     """ A given parameter is out of bound or ill formatted. (rank: 9)"""
 
     _rank = 9
-    
+
     def __init__ (self, msg, parent=None, api_object=None, from_log=False) :
         SagaException.__init__ (self, msg, parent, api_object, from_log)
 
 
 # ------------------------------------------------------------------------------
 #
-class AlreadyExists(SagaException): 
+class AlreadyExists(SagaException, ValueError): 
     """ The entity to be created already exists. (rank: 8)"""
 
     _rank = 8
-    
+
     def __init__ (self, msg, parent=None, api_object=None, from_log=False) :
         SagaException.__init__ (self, msg, parent, api_object, from_log)
 
 
 # ------------------------------------------------------------------------------
 #
-class DoesNotExist(SagaException):
+class DoesNotExist(SagaException, KeyError):
     """ An operation tried to access a non-existing entity. (rank: 7)"""
 
     _rank = 7
-    
+
     def __init__ (self, msg, parent=None, api_object=None, from_log=False) :
         SagaException.__init__ (self, msg, parent, api_object, from_log)
 
 
 # ------------------------------------------------------------------------------
 #
-class IncorrectState(SagaException): 
-    """ The operation is not allowed on the entity in its current state. (rank: 6)"""
+class IncorrectState(SagaException, RuntimeError): 
+    """ The operation is not allowed on the entity
+        in its current state. (rank: 6)"""
 
     _rank = 6
-    
+
     def __init__ (self, msg, parent=None, api_object=None, from_log=False) :
         SagaException.__init__ (self, msg, parent, api_object, from_log)
 
 
 # ------------------------------------------------------------------------------
 #
-class PermissionDenied(SagaException): 
-    """ The used identity is not permitted to perform the requested operation. (rank: 5)"""
+class PermissionDenied(SagaException, RuntimeError): 
+    """ The used identity is not permitted to perform the
+        requested operation. (rank: 5)"""
 
     _rank = 5
-    
+
     def __init__ (self, msg, parent=None, api_object=None, from_log=False) :
         SagaException.__init__ (self, msg, parent, api_object, from_log)
 
 
 # ------------------------------------------------------------------------------
 #
-class AuthorizationFailed(SagaException): 
+class AuthorizationFailed(SagaException, RuntimeError): 
     """ The backend could not establish a valid identity. (rank: 4)"""
 
     _rank = 4
-    
+
     def __init__ (self, msg, parent=None, api_object=None, from_log=False) :
         SagaException.__init__ (self, msg, parent, api_object, from_log)
 
 
 # ------------------------------------------------------------------------------
 #
-class AuthenticationFailed(SagaException): 
+class AuthenticationFailed(SagaException, RuntimeError): 
     """ The backend could not establish a valid identity. (rank: 3)"""
 
     _rank = 3
-    
+
     def __init__ (self, msg, parent=None, api_object=None, from_log=False) :
         SagaException.__init__ (self, msg, parent, api_object, from_log)
 
 
 # ------------------------------------------------------------------------------
 #
-class Timeout(SagaException): 
+class Timeout(SagaException, RuntimeError): 
     """ The interaction with the backend times out. (rank: 2)"""
 
     _rank = 2
-    
+
     def __init__ (self, msg, parent=None, api_object=None, from_log=False) :
         SagaException.__init__ (self, msg, parent, api_object, from_log)
 
 
 # ------------------------------------------------------------------------------
 #
-class NoSuccess(SagaException): 
+class NoSuccess(SagaException, RuntimeError): 
     """ Some other error occurred. (rank: 1)"""
 
     _rank = 1
-    
+
     def __init__ (self, msg, parent=None, api_object=None, from_log=False) :
         SagaException.__init__ (self, msg, parent, api_object, from_log)
 
 
-
+# ------------------------------------------------------------------------------
 

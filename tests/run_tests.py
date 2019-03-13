@@ -12,9 +12,9 @@ try:
 
     dh = ru.DebugHelper()
 
-    print "______________________________________________________________________"
+    print "____________________________________________________________________"
     print "Using radical.saga from: %s" % str(rs)
-    print "______________________________________________________________________"
+    print "____________________________________________________________________"
 
 except Exception, e:
     srcdir = "%s/../" % os.path.dirname(os.path.realpath(__file__))
@@ -22,64 +22,40 @@ except Exception, e:
     import radical.saga                   as rs
     import radical.saga.utils.test_config as sutc
     import radical.utils.testing          as rut
-    print "______________________________________________________________________"
+
+    print "____________________________________________________________________"
     print "Using radical.saga from: %s" % str(rs)
-    print "______________________________________________________________________"
+    print "____________________________________________________________________"
 
 
-#-----------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # entry point
 if __name__ == "__main__":
 
-    parser = optparse.OptionParser ()
-    parser.add_option ("-n", "--notimpl-warn-only",
-                       action  = "store_true", 
-                       dest    = "notimpl_warn_only", 
-                       default = False,
-                       help    = "if set, warn on NotImplemented exceptions. "
-                               + "If set to 'False' (default), NotImplemented "
-                               + "will produce an error.")
-    parser.add_option ("-c", "--config", 
-                       dest    = "config", 
-                       metavar = "CONFIG",
-                       help    = "either a directory that contains test config "
-                               + "files or a comma-separated list of individual "
-                               + "config files")
+    if len(sys.argv) < 2:
+        print "ERROR: provide test config files as arguments"
+        sys.exit (-1)
 
-    (options, args) = parser.parse_args ()
+    configs = sys.argv[1:]
 
-
-    if  options.config == None :
-        if  not args :
-            print "ERROR: You need to provide test config files as arguments"
-            sys.exit (-1)
-        options.config = ",".join (args)
-
-
-    test_cfgs = list()
-    for config in options.config.split (",") :
-        if  os.path.exists (config) :
-            test_cfgs.append (config)
-        else:
-            print "ERROR: Directory/file '%s' doesn't exist." % config
+    for config in configs :
+        if  not os.path.exists (config) :
+            print "ERROR: config '%s' does not exist." % config
             sys.exit (-1)
 
+    test_cfgs = sys.argv[1:]
 
     # set up the testing framework
     testing = rut.Testing ('radical.saga', __file__)
-    ret     = True
+    ret     = 0
 
-    for test_cfg in test_cfgs :
+    for config in configs :
 
         # for each config, set up the test config singleton and run the tests
-        tc = sutc.TestConfig (test_cfg)
+        tc = sutc.TestConfig (config)
 
-        # tag the notimpl_warn_only option to the config
-        tc.notimpl_warn_only = options.notimpl_warn_only
-
-        # run the tests...
         if  not testing.run () :
-            ret = False
+            ret += 1
 
     sys.exit (ret)
 

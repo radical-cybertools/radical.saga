@@ -10,7 +10,6 @@ __license__   = "MIT"
 import radical.utils            as ru
 import radical.utils.signatures as rus
 
-from .constants  import *
 from ..constants import SYNC, ASYNC, TASK
 from ..adaptors  import base    as sab
 
@@ -24,7 +23,6 @@ from .  import job              as j
 from .  import description      as descr
 
 
-
 # ------------------------------------------------------------------------------
 #
 class Service (sb.Base, sasync.Async) :
@@ -33,8 +31,9 @@ class Service (sb.Base, sasync.Async) :
     the creation, submission and management of jobs.
 
     A job.Service represents anything which accepts job creation requests, and
-    which manages thus created :class:`saga.job.Job` instances.  That can be a local shell, 
-    a remote ssh shell, a cluster queuing system, a IaaS backend -- you name it.
+    which manages thus created :class:`saga.job.Job` instances.  That can be
+    a local shell, a remote ssh shell, a cluster queuing system, a IaaS backend
+    -- you name it.
 
     The job.Service is identified by an URL, which usually points to the contact
     endpoint for that service.
@@ -75,7 +74,7 @@ class Service (sb.Base, sasync.Async) :
         __init__(rm, session)
 
         Create a new job.Service instance.
-        
+
         :param rm:      resource manager URL
         :type  rm:      string or :class:`saga.Url`
         :param session: an optional session object with security contexts
@@ -142,8 +141,7 @@ class Service (sb.Base, sasync.Async) :
         if not session :
             session = ss.Session (default=True)
 
-        url     = ru.Url (rm)
-        scheme  = url.scheme.lower ()
+        url = ru.Url (rm)
 
         return cls (url, session, _ttype=ttype)._init_task
 
@@ -180,21 +178,20 @@ class Service (sb.Base, sasync.Async) :
         Example::
 
             service = saga.job.Service("fork://localhost")
-            
+
             # do something with the 'service' object, create jobs, etc...                 
-            
+
             service.close()
 
             service.list() # this call will throw an exception
 
 
         .. warning:: While in principle the job service destructor calls
-            `close()` automatically when a job service instance goes out of scope,
-            you **shouldn't rely on it**. Python's garbage collection can be a 
-            bit odd at times, so you should always call `close()` explicitly.
-            Especially in a **multi-threaded program** this will help to avoid 
-            random errors. 
-        """
+            `close()` automatically when a job service instance goes out of
+            scope, you **shouldn't rely on it**. Python's garbage collection can
+            be a bit odd at times, so you should always call `close()`
+            explicitly.  Especially in a **multi-threaded program** this will
+            help to avoid random errors.  """
 
         if not self.valid :
             raise se.IncorrectState ("This instance was already closed.")
@@ -232,7 +229,8 @@ class Service (sb.Base, sasync.Async) :
 
         Example::
 
-            # A job.Description object describes the executable/application and its requirements
+            # A job.Description object describes the executable/application
+            # and its requirements
             job_desc = saga.job.Description()
             job_desc.executable  = '/bin/sleep'
             job_desc.arguments   = ['10']
@@ -292,7 +290,7 @@ class Service (sb.Base, sasync.Async) :
                     val != default            and \
                     val                       :
 
-                    msg = "'JobDescription.%s' (%s) is not supported by adaptor %s" \
+                    msg = "'JobDescription.%s' (%s) not supported by %s" \
                         % (key, val, adaptor_info['name'])
                     raise se.BadParameter._log (self._logger, msg)
 
@@ -456,4 +454,6 @@ class Service (sb.Base, sasync.Async) :
         return self._adaptor.get_job (job_id, ttype=ttype)
 
 # FIXME: add get_self()
+
+# ------------------------------------------------------------------------------
 

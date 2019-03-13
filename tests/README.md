@@ -1,5 +1,5 @@
-saga-python unit test framework
-===============================
+radical.saga unit test framework
+================================
 
 The test suites expects the python environment to be set up in a way that the
 sage module is automatically found.  Also, it needs the ``nose`` module

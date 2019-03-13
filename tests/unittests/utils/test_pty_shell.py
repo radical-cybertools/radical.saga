@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 
 __author__    = "Andre Merzky"
 __copyright__ = "Copyright 2013, The SAGA Project"
@@ -115,5 +116,15 @@ def test_ptyshell_file_stage () :
 
 
 # ------------------------------------------------------------------------------
+#
+if __name__ == '__main__':
 
+    test_ptyshell_ok()
+    test_ptyshell_nok()
+    test_ptyshell_async()
+    test_ptyshell_prompt()
+    test_ptyshell_file_stage() 
+
+
+# ------------------------------------------------------------------------------
 

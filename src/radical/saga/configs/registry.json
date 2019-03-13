@@ -12,7 +12,7 @@
         "radical.saga.adaptors.shell.shell_resource",
         "radical.saga.adaptors.redis.redis_advert",
         "radical.saga.adaptors.sge.sgejob",
-        "radical.saga.adaptors.pbs.pbsjob",
+      # "radical.saga.adaptors.pbs.pbsjob",
         "radical.saga.adaptors.lsf.lsfjob",
       # "radical.saga.adaptors.irods.irods_replica",
         "radical.saga.adaptors.condor.condorjob",
@@ -22,7 +22,9 @@
         "radical.saga.adaptors.loadl.loadljob",
         "radical.saga.adaptors.globus_online.go_file",
         "radical.saga.adaptors.torque.torquejob",
-        "radical.saga.adaptors.pbspro.pbsprojob"
+        "radical.saga.adaptors.pbspro.pbsprojob",
+        "radical.saga.adaptors.srm.srmfile",
+        "radical.saga.adaptors.cobalt.cobaltjob"
        ]
 }
 

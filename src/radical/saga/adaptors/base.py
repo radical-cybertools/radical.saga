@@ -23,7 +23,7 @@ class Base(object):
     # object).
     __metaclass__ = ru.Singleton
 
-    
+
     # --------------------------------------------------------------------------
     #
     # FIXME: phase out adaptor_options

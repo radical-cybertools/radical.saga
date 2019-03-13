@@ -5,22 +5,20 @@ __license__   = "MIT"
 
 
 import os
-import sys
 import pwd
 import time
 import string
 import getpass
 
 import radical.utils           as ru
-import radical.utils.logger    as rul
 
 from   . import misc           as sumisc
 from   . import pty_process    as supp
 from   . import pty_exceptions as ptye
+from   ..import exceptions     as rse
 
-from   ..session    import Session
-from   ..url        import Url
-from   ..exceptions import *
+from   ..session import Session
+from   ..url     import Url
 
 
 
@@ -99,6 +97,7 @@ _SCRIPTS = {
         'copy_is_posix': True
     }
 }
+
 
 # ------------------------------------------------------------------------------
 #
@@ -182,19 +181,19 @@ class PTYShellFactory (object) :
             host_s = str(info['host_str'])
 
             # Now, if we don't have that master, yet, we need to instantiate it
-            if not host_s in self.registry                 : self.registry[host_s] = {}
-            if not user_s in self.registry[host_s]         : self.registry[host_s][user_s] = {}
-            if not type_s in self.registry[host_s][user_s] :
+            if host_s not in self.registry                 : self.registry[host_s] = {}
+            if user_s not in self.registry[host_s]         : self.registry[host_s][user_s] = {}
+            if type_s not in self.registry[host_s][user_s] :
 
                 # new master: create an instance, and register it
                 m_cmd = info['scripts'][info['shell_type']]['master'] % info
 
-                logger.debug ("open master pty for [%s] [%s] %s: %s'" \
+                logger.debug ("open master pty for [%s] [%s] %s: %s'"
                                 % (type_s, host_s, user_s, m_cmd))
 
                 info['pty'] = supp.PTYProcess (m_cmd, cfg, logger)
                 if not info['pty'].alive () :
-                    raise NoSuccess._log (logger, \
+                    raise rse.NoSuccess._log (logger,
                           "Shell not connected to %s" % info['host_str'])
 
                 # authorization, prompt setup, etc.  Initialize as shell if not
@@ -206,12 +205,12 @@ class PTYShellFactory (object) :
 
 
             else :
-                # we already have a master: make sure it is alive, and restart as
-                # needed
+                # we already have a master: make sure it is alive, and restart
+                # as needed
                 info = self.registry[host_s][user_s][type_s]
 
                 if  not info['pty'].alive (recover=True) :
-                    raise IncorrectState._log (logger, \
+                    raise rse.IncorrectState._log (logger,
                           "Lost shell connection to %s" % info['host_str'])
 
             return info
@@ -238,7 +237,7 @@ class PTYShellFactory (object) :
 
             pty_shell.latency = latency
 
-            if posix == None:
+            if posix is None:
                 posix = info['posix']
 
             # if we did not see a decent prompt within 'delay' time, something
@@ -249,19 +248,21 @@ class PTYShellFactory (object) :
             delay = min (1.0, max (0.1, 10 * latency))
 
             try :
-                prompt_patterns = ["[Pp]assword:\s*$",             # password   prompt
-                                   "Enter passphrase for .*:\s*$", # passphrase prompt
-                                   "Token_Response.*:\s*$",        # passtoken  prompt
-                                   "Enter PASSCODE:$",             # RSA SecureID
-                                   "want to continue connecting",  # hostkey confirmation
-                                   ".*HELLO_\\d+_SAGA$",           # prompt detection helper
-                                   prompt]                         # greedy native shell prompt
+                prompt_patterns = [
+                     "[Pp]assword:\s*$",              # password   prompt
+                     "Enter passphrase for .*:\s*$",  # passphrase prompt
+                     "Token_Response.*:\s*$",         # passtoken  prompt
+                     "Enter PASSCODE:$",              # RSA SecureID
+                     "want to continue connecting",   # hostkey confirmation
+                     ".*HELLO_\\d+_SAGA$",            # prompt detection helper
+                     prompt]                          # greedy native prompt
 
                 # use a very aggressive, but portable prompt setting scheme.
                 # Error messages may appear for tcsh and others.  Excuse
                 # non-posix shells
                 if posix:
-                    pty_shell.write(" export PROMPT_COMMAND='' PS1='$' ; set prompt='$'\n")
+                    pty_shell.write(" export PROMPT_COMMAND='' PS1='$';"
+                                    " set prompt='$'\n")
 
                 # find a prompt
                 n, match = pty_shell.find (prompt_patterns, delay)
@@ -280,8 +281,8 @@ class PTYShellFactory (object) :
 
                 while True :
 
-                    # --------------------------------------------------------------
-                    if n == None :
+                    # ----------------------------------------------------------
+                    if n is None :
 
                         # we found none of the prompts, yet, and need to try
                         # again.  But to avoid hanging on invalid prompts, we
@@ -291,7 +292,7 @@ class PTYShellFactory (object) :
                         # command...
 
                         if time.time() - time_start > timeout:
-                            raise NoSuccess ("Could not detect shell prompt (timeout)")
+                            raise rse.NoSuccess("Could not detect shell prompt (timeout)")
 
                         # make sure we retry a finite time...
                         retries += 1
@@ -302,7 +303,8 @@ class PTYShellFactory (object) :
                             continue
 
                         if posix:
-                            # use a very aggressive, but portable prompt setting scheme
+                            # use a very aggressive, but portable prompt
+                            # setting scheme
                             pty_shell.write (" export PROMPT_COMMAND='' PS1='$' > /dev/null 2>&1 || set prompt='$'\n")
                             pty_shell.write (" printf 'HELLO_%%d_SAGA\\n' %d\n" % retries)
                             used_trigger = True
@@ -315,7 +317,7 @@ class PTYShellFactory (object) :
                     elif n == 0 :
                         logger.info ("got password prompt")
                         if  not shell_pass :
-                            raise AuthenticationFailed ("prompted for unknown password (%s)" \
+                            raise rse.AuthenticationFailed ("prompted for unknown password (%s)" \
                                                           % match)
 
                         pty_shell.write ("%s\n" % shell_pass, nolog=True)
@@ -327,16 +329,17 @@ class PTYShellFactory (object) :
                         logger.info ("got passphrase prompt : %s" % match)
 
                         start = string.find (match, "'", 0)
-                        end   = string.find (match, "'", start+1)
+                        end   = string.find (match, "'", start + 1)
 
                         if start == -1 or end == -1 :
-                            raise AuthenticationFailed ("could not extract key name (%s)" % match)
+                            raise rse.AuthenticationFailed(
+                                    "could not extract key name (%s)" % match)
 
-                        key = match[start+1:end]
+                        key = match[start + 1:end]
 
-                        if  not key in key_pass    :
-                            raise AuthenticationFailed ("prompted for unknown key password (%s)" \
-                                                          % key)
+                        if  key not in key_pass    :
+                            raise rse.AuthenticationFailed(
+                                "prompted for unknown key password (%s)" % key)
 
                         pty_shell.write ("%s\n" % key_pass[key], nolog=True)
                         n, match = pty_shell.find (prompt_patterns, delay)
@@ -363,7 +366,8 @@ class PTYShellFactory (object) :
 
                         # one of the trigger commands got through -- we can now
                         # hope to find the prompt (or the next trigger...)
-                        logger.debug ("got shell prompt trigger (%s) (%s)" %  (n, match))
+                        logger.debug("got shell prompt trigger (%s) (%s)"
+                                    % (n, match))
 
                         found_trigger = match
                         retry_trigger = False
@@ -374,18 +378,19 @@ class PTYShellFactory (object) :
                     # --------------------------------------------------------------
                     elif n == 6 :
 
-                        logger.debug ("got initial shell prompt (%s) (%s)" %  (n, match))
+                        logger.debug ("got initial shell prompt (%s) (%s)"
+                                % (n, match))
 
                         if  retries :
                             if  used_trigger :
-                                # we already sent triggers -- so this match is only
-                                # useful if saw the *correct* shell prompt trigger
-                                # first
+                                # we already sent triggers -- so this match is
+                                # only useful if saw the *correct* shell prompt
+                                # trigger first
                                 trigger = "HELLO_%d_SAGA" % retries
 
-                                if  not trigger in found_trigger :
+                                if  trigger not in found_trigger :
 
-                                    logger.debug ("waiting for prompt trigger %s: (%s) (%s)" \
+                                    logger.debug ("waiting for prompt trigger %s: (%s) (%s)"
                                                % (trigger, n, match))
                                     # but more retries won't help...
                                     retry_trigger = False
@@ -395,7 +400,7 @@ class PTYShellFactory (object) :
                                     while not n :
 
                                         attempts += 1
-                                        n, match  = pty_shell.find (prompt_patterns, delay)
+                                        n, match = pty_shell.find(prompt_patterns, delay)
 
                                         if  not n :
                                             if  attempts == 1 :
@@ -403,7 +408,7 @@ class PTYShellFactory (object) :
                                                     pty_shell.write (" printf 'HELLO_%%d_SAGA\\n' %d\n" % retries)
 
                                             if  attempts > 100 :
-                                                raise NoSuccess ("Could not detect shell prompt (timeout)")
+                                                raise rse.NoSuccess ("Could not detect shell prompt (timeout)")
 
                                     continue
 
@@ -423,7 +428,7 @@ class PTYShellFactory (object) :
 
         with self.rlock :
 
-            if posix == None:
+            if posix is None:
                 posix = info.get('copy_is_posix')
 
           # print '> -- new cp  shell to %s' % s_cmd
@@ -432,6 +437,7 @@ class PTYShellFactory (object) :
             self._initialize_pty (cp_slave, info, posix)
 
             return cp_slave
+
 
     # --------------------------------------------------------------------------
     #
@@ -442,7 +448,6 @@ class PTYShellFactory (object) :
         is created.  If needed, the existing master connection is revived.
         """
 
-      # if True :
         with self.rlock :
 
             s_cmd = info['scripts'][info['shell_type']]['shell'] % info
@@ -541,7 +546,7 @@ class PTYShellFactory (object) :
                     info['cp_exe'] =  self._which ("cp")
 
             else :
-                raise BadParameter._log (self.logger, \
+                raise rse.BadParameter._log (self.logger,
                           "cannot handle schema '%s://'" % url.schema)
 
 
@@ -555,10 +560,10 @@ class PTYShellFactory (object) :
 
             # depending on type, create command line (args, env etc)
             #
-            # We always set term=vt100 to avoid ansi-escape sequences in the prompt
-            # and elsewhere.  Also, we have to make sure that the shell is an
-            # interactive login shell, so that it interprets the users startup
-            # files, and reacts on commands.
+            # We always set term=vt100 to avoid ansi-escape sequences in the
+            # prompt and elsewhere.  Also, we have to make sure that the shell
+            # is an interactive login shell, so that it interprets the users
+            # startup files, and reacts on commands.
 
             try :
                 info['latency'] = sumisc.get_host_latency (url)
@@ -568,15 +573,17 @@ class PTYShellFactory (object) :
 
             except Exception  as e :
                 info['latency'] = 1.0  # generic value assuming slow link
-                info['logger'].warning ("Could not contact host '%s': %s" % (url, e))
+                info['logger'].warning("Could not contact host '%s': %s"
+                                      % (url, e))
 
             if  info['shell_type'] == "sh" :
 
                 info['sh_env'] = "/usr/bin/env TERM=vt100 "  # avoid ansi escapes
 
                 if not sumisc.host_is_local (url.host) :
-                    raise BadParameter._log (self.logger, \
-                            "expect local host for '%s://', not '%s'" % (url.schema, url.host))
+                    raise rse.BadParameter._log (self.logger,
+                            "expect local host for '%s://', not '%s'"
+                            % (url.schema, url.host))
 
                 if  'user' in info and info['user'] :
                     pass
@@ -584,40 +591,47 @@ class PTYShellFactory (object) :
                     info['user'] = getpass.getuser ()
 
             else :
-                info['ssh_env']   =  "/usr/bin/env TERM=vt100 "  # avoid ansi escapes
-                info['scp_env']   =  "/usr/bin/env TERM=vt100 "  # avoid ansi escapes
-                info['sftp_env']  =  "/usr/bin/env TERM=vt100 "  # avoid ansi escapes
-                info['ssh_args']  =  "-t "                       # force pty
-                info['scp_args']  =  _SCP_FLAGS
-                info['sftp_args'] =  _SFTP_FLAGS
+                # avoid ansi escapes
+                info['ssh_env']   = "/usr/bin/env TERM=vt100 "  
+                info['scp_env']   = "/usr/bin/env TERM=vt100 "
+                info['sftp_env']  = "/usr/bin/env TERM=vt100 "
+                info['ssh_args']  = "-t "  # force pty
+                info['scp_args']  = _SCP_FLAGS
+                info['sftp_args'] = _SFTP_FLAGS
 
                 if  session :
 
                     for context in session.contexts :
 
-                        # ssh can also handle UserPass contexts, and ssh type contexts.
-                        # gsissh can handle the same, but also X509 contexts.
+                        # ssh can also handle UserPass contexts, and ssh type
+                        # contexts.  gsissh can handle the same, but also X509
+                        # contexts.
 
                         if  context.type.lower () == "ssh" :
                             if  info['schema'] in _SCHEMAS_SSH + _SCHEMAS_GSI :
 
-                                if  context.attribute_exists ("user_id") and context.user_id :
+                                if  context.attribute_exists ("user_id") and \
+                                    context.user_id :
                                     info['user']  = context.user_id
 
-                                if  context.attribute_exists ("user_key")  and  context.user_key  :
+                                if  context.attribute_exists ("user_key") and \
+                                    context.user_key  :
                                     info['ssh_args']  += "-o IdentityFile=%s " % context.user_key
                                     info['scp_args']  += "-o IdentityFile=%s " % context.user_key
                                     info['sftp_args'] += "-o IdentityFile=%s " % context.user_key
 
-                                    if  context.attribute_exists ("user_pass") and context.user_pass :
+                                    if  context.attribute_exists("user_pass") \
+                                        and context.user_pass:
                                         info['key_pass'][context.user_key] = context.user_pass
 
                         if  context.type.lower () == "userpass" :
                             if  info['schema'] in _SCHEMAS_SSH + _SCHEMAS_GSI :
-                                if  context.attribute_exists ("user_id") and context.user_id :
-                                    info['user']       = context.user_id
-                                if  context.attribute_exists ("user_pass") and context.user_pass :
-                                    info['pass']       = context.user_pass
+                                if  context.attribute_exists ("user_id") and \
+                                    context.user_id :
+                                    info['user'] = context.user_id
+                                if  context.attribute_exists ("user_pass") and \
+                                    context.user_pass :
+                                    info['pass'] = context.user_pass
 
                         if  context.type.lower () == "x509" :
                             if  info['schema'] in _SCHEMAS_GSI :
@@ -648,8 +662,8 @@ class PTYShellFactory (object) :
                     info['sftp_args'] += "-o Port=%d " % int(url.port)
 
 
-                # all ssh based shells allow for user_id and user_pass from contexts
-                # -- but the data given in the URL take precedence
+                # all ssh based shells allow for user_id and user_pass from
+                # contexts -- but the data given in the URL take precedence
 
                 if url.username   :  info['user'] = url.username
                 if url.password   :  info['pass'] = url.password
@@ -659,8 +673,8 @@ class PTYShellFactory (object) :
 
 
                 if  'user' in info and info['user'] :
-                    info['host_str'] = "%s@%s"  % (info['user'], info['host_str'])
-                    info['ctrl'] = "%s_%%h_%%p.%s.ctrl" % (ctrl_base, info['user'])
+                    info['host_str'] = "%s@%s"              % (info['user'], info['host_str'])
+                    info['ctrl']     = "%s_%%h_%%p.%s.ctrl" % (ctrl_base, info['user'])
                 else :
                     info['user'] = getpass.getuser ()
                     info['ctrl'] = "%s_%%h_%%p.ctrl" % (ctrl_base)
@@ -674,7 +688,7 @@ class PTYShellFactory (object) :
 
                 logger.debug('SSH Connection M_FLAGS: %s' % info['m_flags'])
                 logger.debug('SSH Connection S_FLAGS: %s' % info['s_flags'])
-                
+
                 # we want the userauth and hostname parts of the URL, to get the
                 # scp-scope fs root.
                 info['scp_root']  = ""

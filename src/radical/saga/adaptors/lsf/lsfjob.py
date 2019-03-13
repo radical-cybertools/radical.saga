@@ -1,5 +1,5 @@
 
-__author__    = "Ole Weidner"
+__author__    = "RADICAL Team @ Rutgers"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
@@ -12,22 +12,20 @@ import re
 import os
 import time
 import threading
+import datetime
 
 from urlparse import parse_qs
-from tempfile import NamedTemporaryFile
 
-import radical.utils         as ru
-import radical.utils.threads as rut
+import radical.utils  as ru
 
 from .. import base
 from .. import cpi
 
 from ...job.constants import *
 from ...exceptions    import *
-from ...              import job        as sj
-from ...              import filesystem as sfs
-from ...utils         import pty_shell  as sups
-from ...utils.job     import TransferDirectives
+from ...              import job as sj
+from ...utils         import pty_shell  as rsups
+
 
 SYNC_CALL  = cpi.decorators.SYNC_CALL
 ASYNC_CALL = cpi.decorators.ASYNC_CALL
@@ -45,7 +43,7 @@ class _job_state_monitor(threading.Thread):
 
         self.logger = job_service._logger
         self.js = job_service
-        self._stop = rut.Event()
+        self._stop = threading.Event()
 
         super(_job_state_monitor, self).__init__()
         self.setDaemon(True)
@@ -115,7 +113,7 @@ def _lsf_to_saga_jobstate(lsfjs):
 
 # --------------------------------------------------------------------
 #
-def _lsfcript_generator(url, logger, jd, ppn, lsf_version, queue, span):
+def _lsfscript_generator(url, logger, jd, ppn, lsf_version, queue, span):
     """ generates an LSF script from a SAGA job description
     """
     lsf_params = str()
@@ -185,22 +183,29 @@ def _lsfcript_generator(url, logger, jd, ppn, lsf_version, queue, span):
     elif (jd.queue is None) and (queue is not None):
         lsf_params += "#BSUB -q %s \n" % queue
 
-    if jd.project is not None:
+    if jd.project is not None and ':' in jd.project:
+        account, reservation = jd.project.split(':',1)
+        lsf_params += "#BSUB -P %s \n" % str(account)
+        lsf_params += "#BSUB -U %s \n" % str(reservation)
+    elif jd.project is not None:
         lsf_params += "#BSUB -P %s \n" % str(jd.project)
+
     if jd.job_contact is not None:
         lsf_params += "#BSUB -u %s \n" % str(jd.job_contact)
 
     # if total_cpu_count is not defined, we assume 1
     if jd.total_cpu_count is None:
-        jd.total_cpu_count = 1
+        total_cpu_count = 1
+    else:
+        total_cpu_count = jd.total_cpu_count
 
     lsf_params += "#BSUB -n %s \n" % str(jd.total_cpu_count)
-
+    
     # span parameter allows us to influence core spread over nodes
     if span:
         lsf_params += '#BSUB -R "span[%s]"\n' % span
 
-    # escape all double quotes and dollarsigns, otherwise 'echo |'
+    # escape all double quotes and dollar signs, otherwise 'echo |'
     # further down won't work
     # only escape '$' in args and exe. not in the params
     #exec_n_args = workdir_directives exec_n_args
@@ -305,6 +310,7 @@ class Adaptor (base.Base):
         base.Base.__init__(self, _ADAPTOR_INFO)
 
         self.id_re = re.compile('^\[(.*)\]-\[(.*?)\]$')
+        self.epoch = datetime.datetime(1970,1,1)
 
 
     # ----------------------------------------------------------------
@@ -419,7 +425,7 @@ class LSFJobService (cpi.job.Service):
                           'bsub':     dict(),
                           'bkill':    dict()}
 
-        self.shell = susp.PTYShell(pty_url, self.session)
+        self.shell = rsups.PTYShell(pty_url, self.session)
 
       # self.shell.set_initialize_hook(self.initialize)
       # self.shell.set_finalize_hook(self.finalize)
@@ -500,7 +506,7 @@ class LSFJobService (cpi.job.Service):
 
         try:
             # create an LSF job script from SAGA job description
-            script = _lsfcript_generator(url=self.rm, logger=self._logger,
+            script = _lsfscript_generator(url=self.rm, logger=self._logger,
                                          jd=jd, ppn=self.ppn,
                                          lsf_version=self._commands['bjobs']['version'],
                                          queue=self.queue, span=self.span)
@@ -524,7 +530,7 @@ class LSFJobService (cpi.job.Service):
         # (1) we create a temporary file with 'mktemp' and write the contents of 
         #     the generated PBS script into it
         # (2) we call 'qsub <tmpfile>' to submit the script to the queueing system
-        cmdline = """SCRIPTFILE=`mktemp -t SAGA-Python-LSFJobScript.XXXXXX` && echo "%s" > $SCRIPTFILE && %s < $SCRIPTFILE && rm -f $SCRIPTFILE""" % (script, self._commands['bsub']['path'])
+        cmdline = """SCRIPTFILE=`mktemp -t RS-LSFJobScript.XXXXXX` && echo "%s" > $SCRIPTFILE && %s < $SCRIPTFILE && rm -f $SCRIPTFILE""" % (script, self._commands['bsub']['path'])
         ret, out, _ = self.shell.run_sync(cmdline)
 
         if ret != 0:
@@ -591,13 +597,13 @@ class LSFJobService (cpi.job.Service):
             }
 
             results = out.split(',')
-            job_info['state'] = _lsf_to_saga_jobstate(results[0])
-            job_info['exec_hosts'] = results[1]
+            job_info['state']       = _lsf_to_saga_jobstate(results[0])
+            job_info['exec_hosts']  = results[1]
+            job_info['create_time'] = results[3]
+            job_info['start_time']  = results[4]
+            job_info['end_time']    = results[5]  
             if results[2] != '-':
                 job_info['returncode'] = int(results[2])
-            job_info['create_time']    =     results[3]
-            job_info['start_time']     =     results[4]
-            job_info['end_time']       =     results[5]
 
             jd = sj.Description()
 
@@ -727,6 +733,7 @@ class LSFJobService (cpi.job.Service):
     def _job_get_end_time(self, job_obj):
         """ get the job's end time
         """
+        # FIXME: convert to EOPCH
         return self.jobs[job_obj]['end_time']
 
 
@@ -1013,6 +1020,7 @@ class LSFJob (cpi.job.Job):
         if self._started is False:
             return None
         else:
+            # FIXME: convert to EPOCH
             return self.js._job_get_create_time(self)
 
     # ----------------------------------------------------------------
@@ -1024,6 +1032,7 @@ class LSFJob (cpi.job.Job):
         if self._started is False:
             return None
         else:
+            # FIXME: convert to EPOCH
             return self.js._job_get_start_time(self)
 
     # ----------------------------------------------------------------
@@ -1035,6 +1044,7 @@ class LSFJob (cpi.job.Job):
         if self._started is False:
             return None
         else:
+            # FIXME: convert to EPOCH
             return self.js._job_get_end_time(self)
 
     # ----------------------------------------------------------------

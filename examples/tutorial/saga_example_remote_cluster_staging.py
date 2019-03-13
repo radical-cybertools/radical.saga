@@ -6,26 +6,28 @@ __license__   = "MIT"
 
 
 import sys
-import saga
+
+import radica.saga as rs
+
  
 REMOTE_HOST = "alamo.futuregrid.org"
  
 def main():
     try:
         # Your ssh identity on the remote machine
-        ctx = saga.Context("ssh")
+        ctx = rs.Context("ssh")
         ctx.user_id = "oweidner"
  
-        session = saga.Session()
+        session = rs.Session()
         session.add_context(ctx)
  
         # Create a job service object that represent a remote pbs cluster.
         # The keyword 'pbs' in the url scheme triggers the PBS adaptors
         # and '+ssh' enables PBS remote access via SSH.
-        js = saga.job.Service("pbs+ssh://%s" % REMOTE_HOST, session=session)
+        js = rs.job.Service("pbs+ssh://%s" % REMOTE_HOST, session=session)
  
         # describe our job
-        jd = saga.job.Description()
+        jd = rs.job.Description()
  
         # Next, we describe the job we want to run. A complete set of job
         # description attributes can be found in the API documentation.
@@ -60,7 +62,7 @@ def main():
  
         outfilesource = 'sftp://%s/tmp/mysagajob.stdout' % REMOTE_HOST
         outfiletarget = 'file://localhost/tmp/'
-        out = saga.filesystem.File(outfilesource, session=session)
+        out = rs.filesystem.File(outfilesource, session=session)
         out.copy(outfiletarget)
  
         print "Staged out %s to %s (size: %s bytes)\n" % (outfilesource, outfiletarget, out.get_size())
@@ -68,7 +70,7 @@ def main():
  
         return 0
  
-    except saga.SagaException, ex:
+    except rs.SagaException, ex:
         # Catch all saga exceptions
         print "An exception occured: (%s) %s " % (ex.type, (str(ex)))
         # Trace back the exception. That can be helpful for debugging.

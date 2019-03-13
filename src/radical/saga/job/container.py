@@ -60,7 +60,7 @@ class Container (st.Container):
         import job as sjob
 
         for task in tasks :
-            if isinstance (task, sjob.job.Job) :
+            if isinstance (task, sjob.Job) :
                 jobs.append (task)
 
         return jobs

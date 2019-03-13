@@ -7,34 +7,28 @@ Installation
 Requirements
 ------------
 
-saga-python has the following requirements:
+radical.saga has the following requirements:
 
-* Python 2.5 or newer
+* Python 2.7 or newer
 
 
 Installation via PyPi
 ---------------------
 
-saga-python is available for download via PyPI and may be installed using 
+radical.saga is available for download via PyPI and may be installed using 
 easy_install or pip (preferred). Both automatically download and install all 
-dependencies required by saga-python if they can't be found on your system:
+dependencies required by radical.saga if they can't be found on your system:
 
 .. code-block:: bash
 
-    pip install saga-python
+    pip install radical.saga
 
-
-or with easy_install:
-
-.. code-block:: bash
-
-    easy_install saga-python
 
 
 Using Virtualenv
 ----------------
 
-If you don't want to (or can't) install SAGA Python into your system's Python 
+If you don't want to (or can't) install RADICAL-SAGA into your system's Python 
 environment, there's a simple (and often preferred) way to create an 
 alternative Python environment (e.g., in your home directory): 
 
@@ -42,7 +36,7 @@ alternative Python environment (e.g., in your home directory):
 
     virtualenv --no-site-package $HOME/sagaenv/
     . $HOME/sagaenv/bin/activate
-    pip install saga-python   
+    pip install radical.saga   
 
 
 **What if my system Doesn't come With virtualenv, pip or easy_install?**
@@ -55,16 +49,16 @@ It also installs easy_install and pip:
     wget https://raw.githubusercontent.com/pypa/virtualenv/1.9.1/virtualenv.py
     python virtualenv.py $HOME/sagaenv/ --no-site-packages
     . $HOME/sagaenv/bin/activate
-    pip install saga-python
+    pip install radical.saga
 
 
 Installing the Latest Development Version
 -----------------------------------------
 
-.. warning:: Please keep in mind that the latest development version of SAGA Python can be highly unstable or even completely broken. It's not recommended to use it in a production environment.
+.. warning:: Please keep in mind that the latest development version of RADICAL-SAGA can be highly unstable or even completely broken. It's not recommended to use it in a production environment.
 
-You can install the latest development version of SAGA Python directly from our Git repository using pip:
+You can install the latest development version of RADICAL-SAGA directly from our Git repository using pip:
 
 .. code-block:: bash
 
-    pip install -e git://github.com/saga-project/saga-python.git@devel#egg=saga-python
+    pip install -e git://github.com/radical-cybertools/radical.saga.git@devel#egg=radical.saga

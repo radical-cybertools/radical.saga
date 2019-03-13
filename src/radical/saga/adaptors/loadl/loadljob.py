@@ -6,7 +6,7 @@ __license__   = "MIT"
 
 """ IBM LoadLeveler job adaptor implementation
     reference for pbs job adaptor & sge job adaptor implementation
-	Hangi, Kim hgkim@kisti.re.kr
+    Hangi, Kim hgkim@kisti.re.kr
 """
 
 
@@ -22,12 +22,10 @@ import radical.utils as ru
 from .. import base
 from .. import cpi
 
-from ...job.constants import *
+from ...job           import constants  as c
 from ...exceptions    import *
 from ...              import job        as sj
-from ...              import filesystem as sfs
 from ...utils         import pty_shell  as sups
-from ...utils.job     import TransferDirectives
 from ..sge.sgejob     import SgeKeyValueParser
 
 SYNC_CALL  = cpi.decorators.SYNC_CALL
@@ -47,12 +45,12 @@ def _ll_to_saga_jobstate(lljs):
     """ translates a loadleveler one-letter state to saga
         pbs_loadl_comparison.xlsx
     """
-    if   lljs == 'C' : return DONE
-    elif lljs == 'S' : return PENDING
-    elif lljs == 'ST': return PENDING
-    elif lljs == 'I' : return PENDING
-    elif lljs == 'R' : return RUNNING
-    else             : return UNKNOWN
+    if   lljs == 'C' : return c.DONE
+    elif lljs == 'S' : return c.PENDING
+    elif lljs == 'ST': return c.PENDING
+    elif lljs == 'I' : return c.PENDING
+    elif lljs == 'R' : return c.RUNNING
+    else             : return c.UNKNOWN
 
 
 
@@ -64,8 +62,8 @@ def getId(out):
 
     for line in t:
         if line.startswith('Job'):
-            tmpStr=line.split(' ')
-            jobId=tmpStr[1]
+            tmpStr = line.split(' ')
+            jobId  = tmpStr[1]
             break
 
         elif re.search('The job ".+" has been submitted.', line):
@@ -94,28 +92,28 @@ _ADAPTOR_SCHEMAS       = ["loadl", "loadl+ssh", "loadl+gsissh"]
 # the adaptor capabilities & supported attributes
 #
 _ADAPTOR_CAPABILITIES = {
-    "jdes_attributes":   [NAME,
-                          EXECUTABLE,
-                          ARGUMENTS,
-                          ENVIRONMENT,
-                          INPUT,
-                          OUTPUT,
-                          ERROR,
-                          QUEUE,
-                          PROJECT,
-                          JOB_CONTACT,
-                          WALL_TIME_LIMIT,
-                          WORKING_DIRECTORY,
-                          TOTAL_PHYSICAL_MEMORY,
-                          PROCESSES_PER_HOST,
-                          CANDIDATE_HOSTS,
-                          TOTAL_CPU_COUNT],
-    "job_attributes":    [EXIT_CODE,
-                          EXECUTION_HOSTS,
-                          CREATED,
-                          STARTED,
-                          FINISHED],
-    "metrics":           [STATE],
+    "jdes_attributes":   [c.NAME,
+                          c.EXECUTABLE,
+                          c.ARGUMENTS,
+                          c.ENVIRONMENT,
+                          c.INPUT,
+                          c.OUTPUT,
+                          c.ERROR,
+                          c.QUEUE,
+                          c.PROJECT,
+                          c.JOB_CONTACT,
+                          c.WALL_TIME_LIMIT,
+                          c.WORKING_DIRECTORY,
+                          c.TOTAL_PHYSICAL_MEMORY,
+                          c.PROCESSES_PER_HOST,
+                          c.CANDIDATE_HOSTS,
+                          c.TOTAL_CPU_COUNT],
+    "job_attributes":    [c.EXIT_CODE,
+                          c.EXECUTION_HOSTS,
+                          c.CREATED,
+                          c.STARTED,
+                          c.FINISHED],
+    "metrics":           [c.STATE],
     "contexts":          {"ssh": "SSH public/private keypair",
                           "x509": "GSISSH X509 proxy context",
                           "userpass": "username/password pair (ssh)"}
@@ -141,25 +139,26 @@ controlled HPC clusters.
 # the adaptor info is used to register the adaptor with SAGA
 #
 _ADAPTOR_INFO = {
-    "name":    _ADAPTOR_NAME,
+    "name"   : _ADAPTOR_NAME,
     "version": "v0.1",
     "schemas": _ADAPTOR_SCHEMAS,
-    "cpis": [
-        {
-        "type": "radical.saga.job.Service",
-        "class": "LOADLJobService"
-        },
-        {
-        "type": "radical.saga.job.Job",
-        "class": "LOADLJob"
-        }
-    ]
+    "cpis"   : [
+                   {
+                       "type": "radical.saga.job.Service",
+                       "class": "LOADLJobService"
+                   },
+                   {
+                       "type": "radical.saga.job.Job",
+                       "class": "LOADLJob"
+                   }
+               ]
 }
 
 
 ###############################################################################
+#
 # The adaptor class
-#class Adaptor (base.AdaptorBase):
+#
 class Adaptor (base.Base):
     """ this is the actual adaptor class, which gets loaded by SAGA (i.e. by 
         the SAGA engine), and which registers the CPI implementation classes 
@@ -173,11 +172,11 @@ class Adaptor (base.Base):
         base.Base.__init__(self, _ADAPTOR_INFO)
 
         self.id_re = re.compile('^\[(.*)\]-\[(.*?)\]$')
-      # # FIXME: RADICAL
-      # self.opts = ru.Config(module='radical.saga', name=_ADAPTOR_NAME)
-      #
-      # self.purge_on_start = self.opts['purge_on_start'].get_value()
-      # self.purge_older_than = self.opts['purge_older_than'].get_value()
+        self.epoch = datetime(1970,1,1)
+
+        self.purge_on_start   = self._cfg['purge_on_start']
+        self.purge_older_than = self._cfg['purge_older_than']
+
 
     # ----------------------------------------------------------------
     #
@@ -227,7 +226,7 @@ class LOADLJobService (cpi.job.Service):
         """
         self.rm      = rm_url
         self.session = session
-        self.ppn     = 0 # check for remove
+        self.ppn     = 0  # check for remove
         self.jobs    = dict()
         self.cluster_option = ''
         self.energy_policy_tag = None
@@ -235,13 +234,13 @@ class LOADLJobService (cpi.job.Service):
         self.node_usage = None
         self.network_mpi = None
         self.blocking = None
-        self.job_type = 'MPICH' # TODO: Is this a sane default?
+        self.job_type = 'MPICH'  # TODO: Is this a sane default?
         self.enforce_resource_submission = False
         self.enforce_consumable_cpus = False
         self.enforce_consumable_memory = False
         self.enforce_consumable_virtual_memory = False
         self.enforce_consumable_large_page_memory = False
-        self.temp_path = "$HOME/.saga/adaptors/loadl_job"
+        self.temp_path = "$HOME/.radical/saga/adaptors/loadl_job"
 
         # LoadLeveler has two ways of specifying the executable and arguments.
         # - Explicit: the executable and arguments are specified as parameters.
@@ -306,17 +305,17 @@ class LOADLJobService (cpi.job.Service):
         elif rm_scheme == "loadl+gsissh":
             pty_url.scheme = "gsissh"
 
-        # these are the commands that we need in order to interact with Load Leveler.
-        # the adaptor will try to find them during initialize(self) and bail
-        # out in case they are note avaialbe.
-        self._commands = {'llq': None,
-                          'llsubmit':     None,
-                          'llcancel':     None}
+        # these are the commands that we need in order to interact with Load
+        # Leveler.  the adaptor will try to find them during initialize(self)
+        # and bail out in case they are note avaialbe.
+        self._commands = {'llq'     : None,
+                          'llsubmit': None,
+                          'llcancel': None}
 
         self.shell = sups.PTYShell(pty_url, self.session)
 
-        #self.shell.set_initialize_hook(self.initialize)
-        #self.shell.set_finalize_hook(self.finalize)
+        # self.shell.set_initialize_hook(self.initialize)
+        # self.shell.set_finalize_hook(self.finalize)
 
         self.initialize()
 
@@ -333,7 +332,7 @@ class LOADLJobService (cpi.job.Service):
     #
     def initialize(self):
         # check if all required loadleveler tools are available
-        for cmd in self._commands.keys():
+        for cmd in self._commands:
             ret, out, _ = self.shell.run_sync("which %s " % cmd)
             self._logger.info(ret)
             self._logger.info(out)
@@ -365,8 +364,9 @@ class LOADLJobService (cpi.job.Service):
 
         # purge temporary files
         if self._adaptor.purge_on_start:
-            cmd = "find $HOME/.saga/adaptors/loadl_job" \
-                  " -type f -mtime +%d -print -delete | wc -l" % self._adaptor.purge_older_than
+            cmd = "find $HOME/.radical/saga/adaptors/loadl_job" \
+                  " -type f -mtime +%d -print -delete | wc -l" \
+                % self._adaptor.purge_older_than
             ret, out, _ = self.shell.run_sync(cmd)
             if ret == 0 and out != "0":
                 self._logger.info("Purged %s temporary files" % out)
@@ -385,7 +385,8 @@ class LOADLJobService (cpi.job.Service):
         """
         # check if the path exists
         ret, out, _ = self.shell.run_sync(
-                        "(test -d %s && echo -n 0) || (mkdir -p %s && echo -n 1)" % (path, path))
+                      "(test -d %s && echo -n 0) || (mkdir -p %s && echo -n 1)"
+                    % (path, path))
 
         if ret == 0 and out == "1":
             self._logger.info("Remote directory created: %s" % path)
@@ -398,7 +399,8 @@ class LOADLJobService (cpi.job.Service):
     def __remote_job_info_path(self, loadl_job_id="$LOADL_JOB_NAME"):
         """
         Returns the path of the remote job info file.
-        :param loadl_job_id: the LoadLeveler job id, if omitted an environment variable representing the job id will be used.
+        :param loadl_job_id: the LoadLeveler job id.
+        if omitted an environment variable representing the job id will be used.
         :return: path to the remote job info file
         """
 
@@ -417,34 +419,32 @@ class LOADLJobService (cpi.job.Service):
 
     def __get_remote_job_info(self, loadl_job_id):
         """
-        Obtains the job info from a temporary remote file created by the llsubmit script.
+        Obtains the job info from a temporary remote file created by the
+        llsubmit script.
         :param loadl_job_id: the LoadLeveler job id
         :return: a dictionary with the job info
         """
-        ret, out, _ = self.shell.run_sync("cat %s" % self.__remote_job_info_path(loadl_job_id))
+        ret, out, _ = self.shell.run_sync("cat %s"
+                    % self.__remote_job_info_path(loadl_job_id))
         if ret != 0:
             return None
 
         qres = SgeKeyValueParser(out, key_suffix=":").as_dict()
 
-        if "signal" in qres:
-            state = CANCELED
-        elif "exit_status" in qres:
-            if int(qres.get("exit_status")) == 0:
-                state = DONE
-            else:
-                state = FAILED
-        else:
-            state = RUNNING
+        if   "signal"          in qres   : state = c.CANCELED
+        elif "exit_status" not in qres   : state = c.RUNNING
+        elif not int(qres["exit_status"]): state = c.DONE
+        else                             : state = c.FAILED
 
-        job_info = dict(
-                    state=state,
-                    exec_hosts=qres.get("hostname"),
-                    returncode=int(qres.get("exit_status", -1)),
-                    create_time=qres.get("qsub_time"),
-                    start_time=qres.get("start_time"),
-                    end_time=qres.get("end_time"),
-                    gone=False)
+        job_info = {
+                    'state'       : state,
+                    'exec_hosts'  : qres.get("hostname"),
+                    'create_time' : qres.get("qsub_time"),
+                    'start_time'  : qres.get("start_time"),
+                    'end_time'    : qres.get("end_time"),
+                    'returncode'  : int(qres.get("exit_status", -1)),
+                    'gone'        : False
+                   }
 
         return job_info
 
@@ -495,16 +495,18 @@ class LOADLJobService (cpi.job.Service):
             jd.total_cpu_count = 1
         else:
             if jd.total_cpu_count > 1:
-                if self.job_type not in ['bluegene']: # 'bluegene' and total_tasks dont live well together
+                if self.job_type not in ['bluegene']: 
+                    # 'bluegene' and total_tasks dont live well together
                     loadl_params += "#@ total_tasks = %s\n" % jd.total_cpu_count
 
                 loadl_params += "#@ job_type = %s\n" % self.job_type
 
         if self.job_type == 'bluegene':
-            BGQ_CORES_PER_NODE = 16 # Only true for BG/Q
+            BGQ_CORES_PER_NODE = 16  # Only true for BG/Q
             if jd.total_cpu_count % BGQ_CORES_PER_NODE > 0:
-                raise Exception("Number of cores requested is no multiple of 16.")
-            loadl_params += "#@ bg_size = %d\n" % (jd.total_cpu_count / BGQ_CORES_PER_NODE)
+                raise Exception("#cores requested is no multiple of 16.")
+            loadl_params += "#@ bg_size = %d\n" \
+                          % (jd.total_cpu_count / BGQ_CORES_PER_NODE)
 
         if self.blocking:
             loadl_params += "#@ blocking = %s\n" % self.blocking
@@ -569,21 +571,21 @@ class LOADLJobService (cpi.job.Service):
             'function aborted() {',
             '  echo Aborted with signal $1.',
             '  echo "signal: $1" >>%s' % job_info_path,
-            '  echo "end_time: $(LC_ALL=en_US.utf8 date \'+%%a %%b %%d %%H:%%M:%%S %%Y\')" >>%s' % job_info_path,
+            '  echo "end_time: $(LC_ALL=en_US.utf8 date \'+%%s\')" >>%s' % job_info_path,
             '  exit -1',
             '}',
             'mkdir -p %s' % self.temp_path,
             'for sig in SIGHUP SIGINT SIGQUIT SIGTERM SIGUSR1 SIGUSR2; do trap "aborted $sig" $sig; done',
-            'echo "hostname: $HOSTNAME" >%s' % job_info_path,
-            'echo "qsub_time: %s" >>%s' % (datetime.now().strftime("%a %b %d %H:%M:%S %Y"), job_info_path),
-            'echo "start_time: $(LC_ALL=en_US.utf8 date \'+%%a %%b %%d %%H:%%M:%%S %%Y\')" >>%s' % job_info_path
+            'echo "hostname: $HOSTNAME" > %s' % job_info_path,
+            'echo "qsub_time: %s"       >>%s' % (time.time(), job_info_path),
+            'echo "start_time: $(LC_ALL=en_US.utf8 date \'+%%s\')" >>%s' % job_info_path
         ]
 
         script_body += ['%s %s' % (exec_string, args_strings)]
 
         script_body += [
             'echo "exit_status: $?" >>%s' % job_info_path,
-            'echo "end_time: $(LC_ALL=en_US.utf8 date \'+%%a %%b %%d %%H:%%M:%%S %%Y\')" >>%s' % job_info_path
+            'echo "end_time: $(LC_ALL=en_US.utf8 date \'+%%s\')" >>%s' % job_info_path
         ]
 
         # convert exec and args into an string and
@@ -633,7 +635,7 @@ class LOADLJobService (cpi.job.Service):
         # (1) we create a temporary file with 'mktemp' and write the contents of
         #     the generated Load Leveler script into it
         # (2) we call 'llsubmit <tmpfile>' to submit the script to the queueing system
-        cmdline = """SCRIPTFILE=`mktemp -t SAGA-Python-LOADLJobScript.XXXXXX` &&  echo "%s" > $SCRIPTFILE && %s%s $SCRIPTFILE && rm -f $SCRIPTFILE""" %  (script, self._commands['llsubmit']['path'], self.cluster_option)
+        cmdline = """SCRIPTFILE=`mktemp -t RS-LOADLJobScript.XXXXXX` &&  echo "%s" > $SCRIPTFILE && %s%s $SCRIPTFILE && rm -f $SCRIPTFILE""" %  (script, self._commands['llsubmit']['path'], self.cluster_option)
         self._logger.info("cmdline: %r", cmdline)
         ret, out, _ = self.shell.run_sync(cmdline)
 
@@ -650,7 +652,7 @@ class LOADLJobService (cpi.job.Service):
 
             # add job to internal list of known jobs.
             self.jobs[job_id] = {
-                'state':        PENDING,
+                'state':        c.PENDING,
                 'exec_hosts':   None,
                 'returncode':   None,
                 'create_time':  None,
@@ -671,7 +673,7 @@ class LOADLJobService (cpi.job.Service):
         rm, pid = self._adaptor.parse_id(job_id)
 
         # run the LoadLeveler 'llq' command to get some info about our job
-        ret, out, _ = self.shell.run_sync("%s -j %s -r %%st %%dd %%cc %%jt %%c %%Xs" % \
+        ret, out, _ = self.shell.run_sync("%s -j %s -r %%st %%dd %%cc %%jt %%c %%Xs" %
                                           (self._commands['llq']['path'], pid))
         # output is something like
         # R!03/25/2014 13:47!!Serial!normal!kisti.kim
@@ -684,7 +686,7 @@ class LOADLJobService (cpi.job.Service):
         else:
             # the job seems to exist on the backend. let's gather some data
             job_info = {
-                'state':        UNKNOWN,
+                'state':        c.UNKNOWN,
                 'exec_hosts':   None,
                 'returncode':   None,
                 'create_time':  None,
@@ -693,36 +695,44 @@ class LOADLJobService (cpi.job.Service):
                 'gone':         False
             }
 
-            #lastStr=out.rstrip().split('\n')[-1]
-            lastStr=out.rstrip()
+          # lastStr = out.rstrip().split('\n')[-1]
+            lastStr = out.rstrip()
             self._logger.debug(lastStr)
-            if lastStr.startswith('llq:'): # llq: There is currently no job status to report
+
+            if lastStr.startswith('llq:'):
+                # llq: There is currently no job status to report
+                
                 job_info = None
-                retries = 0
-                delay = 1
+                retries  = 0
+
                 while job_info is None and retries < max_retries:
+
                     job_info = self.__get_remote_job_info(pid)
-                    #print "llq:", job_info
-                    if job_info == None and retries > 0:
+                  # print "llq:", job_info
+
+                    if job_info is None and retries > 0:
                         message = "__get_remote_job_info get None, pid: %s and retries: %d" % (pid, retries)
                         self._logger.debug(message)
                         # Exponential back-off
                         time.sleep(2**retries)
+
                     retries += 1
 
-                if job_info == None:
+                if job_info is None:
                     message = "__get_remote_job_info exceed %d times(s), pid: %s" % (max_retries, pid)
                     log_error_and_raise(message, NoSuccess, self._logger)
 
                 self._logger.info("_retrieve_job: %r", job_info)
-            else: # job is still in the queue
+
+            else:
+                # job is still in the queue
                 results = lastStr.split('!')
                 self._logger.info("results: %r",results)
 
-                job_info['state'] = _ll_to_saga_jobstate(results[0])
-                job_info['returncode'] = -1 # still running
+                job_info['state']      = _ll_to_saga_jobstate(results[0])
+                job_info['returncode'] = None  # still running
                 job_info['start_time'] = results[1]
-                #job_info['exec_hosts'] = results[5]
+              # job_info['exec_hosts'] = results[5]
 
             return job_info
 
@@ -748,7 +758,7 @@ class LOADLJobService (cpi.job.Service):
             return prev_info
 
         # if the job is in a terminal state don't expect it to change anymore
-        if prev_info["state"] in [CANCELED, FAILED, DONE]:
+        if prev_info["state"] in [c.CANCELED, c.FAILED, c.DONE]:
             return prev_info
 
         # retrieve updated job information
@@ -767,7 +777,7 @@ class LOADLJobService (cpi.job.Service):
         """ get the job's state
         """
         # check if we have already reach a terminal state
-        if self.jobs[job_id]['state'] in [CANCELED, FAILED, DONE]:
+        if self.jobs[job_id]['state'] in [c.CANCELED, c.FAILED, c.DONE]:
             return self.jobs[job_id]['state']
 
         # check if we can / should update
@@ -830,8 +840,7 @@ class LOADLJobService (cpi.job.Service):
         """ get the job's end time
         """
         # check if we can / should update
-        if (self.jobs[job_id]['gone'] is not True) \
-        and (self.jobs[job_id]['end_time'] is None):
+        if not self.jobs[job_id]['gone'] and not self.jobs[job_id]['end_time']:
             self.jobs[job_id] = self._job_get_info(job_id=job_id)
 
         return self.jobs[job_id]['end_time']
@@ -853,7 +862,7 @@ class LOADLJobService (cpi.job.Service):
         #self.__clean_remote_job_info(pid)
 
         # assume the job was succesfully canceld
-        self.jobs[job_id]['state'] = CANCELED
+        self.jobs[job_id]['state'] = c.CANCELED
 
     # ----------------------------------------------------------------
     #
@@ -868,10 +877,10 @@ class LOADLJobService (cpi.job.Service):
         while True:
             state = self._job_get_state(job_id=job_id)
 
-            if state == UNKNOWN :
+            if state == c.UNKNOWN :
                 log_error_and_raise("cannot get job state", IncorrectState, self._logger)
 
-            if state in [DONE, FAILED, CANCELED]:
+            if state in [c.DONE, c.FAILED, c.CANCELED]:
               # self.__clean_remote_job_info(pid)
                 return True
             # avoid busy poll
@@ -1023,11 +1032,11 @@ class LOADLJob (cpi.job.Job):
 
         if job_info['reconnect'] is True:
             self._id      = job_info['reconnect_jobid']
-            self._name    = self.jd.get(NAME)
+            self._name    = self.jd.get(c.NAME)
             self._started = True
         else:
             self._id      = None
-            self._name    = self.jd.get(NAME)
+            self._name    = self.jd.get(c.NAME)
             self._started = False
 
         return self.get_api()
@@ -1040,7 +1049,7 @@ class LOADLJob (cpi.job.Job):
         """
         if self._started is False:
             # jobs that are not started are always in 'NEW' state
-            return NEW
+            return c.NEW
         else:
             return self.js._job_get_state(self._id)
 
@@ -1120,6 +1129,7 @@ class LOADLJob (cpi.job.Job):
         if self._started is False:
             return None
         else:
+            # FIXME: convert to EPOCH
             return self.js._job_get_create_time(self._id)
 
     # ----------------------------------------------------------------
@@ -1131,6 +1141,7 @@ class LOADLJob (cpi.job.Job):
         if self._started is False:
             return None
         else:
+            # FIXME: convert to EPOCH
             return self.js._job_get_start_time(self._id)
 
     # ----------------------------------------------------------------
@@ -1155,4 +1166,6 @@ class LOADLJob (cpi.job.Job):
         else:
             return self.js._job_get_execution_hosts(self._id)
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
+# ------------------------------------------------------------------------------
+

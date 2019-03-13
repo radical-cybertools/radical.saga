@@ -4,14 +4,13 @@ __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
 
-from ...exceptions import *
+from ...           import exceptions as rse
 
 from .decorators   import CPI_SYNC_CALL  as SYNC
-from .decorators   import CPI_ASYNC_CALL as ASYNC
 
 
 class Attributes (object) :
-    
+
     @SYNC
     def attribute_getter    (self, key)         : pass
 
@@ -26,7 +25,7 @@ class Attributes (object) :
 
     @SYNC
     def add_callback        (self, key, cb)     :
-        raise NotImplemented ("Callbacks are not supported for this backend")
+        raise rse.NotImplemented ("Callbacks not supported for this backend")
 
 
 

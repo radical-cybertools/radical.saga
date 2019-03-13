@@ -163,7 +163,6 @@ class Directory (nsdir.Directory, sa.Attributes) :
         if tgt  :  return self._adaptor.set_ttl      (tgt, ttl, ttype=ttype)
         else    :  return self._adaptor.set_ttl_self (     ttl, ttype=ttype)
 
-     
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Directory', 
@@ -199,7 +198,7 @@ class Directory (nsdir.Directory, sa.Attributes) :
         flags:          flags enum
         ret:            list [saga.Url]
         """
-        
+
         if not flags : flags = 0
         if attr_pattern or obj_type : 
             return self._adaptor.find_adverts (name_pattern, attr_pattern, obj_type, flags, ttype=ttype)

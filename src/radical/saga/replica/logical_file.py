@@ -7,7 +7,6 @@ __license__   = "MIT"
 import radical.utils            as ru
 import radical.utils.signatures as rus
 
-from .constants  import *
 from ..constants import SYNC, ASYNC, TASK
 from ..adaptors  import base    as sab
 from ..namespace import entry   as nsentry
@@ -15,6 +14,7 @@ from ..namespace import entry   as nsentry
 from .. import attributes       as sa
 from .. import session          as ss
 from .. import task             as st
+from .  import constants        as c
 
 
 # ------------------------------------------------------------------------------
@@ -31,7 +31,7 @@ class LogicalFile (nsentry.Entry, sa.Attributes) :
                   rus.optional (dict), 
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns (rus.nothing)
-    def __init__ (self, url=None, flags=READ, session=None, 
+    def __init__ (self, url=None, flags=c.READ, session=None, 
                   _adaptor=None, _adaptor_state={}, _ttype=None) : 
         '''
         __init__(url=None, flags=READ, session=None)
@@ -60,7 +60,7 @@ class LogicalFile (nsentry.Entry, sa.Attributes) :
                   rus.optional (ss.Session),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns (st.Task)
-    def create (cls, url=None, flags=READ, session=None, ttype=None) :
+    def create (cls, url=None, flags=c.READ, session=None, ttype=None) :
         '''
         url:       saga.Url
         flags:     saga.replica.flags enum
@@ -72,7 +72,6 @@ class LogicalFile (nsentry.Entry, sa.Attributes) :
         if not flags : flags = 0
         _nsentry = super (LogicalFile, cls)
         return _nsentry.create (url, flags, session, ttype=ttype)
-
 
 
     # ----------------------------------------------------------------
@@ -105,21 +104,22 @@ class LogicalFile (nsentry.Entry, sa.Attributes) :
 
         ttype:    saga.task.type enum
         ret:      int / saga.Task
-        
-        Returns the size of the physical file represented by this logical file (in bytes)
+
+        Returns the size of the physical file represented by this logical file
+        (in bytes)
 
            Example::
 
                # get a file handle
-               lf = saga.replica.LogicalFile("irods://localhost/tmp/data/data.bin")
-    
+               lf = saga.replica.LogicalFile("irods://localhost/tmp/data.bin")
+
                # print the logical file's size
                print lf.get_size ()
 
         '''
         return self._adaptor.get_size_self (ttype=ttype)
 
-  
+
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('LogicalFile', 
@@ -216,7 +216,7 @@ class LogicalFile (nsentry.Entry, sa.Attributes) :
         '''
         if not flags : flags = 0
         return self._adaptor.replicate (name, flags, ttype=ttype)
-    
+
 
     # --------------------------------------------------------------------------
     # non-GFD.90
@@ -241,8 +241,8 @@ class LogicalFile (nsentry.Entry, sa.Attributes) :
         '''
         if not flags : flags = 0
         return self._adaptor.upload (name, tgt, flags, ttype=ttype)
-    
- 
+
+
     # --------------------------------------------------------------------------
     # non-GFD.90
     #
@@ -266,7 +266,7 @@ class LogicalFile (nsentry.Entry, sa.Attributes) :
         '''
         if not flags : flags = 0
         return self._adaptor.download (name, src, flags, ttype=ttype)
-    
-  
 
+
+# ------------------------------------------------------------------------------
 

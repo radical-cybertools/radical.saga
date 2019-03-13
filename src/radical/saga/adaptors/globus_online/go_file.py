@@ -9,19 +9,15 @@ __license__   = "MIT"
 import os 
 import threading
 
-from cgi  import parse_qs
 
-import radical.utils as ru
-
-from ...exceptions    import *
-from ...              import utils      as rsu
+from ...              import exceptions as rse
+from ...url           import Url
 from ...utils         import pty_shell  as rsups
 from ...utils         import misc       as rsumisc
-from ...              import filesystem as api_fs
+from ...              import filesystem as api
 from ...adaptors      import base       as a_base
-from ...adaptors.cpi  import filesystem as cpi_fs
+from ...adaptors.cpi  import filesystem as cpi
 from ...adaptors.cpi  import decorators as cpi_decs
-from ...job.constants import *
 
 
 SYNC_CALL  = cpi_decs.SYNC_CALL
@@ -33,25 +29,24 @@ ASYNC_CALL = cpi_decs.ASYNC_CALL
 # as they could activate the endpoints through the globus web interface.
 # go+ssh:// vs go+gsissh:// comes to mind
 GO_DEFAULT_URL = "gsissh://cli.globusonline.org/"
-#GO_DEFAULT_URL = "ssh://cli.globusonline.org/"
 
 
-# --------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # the adaptor name
 #
 _ADAPTOR_NAME          = "radical.saga.adaptors.globus_online_file"
-_ADAPTOR_SCHEMAS       = ["go"] # TODO: also allow file:// ??
+_ADAPTOR_SCHEMAS       = ["go"]  # TODO: also allow file:// ??
 
-# --------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # the adaptor capabilities & supported attributes
 #
 _ADAPTOR_CAPABILITIES  = {
     "metrics"          : [],
     "contexts"         : {"x509"     : "X509 proxy for Globus",
-                          "userpass" : "username/password pair for GlobusOnline"}
+                          "userpass" : "username/password for GlobusOnline"}
 }
 
-# --------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # the adaptor documentation
 #
 _ADAPTOR_DOC           = {
@@ -66,7 +61,7 @@ _ADAPTOR_DOC           = {
     "schemas"          : {"go": "use globus online for gridftp file transfer"}
 }
 
-# --------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # the adaptor info is used to register the adaptor with SAGA
 
 _ADAPTOR_INFO          = {
@@ -74,28 +69,28 @@ _ADAPTOR_INFO          = {
     "version"          : "v0.2",
     "schemas"          : _ADAPTOR_SCHEMAS,
     "cpis"             : [
-        { 
-        "type"         : "radical.saga.namespace.Directory",
-        "class"        : "GODirectory"
-        }, 
-        { 
-        "type"         : "radical.saga.namespace.Entry",
-        "class"        : "GOFile"
-        },
-        { 
-        "type"         : "radical.saga.filesystem.Directory",
-        "class"        : "GODirectory"
-        }, 
-        { 
-        "type"         : "radical.saga.filesystem.File",
-        "class"        : "GOFile"
-        }
-    ]
+                             { 
+                                 "type"  : "radical.saga.namespace.Directory",
+                                 "class" : "GODirectory"
+                             }, 
+                             { 
+                                 "type"  : "radical.saga.namespace.Entry",
+                                 "class" : "GOFile"
+                             },
+                             { 
+                                 "type"  : "radical.saga.filesystem.Directory",
+                                 "class" : "GODirectory"
+                             }, 
+                             { 
+                                 "type"  : "radical.saga.filesystem.File",
+                                 "class" : "GOFile"
+                             }
+                         ]
 }
+
 
 ################################################################################
 # The adaptor class
-
 class Adaptor(a_base.Base):
     """ 
     This is the actual adaptor class, which gets loaded by SAGA (i.e. by the
@@ -110,12 +105,11 @@ class Adaptor(a_base.Base):
         a_base.Base.__init__(self, _ADAPTOR_INFO)
 
         # FIXME: RADICAL
-      # self.opts = ru.Config(module='radical.saga', name=_ADAPTOR_NAME)
-      # self.notify = self.opts['enable_notifications'].get_value()
-      # self.f_mode = self.opts['failure_mode'].get_value()
-      # self.prompt = self.opts['prompt_pattern'].get_value()
-      # self.localhost_ep = self.opts['localhost_endpoint'].get_value()
-        self.shells = {}  # keep go shells for each session
+        self.notify       = self._cfg['enable_notifications']
+        self.f_mode       = self._cfg['failure_mode']
+        self.prompt       = self._cfg['prompt_pattern']
+        self.localhost_ep = self._cfg['localhost_endpoint']
+        self.shells       = dict()  # keep go shells for each session
 
         #
         # Lock to synchronize concurrent access to data structures
@@ -133,10 +127,10 @@ class Adaptor(a_base.Base):
 
         # This returns a pty shell for: '[gsi]ssh username@cli.globusonline.org'
         #
-        # X509 contexts are preferred, but ssh contexts, userpass and myproxy can
-        # also be used.  If the given url has username / password encoded, we
-        # create an userpass context out of it and add it to the (copy of) the
-        # session.
+        # X509 contexts are preferred, but ssh contexts, userpass and myproxy
+        # can also be used.  If the given url has username / password encoded,
+        # we create an userpass context out of it and add it to the (copy of)
+        # the session.
 
         self._logger.debug("Acquiring lock")
         with self.shell_lock:
@@ -147,13 +141,17 @@ class Adaptor(a_base.Base):
             init = False
             create = False
 
-            if sid in self.shells and self.shells[sid]['shell'].alive(recover=False):
+            if sid in self.shells \
+                and self.shells[sid]['shell'].alive(recover=False):
+
                 self._logger.debug("Shell in cache and alive, can reuse.")
+
             elif sid in self.shells:
                 self._logger.debug("Shell in cache but not alive.")
                 self.shells[sid]['shell'].finalize()
                 self._logger.debug("Shell is finalized, need to recreate.")
                 create = True
+
             else:
                 self._logger.debug("Shell not in cache, create entry.")
                 init = True
@@ -164,17 +162,19 @@ class Adaptor(a_base.Base):
             if create:
 
                 # deep copy URL (because of?)
-                new_url = rsu.Url(go_url)
+                new_url = Url(go_url)
 
                 # GO specific prompt pattern
                 opts = {'prompt_pattern': self.prompt}
 
                 # create the shell.
-                shell = rsups.PTYShell(new_url, session=session, logger=self._logger, opts=opts, posix=False)
+                shell = rsups.PTYShell(new_url, session=session,
+                                    logger=self._logger, opts=opts, posix=False)
                 self.shells[sid]['shell'] = shell
 
                 # For this fresh shell, we get the list of public endpoints.
-                # That list will contain the set of hosts we can potentially connect to.
+                # That list will contain the set of hosts we can potentially
+                # connect to.
                 self.get_go_endpoint_list(session, shell, fetch=True)
 
             # Initialize other dict members and remote shell
@@ -187,10 +187,12 @@ class Adaptor(a_base.Base):
                 for line in out.split('\n'):
                     if 'User Name:' in line:
                         self.shells[sid]['user'] = line.split(':', 2)[1].strip()
-                        self._logger.debug("using account '%s'" % self.shells[sid]['user'])
+                        self._logger.debug("using account '%s'"
+                                          % self.shells[sid]['user'])
                         break
+
                 if not self.shells[sid]['user']:
-                    raise NoSuccess("Could not confirm user id")
+                    raise rse.NoSuccess("Could not confirm user id")
 
                 # Toggle notification
                 if self.notify == 'True':
@@ -205,7 +207,7 @@ class Adaptor(a_base.Base):
             # we have the shell for sure by now -- return it!
             return self.shells[sid]['shell']
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     # Constructs the following from a SAGA/user URL:
     #
@@ -217,10 +219,10 @@ class Adaptor(a_base.Base):
 
         sid = session._id
 
-        if not sid in self.shells:
-            raise IncorrectState("GO shell disconnected")
+        if sid not in self.shells:
+            raise rse.IncorrectState("GO shell disconnected")
 
-        ep_url = rsu.Url()
+        ep_url = Url()
         ep_url.schema = url.schema
         ep_url.port = url.port
 
@@ -238,7 +240,7 @@ class Adaptor(a_base.Base):
                 # TODO: could add more heuristics, like:
                 # - looking for a "username#localhost"
                 # - looking for special type of entries in the endpoint-list
-                raise BadParameter("localhost endpoint not configured")
+                raise rse.BadParameter("localhost endpoint not configured")
         else:
             # Create an EP based on the username and hostname
             ep_name = "%s#%s" % (self.shells[sid]['user'], url.host)
@@ -246,26 +248,28 @@ class Adaptor(a_base.Base):
 
         return ep_name, ep_url
 
-    # ----------------------------------------------------------------
+
+    # --------------------------------------------------------------------------
     #
-    def get_path_spec(self, session, url, path=None, cwd_url=None, cwd_path=None):
+    def get_path_spec(self, session, url, path=None, cwd_url=None,
+                      cwd_path=None):
 
         # we assume that, whenever we request a path spec, we also want to use
         # it, and we thus register and activate the endpoint, if needed.
 
         sid = session._id
 
-        if not sid in self.shells:
-            raise IncorrectState("GO shell disconnected")
+        if sid not in self.shells:
+            raise rse.IncorrectState("GO shell disconnected")
 
         shell = self.shells[sid]['shell']
-        url   = rsu.Url(url)
+        url   = Url(url)
 
         if not path:
             path = url.path
 
         if not cwd_url:
-            cwd_url = rsu.Url(url)
+            cwd_url = Url(url)
 
             if not cwd_path:
                 cwd_path = '.'
@@ -279,9 +283,10 @@ class Adaptor(a_base.Base):
             url.schema = cwd_url.schema
 
         if not url.host:
-            raise BadParameter('need host for GO ops')
+            raise rse.BadParameter('need host for GO ops')
+
         if not url.schema:
-            raise BadParameter('need schema for GO ops')
+            raise rse.BadParameter('need schema for GO ops')
 
         ep_name, ep_url = self.get_go_endpoint_ids(session, url)
 
@@ -300,11 +305,11 @@ class Adaptor(a_base.Base):
         ps = "%s%s" % (ep_name, ps_path)
 
         # check if we know the endpoint in XXX, and create/activate as needed
-        ep = self.get_go_endpoint(session, shell, ep_url)
+        self.get_go_endpoint(session, shell, ep_url)
 
         return ps
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     def get_go_endpoint(self, session, shell, url):
 
@@ -323,22 +328,25 @@ class Adaptor(a_base.Base):
                 # Don't try to create endpoints that are supposed to be there
                 # (plus, we can't!)
                 if '#' in url.host:
-                    raise NoSuccess("# in hostname, not going to create!")
+                    raise rse.NoSuccess("# in hostname, not going to create!")
 
                 # if not, create it, activate it, and refresh all entries
                 shell.run_sync("endpoint-add %s -p %s" % (ep_name, ep_url))
 
                 # refresh endpoint entries again
-                ep = self.get_go_endpoint_list(session, shell, ep_name, fetch=True)
+                ep = self.get_go_endpoint_list(session, shell, ep_name,
+                                               fetch=True)
 
                 if not ep:
                     # something above must have failed ...
-                    raise NoSuccess("endpoint initialization failed")
+                    raise rse.NoSuccess("endpoint initialization failed")
 
         # we have the endpoint now, for sure -- make sure its activated
         if not ep['Credential Status'] == 'ACTIVE':
-            # TODO: I had an active endpoint, but still got an activation prompt,
-            # probably because the remaining lifetime was not very long anymore.
+
+            # TODO: I had an active endpoint, but still got an activation
+            #       prompt, probably because the remaining lifetime was not
+            #       very long anymore.
             # or Credential Time Left    : 00:16:35 < ????
             # Answer: below 30 min there is a activation prompt,
             # but it does actually continue normally.
@@ -348,7 +356,8 @@ class Adaptor(a_base.Base):
             # Had contact on this with Globus Support, they couldn't suggest
             # anything better.
             if ep['MyProxy Server'] == 'myproxy.globusonline.org' and \
-            '/C=US/O=Globus Consortium/OU=Globus Connect Service/CN=' in ep['Credential Subject']:
+                     '/C=US/O=Globus Consortium/OU=Globus Connect Service/CN=' \
+                     in ep['Credential Subject']:
                 shell.run_sync("endpoint-activate %s" % ep_name)
             else:
                 shell.run_sync("endpoint-activate -g %s" % ep_name)
@@ -357,11 +366,12 @@ class Adaptor(a_base.Base):
             ep = self.get_go_endpoint_list(session, shell, ep_name, fetch=True)
 
             if not ep['Credential Status'] == 'ACTIVE':
-                raise AuthorizationFailed("endpoint activation failed")
+                raise rse.AuthorizationFailed("endpoint activation failed")
 
         return ep
-        
-    # ----------------------------------------------------------------
+
+
+    # --------------------------------------------------------------------------
     #
     def get_go_endpoint_list(self, session, shell, ep_name=None, fetch=False):
 
@@ -383,13 +393,14 @@ class Adaptor(a_base.Base):
                     endpoint_selection = '-a'
 
                 # Get the details of endpoints _OWNED_ by user
-                _, out, _ = shell.run_sync("endpoint-details %s -f "
-                                           "legacy_name,"        # Legacy Name
-                                           "credential_status,"  # Credential Status
-                                           "credential_subject," # Credential Subject
-                                           "myproxy_server"     # MyProxy Server
-                                           % endpoint_selection
-                                           )
+                _, out, _ = shell.run_sync(
+                                     "endpoint-details %s -f "
+                                     "legacy_name,"         # Legacy Name
+                                     "credential_status,"   # Credential Status
+                                     "credential_subject,"  # Credential Subject
+                                     "myproxy_server"       # MyProxy Server
+                                     % endpoint_selection
+                                    )                      
 
                 for line in out.split('\n'):
                     elems = line.split(':', 1)
@@ -417,17 +428,21 @@ class Adaptor(a_base.Base):
                         try:
                             endpoints[name][key] = val
                         except:
-                            raise NoSuccess("No entry to operate on for: %s[%s]" % (key,val))
+                            raise rse.NoSuccess(
+                                   "No entry to operate on: %s[%s]" % (key,val))
 
-                # replace the ep info dist with the new one, to clean out old entries.
+                # replace the ep info dist with the new one, to clean out old
+                # entries.
                 # TODO: merge and not replace(?)
+                #
                 self.shells[session._id]['endpoints'] = endpoints
 
         if ep_name:
             # return the requested entry, or None
             return self.shells[session._id]['endpoints'].get(ep_name, None)
 
-    # ----------------------------------------------------------------
+
+    # --------------------------------------------------------------------------
     #
     def run_go_cmd(self, shell, cmd, mode=None):
 
@@ -461,13 +476,13 @@ class Adaptor(a_base.Base):
                 if lines[3].startswith('Message:'):
                     cause = lines[3].split(':')[1].strip()
                     if cause == 'No such file or directory':
-                        raise DoesNotExist(cause)
+                        raise rse.DoesNotExist(cause)
                     elif cause == 'Could not connect to server':
-                        raise BadParameter(cause)
+                        raise rse.BadParameter(cause)
                     else:
-                        raise NoSuccess('Unknown error: %s' % cause)
+                        raise rse.NoSuccess('Unknown error: %s' % cause)
                 else:
-                    raise NoSuccess('Could not find find message in error: %s' % err)
+                    raise rse.NoSuccess('Could not parse error: %s' % err)
 
                 # TODO: Handle GO access to directories that are not allowed
                 # TODO: by Globus Personal by default (e.g. /var/ , /tmp)
@@ -483,7 +498,7 @@ class Adaptor(a_base.Base):
 
         return out, err
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     def mkparents(self, shell, tgt_ps):
 
@@ -508,7 +523,8 @@ class Adaptor(a_base.Base):
         for path_elem in path_elems :
 
             cur_path = "%s/%s" % (cur_path, path_elem)
-            out, err = self.run_go_cmd(shell, "mkdir %s%s" % (host_ps, cur_path))
+            out, err = self.run_go_cmd(shell, "mkdir %s%s"
+                                              % (host_ps, cur_path))
 
             if err:
                 error[cur_path] = err
@@ -520,15 +536,17 @@ class Adaptor(a_base.Base):
             # already exists -- anything else will raise an exception though...
             if cur_path in error:
 
-                if not 'Path already exists' in error[cur_path]:
+                if 'Path already exists' not in error[cur_path]:
 
                     if self.f_mode == 'raise':
-                        # TODO: a 'translate_exception' call would be useful here...
+                        # TODO: 'translate_exception' call would be useful here
                         # TODO: We can use the exceptions from run_go_cmd?
-                        raise NoSuccess("Could not make dir hierarchy: %s" % str(error))
+                        raise rse.NoSuccess("Could not make dir hierarchy: %s"
+                                           % str(error))
 
                     if self.f_mode == 'report':
-                        self._logger.error("Could not make dir hierarchy: %s" % str(error))
+                        self._logger.error("Could not make dir hierarchy: %s"
+                                          % str(error))
 
                     if self.f_mode == 'silent':
                         pass
@@ -543,25 +561,28 @@ class Adaptor(a_base.Base):
         sync_level = 0
 
         # Create parents
-        if flags & api_fs.CREATE_PARENTS:
+        if flags & api.CREATE_PARENTS:
             self.mkparents(shell, os.path.dirname(target))
 
-        #if flags & api_fs.OVERWRITE:
+      # if flags & api.OVERWRITE:
             # 1: Copy files if the size of the destination does not match the
             #    size of the source
             # 2: Copy files if the timestamp of the destination is older than
             #    the timestamp of the source
-            # 3: Copy files if checksums of the source and destination do not match
-        #    sync_level = 3
+            # 3: Copy files if checksums of the source and destination do not
+            #    match
+      #    sync_level = 3
 
         # Set recursive flag
         cmd_flags = ""
-        if flags & api_fs.RECURSIVE:
+        if flags & api.RECURSIVE:
             cmd_flags += "-r"
 
         # Initiate background copy
         # TODO: Should we use a deadline?
-        cmd = "transfer %s -s %d -- '%s' '%s'" % (cmd_flags, sync_level, source, target)
+        cmd = "transfer %s -s %d -- '%s' '%s'" \
+            % (cmd_flags, sync_level, source, target)
+
         out, _ = self.run_go_cmd(shell, cmd)
         # 'Task ID: 8c6f989d-b6aa-11e4-adc6-22000a97197b'
         key, value = out.split(':')
@@ -586,20 +607,26 @@ class Adaptor(a_base.Base):
         if status == 'SUCCEEDED':
             # The task completed successfully.
             return
+
         elif status == 'ACTIVE':
             # The task is in progress.
-            raise Exception('Task still active, this should not happen after wait')
+            raise Exception('Task active, this should not happen after wait')
+
         elif status == 'INACTIVE':
-            # The task has been suspended and will not continue without intervention.
-            # Currently, only credential expiration will cause this state.
-            raise Exception('Task is inactive, probably credentials have expired')
+            # The task has been suspended and will not continue without
+            # intervention.  Currently, only credential expiration will cause
+            # this state.
+            raise Exception('Task inactive, probably credentials have expired')
+
         elif status == 'FAILED':
             # The task or one of its subtasks failed, expired, or was canceled.
             raise Exception('Task failed')
+
         else:
             raise Exception('Unknown status: %s' % status)
 
-    ################################################################################
+
+    # --------------------------------------------------------------------------
     #
     # Helper function to test for existence and type.
     # Will raise DoesNotExist for non-existing entries.
@@ -610,66 +637,60 @@ class Adaptor(a_base.Base):
         out, err = self.run_go_cmd(shell, "ls -la '%s'" % ps, mode='raise')
 
         mode = out.split('\n')[0].split()[0][0]
-        if mode == '-':
-            mode = 'file'
-        elif mode == 'd':
-            mode = 'dir'
-        elif mode == 'l':
-            mode = 'link'
-        else:
-            raise NoSuccess("stat() unknown mode: '%s' (%s)" % (mode, out))
+        if   mode == '-': mode = 'file'
+        elif mode == 'd': mode = 'dir'
+        elif mode == 'l': mode = 'link'
+        else: raise rse.NoSuccess("stat unknown mode: '%s' (%s)" % (mode, out))
 
         size = int(out.split('\n')[0].split()[3])
 
-        return {
-            'mode': mode,
-            'size': size
-        }
+        return {'mode': mode,
+                'size': size }
 
 
 ################################################################################
 #
-class GODirectory(cpi_fs.Directory):
-    """ Implements cpi_fs.Directory """
+class GODirectory(cpi.Directory):
+    """ Implements cpi.Directory """
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     def __init__(self, api, adaptor):
 
         _cpi_base = super(GODirectory, self)
         _cpi_base.__init__(api, adaptor)
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     def _is_valid(self):
 
         if not self.valid:
-            raise IncorrectState("this instance was closed or removed")
+            raise rse.IncorrectState("this instance was closed or removed")
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     @SYNC_CALL
     def init_instance(self, adaptor_state, url, flags, session):
         """ Directory instance constructor """
 
         # TODO: eval flags!
-        if flags == None:
+        if flags is None:
             flags = 0
 
-        self.orig     = rsu.Url(url) # deep copy
-        self.url      = rsu.Url(url) # deep copy
-        self.path     = url.path       # keep path separate
+        self.orig     = Url(url)  # deep copy
+        self.url      = Url(url)  # deep copy
+        self.path     = url.path  # keep path separate
         self.url.path = None
 
         self.flags    = flags
         self.session  = session
-        self.valid    = False # will be set by initialize
+        self.valid    = False     # will be set by initialize
 
         self.initialize()
 
         return self.get_api()
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     def initialize(self):
 
@@ -677,17 +698,18 @@ class GODirectory(cpi_fs.Directory):
         # to the initial (or later current) working directory.
 
         self.shell = self._adaptor.get_go_shell(self.session)
-        self.ep    = self._adaptor.get_go_endpoint(self.session, self.shell, self.url)
+        self.ep    = self._adaptor.get_go_endpoint(self.session, self.shell,
+                                                   self.url)
 
         ps = self.get_path_spec()
 
         if not self.ep:
-            raise BadParameter("invalid dir '%s'" % ps)
+            raise rse.BadParameter("invalid dir '%s'" % ps)
 
-        if self.flags & api_fs.CREATE_PARENTS:
+        if self.flags & api.CREATE_PARENTS:
             self._adaptor.mkparents(self.shell, ps)
 
-        elif self.flags & api_fs.CREATE:
+        elif self.flags & api.CREATE:
             # TODO: check for errors?
             self._adaptor.run_go_cmd(self.shell, "mkdir '%s'" % ps)
 
@@ -695,13 +717,13 @@ class GODirectory(cpi_fs.Directory):
             stat = self._adaptor.stat(self.shell, ps)
             if stat['mode'] not in ['dir', 'link']:
                 # TODO: if link, check the target
-                raise IncorrectState('Is not a directory')
+                raise rse.IncorrectState('Is not a directory')
 
-        self._logger.debug("Initialized directory %s/%s" % (self.url, self.path))
+        self._logger.debug("Init directory %s/%s" % (self.url, self.path))
 
         self.valid = True
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     def finalize(self, kill=False):
 
@@ -711,34 +733,34 @@ class GODirectory(cpi_fs.Directory):
 
         self.valid = False
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     def get_path_spec(self, url=None, path=None):
 
-        return self._adaptor.get_path_spec(session  = self.session,
-                                           url      = url,
-                                           path     = path,
-                                           cwd_url  = self.url,
-                                           cwd_path = self.path)
+        return self._adaptor.get_path_spec(session=self.session,
+                                           url=url,
+                                           path=path,
+                                           cwd_url=self.url,
+                                           cwd_path=self.path)
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     @SYNC_CALL
     def open(self, url, flags):
 
         self._is_valid()
 
-        adaptor_state = { "from_open" : True,
-                          "url"       : rsu.Url(self.url),   # deep copy
-                          "path"      : self.path}
+        adaptor_state = {"from_open" : True,
+                         "url"       : Url(self.url),   # deep copy
+                         "path"      : self.path}
 
         if rsumisc.url_is_relative(url):
             url = rsumisc.url_make_absolute(self.get_url(), url)
 
-        return api_fs.File(url=url, flags=flags, session=self.session,
+        return api.File(url=url, flags=flags, session=self.session,
                            _adaptor=self._adaptor, _adaptor_state=adaptor_state)
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     @SYNC_CALL
     def open_dir(self, url, flags):
@@ -746,25 +768,25 @@ class GODirectory(cpi_fs.Directory):
         self._is_valid()
 
         adaptor_state = {"from_open": True,
-                         "url"      : rsu.Url(self.url),   # deep copy
+                         "url"      : Url(self.url),   # deep copy
                          "path"     : self.path}
 
         if rsumisc.url_is_relative(url):
             url = rsumisc.url_make_absolute(self.get_url(), url)
 
-        return api_fs.Directory(url=url, flags=flags, session=self.session,
+        return api.Directory(url=url, flags=flags, session=self.session,
                 _adaptor=self._adaptor, _adaptor_state=adaptor_state)
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     @SYNC_CALL
     def change_dir(self, tgt, flags):
 
-        tgt_url = rsu.Url(tgt)
+        tgt_url = Url(tgt)
 
         # TODO: attempt to get new EP
         if not rsumisc.url_is_compatible(self.url, tgt_url):
-            raise BadParameter("Target dir outside of namespace '%s': %s" \
+            raise rse.BadParameter("Target dir outside of namespace '%s': %s"
                                   % (self.url, tgt_url))
 
         if rsumisc.url_is_relative(tgt_url):
@@ -773,7 +795,7 @@ class GODirectory(cpi_fs.Directory):
             self.orig.path = self.path
 
         else:
-            self.orig      = rsu.Url(tgt_url)
+            self.orig      = Url(tgt_url)
             self.url       = tgt_url
             self.path      = self.url.path
             self.url.path  = None
@@ -782,25 +804,25 @@ class GODirectory(cpi_fs.Directory):
 
         self._logger.debug("changed directory (%s)" % (tgt))
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     @SYNC_CALL
     def close(self, timeout=None):
 
         if timeout:
-            raise BadParameter("timeout for close not supported")
+            raise rse.BadParameter("timeout for close not supported")
 
         self.finalize(kill=True)
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     @SYNC_CALL
     def get_url(self):
 
         self._is_valid()
 
-        return rsu.Url(self.orig) # deep copy
+        return Url(self.orig)  # deep copy
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     @SYNC_CALL
     def list(self, npat, flags):
@@ -815,11 +837,12 @@ class GODirectory(cpi_fs.Directory):
 
         self.entries = []
         for line in lines:
-            self.entries.append(rsu.Url(line.strip()))
+            self.entries.append(Url(line.strip()))
 
         return self.entries
-   
-    # ----------------------------------------------------------------
+
+
+    # --------------------------------------------------------------------------
     #
     @SYNC_CALL
     def copy_self(self, tgt, flags):
@@ -830,7 +853,7 @@ class GODirectory(cpi_fs.Directory):
 
         return self.copy(src_in=None, tgt_in=tgt, flags=flags)
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     @SYNC_CALL
     def copy(self, src_in, tgt_in, flags, _from_task=None):
@@ -846,14 +869,15 @@ class GODirectory(cpi_fs.Directory):
 
         self._adaptor.go_transfer(self.shell, flags, src_ps, tgt_ps)
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     @SYNC_CALL
     def move_self(self, tgt, flags):
 
         return self.move(src_in=None, tgt_in=tgt, flags=flags)
-   
-    # ----------------------------------------------------------------
+
+
+    # --------------------------------------------------------------------------
     #
     @SYNC_CALL
     def move(self, src_in, tgt_in, flags):
@@ -871,7 +895,8 @@ class GODirectory(cpi_fs.Directory):
         if src_ep_str == tgt_ep_str:
 
             try:
-                self._adaptor.run_go_cmd(self.shell, "rename '%s' '%s'" % (src_ps, tgt_ps))
+                self._adaptor.run_go_cmd(self.shell, "rename '%s' '%s'"
+                                        % (src_ps, tgt_ps))
                 return
             except:
                 self._logger.warn("rename op failed -- retry as copy/remove")
@@ -879,8 +904,9 @@ class GODirectory(cpi_fs.Directory):
         # either the op spans endpoints, or the 'rename' op failed
         self.copy(src_in, tgt_in, flags)
         self.remove(src_in, flags)
-   
-    # ----------------------------------------------------------------
+
+
+    # --------------------------------------------------------------------------
     #
     @SYNC_CALL
     def remove_self(self, flags):
@@ -889,8 +915,9 @@ class GODirectory(cpi_fs.Directory):
 
         self.remove(self.url, flags)
         self.invalid = True
-   
-    # ----------------------------------------------------------------
+
+
+    # --------------------------------------------------------------------------
     #
     @SYNC_CALL
     def remove(self, tgt_in, flags):
@@ -900,7 +927,7 @@ class GODirectory(cpi_fs.Directory):
         tgt_ps = self.get_path_spec(url=tgt_in)
 
         cmd_flags = ""
-        if flags & api_fs.RECURSIVE:
+        if flags & api.RECURSIVE:
             cmd_flags += "-r"
 
         # TODO: check for errors
@@ -915,7 +942,8 @@ class GODirectory(cpi_fs.Directory):
         cmd      = "rm %s -f '%s'"  % (cmd_flags, tgt_ps)
         out, err = self._adaptor.run_go_cmd(self.shell, cmd, mode='ignore')
 
-    # ----------------------------------------------------------------
+
+    # --------------------------------------------------------------------------
     #
     @SYNC_CALL
     def make_dir(self, tgt_in, flags):
@@ -926,14 +954,15 @@ class GODirectory(cpi_fs.Directory):
 
         # TODO: check for errors
 
-        if flags & api_fs.CREATE_PARENTS:
+        if flags & api.CREATE_PARENTS:
             self._adaptor.mkparents(self.shell, tgt_ps)
 
         else:
             cmd = "mkdir '%s'" % tgt_ps
             self._adaptor.run_go_cmd(self.shell, cmd)
 
-    # ----------------------------------------------------------------
+
+    # --------------------------------------------------------------------------
     #
     @SYNC_CALL
     def get_size_self(self):
@@ -942,7 +971,8 @@ class GODirectory(cpi_fs.Directory):
 
         return self.get_size(self.url)
 
-    # ----------------------------------------------------------------
+
+    # --------------------------------------------------------------------------
     #
     @SYNC_CALL
     def get_size(self, tgt_in):
@@ -955,7 +985,7 @@ class GODirectory(cpi_fs.Directory):
 
         return stat['size']
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     @SYNC_CALL
     def is_dir_self(self):
@@ -964,7 +994,7 @@ class GODirectory(cpi_fs.Directory):
 
         return self.is_dir(self.url)
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     @SYNC_CALL
     def is_dir(self, tgt_in):
@@ -980,7 +1010,7 @@ class GODirectory(cpi_fs.Directory):
         else:
             return False
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     @SYNC_CALL
     def is_link_self(self):
@@ -989,7 +1019,7 @@ class GODirectory(cpi_fs.Directory):
 
         return self.is_link(self.url)
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     @SYNC_CALL
     def is_link(self, tgt_in):
@@ -1005,7 +1035,7 @@ class GODirectory(cpi_fs.Directory):
         else:
             return False
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     @SYNC_CALL
     def is_file_self(self):
@@ -1014,7 +1044,7 @@ class GODirectory(cpi_fs.Directory):
 
         return self.is_link(self.url)
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     @SYNC_CALL
     def is_file(self, tgt_in):
@@ -1030,7 +1060,7 @@ class GODirectory(cpi_fs.Directory):
         else:
             return False
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     @SYNC_CALL
     def exists(self, tgt_in):
@@ -1041,7 +1071,7 @@ class GODirectory(cpi_fs.Directory):
 
         try:
             self._adaptor.stat(self.shell, tgt_ps)
-        except DoesNotExist:
+        except rse.DoesNotExist:
             return False
 
         return True
@@ -1049,48 +1079,48 @@ class GODirectory(cpi_fs.Directory):
 
 ###############################################################################
 #
-class GOFile(cpi_fs.File):
-    """ Implements cpi_fs.File
+class GOFile(cpi.File):
+    """ Implements cpi.File
     """
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     def __init__(self, api, adaptor):
 
         _cpi_base = super(GOFile, self)
         _cpi_base.__init__(api, adaptor)
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     def _is_valid(self):
 
         if not self.valid:
-            raise IncorrectState("this instance was closed or removed")
+            raise rse.IncorrectState("this instance was closed or removed")
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     @SYNC_CALL
     def init_instance(self, adaptor_state, url, flags, session):
         """ File instance constructor """
 
         # TODO: eval flags!
-        if flags == None:
+        if flags is None:
             flags = 0
 
-        self.orig     = rsu.Url(url) # deep copy
-        self.url      = rsu.Url(url) # deep copy
-        self.path     = url.path       # keep path separate
+        self.orig     = Url(url)  # deep copy
+        self.url      = Url(url)  # deep copy
+        self.path     = url.path  # keep path separate
         self.cwd      = rsumisc.url_get_dirname(self.url)
         self.url.path = None
 
         self.flags    = flags
         self.session  = session
-        self.valid    = False # will be set by initialize
+        self.valid    = False     # will be set by initialize
 
         self.initialize()
 
         return self.get_api()
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     def initialize(self):
 
@@ -1098,42 +1128,43 @@ class GOFile(cpi_fs.File):
         # to the initial (or later current) working directory.
 
         self.shell = self._adaptor.get_go_shell(self.session)
-        self.ep    = self._adaptor.get_go_endpoint(self.session, self.shell, self.url)
+        self.ep    = self._adaptor.get_go_endpoint(self.session, self.shell,
+                                                   self.url)
         ps         = self.get_path_spec()
         cwd_ps     = self.get_path_spec(path=self.cwd)
 
         if not self.ep:
-            raise BadParameter("invalid file '%s'" % ps)
+            raise rse.BadParameter("invalid file '%s'" % ps)
 
-        if self.flags & api_fs.CREATE_PARENTS:
+        if self.flags & api.CREATE_PARENTS:
             self._adaptor.mkparents(self.shell, cwd_ps)
 
-        elif self.flags & api_fs.CREATE:
+        elif self.flags & api.CREATE:
             self._logger.error("CREATE not supported for files via globus online")
 
         else:
             stat = self._adaptor.stat(self.shell, ps)
             if stat['mode'] not in ['file', 'link']:
                 # TODO: if link, check the target
-                raise IncorrectState('Is not a (regular) file')
+                raise rse.IncorrectState('Is not a (regular) file')
 
         self._logger.debug("Initialized file %s/%s" % (self.url, self.path))
 
         self.valid = True
 
-    # ----------------------------------------------------------------
+
+    # --------------------------------------------------------------------------
     #
     def get_path_spec(self, url=None, path=None):
 
-        return self._adaptor.get_path_spec(
-            session  = self.session,
-            url      = url,
-            path     = path,
-            cwd_url  = self.url,
-            cwd_path = self.path
-        )
+        return self._adaptor.get_path_spec(session=self.session,
+                                           url=url,
+                                           path=path,
+                                           cwd_url=self.url,
+                                           cwd_path=self.path)
 
-    # ----------------------------------------------------------------
+
+    # --------------------------------------------------------------------------
     #
     def finalize(self, kill=False):
 
@@ -1143,26 +1174,27 @@ class GOFile(cpi_fs.File):
 
         self.valid = False
 
-    # ----------------------------------------------------------------
+
+    # --------------------------------------------------------------------------
     #
     @SYNC_CALL
     def close(self, timeout=None):
 
         if timeout:
-            raise BadParameter("timeout for close not supported")
+            raise rse.BadParameter("timeout for close not supported")
 
         self.finalize(kill=True)
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     @SYNC_CALL
     def get_url(self):
 
         self._is_valid()
 
-        return rsu.Url(self.orig) # deep copy
+        return Url(self.orig)  # deep copy
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     @SYNC_CALL
     def copy_self(self, tgt_in, flags):
@@ -1174,7 +1206,7 @@ class GOFile(cpi_fs.File):
 
         self._adaptor.go_transfer(self.shell, flags, src_ps, tgt_ps)
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     @SYNC_CALL
     def move_self(self, tgt_in, flags):
@@ -1196,7 +1228,8 @@ class GOFile(cpi_fs.File):
         if src_ep_str == tgt_ep_str:
 
             try:
-                self._adaptor.run_go_cmd(self.shell, "rename '%s' '%s'" % (src_ps, tgt_ps))
+                self._adaptor.run_go_cmd(self.shell, "rename '%s' '%s'"
+                                        % (src_ps, tgt_ps))
                 return
             except:
                 self._logger.warn("Rename op failed -- retry as copy/remove")
@@ -1205,7 +1238,7 @@ class GOFile(cpi_fs.File):
         self.copy_self(tgt_in, flags)
         self.remove_self(flags)
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     @SYNC_CALL
     def remove_self(self, flags):
@@ -1213,18 +1246,17 @@ class GOFile(cpi_fs.File):
         self._is_valid()
 
         cmd_flags = ""
-        if flags & api_fs.RECURSIVE:
+        if flags & api.RECURSIVE:
             cmd_flags += "-r"
 
         # TODO: check for errors
-
         # TODO: should me extracted and merged with operations on Directory?
 
         tgt_ps   = self.get_path_spec()
         cmd      = "rm %s -f '%s'"  % (cmd_flags, tgt_ps)
         out, err = self._adaptor.run_go_cmd(self.shell, cmd, mode='ignore')
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     @SYNC_CALL
     def get_size_self(self):
@@ -1237,7 +1269,7 @@ class GOFile(cpi_fs.File):
 
         return stat['size']
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     @SYNC_CALL
     def is_link_self(self):
@@ -1251,7 +1283,7 @@ class GOFile(cpi_fs.File):
         else:
             return False
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     @SYNC_CALL
     def is_file_self(self):
@@ -1265,12 +1297,12 @@ class GOFile(cpi_fs.File):
         else:
             return False
 
-    # ----------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #
     @SYNC_CALL
     def is_dir_self(self):
 
-        # TODO: can probably be further extracted and merged with Directory calls
+        # TODO: can be further extracted and merged with Directory calls
 
         self._is_valid()
 
@@ -1281,3 +1313,6 @@ class GOFile(cpi_fs.File):
             return True
         else:
             return False
+
+# ------------------------------------------------------------------------------
+

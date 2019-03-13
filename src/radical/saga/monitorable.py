@@ -8,9 +8,8 @@ __license__   = "MIT"
 
 import radical.utils.signatures as rus
 
-import radical.saga.attributes       as sa
-import radical.saga.base             as sb
-import radical.saga.exceptions       as se
+from . import attributes        as sa
+from . import exceptions        as se
 
 
 # ------------------------------------------------------------------------------
@@ -52,7 +51,7 @@ class Monitorable (sa.Attributes) :
 
     # --------------------------------------------------------------------------
     #
-    # Metrics are not implemented in SAGA-Python
+    # Metrics are not implemented in RADICAL-SAGA
     #
   # @rus.takes   ('Monitorable', basestring)
   # @rus.returns ('Metric')
