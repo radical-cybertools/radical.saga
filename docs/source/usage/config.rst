@@ -37,14 +37,6 @@ SAGA configuration files use a structure that looks like this::
         option = value
 
 
-.. _conf_options:
-
-Configuration Options
----------------------
-
-.. warning:: This should be generated automatically!
-
-
 .. _conf_api:
 
 Configuration API
