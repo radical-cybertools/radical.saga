@@ -1,0 +1,6 @@
+
+{ 
+    # load adaptors which are marked as beta (i.e. not released)
+    "load_beta_adaptors" : "${RADICAL_SAGA_ENABLE_BETA}"
+}
+

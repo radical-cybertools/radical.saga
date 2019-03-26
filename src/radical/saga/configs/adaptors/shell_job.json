@@ -1,0 +1,20 @@
+
+{
+    # Enable support for job state notifications.  Note that enabling this
+    # option will create a local thread, a remote shell process, and an
+    # additional network connection.  In particular for ssh/gsissh where the
+    # number of concurrent connections is limited to 10, this effectively halfs
+    # the number of available job service instances per remote host.
+    "enable_notifications" : false,
+
+    # Purge job information (state, stdio, ...) for all jobs which are in final
+    # state when starting the job service instance. Note that this will purge
+    # *all* suitable jobs, including the ones managed by another, live job
+    # service instance.
+    "purge_on_start" : true,
+
+    # The adaptor stores job state information on the filesystem on the target
+    # resource.  This parameter specified what location should be used.
+    "base_workdir" : "${HOME}/.radical/saga/adaptors/shell_job/"
+}
+

@@ -1,12 +1,13 @@
+#!/usr/bin/env python
 
 __author__    = "Andre Merzky, Ole Weidner"
 __copyright__ = "Copyright 2013, The SAGA Project"
 __license__   = "MIT"
 
 
-import saga
-import radical.utils.testing  as testing
-import saga.utils.test_config as sutc
+import radical.saga                   as saga
+import radical.utils.testing          as testing
+import radical.saga.utils.test_config as sutc
 
 
 # ------------------------------------------------------------------------------
@@ -82,8 +83,8 @@ def test_get_url():
     try:
         tc = testing.get_test_config ()
         js = saga.job.Service(tc.job_service_url, tc.session)
-        assert str(js.get_url()) == str(tc.job_service_url)
-        assert str(js.url) == str(tc.job_service_url)
+        assert(str(js.get_url()) == str(tc.job_service_url)), 'expected %s [%s]' % (str(js.get_url()) == str(tc.job_service_url))
+        assert(str(js.url)       == str(tc.job_service_url)), 'expected %s [%s]' % (str(js.get_url()) == str(tc.job_service_url))
 
     except saga.NotImplemented as ni:
             assert tc.notimpl_warn_only, "%s " % ni
@@ -263,4 +264,21 @@ def test_jobid_viability ():
 
     except saga.SagaException as se:
         assert False, "Unexpected exception: %s" % se
+
+
+# ------------------------------------------------------------------------------
+#
+if __name__ == '__main__':
+
+    test_close()
+    test_open_close()
+    test_get_url()
+    test_list_jobs()
+    test_run_job()
+    test_get_job()
+    test_multiple_services()
+    test_jobid_viability()
+
+
+# ------------------------------------------------------------------------------
 

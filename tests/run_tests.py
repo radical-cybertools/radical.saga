@@ -1,34 +1,30 @@
 
-__author__    = "Ole Weidner"
-__copyright__ = "Copyright 2013, The SAGA Project"
-__license__   = "MIT"
-
-
 import os
 import sys
 import glob
 import optparse
 
 try:
-    import saga
-    import saga.utils.test_config as sutc
-    import radical.utils.testing  as rut
-    import radical.utils          as ru
+    import radical.saga                   as rs
+    import radical.saga.utils.test_config as sutc
+    import radical.utils.testing          as rut
+    import radical.utils                  as ru
 
     dh = ru.DebugHelper()
 
     print "____________________________________________________________________"
-    print "Using saga-python from: %s" % str(saga)
+    print "Using radical.saga from: %s" % str(rs)
     print "____________________________________________________________________"
 
 except Exception, e:
     srcdir = "%s/../" % os.path.dirname(os.path.realpath(__file__))
     sys.path.insert(0, os.path.abspath(srcdir))
-    import saga
-    import saga.utils.test_config as sutc
-    import radical.utils.testing  as rut
+    import radical.saga                   as rs
+    import radical.saga.utils.test_config as sutc
+    import radical.utils.testing          as rut
+
     print "____________________________________________________________________"
-    print "Using saga-python from: %s" % str(saga)
+    print "Using radical.saga from: %s" % str(rs)
     print "____________________________________________________________________"
 
 
@@ -40,20 +36,26 @@ if __name__ == "__main__":
         print "ERROR: provide test config files as arguments"
         sys.exit (-1)
 
+    configs = sys.argv[1:]
+
+    for config in configs :
+        if  not os.path.exists (config) :
+            print "ERROR: config '%s' does not exist." % config
+            sys.exit (-1)
 
     test_cfgs = sys.argv[1:]
 
     # set up the testing framework
-    testing = rut.Testing ('saga', __file__)
-    ret     = True
-    for test_cfg in test_cfgs :
+    testing = rut.Testing ('radical.saga', __file__)
+    ret     = 0
 
-        # use this config, ignore not implemented errors, run tests
-        tc = sutc.TestConfig(test_cfg)
-        tc.notimpl_warn_only = True
+    for config in configs :
 
-        if not testing.run(tc):
-            ret = False
+        # for each config, set up the test config singleton and run the tests
+        tc = sutc.TestConfig (config)
+
+        if  not testing.run () :
+            ret += 1
 
     sys.exit (ret)
 

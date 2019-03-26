@@ -1,7 +1,7 @@
 
 import os
 import sys
-import saga
+import radical.saga as saga
 
 import radical.utils.benchmark as rb
 

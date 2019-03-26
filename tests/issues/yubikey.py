@@ -1,5 +1,5 @@
 
-import saga
+import radical.saga as saga
 
 c = saga.Context ('ssh')
 c.user_id = 'dinesh'

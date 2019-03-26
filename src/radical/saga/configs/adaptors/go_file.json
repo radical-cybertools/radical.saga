@@ -1,0 +1,24 @@
+
+{
+    # Enable email notifications for all file transfers.  Note that 'true' and
+    # 'false' will result in permanent changes to your GO notification settings.
+    # 'null' will leave your profile's settings upchanged.
+    "enable_notifications" : null, 
+
+    # Globus-Online seems to behave eratically.  This flag defines how the
+    # adaptor should deal with intermittent and fatal errors.  'raise' will
+    # cause exceptions on all errors, 'report' will print error messages, but
+    # otherwise continue, and 'ignore' will (duh!) ignore errors.  'report' is
+    # the default, you should only use 'ignore' when you know what you are
+    # doing!
+    "failure_mode"     : "report",
+
+    # GO always has a "$ " prompt',
+    "prompt_pattern"   : "\\$ $",
+
+    # Setting this value to the GO endpoint name of your laptop/desktop/etc.,
+    # allows you to refer to it by "localhost" in your code. This enables
+    # consistency with using your code with other adaptors.
+    "localhost_endpoint" : "${RADICAL_SAGA_GLOBUS_ONLINE_LOCALHOST_ENDPOINT}"
+}
+

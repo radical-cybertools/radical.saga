@@ -18,7 +18,7 @@ The example also assumes that you have a working public/private SSH key-pair and
 that you can log-in to your remote resource of choice using those keys, i.e.,
 your public key is in the ~/.ssh/authorized_hosts file on the remote machine. If
 you are not sure how this works, you might want to read about 
-`SSH and GSISSH <https://github.com/saga-project/saga-python/wiki/SSH-and-GSISSH>`_ 
+`SSH and GSISSH <https://github.com/radical-cybertools/radical.saga/wiki/SSH-and-GSISSH>`_ 
 first.
 
 
@@ -132,7 +132,7 @@ commonly used contexts in SAGA are ``ssh`` and ``gsissh``:
 
 A Context can't be used by itself, but rather has to be added to a
 ``saga.Session`` object. A session can have one or more Contexts. At runtime,
-SAGA Python will iterate over all Contexts of a Session to see if any of them
+RADICAL-SAGA will iterate over all Contexts of a Session to see if any of them
 can be used to establish a connection.
 
 .. code-block:: python

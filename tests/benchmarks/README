@@ -6,15 +6,15 @@ Benchmark Experiments in the SAGA Paper
      middleware calls
 
      We measure the overhead by running 10.000 jobs over ssh, for localhost and
-     a remote host (india.futuregrid.org).  While SAGA-Python is managing the
+     a remote host (india.futuregrid.org).  While RADICAL-SAGA is managing the
      spawned ssh processes via fork/exec (providing a PTY for better I/O
      capture), we use a simple python subprocess for the non-saga example
      (simpler, faster).  We are interested in the total time to completion, but
      the benchmark will also report on startup overhead, jitter, min/max, and
      some other metrics.  
 
-     Both the SAGA-Python benchmark and the native ssh benchmark will used the
-     SAGA-Python benchmarking framework -- but no SAGA calls will be present in
+     Both the RADICAL-SAGA benchmark and the native ssh benchmark will used the
+     RADICAL-SAGA benchmarking framework -- but no SAGA calls will be present in
      the benchmark's load in the latter case.
 
      To reproduce graph 1 in the paper (4 measurements), make sure to use the

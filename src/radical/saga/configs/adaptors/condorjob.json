@@ -1,0 +1,6 @@
+
+{
+    # Enable condor_history for state checks (slow)
+    "use_history" : "${RADICAL_SAGA_CONDOR_USE_HISTORY}"
+}
+

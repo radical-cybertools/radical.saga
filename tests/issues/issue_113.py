@@ -4,11 +4,11 @@ __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
 
-""" https://github.com/saga-project/saga-python/issues/113
+""" https://github.com/radical-cybertools/radical.saga/issues/113
 """
 
 import sys
-import saga
+import radical.saga as saga
 import time
 
 ITERATIONS=32

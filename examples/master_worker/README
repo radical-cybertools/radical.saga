@@ -14,14 +14,14 @@ service: pbs+ssh://vshah505@india.futuregrid.org
 working_directory: /N/u/vshah505/worker/
 redis_server: gw68.quarry.iu.teragrid.org
 redis_pass: XXXXXXXXXXXXXXXXXXXXXX
-bliss_env: $HOME/sagaenv
+radical.saga_env: $HOME/sagaenv
 
 #Futuregrid_Sierra
 service: pbs+ssh://vshah505@sierra.futuregrid.org
 working_directory: /N/u/vshah505/worker/
 redis_server: gw68.quarry.iu.teragrid.org
 redis_pass: XXXXXXXXXXXXXXXXXXXXXX
-bliss_env: $HOME/sagaenv
+radical.saga_env: $HOME/sagaenv
 
 --------------------------------------------------
 

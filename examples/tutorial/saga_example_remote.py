@@ -6,16 +6,18 @@ __license__   = "MIT"
 
 
 import sys
-import saga
+
+import radica.saga as rs
+
 
 def main():
     try:
         # Your ssh identity on the remote machine. Change if necessary.
-        ctx = saga.Context("ssh")
+        ctx = rs.Context("ssh")
         #ctx.user_id  = "oweidner"
         #ctx.user_key = "/Users/oweidner/.ssh/sagaproj_rsa"
 
-        session = saga.Session()
+        session = rs.Session()
         session.add_context(ctx)
 
         # Create a job service object that represent the local machine.
@@ -23,10 +25,10 @@ def main():
         # which can execute jobs on the local machine as well as on a remote
         # machine via "ssh://hostname". You can use 'localhost' or replace
         # it with the name/address of a machien you have ssh access to.
-        js = saga.job.Service("ssh://localhost", session=session)
+        js = rs.job.Service("ssh://localhost", session=session)
 
         # describe our job
-        jd = saga.job.Description()
+        jd = rs.job.Description()
 
         # Next, we describe the job we want to run. A complete set of job
         # description attributes can be found in the API documentation.
@@ -61,7 +63,7 @@ def main():
 
         return 0
 
-    except saga.SagaException, ex:
+    except rs.SagaException, ex:
         # Catch all saga exceptions
         print "An exception occured: (%s) %s " % (ex.type, (str(ex)))
         # Trace back the exception. That can be helpful for debugging.

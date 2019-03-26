@@ -1,5 +1,5 @@
-saga-python is licensed under the MIT License (MIT)
----------------------------------------------------
+radical.saga is licensed under the MIT License (MIT)
+----------------------------------------------------
 
 Copyright (C) 2011-2013 by The SAGA Project 
 

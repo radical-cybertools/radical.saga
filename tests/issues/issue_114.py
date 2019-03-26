@@ -1,5 +1,5 @@
 import sys
-import saga
+import radical.saga as saga
 
 import pudb; pudb.set_interrupt_handler()
 

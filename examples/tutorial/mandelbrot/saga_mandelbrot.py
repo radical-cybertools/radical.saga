@@ -7,8 +7,11 @@ __license__   = "MIT"
 import os
 import sys
 import time
-import saga
+
 from PIL import Image
+
+import radica.saga as rs
+
 
 #-----------------------------------------------------------------------------
 #
@@ -27,7 +30,7 @@ REMOTE_DIR = "/tmp/"  # change this to your home directory
 # that particualr host.
 REMOTE_JOB_ENDPOINT = "ssh://" + REMOTE_HOST
 
-# At the moment saga-python only provides an sftp file adaptor, so changing
+# At the moment radical.saga only provides an sftp file adaptor, so changing
 # the URL scheme here wouldn't make any sense.
 REMOTE_FILE_ENDPOINT = "sftp://" + REMOTE_HOST + "/" + REMOTE_DIR
 
@@ -44,10 +47,10 @@ tilesy = 2
 if __name__ == "__main__":
     try:
         # Your ssh identity on the remote machine
-        ctx = saga.Context("ssh")
+        ctx = rs.Context("ssh")
         #ctx.user_id = ""
 
-        session = saga.Session()
+        session = rs.Session()
         session.add_context(ctx)
 
         # list that holds the jobs
@@ -55,19 +58,19 @@ if __name__ == "__main__":
 
         # create a working directory in /scratch
         dirname = '%s/mbrot/' % (REMOTE_FILE_ENDPOINT)
-        workdir = saga.filesystem.Directory(dirname, saga.filesystem.CREATE,
+        workdir = rs.filesystem.Directory(dirname, rs.filesystem.CREATE,
                                             session=session)
 
         # copy the executable and warpper script to the remote host
-        mbwrapper = saga.filesystem.File('file://localhost/%s/mandelbrot.sh' % os.getcwd())
+        mbwrapper = rs.filesystem.File('file://localhost/%s/mandelbrot.sh' % os.getcwd())
         mbwrapper.copy(workdir.get_url())
-        mbexe = saga.filesystem.File('file://localhost/%s/mandelbrot.py' % os.getcwd())
+        mbexe = rs.filesystem.File('file://localhost/%s/mandelbrot.py' % os.getcwd())
         mbexe.copy(workdir.get_url())
 
         # the saga job services connects to and provides a handle
         # to a remote machine. In this case, it's your machine.
         # fork can be replaced with ssh here:
-        jobservice = saga.job.Service(REMOTE_JOB_ENDPOINT, session=session)
+        jobservice = rs.job.Service(REMOTE_JOB_ENDPOINT, session=session)
 
         for x in range(0, tilesx):
             for y in range(0, tilesy):
@@ -75,7 +78,7 @@ if __name__ == "__main__":
                 # describe a single Mandelbrot job. we're using the
                 # directory created above as the job's working directory
                 outputfile = 'tile_x%s_y%s.gif' % (x, y)
-                jd = saga.job.Description()
+                jd = rs.job.Description()
                 #jd.queue             = "development"
                 jd.wall_time_limit   = 10
                 jd.total_cpu_count   = 1
@@ -97,7 +100,7 @@ if __name__ == "__main__":
             for job in jobs:
                 jobstate = job.get_state()
                 print ' * Job %s status: %s' % (job.id, jobstate)
-                if jobstate in [saga.job.DONE, saga.job.FAILED]:
+                if jobstate in [rs.job.DONE, rs.job.FAILED]:
                     jobs.remove(job)
             print ""
             time.sleep(5)
@@ -121,7 +124,7 @@ if __name__ == "__main__":
         fullimage.save("mandelbrot_full.gif", "GIF")
         sys.exit(0)
 
-    except saga.SagaException, ex:
+    except rs.SagaException, ex:
         # Catch all saga exceptions
         print "An exception occured: (%s) %s " % (ex.type, (str(ex)))
         # Trace back the exception. That can be helpful for debugging.

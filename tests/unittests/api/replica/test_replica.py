@@ -4,7 +4,7 @@ __copyright__ = "Copyright 2013, The SAGA Project"
 __license__   = "MIT"
 
 import time
-import saga
+import radical.saga as saga
 import os
 
 from copy import deepcopy

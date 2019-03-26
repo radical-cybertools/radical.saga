@@ -1,5 +1,5 @@
 import sys
-import saga
+import radical.saga as saga
 
 REMOTE_HOST = "your.loadleveler.cluster.address"
 

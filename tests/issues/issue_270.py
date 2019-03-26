@@ -1,5 +1,5 @@
 
-import saga
+import radical.saga as saga
 
 jd             = saga.job.Description()
 jd.executable  = '/bin/sleep'

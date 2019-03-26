@@ -10,8 +10,10 @@ __license__   = "MIT"
 """
 
 import sys
-import saga
 import getpass
+
+import radical.saga as rs
+
 
 URL = "condor+ssh://gw68.quarry.iu.teragrid.org?WhenToTransferOutput=ON_EXIT&should_transfer_files=YES&notification=Always",
 URL = "condor+gsissh://login.osgconnect.net"
@@ -21,18 +23,18 @@ URL = "condor+gsissh://submit-1.osg.xsede.org"
 def main():
     try:
         # Your ssh identity on the remote machine.
-      # ctx = saga.Context("ssh")
+      # ctx = rs.Context("ssh")
       # ctx.user_id = getpass.getuser()  # Change if necessary
 
-        session = saga.Session()
+        session = rs.Session()
       # session.add_context(ctx)
 
         # create a job service for the local machine. both, 'fork' and
         # 'local' schemes trigger the local job adaptor.
-        js = saga.job.Service(URL, session=session)
+        js = rs.job.Service(URL, session=session)
 
         # describe our job
-        jd = saga.job.Description()
+        jd = rs.job.Description()
 
         # environment, executable & arguments. We use '/bin/sleep' to simulate
         # a job that runs for $RUNTIME seconds.
@@ -87,7 +89,7 @@ def main():
         js.close()
         return 0
 
-    except saga.SagaException, ex:
+    except rs.SagaException, ex:
         print "An exception occured: %s " % ((str(ex)))
         # get the whole traceback in case of an exception -
         # this can be helpful for debugging the problem

@@ -3,7 +3,7 @@ import radical.utils.benchmark as rb
 
 import os
 import sys
-import saga
+import radical.saga as saga
 
 
 # ------------------------------------------------------------------------------
