@@ -24,20 +24,25 @@ import threading
 
 from cgi  import parse_qs
 
-SYNC_CALL = saga.adaptors.cpi.decorators.SYNC_CALL
+SYNC_CALL  = saga.adaptors.cpi.decorators.SYNC_CALL
 ASYNC_CALL = saga.adaptors.cpi.decorators.ASYNC_CALL
 
 SYNC_WAIT_UPDATE_INTERVAL = 1  # seconds
-MONITOR_UPDATE_INTERVAL = 3  # seconds
+MONITOR_UPDATE_INTERVAL   = 3  # seconds
 
-SMT = 'smt4'
+# summit specific define
+SMT = 4
 
 
-# --------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 #
 class _job_state_monitor(threading.Thread):
-    """ thread that periodically monitors job states
+    """ 
+    thread that periodically monitors job states
     """
+
+    # --------------------------------------------------------------------------
+    #
     def __init__(self, job_service):
 
         self.logger = job_service._logger
@@ -133,8 +138,8 @@ def _lsfscript_generator(url, logger, jd, ppn, lsf_version, queue, span):
     if jd.name is not None:
         lsf_params += "#BSUB -J %s \n" % jd.name
 
-    env_variable_list = "export RADICAL_SAGA_SMT=%s" % SMT
-    if jd.environment is not None:
+    env_variable_list = "export RADICAL_SAGA_SMT=%d" % SMT
+    if jd.environment:
         for key in jd.environment.keys():
             env_variable_list += " %s=%s " % (key, jd.environment[key])
 
@@ -207,15 +212,14 @@ def _lsfscript_generator(url, logger, jd, ppn, lsf_version, queue, span):
     if ret: hostname = os.environ.get('HOSTNAME', '')
     else  : hostname = out.strip()
 
-    if 'summitdev' in hostname: ppn = 20
-    elif 'summit'  in hostname: ppn = 42
+    if   'summitdev' in hostname: ppn = 20
+    elif 'summit'    in hostname: ppn = 42 * SMT
 
     number_of_nodes = int(total_cpu_count / ppn)
     if total_cpu_count % ppn > 0:
         number_of_nodes += 1
-    lsf_params += "#BSUB -nnodes %s \n" %str(number_of_nodes)
-
-    lsf_params += "#BSUB -alloc_flags 'gpumps %s' \n" % SMT
+    lsf_params += "#BSUB -nnodes %s \n" % str(number_of_nodes)
+    lsf_params += "#BSUB -alloc_flags 'gpumps smt%d' \n" % SMT
 
     # span parameter allows us to influence core spread over nodes
     if span:
@@ -228,8 +232,8 @@ def _lsfscript_generator(url, logger, jd, ppn, lsf_version, queue, span):
     exec_n_args = exec_n_args.replace('$', '\\$')
 
     lsfscript = "\n#!/bin/bash \n%s\n%s\n%s" % (lsf_params, env_variable_list, exec_n_args)
-
     lsfscript = lsfscript.replace('"', '\\"')
+
     return lsfscript
 
 
@@ -319,6 +323,8 @@ class Adaptor (saga.adaptors.base.Base):
     """ this is the actual adaptor class, which gets loaded by SAGA (i.e. by 
         the SAGA engine), and which registers the CPI implementation classes 
         which provide the adaptor's functionality.
+
+        FIXME: SMT settings are hardcoded to 4
     """
 
     # ----------------------------------------------------------------
@@ -548,7 +554,8 @@ class LSFJobSummitService (saga.adaptors.cpi.job.Service):
         # (1) we create a temporary file with 'mktemp' and write the contents of 
         #     the generated PBS script into it
         # (2) we call 'qsub <tmpfile>' to submit the script to the queueing system
-        cmdline = """SCRIPTFILE=`mktemp -t SAGA-Python-LSFJobScript.XXXXXX` && echo "%s" > $SCRIPTFILE && %s $SCRIPTFILE && rm -f $SCRIPTFILE""" % (script, self._commands['bsub']['path'])
+      # cmdline = """SCRIPTFILE=`mktemp -t SAGA-Python-LSFJobScript.XXXXXX` && echo "%s" > $SCRIPTFILE && %s $SCRIPTFILE && rm -f $SCRIPTFILE""" % (script, self._commands['bsub']['path'])
+        cmdline = """SCRIPTFILE=`mktemp -p $HOME -t SAGA-Python-LSFJobScript.XXXXXX` && echo "%s" > $SCRIPTFILE && %s $SCRIPTFILE""" % (script, self._commands['bsub']['path'])
         ret, out, _ = self.shell.run_sync(cmdline)
 
         if ret != 0:
