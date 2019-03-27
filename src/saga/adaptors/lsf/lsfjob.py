@@ -197,10 +197,15 @@ def _lsfscript_generator(url, logger, jd, ppn, lsf_version, queue, span):
     else:
         total_cpu_count = jd.total_cpu_count
 
-    out, err, ret = ru.sh_callout('hostname -f')
+    # for resource specific checks, get hostname from the js url.  If that is
+    # set to localhost, fall back to hostname inspection.
+    hostname = url.host
 
-    if ret: hostname = os.environ.get('HOSTNAME', '')
-    else  : hostname = out.strip()
+    if 'localhost' in hostname:
+        out, err, ret = ru.sh_callout('hostname -f')
+
+        if ret: hostname = os.environ.get('HOSTNAME', '')
+        else  : hostname = out.strip()
 
     if   'summitdev' in hostname: ppn = 20
     elif 'summit'    in hostname: ppn = 42 * SMT

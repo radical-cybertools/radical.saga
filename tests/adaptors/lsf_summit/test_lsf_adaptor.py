@@ -5,19 +5,15 @@ __copyright__ = "Copyright 2018-2019, The SAGA Project"
 __license__ = "MIT"
 
 
-""" This test tests the LSF script generator function as well as the LSF adaptor
 """
+This test tests the LSF script generator function as well as the LSF adaptor
+"""
+
 import unittest
-import sys
-from saga.adaptors.lsf.lsfjob import _lsfscript_generator
-import saga.url as surl
+
 import saga
 
-
-try:
-    import mock
-except ImportError:
-    from unittest import mock
+from saga.adaptors.lsf.lsfjob import _lsfscript_generator
 
 
 # ------------------------------------------------------------------------------
@@ -28,7 +24,7 @@ class TestGenerator(unittest.TestCase):
     #
     def setUp(self):
 
-        self._url = surl.Url('gsissh://summit.ccs.ornl.gov')
+        self._url = saga.Url('gsissh://summit.ccs.ornl.gov')
         self._jd  = saga.job.Description()
         self._jd.name            = 'Test'
         self._jd.executable      = '/bin/sleep'
@@ -39,7 +35,7 @@ class TestGenerator(unittest.TestCase):
         self._jd.queue           = 'normal-queue'
         self._jd.project         = 'TestProject'
         self._jd.wall_time_limit = 70
-        self._jd.total_cpu_count = 65
+        self._jd.total_cpu_count = 200  # SMT 4
 
         self._script = "\n#!/bin/bash \n" \
                        "#BSUB -J Test \n" \
@@ -50,8 +46,7 @@ class TestGenerator(unittest.TestCase):
                        "#BSUB -P TestProject \n" \
                        "#BSUB -nnodes 2 \n" \
                        "#BSUB -alloc_flags 'gpumps smt4' \n\n" \
-                       "export  RADICAL_SAGA_SMT=4 \n" \
-                       "export  test_env=15 \n" \
+                       "export RADICAL_SAGA_SMT=4 test_env=15 \n" \
                        "/bin/sleep 60 "
 
     # --------------------------------------------------------------------------
