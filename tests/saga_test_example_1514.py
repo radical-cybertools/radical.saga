@@ -6,7 +6,7 @@ __license__   = "MIT"
 
 
 import os
-import saga.filesystem as sfs
+import radical.saga.filesystem as sfs
 
 # we  try to copy a file
 #   /tmp/foo     -> /tmp/tgt/foo

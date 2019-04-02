@@ -10,7 +10,7 @@ import sys
 import os
 import tempfile
 import shutil
-import saga
+import radical.saga as saga
 
 CLEANUP=False
 

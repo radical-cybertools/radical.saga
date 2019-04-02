@@ -9,7 +9,7 @@
    script in order to get some debug output.
 
    If you think you have encountered a defect, please 
-   report it at: https://github.com/saga-project/saga-python/issues
+   report it at: https://github.com/radical-cybertools/radical.saga/issues
 '''
 
 __author__    = "Ashley Zebrowski"
@@ -17,7 +17,7 @@ __copyright__ = "Copyright 2012, Ashley Zebrowski"
 __license__   = "MIT"
 
 import sys, time
-import saga
+import radical.saga as saga
 import os
 
 FILE_SIZE = 1 # in megs, approx

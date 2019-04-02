@@ -7,28 +7,30 @@ __license__   = "MIT"
 
 import os
 import sys
-import saga
 import getpass
+
+import radica.saga as rs
+
 
 REMOTE_HOST = "localhost"
 
 def main():
     try:
         # Your ssh identity on the remote machine
-        ctx = saga.Context("ssh")
+        ctx = rs.Context("ssh")
         ctx.user_id = "oweidner"
 
-        session = saga.Session()
+        session = rs.Session()
       # session.add_context(ctx)
 
         # Create a job service object that represent the local machine.
         # The keyword 'fork://' in the url scheme triggers the 'shell' adaptor
         # which can execute jobs on the local machine as well as on a remote
         # machine via "ssh://hostname".
-        js = saga.job.Service("ssh://%s" % REMOTE_HOST, session=session)
+        js = rs.job.Service("ssh://%s" % REMOTE_HOST, session=session)
 
         # describe our job
-        jd = saga.job.Description()
+        jd = rs.job.Description()
 
         # Next, we describe the job we want to run. A complete set of job
         # description attributes can be found in the API documentation.
@@ -63,7 +65,7 @@ def main():
 
         outfilesource = 'sftp://%s/tmp/mysagajob-%s.stdout' % (REMOTE_HOST, getpass.getuser())
         outfiletarget = "file://%s/" % os.getcwd()
-        out = saga.filesystem.File(outfilesource, session=session)
+        out = rs.filesystem.File(outfilesource, session=session)
         out.copy(outfiletarget)
 
         print "Staged out %s to %s (size: %s bytes)" % (outfilesource, outfiletarget, out.get_size())
@@ -71,7 +73,7 @@ def main():
 
         return 0
 
-    except saga.SagaException, ex:
+    except rs.SagaException, ex:
         # Catch all saga exceptions
         print "An exception occured: (%s) %s " % (ex.type, (str(ex)))
         # Trace back the exception. That can be helpful for debugging.

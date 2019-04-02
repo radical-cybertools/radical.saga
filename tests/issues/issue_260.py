@@ -1,5 +1,5 @@
 
-import saga
+import radical.saga as saga
 
 files = []
 for i in range (0, 100) :

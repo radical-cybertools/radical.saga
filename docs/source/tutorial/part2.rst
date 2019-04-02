@@ -2,7 +2,7 @@
 Part 2: Local Job Submission
 ****************************
 
-One of the most important feature of SAGA Python is the capability to submit
+One of the most important feature of RADICAL-SAGA is the capability to submit
 jobs to local and remote queueing systems and resource managers. This first
 example explains how to define a SAGA job using the Job API and run it on your
 local machine.
@@ -40,16 +40,16 @@ The output should look something like this:
 .. code-block:: none
 
     Job ID    : [fork://localhost]-[None]
-    Job State : saga.job.Job.New
+    Job State : rs.job.Job.New
 
     ...starting job...
 
     Job ID    : [fork://localhost]-[644240]
-    Job State : saga.job.Job.Pending
+    Job State : rs.job.Job.Pending
 
     ...waiting for job...
 
-    Job State : saga.job.Job.Done
+    Job State : rs.job.Job.Done
     Exitcode  : None
 
 
@@ -67,7 +67,7 @@ A Quick Note on Logging and Debugging
 -------------------------------------
 
 Since working with distributed systems is inherently complex and much of the
-complexity is hidden within SAGA Python, it is necessary to do a lot of internal
+complexity is hidden within RADICAL-SAGA, it is necessary to do a lot of internal
 logging. By default, logging output is disabled, but if something goes wrong or
 if you're just curious, you can enable the logging output by setting the
 environment variable ``SAGA_VERBOSE`` to a value between 1 (print only critical
@@ -81,34 +81,34 @@ messages) and 5 (print all messages). Give it a try with the above example:
 Discussion
 ==========
 
-Now that we have successfully run our first job with saga-python, we will
+Now that we have successfully run our first job with radical.saga, we will
 discuss some of the the building blocks and details of the code.
 
-The job submission and management capabilities of saga-python are packaged in
-the `saga.job module (API Doc). Three classes are defined in this module:
+The job submission and management capabilities of radical.saga are packaged in
+the `rs.job module (API Doc). Three classes are defined in this module:
 
 * The ``job.Service`` class provides a handle to the resource manager, like for example a remote PBS cluster.
 * The ``job.Description`` class is used to describe the executable, arguments, environment and requirements (e.g., number of cores, etc) of a new job.
 * The ``job.Job`` class is a handle to a job associated with a job.Service. It is used to control (start, stop) the job and query its status (e.g., Running, Finished, etc).
 
-In order to use the SAGA Job API, we first need to import the saga-python
+In order to use the SAGA Job API, we first need to import the radical.saga
 module:
 
 .. code-block:: python
 
-    import saga
+    import radical.saga as rs
 
 Next, we create a ``job.Service`` object that represents the compute resource you
 want to use (see figure above). The job service takes a single URL as parameter.
-The URL is a way to tell saga-python what type of resource or middleware you
-want to use and where it is. The URL parameter is passed to saga-python's plug-
+The URL is a way to tell radical.saga what type of resource or middleware you
+want to use and where it is. The URL parameter is passed to radical.saga's plug-
 in selector and based on the URL scheme, a plug-in is selected. In this case the
 Local job plug-in is selected for ``fork://``. URL scheme - Plug-in mapping is
 described in :ref:`chapter_adaptors`.
 
 .. code-block:: python
 
-    js = saga.job.Service("fork://localhost")
+    js = rs.job.Service("fork://localhost")
 
 To define a new job, a job.Description object needs to be created that contains
 information about the executable we want to run, its arguments, the environment
@@ -116,7 +116,7 @@ that needs to be set and some other optional job requirements:
 
 .. code-block:: python
 
-    jd = saga.job.Description()
+    jd = rs.job.Description()
     
     # environment, executable & arguments
     jd.environment = {'MYOUTPUT':'"Hello from SAGA"'}       

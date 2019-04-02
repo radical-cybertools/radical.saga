@@ -1,0 +1,9 @@
+
+{
+    "enabled"      : "True",
+
+    # The adaptor stores proxy information on the filesystem on the local
+    # resource.  This parameter specified what location should be used.
+    "base_workdir" : "${$HOME:.}/.radical/saga/adaptors/proxies/"
+}
+

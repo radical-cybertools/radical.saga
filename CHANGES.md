@@ -1,9 +1,9 @@
 
 
   - For a list of bug fixes, see
-    https://github.com/radical-cybertools/saga-python/issues?q=is%3Aissue+is%3Aclosed+sort%3Aupdated-desc
+    https://github.com/radical-cybertools/radical.saga/issues?q=is%3Aissue+is%3Aclosed+sort%3Aupdated-desc
   - For a list of open issues and known problems, see
-    https://github.com/radical-cybertools/saga-python/issues?q=is%3Aissue+is%3Aopen+
+    https://github.com/radical-cybertools/radical.saga/issues?q=is%3Aissue+is%3Aopen+
 
 
 Version 0.50.5                                                        2018-12-19
@@ -432,7 +432,7 @@ Version 0.22 release 2014-11-03
 --------------------------------------------------------------------------------
 
   - Hotfix release fixing incompatbile sftp flag "-2" 
-    - https://github.com/radical-cybertools/saga-python/issues/397
+    - https://github.com/radical-cybertools/radical.saga/issues/397
 
 
 Version 0.21 release 2014-10-29
@@ -451,7 +451,7 @@ Version 0.19 release 2014-09-15
   - Improved file transfer performance
   - Small improvements in PBS (esp. Cray) and LSF adaptors. 
   - Closed tickets:
-    - https://github.com/radical-cybertools/saga-python/issues?q=is%3Aclosed+is%3Aissue+milestone%3A%22saga-python+0.19%22+
+    - https://github.com/radical-cybertools/radical.saga/issues?q=is%3Aclosed+is%3Aissue+milestone%3A%22radical.saga+0.19%22+
 
 Version 0.18 release 2014-08-28
 --------------------------------------------------------------------------------
@@ -463,7 +463,7 @@ Version 0.17 release 2014-07-22
 
   - Improved prompt-detection and small bug fixes.
   - Closed tickets:
-    - https://github.com/radical-cybertools/saga-python/issues?milestone=20&state=closed
+    - https://github.com/radical-cybertools/radical.saga/issues?milestone=20&state=closed
 
 Version 0.16 release 2014-07-09
 --------------------------------------------------------------------------------
@@ -471,13 +471,13 @@ Version 0.16 release 2014-07-09
   - Several adaptor upddtes
   - Addressed SSH caching and prompt-detection issues
   - Closed tickets:
-    - https://github.com/radical-cybertools/saga-python/issues?milestone=19&state=closed
+    - https://github.com/radical-cybertools/radical.saga/issues?milestone=19&state=closed
 
 Version 0.15 release 2014-06-18
 --------------------------------------------------------------------------------
 
   - Fixed issues with the shell aadaptor Directory.list() method:
-    - https://github.com/radical-cybertools/saga-python/issues/330
+    - https://github.com/radical-cybertools/radical.saga/issues/330
 
 Version 0.14 release 2014-05-07
 --------------------------------------------------------------------------------
@@ -485,17 +485,17 @@ Version 0.14 release 2014-05-07
   - Fixed TTY wrapper issues
   - Migration to new GitHub repository
   - Documentation now on ReadTheDocs:
-    http://saga-python.readthedocs.org/en/latest/
+    http://radical.saga.readthedocs.org/en/latest/
   - Integrated Mark's work on the Condor adaptor
   - Closed tickets:
-    - https://github.com/radical-cybertools/saga-python/issues?milestone=18&state=closed
+    - https://github.com/radical-cybertools/radical.saga/issues?milestone=18&state=closed
 
 Version 0.13 release 2014-02-27
 --------------------------------------------------------------------------------
 
   - Bugfix release.
   - Closed tickets:
-    - https://github.com/saga-project/saga-python/issues?milestone=17&state=closed
+    - https://github.com/radical-cybertools/radical.saga/issues?milestone=17&state=closed
 
 
 Version 0.12 release 2014-02-26
@@ -507,7 +507,7 @@ Version 0.11 release 2014-02-25
 --------------------------------------------------------------------------------
 
   - Closed tickets:
-    - https://github.com/saga-project/saga-python/issues?milestone=16&state=closed
+    - https://github.com/radical-cybertools/radical.saga/issues?milestone=16&state=closed
 
 Version 0.10 release 2014-01-18
 --------------------------------------------------------------------------------
@@ -515,14 +515,14 @@ Version 0.10 release 2014-01-18
   - Changed versioning scheme from major.minor.patch to major.minor
     due to Python's messed up installers
   - Fixed job script cleanup:
-    https://github.com/saga-project/saga-python/issues?milestone=15&state=closed
+    https://github.com/radical-cybertools/radical.saga/issues?milestone=15&state=closed
 
 Version 0.9.16 release 2014-01-13
 --------------------------------------------------------------------------------
 
   - Some improvements to sftp file adaptor
   - Closed tickets: 
-    - https://github.com/saga-project/saga-python/issues?milestone=14&state=closed
+    - https://github.com/radical-cybertools/radical.saga/issues?milestone=14&state=closed
 
 Version 0.9.15 release 2013-12-10
 --------------------------------------------------------------------------------
@@ -535,28 +535,28 @@ Version 0.9.14 release 2013-12-10
   - Migration to radical.utils
   - Numerous SFTP file adaptor improvements
   - Closed tickets: 
-    - https://github.com/saga-project/saga-python/issues?milestone=13&state=closed
+    - https://github.com/radical-cybertools/radical.saga/issues?milestone=13&state=closed
 
 Version 0.9.13 release 2013-11-26
 --------------------------------------------------------------------------------
 
   - Added Platform LSF adaptor
   - Closed tickets:
-    - https://github.com/saga-project/saga-python/issues?milestone=11&state=closed
+    - https://github.com/radical-cybertools/radical.saga/issues?milestone=11&state=closed
 
 Version 0.9.12 release 2013-10-18
 --------------------------------------------------------------------------------
 
   - Added iRODS replica adaptor
   - Closed tickets:
-    - https://github.com/saga-project/saga-python/issues?milestone=10&state=closed
+    - https://github.com/radical-cybertools/radical.saga/issues?milestone=10&state=closed
 
 Version 0.9.11 released 2013-09-04
 --------------------------------------------------------------------------------
 
   - Bugfix release
   - Closed tickets:
-    - https://github.com/saga-project/saga-python/issues?milestone=9&state=closed
+    - https://github.com/radical-cybertools/radical.saga/issues?milestone=9&state=closed
 
 Version 0.9.10 released 2013-08-12
 --------------------------------------------------------------------------------
@@ -564,19 +564,19 @@ Version 0.9.10 released 2013-08-12
   - Better support for Amazon EC2
   - Fixed working directory handling for PBS
   - Closed tickets: 
-    - https://github.com/saga-project/saga-python/issues?milestone=3&state=closed
+    - https://github.com/radical-cybertools/radical.saga/issues?milestone=3&state=closed
 
 Version 0.9.9 released 2013-07-19
 --------------------------------------------------------------------------------
 
   - Hotfix release: bug in Url.__str__ and SFTP copy
-    - https://github.com/saga-project/saga-python/issues?milestone=8&state=closed
+    - https://github.com/radical-cybertools/radical.saga/issues?milestone=8&state=closed
 
 Version 0.9.8 released 2013-06-22
 --------------------------------------------------------------------------------
 
   - Hotfix release: critical bug in wait() signature
-    - https://github.com/saga-project/saga-python/issues?milestone=7&state=closed
+    - https://github.com/radical-cybertools/radical.saga/issues?milestone=7&state=closed
 
 Version 0.9.7 released 2013-06-19
 --------------------------------------------------------------------------------
@@ -584,19 +584,19 @@ Version 0.9.7 released 2013-06-19
   - Added resource package
   - Added 'liblcoud' based adaptor to access Amazon EC2 clouds
   - Closed issues:
-    - https://github.com/saga-project/saga-python/issues?milestone=5&state=closed
+    - https://github.com/radical-cybertools/radical.saga/issues?milestone=5&state=closed
 
 Version 0.9.6 released 2013-06-17
 --------------------------------------------------------------------------------
 
   - Hotfix release: critical PBS/TORQUE adaptor fixes
-    - https://github.com/saga-project/saga-python/issues?&milestone=6&state=closed
+    - https://github.com/radical-cybertools/radical.saga/issues?&milestone=6&state=closed
 
 Version 0.9.5 released 2013-06-06
 --------------------------------------------------------------------------------
 
   - Hotfix release: critical SLURM adaptor fixes
-    - https://github.com/saga-project/saga-python/issues?milestone=4&state=closed
+    - https://github.com/radical-cybertools/radical.saga/issues?milestone=4&state=closed
 
 Version 0.9.4 released 2013-06-01
 --------------------------------------------------------------------------------
@@ -607,7 +607,7 @@ Version 0.9.4 released 2013-06-01
   - A simple HTTP protocol file adaptor
   - Fixed some issues with user-pass and X.509 security contexts
   - Over 40 bugfixes and improvements: 
-    - https://github.com/saga-project/saga-python/issues?milestone=2&state=closed
+    - https://github.com/radical-cybertools/radical.saga/issues?milestone=2&state=closed
 
 Version 0.9.3 released 2013-04-08
 --------------------------------------------------------------------------------
@@ -615,31 +615,31 @@ Version 0.9.3 released 2013-04-08
   - Added SFTP adaptor
   - Added tutorial examples
   - Closed issues:
-    - https://github.com/saga-project/saga-python/issues/78
-    - https://github.com/saga-project/saga-python/issues/73
-    - https://github.com/saga-project/saga-python/issues/72
-    - https://github.com/saga-project/saga-python/issues/71
-    - https://github.com/saga-project/saga-python/issues/69
-    - https://github.com/saga-project/saga-python/issues/66
-    - https://github.com/saga-project/saga-python/issues/63
-    - https://github.com/saga-project/saga-python/issues/62
-    - https://github.com/saga-project/saga-python/issues/61
-    - https://github.com/saga-project/saga-python/issues/60
-    - https://github.com/saga-project/saga-python/issues/58
-    - https://github.com/saga-project/saga-python/issues/57
-    - https://github.com/saga-project/saga-python/issues/56
-    - https://github.com/saga-project/saga-python/issues/55
-    - https://github.com/saga-project/saga-python/issues/22
-    - https://github.com/saga-project/saga-python/issues/51
-    - https://github.com/saga-project/saga-python/issues/53
-    - https://github.com/saga-project/saga-python/issues/26
-    - https://github.com/saga-project/saga-python/issues/49
-    - https://github.com/saga-project/saga-python/issues/50
-    - https://github.com/saga-project/saga-python/issues/47
-    - https://github.com/saga-project/saga-python/issues/45
-    - https://github.com/saga-project/saga-python/issues/46
-    - https://github.com/saga-project/saga-python/issues/43
-    - https://github.com/saga-project/saga-python/issues/27
+    - https://github.com/radical-cybertools/radical.saga/issues/78
+    - https://github.com/radical-cybertools/radical.saga/issues/73
+    - https://github.com/radical-cybertools/radical.saga/issues/72
+    - https://github.com/radical-cybertools/radical.saga/issues/71
+    - https://github.com/radical-cybertools/radical.saga/issues/69
+    - https://github.com/radical-cybertools/radical.saga/issues/66
+    - https://github.com/radical-cybertools/radical.saga/issues/63
+    - https://github.com/radical-cybertools/radical.saga/issues/62
+    - https://github.com/radical-cybertools/radical.saga/issues/61
+    - https://github.com/radical-cybertools/radical.saga/issues/60
+    - https://github.com/radical-cybertools/radical.saga/issues/58
+    - https://github.com/radical-cybertools/radical.saga/issues/57
+    - https://github.com/radical-cybertools/radical.saga/issues/56
+    - https://github.com/radical-cybertools/radical.saga/issues/55
+    - https://github.com/radical-cybertools/radical.saga/issues/22
+    - https://github.com/radical-cybertools/radical.saga/issues/51
+    - https://github.com/radical-cybertools/radical.saga/issues/53
+    - https://github.com/radical-cybertools/radical.saga/issues/26
+    - https://github.com/radical-cybertools/radical.saga/issues/49
+    - https://github.com/radical-cybertools/radical.saga/issues/50
+    - https://github.com/radical-cybertools/radical.saga/issues/47
+    - https://github.com/radical-cybertools/radical.saga/issues/45
+    - https://github.com/radical-cybertools/radical.saga/issues/46
+    - https://github.com/radical-cybertools/radical.saga/issues/43
+    - https://github.com/radical-cybertools/radical.saga/issues/27
 
 Version 0.9.2 released 2013-03-11
 --------------------------------------------------------------------------------
@@ -685,7 +685,7 @@ Version 0.2.5 released 2012-10-24
     dependencies on 3rd party modules cannot be fulfilled, the plug-in
     will just get skipped and the remaining ones will still get
     loaded. Previously, a single problem during plug-in loading would
-    take Bliss down.
+    take radical.saga down.
 
 Version 0.2.4 released 2012-7-10
 --------------------------------------------------------------------------------
@@ -719,15 +719,15 @@ Version 0.2.2 released 2012-6-12
 Version 0.2.1 released 2012-5-16
 --------------------------------------------------------------------------------
 
-  - Fixed https://github.com/saga-project/bliss/issues/5
-  - Fixed https://github.com/saga-project/bliss/issues/13
+  - Fixed https://github.com/radical-cybertools/radical.saga/issues/5
+  - Fixed https://github.com/radical-cybertools/radical.saga/issues/13
 
 Version 0.2.0 released 2012-5-15
 --------------------------------------------------------------------------------
 
   - SFTP support for local <-> remote copy operations, mkdir, get_size
   - Added supoprt for ssh re-connection after timeout (issue #29)
-  - Abandoned 'Exception' filenames and API inheritance. The Bliss
+  - Abandoned 'Exception' filenames and API inheritance. The radical.saga
     interface looks much cleaner now. Compatibility with previous
     versions has been ensured
   - Improved (inline) API documentation
@@ -736,7 +736,7 @@ Version 0.2.0 released 2012-5-15
     versions
   - Added SGE (Sun Grid Engine) plug-in (issue #11)
   - Removed sagacompat compatibility API
-  - Log source names now all start with 'bliss.'. This should make
+  - Log source names now all start with 'radical.saga.'. This should make
     filtering much easier
   - Moved SD package into development branch features/servicediscovery
 
@@ -759,13 +759,13 @@ Version 0.1.17 released 2012-01-04
 Version 0.1.16 released 2012-01-03
 --------------------------------------------------------------------------------
 
-  - Fixed issue: https://github.com/oweidner/bliss/issues/9
+  - Fixed issue: https://github.com/oweidner/radical.saga/issues/9
 
 Version 0.1.15 released 2012-01-03
 --------------------------------------------------------------------------------
 
-  - Fixed issue: https://github.com/oweidner/bliss/issues/8
-  - Fixed issue: https://github.com/oweidner/bliss/issues/6
+  - Fixed issue: https://github.com/oweidner/radical.saga/issues/8
+  - Fixed issue: https://github.com/oweidner/radical.saga/issues/6
   - First version of a bigjob plugin. See wiki for details.
   - Fixed Python 2.4 compatibility issue
 

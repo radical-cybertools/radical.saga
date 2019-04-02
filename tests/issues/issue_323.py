@@ -1,6 +1,6 @@
 
 import sys
-import saga
+import radical.saga as saga
 import time
 import multiprocessing as mp
 

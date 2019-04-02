@@ -1,0 +1,33 @@
+
+{
+    "pty" : 
+    {
+        # use this regex to detect shell prompts
+        "prompt_pattern"       : "${RADICAL_SAGA_PTY_SSH_PROMPT:[\\$#%>\\]]\\s*$}",
+
+        # use the specified protocol for pty level file transfer
+        # options: 'sftp', 'scp', 'rsync+ssh', 'rsync'
+        "ssh_copy_mode"        : "${RADICAL_SAGA_PTY_SSH_COPYMODE:sftp}",
+
+        # use the specified mode as flag for the ssh ControlMaster
+        # option.  This should be set to "no" on CentOS.
+        # options: 'auto', 'no'
+        "ssh_share_mode"       : "${RADICAL_SAGA_PTY_SSH_SHAREMODE:auto}",
+
+        # connection attempts time out after that many seconds
+        "ssh_timeout"          : "${RADICAL_SAGA_PTY_SSH_TIMEOUT:10.0}",
+
+        # maximum number of connections kept in a connection pool
+        "connection_pool_size" : "${RADICAL_SAGA_PTY_CONN_POOL_SIZE:10}",
+
+        # minimum time a connection is kept alive in a connection pool
+        "connection_pool_ttl"  : "${RADICAL_SAGA_PTY_CONN_POOL_TTL:600}",
+
+        # FIXME: should that be the same value as 'ssh_timeout'?
+        # maximum number of seconds to wait for any connection in 
+        # the connection pool to become available before raising 
+        # a timeout error
+        "connection_pool_wait" : "${RADICAL_SAGA_PTY_CONN_POOL_WAIT:600}"
+    }
+}
+

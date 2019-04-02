@@ -15,7 +15,7 @@ working public/private SSH key-pair and that you can sftp into your remote
 resource using those keys, i.e., your public key is in the
 ~/.ssh/authorized_hosts file on the remote machine. If
 you are not sure how this works, you might want to read about 
-`SSH and GSISSH <https://github.com/saga-project/saga-python/wiki/SSH-and-GSISSH>`_ 
+`SSH and GSISSH <https://github.com/radical-cybertools/radical.saga/wiki/SSH-and-GSISSH>`_ 
 first.
 
 Hands-On: Remote Job Submission with File Staging
@@ -71,5 +71,22 @@ Check the Output
 Your output file should now be in /tmp/mysagajob.stdout and contain the 
 string ``Hello from SAGA``.
 
+Coding URLs
+-----------
 
+URLs ``sftp://username:password@hostname:port//some/path`` and
+``sftp://username:password@hostname:port/some/path`` (note the two ``//`` in
+the first URL) are supposed to be the same. However, SAGA may treat them
+diffently due some missing path normalization. URL should be coded with single
+'/' or composed as follow:
+
+.. code-block:: python
+
+    remote_dir_url = saga.Url()
+    remote_dir_url.scheme = 'sftp'
+    remote_dir_url.username = username
+    remote_dir_url.username = $PASSWORD
+    remote_dir_url.host = hostname
+    remote_dir_url.port = port
+    remote_dir_url.path = /some/path
 

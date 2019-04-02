@@ -95,12 +95,12 @@ executing shell and evaluated by SAGA at program startup.
 Application Level Logging
 -------------------------
 
-The SAGA-Python logging utilities are a thin wrapper around Python's logging
-facilities, integrated into the SAGA-Python configuration facilities.
+The RADICAL-SAGA logging utilities are a thin wrapper around Python's logging
+facilities, integrated into the RADICAL-SAGA configuration facilities.
 To support the seamless integration of application level logging needs, the
 :func:`saga.utils.logger.getLogger` allows to produce additional logger
 facilities, which are again native Python :class:`logging.Logger` instances, but
-preconfigured according to the SAGA-Python logging configuration.
+preconfigured according to the RADICAL-SAGA logging configuration.
 Those instances can then be further customized as needed::
 
    from saga.utils.logger import getLogger, INFO

@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 
 __author__    = "Andre Merzky, Ole Weidner"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
@@ -7,10 +8,11 @@ __license__   = "MIT"
 """ Unit tests for saga.engine.engine.py
 """
 
-import os, sys
-from   saga.engine.engine import Engine
+import os
+import sys
+import pprint
 
-import radical.utils as ru
+from   radical.saga.engine.engine import Engine
 
 
 def test_singleton():
@@ -23,17 +25,20 @@ def test_singleton():
     e2 = Engine()
     assert(e1 == e2)
 
+
 def test_configurable():
     """ Test the object's Configurable interface
     """
     # make sure singleton works
-    assert Engine().get_config()['load_beta_adaptors'].get_value() == False
+    assert(not Engine()._cfg['load_beta_adaptors'])
+
 
 def test_emtpy_registry():
     """ Test that an empty adaptor registry is handled properly
     """
     Engine()._load_adaptors([])
     assert Engine().loaded_adaptors() == {}
+
 
 def test_broken_registry():
     """ Test that an attemt to load from a broken registry 
@@ -45,11 +50,13 @@ def test_broken_registry():
     except TypeError:
         assert True
 
+
 def test_load_nonexistent_adaptor():
     """ Test that an attempt to load a non-existent adaptor is handled properly
     """
     Engine()._load_adaptors(["nonexistent"])
     assert len(Engine().loaded_adaptors()) == 0
+
 
 def test_load_adaptor():
     """ Test that an attempt to load an adaptor is handled properly
@@ -61,20 +68,20 @@ def test_load_adaptor():
 
     Engine()._load_adaptors(["mockadaptor_enabled"])
     # make sure the adapor is in the list
-    assert len(Engine().loaded_adaptors()['saga.job.Job']['mock']) == 1
+    assert(len(Engine().loaded_adaptors()['radical.saga.job.Job']['mock']) == 1), \
+            pprint.pformat(Engine().loaded_adaptors())
 
     # make sure the configuration gets passed through
-    cpis         = Engine().loaded_adaptors()
-    adaptor      = cpis['saga.job.Job']['mock'][0]['adaptor_instance']
-    cfg          = adaptor.get_config()
-    foo_dict     = cfg["foo"].as_dict()
-    assert foo_dict == {'foo': 'bar'}
+    cpis    = Engine().loaded_adaptors()
+    adaptor = cpis['radical.saga.job.Job']['mock'][0]['adaptor_instance']
 
     # restore sys.path
     sys.path = old_sys_path
 
+
 def test_load_adaptor_twice():
-    """ Test that an attempt to load the same adaptor twice doesn't cause trouble """
+    """ Test that an attempt to load the same adaptor twice 
+    doesn't cause trouble """
     # store old sys.path
     old_sys_path = sys.path
     path = os.path.split(os.path.abspath(__file__))[0]
@@ -82,21 +89,20 @@ def test_load_adaptor_twice():
 
     Engine()._load_adaptors(["mockadaptor_enabled", "mockadaptor_enabled"])
     cpis  = Engine().loaded_adaptors()
-    mocks = cpis['saga.job.Job']['mock']
+    mocks = cpis['radical.saga.job.Job']['mock']
     assert len(mocks) == 1
 
     # make sure the configuration gets passed through
     cpis         = Engine().loaded_adaptors()
-    adaptor      = cpis['saga.job.Job']['mock'][0]['adaptor_instance']
-    cfg          = adaptor.get_config()
-    foo_dict     = cfg["foo"].as_dict()
-    assert foo_dict == {'foo': 'bar'}
+    adaptor      = cpis['radical.saga.job.Job']['mock'][0]['adaptor_instance']
 
     # restore sys.path
     sys.path = old_sys_path
 
+
 def test_load_broken_adaptor():
-    """ Test that an expection in the adaptor's sanity_check() method is handled properly
+    """ Test that an expection in the adaptor's sanity_check() method
+    is handled properly
     """
     # store old sys.path
     old_sys_path = sys.path
@@ -110,5 +116,19 @@ def test_load_broken_adaptor():
     sys.path = old_sys_path
 
 
+# ------------------------------------------------------------------------------
+#
+if __name__ == '__main__':
 
+    test_singleton()
+    test_configurable()
+    test_emtpy_registry()
+    test_broken_registry()
+    test_load_nonexistent_adaptor()
+    test_load_adaptor()
+    test_load_adaptor_twice()
+    test_load_broken_adaptor()
+
+
+# ------------------------------------------------------------------------------
 

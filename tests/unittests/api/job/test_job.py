@@ -1,111 +1,87 @@
+#!/usr/bin/env python
 
 __author__    = "Andre Merzky, Ole Weidner"
 __copyright__ = "Copyright 2013, The SAGA Project"
 __license__   = "MIT"
 
+
 import time
-import saga
+import radical.saga as rs
 
 import radical.utils.testing  as testing
-import saga.utils.test_config as sutc
+import radical.rs.utils.test_config as sutc
 
 from copy import deepcopy
 
-# ------------------------------------------------------------------------------
-#
-def _silent_cancel(job_obj):
-    # try to cancel job but silently ignore all errors
-    try:
-        job_obj.cancel()
-    except Exception:
-        pass
-
 
 # ------------------------------------------------------------------------------
 #
-def _silent_close_js(js_obj):
-    # try to cancel job but silently ignore all errors
-    try:
-        js_obj.close()
-    except Exception:
-        pass
-
-
-# ------------------------------------------------------------------------------
-#
-def test_job_service_get_url():
+def test_job_service_get_url(job_service, cfg):
     """ Test if the job service URL is returned correctly
     """
-    js = None
+    js = job_service
     try:
-        tc = testing.get_test_config ()
-        js = saga.job.Service(tc.job_service_url, tc.session)
         assert js, "job service creation failed?"
-        assert (tc.job_service_url == str(js.url)), "%s == %s" % (tc.job_service_url, str(js.url))
+        assert (cfg['job_service_url'] == str(js.url))
 
-    except saga.SagaException as ex:
+    except rs.SagaException as ex:
         assert False, "unexpected exception %s" % ex
-    finally:
-        _silent_close_js(js)
 
 
 # ------------------------------------------------------------------------------
 #
-def test_job_service_invalid_url():
+def test_job_service_invalid_url(cfg, session, tools):
     """ Test if a non-resolvable hostname results in a proper exception
     """
+
+    tmp_js = None
+    
     try:
-        tc = testing.get_test_config ()
-        invalid_url = deepcopy(saga.Url(tc.job_service_url))
+        invalid_url      = rs.Url(cfg['job_service_url'])
         invalid_url.host = "does.not.exist"
-        tmp_js = saga.job.Service(invalid_url, tc.session)
-        _silent_close_js(tmp_js)
+        tmp_js = rs.job.Service (invalid_url, session)
         assert False, "Expected XYZ exception but got none."
 
-    except saga.BadParameter :
+    except rs.BadParameter :
         assert True
 
     # we don't check DNS anymore, as that can take *ages* -- so we now also
     # see Timeout and NoSuccess exceptions...
-    except saga.Timeout :
+    except (rs.NoSuccess, rs.Timeout) :
         assert True
 
-    except saga.NoSuccess :
-        assert True
-
-    # other exceptions sould never occur
-    except saga.SagaException as ex:
+    # other exceptions should never occur
+    except rs.SagaException as ex:
         assert False, "Expected BadParameter, Timeout or NoSuccess exception, but got %s (%s)" % (type(ex), ex)
+
+    finally :
+        tools.silent_close (tmp_js)
 
 
 # ------------------------------------------------------------------------------
 #
-def test_job_service_create():
+def test_job_service_create(job_service, cfg, tools):
     """ Test service.create_job() - expecting state 'NEW'
     """
-    js = None
+    js = job_service
+    j  = None
     try:
-        tc = testing.get_test_config ()
-        js = saga.job.Service(tc.job_service_url, tc.session)
-        jd = saga.job.Description()
+        jd = rs.job.Description()
         jd.executable = '/bin/sleep'
         jd.arguments = ['10']
 
         # add options from the test .cfg file if set
-        jd = sutc.add_tc_params_to_jd(tc=tc, jd=jd)
+        tools.configure_jd (cfg, jd)
 
         j = js.create_job(jd)
         assert j.state == j.get_state()
-        assert j.state == saga.job.NEW
+        assert j.state == rs.job.NEW
 
-    except saga.NotImplemented as ni:
-        assert tc.notimpl_warn_only, "%s " % ni
-        if tc.notimpl_warn_only:
-            print "%s " % ni
-    except saga.SagaException as se:
-        assert False, "Unexpected exception: %s" % se
-    finally:
-        _silent_close_js(js)
+    except rs.SagaException as e:
+        tools.assert_exception (cfg, e)
+
+    finally :
+        tools.silent_cancel (j)
 
 
 # ------------------------------------------------------------------------------
@@ -117,15 +93,15 @@ def test_job_service_get_session():
     session = None
     try:
         tc = testing.get_test_config ()
-        session = tc.session or saga.Session()
-        js = saga.job.Service(tc.job_service_url, session)
+        session = tc.session or rs.Session()
+        js = rs.job.Service(tc.job_service_url, session)
 
         assert js.get_session() == session, "Setting service session failed."
         assert js.session == session, "Setting service session failed."
         assert js._adaptor.get_session() == session, "Setting service session failed."
         assert js._adaptor.session == session, "Setting service session failed."
 
-    except saga.SagaException as ex:
+    except rs.SagaException as ex:
         assert False, "unexpected exception %s" % ex
     finally:
         _silent_close_js(js)
@@ -133,85 +109,83 @@ def test_job_service_get_session():
 
 # ------------------------------------------------------------------------------
 #
-def test_job_run():
+def test_job_run (job_service, cfg, tools):
     """ Test job.run() - expecting state: RUNNING/PENDING
     """
-    js = None
+    js = job_service
     j  = None
     try:
-        tc = testing.get_test_config ()
-        js = saga.job.Service(tc.job_service_url, tc.session)
-        jd = saga.job.Description()
+        jd = rs.job.Description()
         jd.executable = '/bin/sleep'
         jd.arguments = ['10']
 
         # add options from the test .cfg file if set
-        jd = sutc.add_tc_params_to_jd(tc=tc, jd=jd)
+        tools.configure_jd (cfg, jd)
 
         j = js.create_job(jd)
 
         j.run()
 
-        assert (j.state in [saga.job.RUNNING, saga.job.PENDING]), "j.state: %s" % j.state
+        assert (j.state in [rs.job.RUNNING, rs.job.PENDING]), "j.state: %s" % j.state
 
-    except saga.NotImplemented as ni:
-        assert tc.notimpl_warn_only, "%s " % ni
-        if tc.notimpl_warn_only:
-            print "%s " % ni
-    except saga.SagaException as se:
-        assert False, "Unexpected exception: %s" % se
-    finally:
-        _silent_cancel(j)
-        _silent_close_js(js)
+    except rs.SagaException as e:
+        tools.assert_exception (cfg, e)
+
+    finally :
+        tools.silent_cancel (j)
 
 
 # ------------------------------------------------------------------------------
 #
-def test_job_wait():
+def test_job_wait(job_service, cfg, tools):
     """ Test job.wait() - expecting state: DONE (this test might take a while)
     """
-    js = None
+    js = job_service
     j  = None
     try:
+        t_min = time.time()
         tc = testing.get_test_config ()
-        js = saga.job.Service(tc.job_service_url, tc.session)
-        jd = saga.job.Description()
+        js = rs.job.Service(tc.job_service_url, tc.session)
+
+        jd = rs.job.Description()
         jd.executable = '/bin/sleep'
-        jd.arguments = ['10']
+        jd.arguments  = ['10']
 
         # add options from the test .cfg file if set
-        jd = sutc.add_tc_params_to_jd(tc=tc, jd=jd)
+        tools.configure_jd (cfg, jd)
 
         j = js.create_job(jd)
 
         j.run()
         j.wait()
-        assert j.state == saga.job.DONE, "%s != %s" % (j.state, saga.job.DONE)
+        t_max = time.time()
 
-    except saga.NotImplemented as ni:
-        assert tc.notimpl_warn_only, "%s " % ni
-        if tc.notimpl_warn_only:
-            print "%s " % ni
-    except saga.SagaException as se:
-        assert False, "Unexpected exception: %s" % se
-    finally:
-        _silent_cancel(j)
-        _silent_close_js(js)
+        # assert success
+        assert(j.state == rs.job.DONE), "%s != %s" % (j.state, rs.job.DONE)
+
+        # We expect job time information to be reported in seconds since epoch.
+        assert(t_min <= j.created  <= t_max), 'created  invalid: %s' % j.created
+        assert(t_min <= j.started  <= t_max), 'started  invalid: %s' % j.started
+        assert(t_min <= j.finished <= t_max), 'finished invalid: %s' % j.finished
+
+    except rs.SagaException as e:
+        tools.assert_exception (cfg, e)
+
+    finally :
+        tools.silent_cancel (j)
 
 
 # ------------------------------------------------------------------------------
 #
-def test_job_multiline_run():
+def test_job_multiline_run(job_service, cfg, tools):
     """ Test job.run() with multiline command
     """
-    js = None
+    js = job_service
     j  = None
     try:
-        tc = testing.get_test_config ()
-        js = saga.job.Service(tc.job_service_url, tc.session)
-        jd = saga.job.Description()
+        jd = rs.job.Description()
         jd.executable = '/bin/sh'
-        jd.arguments = ["""-c "python -c '
+        jd.arguments  = ["""-c "python -c '
 import time
 if True :
   if True :
@@ -221,116 +195,101 @@ if True :
 """]
 
         # add options from the test .cfg file if set
-        jd = sutc.add_tc_params_to_jd(tc=tc, jd=jd)
+        tools.configure_jd (cfg, jd)
+
         j = js.create_job(jd)
-
         j.run()
-        assert (j.state in [saga.job.RUNNING, saga.job.PENDING]), 'j.state: %s' % j.state
-        j.wait()
-        assert (j.state == saga.job.DONE), "j.state: %s " % j.state
 
-    except saga.NotImplemented as ni:
-        assert tc.notimpl_warn_only, "%s " % ni
-        if tc.notimpl_warn_only:
-            print "%s " % ni
-    except saga.SagaException as se:
-        assert False, "Unexpected exception: %s" % se
-    finally:
-        _silent_cancel(j)
-        _silent_close_js(js)
+        assert (j.state in [rs.job.RUNNING, rs.job.PENDING])
+        j.wait()
+        assert (j.state in [rs.job.DONE])
+
+    except rs.SagaException as e:
+        tools.assert_exception (cfg, e)
+
+    finally :
+        tools.silent_cancel (j)
+
 
 
 # ------------------------------------------------------------------------------
 #
-def test_job_suspend_resume():
+def test_job_suspend_resume(job_service, cfg, tools):
     """ Test job.suspend()/resume() - expecting state: SUSPENDED/RUNNING
     """
-    js = None
+    js = job_service
     j  = None
     try:
-        tc = testing.get_test_config ()
-        js = saga.job.Service(tc.job_service_url, tc.session)
-        jd = saga.job.Description()
+        jd = rs.job.Description()
         jd.executable = '/bin/sleep'
-        jd.arguments = ['20']
+        jd.arguments  = ['20']
 
         # add options from the test .cfg file if set
-        jd = sutc.add_tc_params_to_jd(tc=tc, jd=jd)
+        tools.configure_jd (cfg, jd)
 
         j = js.create_job(jd)
         j.run()
-
         j.suspend()
-        assert j.state == saga.job.SUSPENDED
+
+        assert j.state == rs.job.SUSPENDED
         assert j.state == j.get_state()
 
         j.resume()
-        assert j.state == saga.job.RUNNING
+        assert j.state == rs.job.RUNNING
         assert j.state == j.get_state()
 
-    except saga.NotImplemented as ni:
-        assert tc.notimpl_warn_only, "%s " % ni
-        if tc.notimpl_warn_only:
-            print "%s " % ni
-    except saga.SagaException as se:
-        assert False, "Unexpected exception: %s" % se
+    except rs.SagaException as e:
+        tools.assert_exception (cfg, e)
+
     finally:
-        _silent_cancel(j)
-        _silent_close_js(js)
+        tools.silent_cancel (j)
 
 
 # ------------------------------------------------------------------------------
 #
-def test_job_cancel():
+def test_job_cancel(job_service, cfg, tools):
     """ Test job.cancel() - expecting state: CANCELED
     """
-    js = None
+    js = job_service
     j  = None
     try:
-        tc = testing.get_test_config ()
-        js = saga.job.Service(tc.job_service_url, tc.session)
-        jd = saga.job.Description()
+        jd = rs.job.Description()
         jd.executable = '/bin/sleep'
-        jd.arguments = ['10']
+        jd.arguments  = ['10']
 
         # add options from the test .cfg file if set
-        jd = sutc.add_tc_params_to_jd(tc=tc, jd=jd)
+        tools.configure_jd (cfg, jd)
 
         j = js.create_job(jd)
 
         j.run()
         j.cancel()
-        assert j.state == saga.job.CANCELED
+        assert j.state == rs.job.CANCELED
 
-    except saga.NotImplemented as ni:
-            assert tc.notimpl_warn_only, "%s " % ni
-            if tc.notimpl_warn_only:
-                print "%s " % ni
-    except saga.SagaException as se:
-        assert False, "Unexpected exception: %s" % se
+    except rs.SagaException as e:
+        tools.assert_exception (cfg, e)
+
     finally:
-        _silent_close_js(js)
+        tools.silent_cancel (j)
 
 
 # ------------------------------------------------------------------------------
 #
-def test_job_run_many():
+def test_job_run_many(job_service, cfg, tools):
     """ Run a bunch of jobs concurrently via the same job service.
     """
     NUM_JOBS = 32
 
-    js   = None
+    js   = job_service
     jobs = []
     try:
 
-        tc = testing.get_test_config ()
-        js = saga.job.Service(tc.job_service_url, tc.session)
-        jd = saga.job.Description()
+        jd = rs.job.Description()
         jd.executable = '/bin/sleep'
-        jd.arguments = ['60']
+        jd.arguments  = ['60']
 
         # add options from the test .cfg file if set
-        jd = sutc.add_tc_params_to_jd(tc=tc, jd=jd)
+        tools.configure_jd (cfg, jd)
 
         for i in range(0, NUM_JOBS):
             j = js.create_job(jd)
@@ -340,40 +299,30 @@ def test_job_run_many():
         for job in jobs:
             job.run()
 
-        # wait a bit
-        time.sleep(10)
-
         for job in jobs:
             job.cancel()
-            assert job.state == saga.job.CANCELED
+            assert job.state == rs.job.CANCELED
 
-    except saga.NotImplemented as ni:
-            assert tc.notimpl_warn_only, "%s " % ni
-            if tc.notimpl_warn_only:
-                print "%s " % ni
-    except saga.SagaException as se:
-        assert False, "Unexpected exception: %s" % se
+    except rs.SagaException as e:
+        tools.assert_exception (cfg, e)
+
     finally:
-        for j in jobs:
-            _silent_cancel(j)
-        _silent_close_js(js)
+        tools.silent_cancel (jobs)
 
 
 # ------------------------------------------------------------------------------
 #
-def test_get_exit_code():
+def test_get_exit_code(job_service, cfg, tools):
     """ Test job.exit_code
     """
-    js = None
+    js = job_service
     j  = None
     try:
-        tc = testing.get_test_config ()
-        js = saga.job.Service(tc.job_service_url, tc.session)
-        jd = saga.job.Description()
+        jd = rs.job.Description()
         jd.executable = "/bin/sleep"
 
         # add options from the test .cfg file if set
-        jd = sutc.add_tc_params_to_jd(tc=tc, jd=jd)
+        tools.configure_jd (cfg, jd)
 
         j = js.create_job(jd)
         j.run()
@@ -382,15 +331,11 @@ def test_get_exit_code():
         ec = j.exit_code
         assert ec == 1, "%s != 1" % ec
 
-    except saga.NotImplemented as ni:
-        assert tc.notimpl_warn_only, "%s " % ni
-        if tc.notimpl_warn_only:
-            print "%s " % ni
-    except saga.SagaException as se:
-        assert False, "Unexpected exception: %s" % se
+    except rs.SagaException as e:
+        tools.assert_exception (cfg, e)
+
     finally:
-        _silent_cancel(j)
-        _silent_close_js(js)
+        tools.silent_cancel (j)
 
 
 # ------------------------------------------------------------------------------
@@ -402,8 +347,8 @@ def test_get_stdio():
     j  = None
     try:
         tc = testing.get_test_config ()
-        js = saga.job.Service(tc.job_service_url, tc.session)
-        jd = saga.job.Description()
+        js = rs.job.Service(tc.job_service_url, tc.session)
+        jd = rs.job.Description()
         jd.pre_exec   = ['echo pre' ]
         jd.executable = 'sh'
         jd.arguments  = ['-c', '"echo out; echo err 1>&2"']
@@ -428,11 +373,11 @@ def test_get_stdio():
         assert 'out'  in j.stdout
         assert 'err'  in j.stderr
 
-    except saga.NotImplemented as ni:
+    except rs.NotImplemented as ni:
         assert tc.notimpl_warn_only, "%s " % ni
         if tc.notimpl_warn_only:
             print "%s " % ni
-    except saga.SagaException as se:
+    except rs.SagaException as se:
         assert False, "Unexpected exception: %s" % se
     finally:
         _silent_cancel(j)
@@ -441,50 +386,43 @@ def test_get_stdio():
 
 # ------------------------------------------------------------------------------
 #
-def test_get_service_url():
+def test_get_service_url(job_service,cfg, tools):
     """ Test if job.service_url == Service.url
     """
-    js = None
+    js = job_service
     try:
-        tc = testing.get_test_config ()
-        js = saga.job.Service(tc.job_service_url, tc.session)
-        jd = saga.job.Description()
+        jd = rs.job.Description()
         jd.executable = '/bin/sleep'
         jd.arguments = ['10']
 
         # add options from the test .cfg file if set
-        jd = sutc.add_tc_params_to_jd(tc=tc, jd=jd)
+        tools.configure_jd (cfg, jd)
 
         j = js.create_job(jd)
 
         assert j.service_url == js.url
 
-    except saga.NotImplemented as ni:
-            assert tc.notimpl_warn_only, "%s " % ni
-            if tc.notimpl_warn_only:
-                print "%s " % ni
-    except saga.SagaException as se:
-        assert False, "Unexpected exception: %s" % se
+    except rs.SagaException as e:
+        tools.assert_exception (cfg, e)
+
     finally:
-        _silent_close_js(js)
+        tools.silent_cancel (j)
 
 
 # ------------------------------------------------------------------------------
 #
-def test_get_id():
+def test_get_id(job_service, cfg, tools):
     """ Test job.get_id() / job.id
     """
-    js = None
+    js = job_service
     j  = None
     try:
-        tc = testing.get_test_config ()
-        js = saga.job.Service(tc.job_service_url, tc.session)
-        jd = saga.job.Description()
+        jd = rs.job.Description()
         jd.executable = '/bin/sleep'
         jd.arguments = ['10']
 
         # add options from the test .cfg file if set
-        jd = sutc.add_tc_params_to_jd(tc=tc, jd=jd)
+        tools.configure_jd (cfg, jd)
 
         j = js.create_job(jd)
         j.run()
@@ -492,40 +430,32 @@ def test_get_id():
         assert j.id is not None
         assert j.id == j.get_id()
 
-    except saga.NotImplemented as ni:
-        assert tc.notimpl_warn_only, "%s " % ni
-        if tc.notimpl_warn_only:
-            print "%s " % ni
-    except saga.SagaException as se:
-        assert False, "Unexpected exception: %s" % se
+    except rs.SagaException as e:
+        tools.assert_exception (cfg, e)
+
     finally:
-        _silent_cancel(j)
-        _silent_close_js(js)
+        tools.silent_cancel (j)
 
 
-# if __name__ == '__main__' :
-# 
-#     def cb (obj, metric, ctx) :
-#         print " -----------------"
-#         print obj.state
-#         print " ================="
-#         return True
-# 
-#     js = saga.job.Service('fork://localhost')
-#     jd = saga.job.Description()
-#     jd.executable = '/bin/sleep'
-#     jd.arguments = ['20']
-#     j = js.create_job(jd)
-#     j.add_callback ('state', cb)
-#     j.run()
-# 
-#     j.suspend()
-#     assert j.state == saga.job.SUSPENDED
-#     assert j.state == j.get_state()
-# 
-# 
-#     j.resume()
-#     assert j.state == saga.job.RUNNING
-#     assert j.state == j.get_state()
-#     time.sleep (20)
+# ------------------------------------------------------------------------------
+#
+if __name__ == '__main__':
+
+    test_job_service_get_url()
+    test_job_service_invalid_url()
+    test_job_service_create()
+    test_job_service_get_session()
+    test_job_run()
+    test_job_wait()
+    test_job_multiline_run()
+    test_job_suspend_resume()
+    test_job_cancel()
+    test_job_run_many()
+    test_get_exit_code()
+    test_get_stdio()
+    test_get_service_url()
+    test_get_id()
+
+
+# ------------------------------------------------------------------------------
 

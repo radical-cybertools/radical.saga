@@ -4,21 +4,11 @@ __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
 
-import saga.exceptions as se
-from   saga.url import Url
+import radical.saga.exceptions as se
+from   radical.saga.url import Url
 
 import radical.utils as ru
 
-
-def test_wrong_type():
-    """ Test that the right execption is thrown if Url is not initialized
-        properly. 
-    """
-    try:
-        u = Url({'bad':'idea'})
-        assert False
-    except se.BadParameter, ex:
-        assert True
 
 # -------------------------------------------------------------------------
 #
@@ -79,8 +69,8 @@ def test_url_properties():
 
    url.scheme = "scheme"
    url.host   = "host"
-   assert str(url)           == "scheme://host":,   "unexpected url" 
-   assert url.get_host()     == "host",             "unexpected host")      
+   assert str(url)           == "scheme://host",    "unexpected url" 
+   assert url.get_host()     == "host",             "unexpected host"
    
    url.set_host("thost")
    assert url.get_host()     == "thost",            "unexpected host" 
@@ -95,7 +85,7 @@ def test_url_properties():
 
    url.port     = 42
    url.username = "username"
-   assert str(url)           == "scheme://username@host:42":, "unexpected url" 
+   assert str(url)           == "scheme://username@host:42", "unexpected url" 
    assert url.get_username() == "username",         "unexpected username"
    
    url.set_username("tusername")
@@ -112,7 +102,7 @@ def test_url_properties():
    url.password = "password"
    url.path     = "/path/"
    assert str(url)           == "scheme://username:password@host:42/path/", "unexpected url" 
-   assert url.get_path()     == "/path",            "unexpected path"
+   assert url.get_path()     == "/path/",           "unexpected path %s" % url.get_path()
 
    url.set_path("tpath")
    assert url.get_path()     == "/tpath",           "unexpected path" 

@@ -1,0 +1,15 @@
+
+{ 
+    # Purge temporary job information for all jobs which are older than a number
+    # of days.  The number of days can be configured with <purge_older_than>.
+    "purge_on_start" : true,
+
+    # When <purge_on_start> is enabled this specifies the number of days to
+    # consider a temporary file older enough to be deleted.
+    "purge_older_than" : 30, 
+
+    # The adaptor stores job state information on the filesystem on the target
+    # resource.  This parameter specified what location should be used.
+    "base_workdir" : "${HOME}/.radical/saga/adaptors/sge_job/"
+}
+

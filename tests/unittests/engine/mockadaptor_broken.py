@@ -7,15 +7,15 @@ __license__   = "MIT"
 """ Unit test mock adaptor for saga.engine.engine.py
 """
 
-from   saga.utils.singleton import Singleton
+from   radical,utils import Singleton
 
-import saga.adaptors.cpi.base
-import saga.adaptors.cpi.job
+import radical.saga.adaptors.cpi.base
+import radical.saga.adaptors.cpi.job
 
 import radical.utils as ru
 
 
-_ADAPTOR_NAME        = 'saga.adaptor.mock'
+_ADAPTOR_NAME        = 'radical.saga.adaptor.mock'
 _ADAPTOR_SCHEMAS     = ['mock']
 _ADAPTOR_DOC         = {}
 _ADAPTOR_CAPABILITES = {}
@@ -25,20 +25,20 @@ _ADAPTOR_INFO        = {
     'version'        : '1.0',
     'schemas'        : _ADAPTOR_SCHEMAS,
     'cpis'           : [{ 
-        'type'       : 'saga.job.Job',
+        'type'       : 'radical.saga.job.Job',
         'class'      : 'MockJob'
         }
     ]
 }
 
 
-class Adaptor (saga.adaptors.base.Base):
+class Adaptor (radical.saga.adaptors.base.Base):
 
     __metaclass__ = Singleton
 
     def __init__ (self) :
 
-        saga.adaptors.base.Base.__init__ (self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS) 
+        radical.saga.adaptors.base.Base.__init__ (self, _ADAPTOR_INFO) 
 
 
     def sanity_check (self) :
@@ -51,7 +51,7 @@ class Adaptor (saga.adaptors.base.Base):
 
 
 
-class MockJob (saga.adaptors.cpi.job.Job) :
+class MockJob (radical.saga.adaptors.cpi.job.Job) :
 
     def __init__ (self, api, adaptor) :
 

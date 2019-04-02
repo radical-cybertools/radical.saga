@@ -7,8 +7,9 @@ __license__   = "MIT"
 
 import os
 import sys
-import saga
 import time
+
+import radical.saga as rs
 
 
 """  
@@ -144,14 +145,14 @@ def usage (msg = None) :
 #
 def state2str (state) :
 
-    if state == saga.resource.UNKNOWN  : return "UNKNOWN"
-    if state == saga.resource.NEW      : return "NEW   "
-    if state == saga.resource.PENDING  : return "PENDING"
-    if state == saga.resource.ACTIVE   : return "ACTIVE"
-    if state == saga.resource.CANCELED : return "CANCELED"
-    if state == saga.resource.EXPIRED  : return "EXPIRED"
-    if state == saga.resource.DONE     : return "DONE  "
-    if state == saga.resource.FAILED   : return "FAILED"
+    if state == rs.resource.UNKNOWN  : return "UNKNOWN"
+    if state == rs.resource.NEW      : return "NEW   "
+    if state == rs.resource.PENDING  : return "PENDING"
+    if state == rs.resource.ACTIVE   : return "ACTIVE"
+    if state == rs.resource.CANCELED : return "CANCELED"
+    if state == rs.resource.EXPIRED  : return "EXPIRED"
+    if state == rs.resource.DONE     : return "DONE  "
+    if state == rs.resource.FAILED   : return "FAILED"
 
 
 
@@ -166,11 +167,11 @@ if not 'EC2_SECRET_KEY' in os.environ : usage ("no %s in environment" % 'EC2_SEC
 if not 'EC2_KEYPAIR_ID' in os.environ : usage ("no %s in environment" % 'EC2_KEYPAIR_ID')
 if not 'EC2_KEYPAIR'    in os.environ : usage ("no %s in environment" % 'EC2_KEYPAIR'   )
 
-server = saga.Url(os.environ['EC2_URL'])
+server = rs.Url(os.environ['EC2_URL'])
 
 
 # in order to connect to EC2, we need an EC2 ID and KEY
-c1 = saga.Context ('ec2')
+c1 = rs.Context ('ec2')
 c1.user_id  = os.environ['EC2_ACCESS_KEY']
 c1.user_key = os.environ['EC2_SECRET_KEY']
 c1.server   = server
@@ -180,7 +181,7 @@ c1.server   = server
 # If the keypair is not yet registered on EC2, it will be registered by SAGA
 # -- but then a user_key *must* be specified (only the public key is ever
 # transfererd to EC2).
-c2 = saga.Context ('ec2_keypair')
+c2 = rs.Context ('ec2_keypair')
 c2.token     = os.environ['EC2_KEYPAIR_ID']
 c2.user_cert = os.environ['EC2_KEYPAIR']
 c2.user_id   = 'ubuntu'         # the user id on the target VM
@@ -189,12 +190,12 @@ c2.server    = server
 # we create a session for all SAGA interactions, and attach the respective
 # security contexts.  Those are now avail for all SAGA objects created in
 # that session
-s = saga.Session (False)  # FALSE: don't use any other (default) contexts
+s = rs.Session (False)  # FALSE: don't use any other (default) contexts
 s.contexts.append (c1)
 s.contexts.append (c2)
 
 # in this session, connect to the EC2 resource manager
-rm  = saga.resource.Manager (server, session=s)
+rm  = rs.resource.Manager (server, session=s)
 
 
 # --------------------------------------------------------------------------
@@ -259,7 +260,7 @@ elif  '-c' in args :
 
         # create a resource description with an image and an OS template, out of
         # the ones listed above.  We pick a small VM and a plain Ubuntu image...
-        cd = saga.resource.ComputeDescription ()
+        cd = rs.resource.ComputeDescription ()
         cd.image    = image
         cd.template = 'Small Instance'
 
@@ -292,9 +293,9 @@ elif  '-u' in args :
         print "  state        : %s (%s)"  %  (state2str(cr.state), cr.state_detail)
 
         # make sure the machine is not in final state already
-        if  cr.state in [saga.resource.EXPIRED,
-                         saga.resource.DONE,
-                         saga.resource.FAILED] :
+        if  cr.state in [rs.resource.EXPIRED,
+                         rs.resource.DONE,
+                         rs.resource.FAILED] :
             print "  VM %s is alrady in final state"  %  vm_id
             continue
 
@@ -302,9 +303,9 @@ elif  '-u' in args :
         # is in that state.
         # Note: the careful coder will spot the subtle race condition between the 
         # check above and the check on this line... ;-)
-        if cr.state != saga.resource.ACTIVE :
+        if cr.state != rs.resource.ACTIVE :
           print "  wait for ACTIVE state"
-          cr.wait (saga.resource.ACTIVE)
+          cr.wait (rs.resource.ACTIVE)
 
           # Once a VM comes active, it still needs to boot and setup the ssh
           # daemon to be usable -- we thus wait for a while
@@ -318,7 +319,7 @@ elif  '-u' in args :
         # instance -- that context was created from the ec2_keypair context
         # which was earlier used for VM contextualization.  So we use that
         # session to create a job service instance for that VM:
-        js = saga.job.Service (cr.access, session=s)
+        js = rs.job.Service (cr.access, session=s)
 
         print "running job"
         # all ready: do the deed!
@@ -351,9 +352,9 @@ elif  '-d' in args :
         print "  state        : %s (%s)"  %  (state2str(cr.state), cr.state_detail)
         print "  access       : %s"       %  cr.access
 
-        if cr.state in [saga.resource.EXPIRED,
-                        saga.resource.DONE,
-                        saga.resource.FAILED] :
+        if cr.state in [rs.resource.EXPIRED,
+                        rs.resource.DONE,
+                        rs.resource.FAILED] :
             print "  VM %s is alrady in final state"  %  vm_id
             continue
 

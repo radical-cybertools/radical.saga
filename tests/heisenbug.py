@@ -4,7 +4,7 @@ import sys
 import time
 import logging
 import uuid
-import saga
+import radical.saga as saga
 import pilot
 import traceback
  

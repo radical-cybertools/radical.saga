@@ -4,12 +4,12 @@ __copyright__ = "Copyright 2013, The SAGA Project"
 __license__   = "MIT"
 
 
-""" Test for https://github.com/saga-project/saga-python/issues/133
+""" Test for https://github.com/radical-cybertools/radical.saga/issues/133
 """
 
 import os
 import sys
-import saga
+import radical.saga as saga
 
 print os.environ['PS1']
 
