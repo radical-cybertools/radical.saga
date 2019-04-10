@@ -6,6 +6,29 @@
     https://github.com/radical-cybertools/radical.saga/issues?q=is%3Aissue+is%3Aopen+
 
 
+Version 0.60.0  Release                                               2019-04-10
+--------------------------------------------------------------------------------
+
+  - radicalization! rename saga-python to radical.saga
+  - fix logger levels 
+  - fix issue #661
+  - Adding missing flags for Summit. add test case
+  - fix job.cancel in some corner cases
+  - document missing path normalization 
+  - add support for summit
+  - get hostname from env variable 
+  - clean out unsupported jod description attributes
+  - LSF SMT level now defaults to 1 (summit)
+  - convert to new config file format (json)
+  - get unit tests back in  working order 
+  - gpu support for bridges 
+  - linted, flaked, pepped, cleaned...  a bit... 
+  - make commtransparent flag optional 
+  - remove topology restriction on BW 
+  - sync torque and pbspro, remove deprecated pbs 
+  - make job adaptors uniformely emit EPOCH timestamps 
+
+
 Version 0.50.5                                                        2018-12-19
 --------------------------------------------------------------------------------
 
