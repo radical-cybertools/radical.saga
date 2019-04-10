@@ -71,5 +71,22 @@ Check the Output
 Your output file should now be in /tmp/mysagajob.stdout and contain the 
 string ``Hello from SAGA``.
 
+Coding URLs
+-----------
 
+URLs ``sftp://username:password@hostname:port//some/path`` and
+``sftp://username:password@hostname:port/some/path`` (note the two ``//`` in
+the first URL) are supposed to be the same. However, SAGA may treat them
+diffently due some missing path normalization. URL should be coded with single
+'/' or composed as follow:
+
+.. code-block:: python
+
+    remote_dir_url = saga.Url()
+    remote_dir_url.scheme = 'sftp'
+    remote_dir_url.username = username
+    remote_dir_url.username = $PASSWORD
+    remote_dir_url.host = hostname
+    remote_dir_url.port = port
+    remote_dir_url.path = /some/path
 

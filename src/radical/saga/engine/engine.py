@@ -170,9 +170,9 @@ class Engine(object):
             try :
                 adaptor_module = ru.import_module(module_name)
 
-            except Exception as e:
-                self._logger.exception("skip adaptor %s: import failed: %s"
-                                      % (module_name, e))
+            except Exception:
+                self._logger.warn("skip adaptor %s: import failed",
+                                  module_name, exc_info=True)
                 continue
 
             # we expect the module to have an 'Adaptor' class
@@ -185,14 +185,14 @@ class Engine(object):
                 adaptor_instance = adaptor_module.Adaptor ()
                 adaptor_info     = adaptor_instance.register ()
 
-            except rse.SagaException as e:
-                self._logger.exception("skip adaptor %s: failed t o load '%s'"
-                                      % (module_name, e))
+            except rse.SagaException:
+                self._logger.warn("skip adaptor %s: failed to load",
+                                  module_name, exc_info=True)
                 continue
 
-            except Exception as e:
-                self._logger.exception("skip adaptor %s: init failed: '%s'"
-                                      % (module_name, e))
+            except Exception:
+                self._logger.warn("skip adaptor %s: init failed",
+                                  module_name, exc_info=True)
                 continue
 
 
@@ -203,16 +203,16 @@ class Engine(object):
             try:
                 adaptor_instance.sanity_check ()
 
-            except Exception as e:
-                self._logger.exception("skip adaptor %s: test failed : %s"
-                                      % (module_name, e))
+            except Exception:
+                self._logger.warn("skip adaptor %s: test failed",
+                                  module_name, exc_info=True)
                 continue
 
 
             # check if we have a valid adaptor_info
             if adaptor_info is None :
-                self._logger.debug("skip adaptor %s: invalid adaptor data"
-                                      % module_name)
+                self._logger.warn("skip adaptor %s: invalid adaptor data",
+                                  module_name)
                 continue
 
 
@@ -220,8 +220,8 @@ class Engine(object):
                 'cpis'    not in adaptor_info or \
                 'version' not in adaptor_info or \
                 'schemas' not in adaptor_info    :
-                self._logger.debug("skip adaptor %s: incomplete data"
-                                      % module_name)
+                self._logger.warn("skip adaptor %s: incomplete data",
+                                  module_name)
                 continue
 
 
@@ -237,8 +237,8 @@ class Engine(object):
                 if 'alpha' in adaptor_version.lower() or \
                    'beta'  in adaptor_version.lower()    :
 
-                    self._logger.debug("skip beta adaptor %s (version %s)"
-                                    % (module_name, adaptor_version))
+                    self._logger.warn("skip beta adaptor %s (version %s)",
+                                      module_name, adaptor_version)
                     continue
 
 
@@ -252,27 +252,27 @@ class Engine(object):
                 adaptor_config  = ru.Config('radical.saga', name=adaptor_name)
                 adaptor_enabled = adaptor_config.get('enabled', True)
 
-            except rse.SagaException as e:
-                self._logger.exception("skip adaptor %s: init failed: %s"
-                                      % (module_name, e))
+            except rse.SagaException:
+                self._logger.warn("skip adaptor %s: init failed",
+                                  module_name, exc_info=True)
                 continue
+
             except Exception as e:
-                self._logger.exception("skip adaptor %s: init error : %s"
-                                      % (module_name, e))
+                self._logger.warn("skip adaptor %s: init error",
+                                  module_name, exc_info=True)
                 continue
 
 
             # only load adaptor if it is not disabled via config files
             if not adaptor_enabled:
-                self._logger.info("skip adaptor %s: adaptor not enabled:"
-                                 % (module_name))
+                self._logger.warn("skip adaptor %s: disabled", module_name)
                 continue
 
 
             # check if the adaptor has anything to register
             if 0 == len (adaptor_info['cpis']) :
-                self._logger.debug("skip adaptor %s: adaptor has no cpis"
-                                      % (module_name))
+                self._logger.warn("skip adaptor %s: adaptor has no cpis",
+                                  module_name)
                 continue
 
 
@@ -281,10 +281,10 @@ class Engine(object):
             for cpi_info in adaptor_info['cpis'] :
 
                 # check cpi information details for completeness
-                if  not 'type'    in cpi_info or \
-                    not 'class'   in cpi_info    :
-                    self._logger.info("skip %s cpi: incomplete info detail"
-                                     % (module_name))
+                if  'type'  not in cpi_info or \
+                    'class' not in cpi_info    :
+                    self._logger.warn("skip %s cpi: incomplete info detail",
+                                      module_name)
                     continue
 
 
@@ -296,11 +296,12 @@ class Engine(object):
                 try :
                     cpi_class = getattr (adaptor_module, cpi_cname)
 
-                except Exception as e:
+                except Exception:
                     # this exception likely means that the adaptor does not call
                     # the radical.saga.adaptors.Base initializer (correctly)
-                    self._logger.exception("skip adaptor %s: invalid %s: %s"
-                                % (module_name, cpi_info['class'], str(e)))
+                    self._logger.warn("skip adaptor %s: invalid %s",
+                                      module_name, cpi_info['class'],
+                                      exc_info=True)
                     continue
 
                 # make sure the cpi class is a valid cpi for the given type.
@@ -332,14 +333,14 @@ class Engine(object):
 
                 if  len(cpi_type_nselems) < 3 or \
                     len(cpi_type_nselems) > 4    :
-                    self._logger.debug("skip adaptor %s invalid cpi %s"
-                                     % (module_name, cpi_type))
+                    self._logger.warn("skip adaptor %s invalid cpi %s",
+                                      module_name, cpi_type)
                     continue
 
                 if  cpi_type_nselems[0] != 'radical' and \
                     cpi_type_nselems[1] != 'saga'    :
-                    self._logger.debug ("skip adaptor %s: invalid cpi ns %s"
-                                     % (module_name, cpi_type))
+                    self._logger.warn("skip adaptor %s: invalid cpi ns %s",
+                                      module_name, cpi_type, exc_info=True)
                     continue
 
                 # -> ['radical', 'saga',                    'job', 'Service']
@@ -368,8 +369,8 @@ class Engine(object):
              #      cpi_type_modname = cpi_type_modname_2
              #
              #  if  not cpi_type_modname :
-             #      self._logger.debug ("skip adaptor %s: unknown cpi %s"
-             #                       % (module_name, cpi_type))
+             #      self._logger.warn("skip adaptor %s: unknown cpi %s",
+             #                        module_name, cpi_type, exc_info=True)
              #      sys.exit()
              #      continue
              #
@@ -384,8 +385,9 @@ class Engine(object):
              #              cpi_ok = True
              #
              #  if not cpi_ok :
-             #      self._logger.debug ("skip adaptor %s: no cpi %s (%s)"
-             #                       % (module_name, cpi_class, cpi_type))
+             #      self._logger.warn("skip adaptor %s: no cpi %s (%s)",
+             #                        module_name, cpi_class, cpi_type,
+             #                       exc_info=True)
              #      continue
 
 
@@ -415,9 +417,9 @@ class Engine(object):
 
                     # make sure this tuple was not registered, yet
                     if info in self._adaptor_registry[cpi_type][adaptor_schema]:
-
-                        self._logger.debug("skip adaptor %s: exists %s: %s"
-                                  % (module_name, cpi_class, adaptor_instance))
+                        self._logger.warn("skip adaptor %s: exists %s: %s",
+                                          module_name, cpi_class,
+                                          adaptor_instance, exc_info=True)
                         continue
 
                     self._adaptor_registry[cpi_type] \
