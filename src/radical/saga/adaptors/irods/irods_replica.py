@@ -360,8 +360,7 @@ class Adaptor (rs.adaptors.base.Base):
                     # an empty stack too
                     #
                     # TODO: SAVE THE LIST OF RESOURCES IN A RESOURCE GROUP
-                    while len(cw_result_list) > 0 and \
-                        not line.startswith("-----"):
+                    while cw_result_list and not line.startswith("-----"):
                         line = cw_result_list.pop(0)
 
                     result.append(entry)

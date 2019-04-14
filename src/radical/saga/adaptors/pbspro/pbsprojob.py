@@ -592,7 +592,7 @@ class PBSProJobService (cpi.Service):
         for cmd in self._commands.keys():
 
             ret, out, _ = self.shell.run_sync("which %s " % cmd)
-            if ret != 0:
+            if ret:
                 message = "Error finding PBS tools: %s" % out
                 log_error_and_raise(message, rse.NoSuccess, self._logger)
 
@@ -603,7 +603,7 @@ class PBSProJobService (cpi.Service):
                                            "version": "?"}
                 else:
                     ret, out, _ = self.shell.run_sync("%s --version" % cmd)
-                    if ret != 0:
+                    if ret:
                         message = "Error finding PBS tools: %s" % out
                         log_error_and_raise(message, rse.NoSuccess,
                             self._logger)
@@ -626,7 +626,7 @@ class PBSProJobService (cpi.Service):
         # path that we're logged in to a Cray machine.
         if self.is_cray == "":
             ret, out, _ = self.shell.run_sync('which aprun')
-            if ret != 0:
+            if ret:
                 self.is_cray = ""
             else:
                 self._logger.info("Host '%s' seems to be a Cray machine." \
@@ -651,7 +651,7 @@ class PBSProJobService (cpi.Service):
             ret, out, _ = self.shell.run_sync('unset GREP_OPTIONS; %s -a | grep -E "(np|pcpu|pcpus)[[:blank:]]*=" ' % \
                                                self._commands['pbsnodes']['path'])
 
-        if ret != 0:
+        if ret:
             message = "Error running pbsnodes: %s" % out
             log_error_and_raise(message, rse.NoSuccess, self._logger)
         else:
@@ -711,7 +711,7 @@ class PBSProJobService (cpi.Service):
         if jd.working_directory:
             self._logger.info("Create working directory %s" % jd.working_directory)
             ret, out, _ = self.shell.run_sync("mkdir -p %s" % jd.working_directory)
-            if ret != 0:
+            if ret:
                 # something went wrong
                 message = "Couldn't create working directory - %s" % (out)
                 log_error_and_raise(message, rse.NoSuccess, self._logger)
@@ -729,7 +729,7 @@ class PBSProJobService (cpi.Service):
             """ %  (script, self._commands['qsub']['path'])
         ret, out, _ = self.shell.run_sync(cmdline)
 
-        if ret != 0:
+        if ret:
             # something went wrong
             message = "Error running 'qsub': %s [%s]" % (out, cmdline)
             log_error_and_raise(message, rse.NoSuccess, self._logger)
@@ -824,7 +824,7 @@ class PBSProJobService (cpi.Service):
                  "(ctime)|(start_time)|(stime)|(mtime)'"
                 % (self._commands['qstat']['path'], qstat_flag, pid))
 
-        if ret != 0:
+        if ret:
 
             if reconnect:
                 message = "Couldn't reconnect to job '%s': %s" % (job_id, out)
@@ -986,7 +986,7 @@ class PBSProJobService (cpi.Service):
         ret, out, _ = self.shell.run_sync("%s %s\n"
                     % (self._commands['qdel']['path'], pid))
 
-        if ret != 0:
+        if ret:
             message = "Error canceling job via 'qdel': %s" % out
             log_error_and_raise(message, rse.NoSuccess, self._logger)
 
@@ -1097,10 +1097,10 @@ class PBSProJobService (cpi.Service):
         ret, out, _ = self.shell.run_sync("unset GREP_OPTIONS; %s | grep `whoami`" %
                                           self._commands['qstat']['path'])
 
-        if ret != 0 and len(out) > 0:
+        if ret and out:
             message = "failed to list jobs via 'qstat': %s" % out
             log_error_and_raise(message, rse.NoSuccess, self._logger)
-        elif ret != 0 and len(out) == 0:
+        elif ret and not out:
             # qstat | grep `` exits with 1 if the list is empty
             pass
         else:
