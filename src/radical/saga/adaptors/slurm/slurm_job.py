@@ -20,7 +20,6 @@ import tempfile
 import radical.utils as ru
 
 from ...job           import constants   as c
-from ...              import exceptions  as rse
 from ...utils         import pty_shell   as rsups
 from ...              import job         as api_job
 from ...              import exceptions  as rse
@@ -429,7 +428,7 @@ class SLURMJobService (cpi_job.Service) :
         number_of_processes = jd.as_dict().get(c.NUMBER_OF_PROCESSES)
         processes_per_host  = jd.as_dict().get(c.PROCESSES_PER_HOST)
         output              = jd.as_dict().get(c.OUTPUT, "radical.saga.stdout")
-        error               = jd.as_dict().get(c.ERROR)
+        error               = jd.as_dict().get(c.ERROR,  "radical.saga.stderr")
       # file_transfer       = jd.as_dict().get(c.FILE_TRANSFER)
         wall_time_limit     = jd.as_dict().get(c.WALL_TIME_LIMIT)
         queue               = jd.as_dict().get(c.QUEUE)

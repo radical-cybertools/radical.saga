@@ -273,15 +273,13 @@ def _script_generator(url, logger, jd, ppn, gres, version, is_cray=False,
     if      queue: queue_spec =    queue
     elif jd.queue: queue_spec = jd.queue
 
-    if jd.candidate_hosts:
-        if 'BIG_FLASH' in jd.candidate_hosts:
-            node_properties.append('bigflash')
-        elif len(jd.candidate_hosts) == 1:
-            queue_spec += '@%s' % jd.candidate_hosts[0]
-        else:
-            raise rse.NotImplemented("unsupported candidate_hosts [%s]"
-                                      % jd.candidate_hosts)
-
+    # Parse candidate_hosts
+    #
+    # Node properties are appended to the nodes argument in the resource_list.
+    #
+    # Currently only implemented for "bigflash" on Gordon@SDSC
+    # https://github.com/radical-cybertools/saga-python/issues/406
+    #
     if queue_spec:
         pbs_params += "#PBS -q %s\n" % queue_spec
 
@@ -308,7 +306,7 @@ def _script_generator(url, logger, jd, ppn, gres, version, is_cray=False,
     if jd.total_cpu_count % ppn > 0:
         nnodes += 1
 
-    # We use the ncpus value for systems that need to specify ncpus as multiple of PPN
+    # use ncpus value for systems that need to specify ncpus as multiple of PPN
     ncpus = nnodes * ppn
 
     # Node properties are appended to the nodes argument in the resource_list.
@@ -322,12 +320,11 @@ def _script_generator(url, logger, jd, ppn, gres, version, is_cray=False,
     if jd.candidate_hosts:
         if 'BIG_FLASH' in jd.candidate_hosts:
             node_properties.append('bigflash')
+        elif len(jd.candidate_hosts) == 1:
+            queue_spec += '@%s' % jd.candidate_hosts[0]
         else:
-            raise rse.NotImplemented("This type of 'candidate_hosts' not implemented: '%s'" % jd.candidate_hosts)
-
-    # If we want just a slice of one node
-    if jd.total_cpu_count < ppn:
-        ppn = jd.total_cpu_count
+            raise rse.NotImplemented("unsupported candidate_hosts [%s]"
+                                      % jd.candidate_hosts)
 
     if 'cheyenne'  in url.host.lower() or \
        'cheyenne'  in os.uname()[1].lower():
@@ -595,7 +592,7 @@ class PBSProJobService (cpi.Service):
         for cmd in self._commands.keys():
 
             ret, out, _ = self.shell.run_sync("which %s " % cmd)
-            if ret != 0:
+            if ret:
                 message = "Error finding PBS tools: %s" % out
                 log_error_and_raise(message, rse.NoSuccess, self._logger)
 
@@ -606,13 +603,13 @@ class PBSProJobService (cpi.Service):
                                            "version": "?"}
                 else:
                     ret, out, _ = self.shell.run_sync("%s --version" % cmd)
-                    if ret != 0:
+                    if ret:
                         message = "Error finding PBS tools: %s" % out
                         log_error_and_raise(message, rse.NoSuccess,
                             self._logger)
                     else:
                         # version is reported as: "version: x.y.z"
-                        version = out#.strip().split()[1]
+                        version = out  #.strip().split()[1]
 
                         # add path and version to the command dictionary
                         self._commands[cmd] = {"path":    path,
@@ -621,14 +618,15 @@ class PBSProJobService (cpi.Service):
         self._logger.info("Found PBS tools: %s" % self._commands)
 
         #
-        # TODO: Get rid of this, as I dont think there is any justification that Cray's are special
+        # TODO: Get rid of this, as I dont think there is any 
+        #       justification that Cray's are special
         #
         # let's try to figure out if we're working on a Cray machine.
         # naively, we assume that if we can find the 'aprun' command in the
         # path that we're logged in to a Cray machine.
         if self.is_cray == "":
             ret, out, _ = self.shell.run_sync('which aprun')
-            if ret != 0:
+            if ret:
                 self.is_cray = ""
             else:
                 self._logger.info("Host '%s' seems to be a Cray machine." \
@@ -653,7 +651,7 @@ class PBSProJobService (cpi.Service):
             ret, out, _ = self.shell.run_sync('unset GREP_OPTIONS; %s -a | grep -E "(np|pcpu|pcpus)[[:blank:]]*=" ' % \
                                                self._commands['pbsnodes']['path'])
 
-        if ret != 0:
+        if ret:
             message = "Error running pbsnodes: %s" % out
             log_error_and_raise(message, rse.NoSuccess, self._logger)
         else:
@@ -713,7 +711,7 @@ class PBSProJobService (cpi.Service):
         if jd.working_directory:
             self._logger.info("Create working directory %s" % jd.working_directory)
             ret, out, _ = self.shell.run_sync("mkdir -p %s" % jd.working_directory)
-            if ret != 0:
+            if ret:
                 # something went wrong
                 message = "Couldn't create working directory - %s" % (out)
                 log_error_and_raise(message, rse.NoSuccess, self._logger)
@@ -731,7 +729,7 @@ class PBSProJobService (cpi.Service):
             """ %  (script, self._commands['qsub']['path'])
         ret, out, _ = self.shell.run_sync(cmdline)
 
-        if ret != 0:
+        if ret:
             # something went wrong
             message = "Error running 'qsub': %s [%s]" % (out, cmdline)
             log_error_and_raise(message, rse.NoSuccess, self._logger)
@@ -826,7 +824,7 @@ class PBSProJobService (cpi.Service):
                  "(ctime)|(start_time)|(stime)|(mtime)'"
                 % (self._commands['qstat']['path'], qstat_flag, pid))
 
-        if ret != 0:
+        if ret:
 
             if reconnect:
                 message = "Couldn't reconnect to job '%s': %s" % (job_id, out)
@@ -874,35 +872,39 @@ class PBSProJobService (cpi.Service):
             results = out.split('\n')
             for line in results:
 
-                if line.count('=') == 1:
-                    key, val = line.split('=')
-                    key = key.strip()
-                    val = val.strip()
+                if '=' in line:
+                    k, v = line.split('=', 1)
+                    k    = k.strip()
+                    v    = v.strip()
 
-                    if   key in ['job_state'  ]: job_state = val 
-                    elif key in ['job_name'   ]: job_info['name'] = val
-                    elif key in ['exit_status',  # TORQUE / PBS Pro
-                                 'Exit_status']: job_info['returncode' ] = int(val)
-                    elif key in ['exec_host'  ]: job_info['exec_hosts' ] = val.split('+')
-                    elif key in ['start_time',   # TORQUE / PBS Pro
-                                 'stime'      ]: job_info['start_time' ] = val
-                    elif key in ['ctime'      ]: job_info['create_time'] = val
-                    elif key in ['mtime'      ]: job_info['end_time'   ] = val
+                    if   k in ['job_state'  ]: job_state               = v 
+                    elif k in ['job_name'   ]: job_info['name']        = v
+                    elif k in ['exit_status',  # TORQUE / PBS Pro
+                               'Exit_status']: job_info['returncode' ] = int(v)
+                    elif k in ['exec_host'  ]: job_info['exec_hosts' ] = v
+                    elif k in ['start_time',   # TORQUE / PBS Pro
+                               'stime'      ]: job_info['start_time' ] = v
+                    elif k in ['ctime'      ]: job_info['create_time'] = v
+                    elif k in ['mtime'      ]: job_info['end_time'   ] = v
 
-                  # FIXME: qstat will not tell us time zones, so we cannot convert to
-                  #        EPOCH (which is UTC).  We thus take times ourself.
-                  #        A proper solution would be to either do the time
-                  #        conversion on the target host, or to inspect time
-                  #        zone settings on the host.
+                  # FIXME: qstat will not tell us time zones, so we cannot
+                  #        convert to EPOCH (which is UTC).  We thus take times
+                  #        ourself.  A proper solution would be to either do the
+                  #        time conversion on the target host, or to inspect
+                  #        time zone settings on the host.
                   #
-                  # # PBS Pro doesn't provide "end time", but
-                  # # "resources_used.walltime" could be added up to the start
-                  # # time.  Alternatively, we can use mtime, (latest
-                  # # modification time) which is generally also end time.
-                  # # TORQUE has an "comp_time" (completion? time), that is
-                  # # generally the same as mtime.
-                  # #
-                  # # For now we  use mtime for both TORQUE and PBS Pro.
+                  # NOTE:  PBS Pro doesn't provide "end time", but 
+                  #        "resources_used.walltime" could be added up to the
+                  #        start time.  Alternatively, we can use mtime, (latest
+                  #        modification time) which is generally also end time.
+                  #        TORQUE has an "comp_time" (completion? time), that is
+                  #        generally the same as mtime.
+                  #
+                  #        For now we use mtime for both TORQUE and PBS Pro.
+
+            # split exec hosts list if set
+            if job_info['exec_hosst']:
+                job_info['exec_hosts'] = job_info['exec_hosts'].split('+')
 
             # TORQUE doesn't allow us to distinguish DONE/FAILED on final state
             # alone, we need to consider the exit_status.
@@ -981,10 +983,10 @@ class PBSProJobService (cpi.Service):
         """
         rm, pid = self._adaptor.parse_id(job_id)
 
-        ret, out, _ = self.shell.run_sync("%s %s\n" \
-            % (self._commands['qdel']['path'], pid))
+        ret, out, _ = self.shell.run_sync("%s %s\n"
+                    % (self._commands['qdel']['path'], pid))
 
-        if ret != 0:
+        if ret:
             message = "Error canceling job via 'qdel': %s" % out
             log_error_and_raise(message, rse.NoSuccess, self._logger)
 
@@ -1095,10 +1097,10 @@ class PBSProJobService (cpi.Service):
         ret, out, _ = self.shell.run_sync("unset GREP_OPTIONS; %s | grep `whoami`" %
                                           self._commands['qstat']['path'])
 
-        if ret != 0 and len(out) > 0:
+        if ret and out:
             message = "failed to list jobs via 'qstat': %s" % out
             log_error_and_raise(message, rse.NoSuccess, self._logger)
-        elif ret != 0 and len(out) == 0:
+        elif ret and not out:
             # qstat | grep `` exits with 1 if the list is empty
             pass
         else:
@@ -1146,7 +1148,7 @@ class PBSProJobService (cpi.Service):
             job.cancel (timeout)
 
 
-###############################################################################
+# ------------------------------------------------------------------------------
 #
 class PBSProJob (cpi.Job):
     """ implements cpi.Job
@@ -1191,7 +1193,8 @@ class PBSProJob (cpi.Job):
             return api.NEW
 
         return self.js._job_get_state(job_id=self._id)
-            
+
+
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
@@ -1311,4 +1314,6 @@ class PBSProJob (cpi.Job):
         """
         return self.jd
 
+
+# ------------------------------------------------------------------------------
 
