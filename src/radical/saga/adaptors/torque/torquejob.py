@@ -519,7 +519,7 @@ class Adaptor (a_base.Base):
         a_base.Base.__init__(self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
 
         self.id_re = re.compile('^\[(.*)\]-\[(.*?)\]$')
-        self.epoch = datetime.datetime(1970,1,1)
+        self.epoch = datetime.datetime(1970, 1, 1)
 
 
     # ----------------------------------------------------------------
@@ -634,10 +634,11 @@ class TORQUEJobService (cpi.Service):
         # these are the commands that we need in order to interact with PBS.
         # the adaptor will try to find them during initialize(self) and bail
         # out in case they are note available.
-        self._commands = {'pbsnodes': dict(),
-                          'qstat':    dict(),
-                          'qsub':     dict(),
-                          'qdel':     dict()}
+        self._commands = {'pbsnodes': None,
+                          'qstat':    None,
+                          'qsub':     None,
+                          'qdel':     None, 
+                          'checkjob': None}
 
         self.shell = rsups.PTYShell(pty_url, self.session)
 
@@ -654,38 +655,23 @@ class TORQUEJobService (cpi.Service):
 
         # check if all required pbs tools are available
         ret, out, _ = self.shell.run_sync("qstat --version")
+
         if ret:
             message = "Error finding PBS tools: %s" % out
             log_error_and_raise(message, rse.NoSuccess, self._logger)
-        version = out.strip()
-        self._logger.info("Found PBS version: %s" % version)
 
-        for cmd in self._commands.keys():
+        self._pbs_version = out.strip()
+        self._logger.info("Found PBS version: %s" % self._pbs_version)
+
+        for cmd in self._commands:
+
             ret, out, _ = self.shell.run_sync("which %s " % cmd)
-            if ret:
-                message = "Error finding PBS tools: %s" % out
-                log_error_and_raise(message, rse.NoSuccess, self._logger)
-            else:
-                path = out.strip()  # strip removes newline
-                if cmd == 'qdel':   # qdel doesn't support --version!
-                    self._commands[cmd] = {"path":    path,
-                                           "version": "?"}
-                elif cmd == 'qsub':  # qsub doesn't always support --version!
-                    self._commands[cmd] = {"path":    path,
-                                           "version": "?"}
-                else:
-                    ret, out, _ = self.shell.run_sync("%s --version" % cmd)
-                    if ret != 0:
-                        message = "Error finding PBS tools: %s" % out
-                        log_error_and_raise(message, rse.NoSuccess,
-                            self._logger)
-                    else:
-                        # version is reported as: "version: x.y.z"
-                        version = out  # .strip().split()[1]
 
-                        # add path and version to the command dictionary
-                        self._commands[cmd] = {"path":    path,
-                                               "version": version}
+            if ret:
+                self._logger.warn("missing PBS tool %s: %s" % (cmd, out))
+                continue
+
+            self._commands[cmd] = out.strip()  # strip removes newline
             self._logger.info("Found PBS %s: %s" % (cmd, out.strip()))
 
 
@@ -715,15 +701,15 @@ class TORQUEJobService (cpi.Service):
 
         # TODO: this is quite a hack. however, it *seems* to work quite
         #       well in practice.
-        if any(ver in  self._commands['qstat']['version']
+        if any(ver in  self._pbs_version
                    for ver in ('PBSPro_13', 'PBSPro_12', 'PBSPro_11.3')):
             ret, out, _ = self.shell.run_sync('unset GREP_OPTIONS; %s -a '
                           '| grep -E "resources_available.ncpus"'
-                          % self._commands['pbsnodes']['path'])
+                          % self._commands['pbsnodes'])
         else:
             ret, out, _ = self.shell.run_sync('unset GREP_OPTIONS; %s -a '
                           '| grep -E "(np|pcpu|pcpus)[[:blank:]]*=" '
-                          % self._commands['pbsnodes']['path'])
+                          % self._commands['pbsnodes'])
 
         if ret != 0:
             message = "Error running pbsnodes: %s" % out
@@ -774,7 +760,7 @@ class TORQUEJobService (cpi.Service):
             script = _script_generator(url=self.rm, logger=self._logger,
                                    jd=jd, ppn=self.ppn, gpn=self.gpn, 
                                    gres=self.gres,
-                                   version=self._commands['qstat']['version'],
+                                   version=self._pbs_version,
                                    is_cray=self.is_cray, queue=self.queue
                                    )
 
@@ -804,7 +790,7 @@ class TORQUEJobService (cpi.Service):
             &&  echo "%s" > $SCRIPTFILE \\
             &&  %s $SCRIPTFILE \\
             &&  rm -f $SCRIPTFILE
-            """ %  (script, self._commands['qsub']['path'])
+            """ %  (script, self._commands['qsub'])
         ret, out, _ = self.shell.run_sync(cmdline)
 
         if ret != 0:
@@ -887,27 +873,137 @@ class TORQUEJobService (cpi.Service):
             }
 
         rm, pid = self._adaptor.parse_id(job_id)
+        ok = False
 
-        # run the PBS 'qstat' command to get some infos about our job
-        # TODO: create a PBSPRO/TORQUE flag once
-      # if 'PBSPro_1' in self._commands['qstat']['version']:
-      #     qstat_flag = '-f'
-      # else:
-      #     qstat_flag = '-f1'
-        qstat_flag = '-f1'
+        if not ok:
 
-        ret, out, _ = self.shell.run_sync("unset GREP_OPTIONS; %s %s %s | "
-                "grep -E -i '(job_state)|(exec_host)|(exit_status)|"
-                 "(ctime)|(start_time)|(stime)|(mtime)'"
-                % (self._commands['qstat']['path'], qstat_flag, pid))
+            # try `qstat`
+            # TODO: move to config file
+            #       if 'PBSPro_1' in self._pbs_version:
+            qstat_flag = '-f1'
 
-        if ret != 0:
+            ret, out1, err1 = self.shell.run_sync("unset GREP_OPTIONS; %s %s %s | "
+                    "grep -E -i '(job_state)|(exec_host)|(exit_status)|"
+                     "(ctime)|(start_time)|(stime)|(mtime)'"
+                    % (self._commands['qstat'], qstat_flag, pid))
 
-            if reconnect:
-                message = "Couldn't reconnect to job '%s': %s" % (job_id, out)
-                log_error_and_raise(message, rse.NoSuccess, self._logger)
+            if ret != 0:
+                self._logger.warn('qstat failed with: %s', err1)
 
-            if "Unknown Job Id" in out:
+            else:
+
+                # qstat worked - parse output
+                ok = True
+
+                # the result should look something like this:
+                #     job_state = C
+                #     exec_host = i72/0
+                #     exit_status = 0
+                for line in out1.split('\n'):
+
+                    if '=' not in line:
+                        continue
+
+                    key, val = line.split('=', 1)
+                    key = key.strip().lower
+                    val = val.strip()
+
+                    if   key in ['job_state'  ]: job_state = val 
+                    elif key in ['job_name'   ]: job_info['name'] = val
+                    elif key in ['exit_status']: job_info['returncode' ] = int(val)
+                    elif key in ['exec_host'  ]: job_info['exec_hosts' ] = val.split('+')
+                                                 # format i73/7+i73/6+...
+
+                  # FIXME: qstat will not tell us time zones, so we cannot
+                  #        convert to EPOCH (which is UTC).  We thus take
+                  #        times ourself.  A proper solution would be to
+                  #        either do the time conversion on the target host,
+                  #        or to inspect time zone settings on the host.
+                  #
+                  # # PBS Pro doesn't provide "end time", but
+                  # # "resources_used.walltime" could be added up to the
+                  # # start time.  Alternatively, we can use mtime, (latest
+                  # # modification time) which is generally also end time.
+                  # # TORQUE has an "comp_time" (completion? time), that is
+                  # # generally the same as mtime.  # # For now we  use
+                  # mtime for both TORQUE and PBS Pro.
+
+                    elif key in ['start_time',  # TORQUE / PBS Pro
+                                 'stime'      ]: job_info['start_time' ] = val
+                    elif key in ['ctime'      ]: job_info['create_time'] = val
+                    elif key in ['mtime'      ]: job_info['end_time'   ] = val
+
+
+        if not ok:
+
+            # qstat failed - try `checkjob`
+            ret, out2, err2 = self.shell.run_sync("%s %s"
+                    % (self._commands['checkjob'], pid))
+
+            if ret != 0:
+                self._logger.warn('checkjob failed with: %s', err2)
+
+            else:
+
+                # checkjob worked - parse result
+                ok = True
+
+                # the result should look something like this:
+                #     job 4683422
+                #     
+                #     AName: titan.qsub
+                #     State: Running
+                #     Creds:  user:merzky1  group:merzky1  account:BIP149 \
+                #             class:debug  qos:smallplcmnt
+                #     WallTime:   00:00:52 of 00:05:00
+                #     SubmitTime: Mon Apr 29 06:38:53 
+                #     ...
+                #
+                # See also parse comments on qstat values
+                # FIXME: exec host parsing
+                # FIXME: missing start time (should be computed from walltime)
+                for line in out2.split('\n'):
+
+                    if not ':' in line:
+                        continue
+
+                    key, val = line.split(':', 1)
+                    key = key.strip().lower()
+                    val = val.strip()
+
+                    if   key in ['state'     ]: job_state               = val 
+                    elif key in ['aname'     ]: job_info['name']        = val 
+                    elif key in ['submittime']: job_info['create_time'] = val
+
+                    elif key in ['completion code']:
+                        job_info['end_time'  ] = str(val.split(':',1)[1])
+                        job_info['returncode'] = int(val.split(     )[0])
+
+        if ok:
+
+            # we did get some information - see if we need a state update
+            # TORQUE doesn't allow us to distinguish DONE/FAILED on
+            # final state alone,  we need to consider the exit_status.
+            retcode = job_info.get('returncode', -1)
+            job_info['state'] = _to_saga_jobstate(job_state, retcode)
+
+            # FIXME: workaround for time zone problem described above
+            if job_info['state'] in [api.RUNNING] + api.FINAL \
+                and not job_info['start_time']:
+                job_info['start_time'] = time.time()
+
+            if job_info['state'] in api.FINAL \
+                and not job_info['end_time']:
+                job_info['end_time'] = time.time()
+
+
+        else:
+
+            # both failed - search all output for 'unknown job' or 'invalid job'
+            all_out = '\n'.join([out1, out2, err1, err2])
+
+            if  "unknown job" in all_out.lower() or \
+                "invalid job" in all_out.lower():
 
                 # Let's see if the last known job state was running or pending.
                 # in that case, the job is gone now, which can either mean DONE,
@@ -934,69 +1030,13 @@ class TORQUEJobService (cpi.Service):
                     job_info['end_time'] = time.time()
 
             else:
-                # something went wrong
-                message = "Error retrieving job info via 'qstat': %s" % out
-                log_error_and_raise(message, rse.NoSuccess, self._logger)
-        else:
+                if reconnect:
+                    log_error_and_raise("Couldn't reconnect to '%s'" % job_id,
+                                        rse.NoSuccess, self._logger)
 
-            # The job seems to exist on the backend. let's process some data.
-
-            # TODO: make the parsing "contextual", in the sense that it takes
-            #       the state into account.
-
-            # parse the egrep result. this should look something like this:
-            #     job_state = C
-            #     exec_host = i72/0
-            #     exit_status = 0
-            results = out.split('\n')
-            for line in results:
-
-                if line.count('=') == 1:
-
-                    key, val = line.split('=')
-                    key = key.strip()
-                    val = val.strip()
-
-                    if   key in ['job_state'  ]: job_state = val 
-                    elif key in ['job_name'   ]: job_info['name'] = val
-                    elif key in ['exit_status']: job_info['returncode' ] = int(val)
-                    elif key in ['exec_host'  ]: job_info['exec_hosts' ] = val.split('+')
-                                                 # format i73/7+i73/6+...
-
-
-                  # FIXME: qstat will not tell us time zones, so we cannot
-                  #        convert to EPOCH (which is UTC).  We thus take times
-                  #        ourself.  A proper solution would be to either do the
-                  #        time conversion on the target host, or to inspect
-                  #        time zone settings on the host.
-                  #
-                  # # PBS Pro doesn't provide "end time", but
-                  # # "resources_used.walltime" could be added up to the start
-                  # # time.  Alternatively, we can use mtime, (latest
-                  # # modification time) which is generally also end time.
-                  # # TORQUE has an "comp_time" (completion? time), that is
-                  # # generally the same as mtime.
-                  # #
-                  # # For now we  use mtime for both TORQUE and PBS Pro.
-
-                    elif key in ['start_time',  # TORQUE / PBS Pro
-                                 'stime'      ]: job_info['start_time' ] = val
-                    elif key in ['ctime'      ]: job_info['create_time'] = val
-                    elif key in ['mtime'      ]: job_info['end_time'   ] = val
-
-            # TORQUE doesn't allow us to distinguish DONE/FAILED on
-            # final state alone,  we need to consider the exit_status.
-            retcode = job_info.get('returncode', -1)
-            job_info['state'] = _to_saga_jobstate(job_state, retcode)
-
-            # FIXME: workaround for time zone problem described above
-            if job_info['state'] in [api.RUNNING] + api.FINAL \
-                and not job_info['start_time']:
-                job_info['start_time'] = time.time()
-
-            if job_info['state'] in api.FINAL \
-                and not job_info['end_time']:
-                job_info['end_time'] = time.time()
+                else:
+                    log_error_and_raise("Error retrieving info for %s" % job_id,
+                                        rse.NoSuccess, self._logger)
 
         # return the updated job info
         return job_info
@@ -1063,7 +1103,7 @@ class TORQUEJobService (cpi.Service):
         rm, pid = self._adaptor.parse_id(job_id)
 
         ret, out, _ = self.shell.run_sync("%s %s\n"
-                                       % (self._commands['qdel']['path'], pid))
+                                       % (self._commands['qdel'], pid))
 
         if ret != 0:
             message = "Error canceling job via 'qdel': %s" % out
@@ -1175,7 +1215,7 @@ class TORQUEJobService (cpi.Service):
 
         ret, out, _ = self.shell.run_sync(
                                      "unset GREP_OPTIONS; %s | grep `whoami`"
-                                     % self._commands['qstat']['path'])
+                                     % self._commands['qstat'])
 
         if ret != 0 and len(out) > 0:
             message = "failed to list jobs via 'qstat': %s" % out
