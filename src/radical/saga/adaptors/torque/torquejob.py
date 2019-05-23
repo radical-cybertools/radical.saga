@@ -695,14 +695,14 @@ class TORQUEJobService (cpi.Service):
         # let's try to figure out if we're working on a Cray machine.
         # naively, we assume that if we can find the 'aprun' command in the
         # path that we're logged in to a Cray machine.
-        if self.is_cray == "":
+        if not self.is_cray:
             ret, out, _ = self.shell.run_sync('which aprun')
             if ret != 0:
-                self.is_cray = ""
+                self.is_cray = False
             else:
                 self._logger.info("Host '%s' seems to be a Cray machine." 
                     % self.rm.host)
-                self.is_cray = "unknowncray"
+                self.is_cray = True
         else: 
             self._logger.info("host is cray: %s" % self.is_cray)
 
