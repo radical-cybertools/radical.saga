@@ -331,7 +331,7 @@ class Adaptor (base.Base):
     #
     def __init__ (self) :
 
-        base.Base.__init__ (self, _ADAPTOR_INFO)
+        base.Base.__init__ (self, _ADAPTOR_INFO, expand_env=False)
 
         self.id_re = re.compile ('^\[(.*)\]-\[(.*?)\]$')
 
