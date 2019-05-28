@@ -28,7 +28,7 @@ class Base(object):
     #
     # FIXME: phase out adaptor_options
     #
-    def __init__ (self, adaptor_info, adaptor_options=None) :
+    def __init__ (self, adaptor_info, adaptor_options=None):
 
         # FIXME: engine is loading cfg already, here we load again...
 
@@ -40,7 +40,9 @@ class Base(object):
         self._logger  = ru.Logger('radical.saga.api')
 
 
-        self._cfg     = ru.Config(module='radical.saga', name=self._name)
+        # we need to expand later once we got env from the remote resource
+        self._cfg     = ru.Config(module='radical.saga', name=self._name,
+                                  expand=False)
 
         if 'enabled' not in self._cfg:
             self._cfg['enabled'] = True
