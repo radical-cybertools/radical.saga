@@ -157,8 +157,9 @@ def _to_saga_jobstate(job_state, retcode, logger=None):
     elif job_state == 'X': ret = api.CANCELED  # PBSPro
     else                 : ret = api.UNKNOWN
 
-    logger.debug('check state: %s', job_state)
-    logger.debug('use   state: %s', ret)
+    if logger:
+        logger.debug('check state: %s', job_state)
+        logger.debug('use   state: %s', ret)
 
     return ret
 
@@ -987,7 +988,8 @@ class TORQUEJobService (cpi.Service):
             # TORQUE doesn't allow us to distinguish DONE/FAILED on
             # final state alone,  we need to consider the exit_status.
             retcode = job_info.get('returncode', -1)
-            job_info['state'] = _to_saga_jobstate(job_state, retcode)
+            job_info['state'] = _to_saga_jobstate(job_state, retcode,
+                                                  logger=self._logger)
 
             # FIXME: workaround for time zone problem described above
             if job_info['state'] in [api.RUNNING] + api.FINAL \
