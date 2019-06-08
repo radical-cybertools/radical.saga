@@ -6,11 +6,9 @@ import radical.utils as ru
 
 from ...             import exceptions as rse
 from ...utils        import pty_shell  as sups
-from ...             import url        as rsurl
 from ...adaptors     import base       as rsab
 from ...adaptors.cpi import filesystem as cpi
 from ...             import filesystem as api
-from ...utils        import misc       as rsum
 
 from ...adaptors.cpi.decorators import SYNC_CALL
 
@@ -84,8 +82,8 @@ class Adaptor(rsab.Base):
     """
 
     def __init__(self) :
-        rsab.Base.__init__(self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
 
+        rsab.Base.__init__(self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
         self.pty_url = self._cfg['pty_url']
 
 
