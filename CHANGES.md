@@ -6,7 +6,7 @@
     https://github.com/radical-cybertools/radical.saga/issues?q=is%3Aissue+is%3Aopen+
 
 
-Version 0.60.5  Release                                               2019-06-08
+Version 0.62.0  Release                                               2019-06-08
 --------------------------------------------------------------------------------
 
   - better cray detection 
