@@ -6,6 +6,16 @@
     https://github.com/radical-cybertools/radical.saga/issues?q=is%3Aissue+is%3Aopen+
 
 
+Version 0.60.5  Release                                               2019-06-08
+--------------------------------------------------------------------------------
+
+  - better cray detection 
+  - code improvements
+  - upport srun as (unsccheduled or scheduled) launch method
+  - support tiger @ princeton
+  - remove support for some legacy machines
+ 
+ 
 Version 0.60.0  Release                                               2019-04-10
 --------------------------------------------------------------------------------
 
