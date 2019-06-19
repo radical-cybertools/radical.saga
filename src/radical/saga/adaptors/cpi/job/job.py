@@ -9,7 +9,7 @@ __license__   = "MIT"
 from ..decorators import CPI_SYNC_CALL  as SYNC
 from ..decorators import CPI_ASYNC_CALL as ASYNC
 from ..base       import CPIBase
-from ..async      import Async
+from ..sasync     import Async
 
 
 class Job (CPIBase, Async) :

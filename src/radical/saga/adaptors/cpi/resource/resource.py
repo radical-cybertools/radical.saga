@@ -8,7 +8,7 @@ __license__   = "MIT"
 
 from .. import decorators as cpi_dec
 from .. import base       as cpi_base
-from .. import async      as cpi_async
+from .. import sasync     as cpi_async
 
 
 SYNC  = cpi_dec.CPI_SYNC_CALL
@@ -28,7 +28,7 @@ class Resource (cpi_base.CPIBase, cpi_async.Async) :
 
     @SYNC
     def init_instance             (self, info,    ttype) : pass
-    @ASYNC                                        
+    @ASYNC
     def init_instance_async       (self, info,    ttype) : pass
 
 
@@ -38,17 +38,17 @@ class Resource (cpi_base.CPIBase, cpi_async.Async) :
     #
     @SYNC
     def reconfig           (self, descr,          ttype) : pass
-    @ASYNC                                       
+    @ASYNC
     def reconfig_async     (self, descr,          ttype) : pass
-                           
-    @SYNC                  
+
+    @SYNC
     def destroy            (self,                 ttype) : pass
-    @ASYNC                                                     
+    @ASYNC
     def destroy_async      (self,                 ttype) : pass
-                           
-    @SYNC                  
+
+    @SYNC
     def wait               (self, state, timeout, ttype) : pass
-    @ASYNC                 
+    @ASYNC
     def wait_async         (self, state, timeout, ttype) : pass
 
 
@@ -56,37 +56,37 @@ class Resource (cpi_base.CPIBase, cpi_async.Async) :
     # attribute getters
     @SYNC
     def get_id                 (self, ttype)             : pass
-    @ASYNC                                     
+    @ASYNC
     def get_id_async           (self, ttype)             : pass
-                                               
-    @SYNC                                      
+
+    @SYNC
     def get_rtype              (self, ttype)             : pass
-    @ASYNC                                     
+    @ASYNC
     def get_rtype_async        (self, ttype)             : pass
-                                               
-    @SYNC                                      
+
+    @SYNC
     def get_state              (self, ttype)             : pass
-    @ASYNC                                     
+    @ASYNC
     def get_state_async        (self, ttype)             : pass
-                                               
-    @SYNC                                      
+
+    @SYNC
     def get_state_detail       (self, ttype)             : pass
-    @ASYNC                                     
+    @ASYNC
     def get_state_detail_async (self, ttype)             : pass
-                                               
-    @SYNC                                      
+
+    @SYNC
     def get_access             (self, ttype)             : pass
-    @ASYNC                                     
+    @ASYNC
     def get_access_async       (self, ttype)             : pass
-                                               
-    @SYNC                                      
+
+    @SYNC
     def get_manager            (self, ttype)             : pass
-    @ASYNC                                     
+    @ASYNC
     def get_manager_async      (self, ttype)             : pass
-                                               
-    @SYNC                                      
+
+    @SYNC
     def get_description        (self, ttype)             : pass
-    @ASYNC                                     
+    @ASYNC
     def get_description_async  (self, ttype)             : pass
 
 

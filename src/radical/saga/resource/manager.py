@@ -10,7 +10,7 @@ import radical.utils.signatures    as rus
 from ..constants import SYNC, ASYNC, TASK
 from ..adaptors  import base       as sab
 
-from .. import async               as async
+from .. import sasync              as async
 from .. import task                as st
 from .. import base                as sb
 from .. import session             as ss
@@ -23,7 +23,7 @@ from .  import constants           as c
 
 
 # ------------------------------------------------------------------------------
-# 
+#
 class Manager (sb.Base, async.Async) :
     """
     In the context of RADICAL-SAGA, a *ResourceManager* is a service which
@@ -34,20 +34,20 @@ class Manager (sb.Base, async.Async) :
     This :class:`Manager` class represents the contact point to such
     ResourceManager instances -- the application can thus acquire compute, data
     or network resources, according to some resource specification, for a bound
-    or unbound amount of time. 
+    or unbound amount of time.
     """
 
     # --------------------------------------------------------------------------
-    # 
-    @rus.takes   ('Manager', 
-                  rus.optional (str, ru.Url), 
+    #
+    @rus.takes   ('Manager',
+                  rus.optional (str, ru.Url),
                   rus.optional (ss.Session),
-                  rus.optional (sab.Base), 
-                  rus.optional (dict), 
+                  rus.optional (sab.Base),
+                  rus.optional (dict),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns (rus.nothing)
     def __init__ (self, url=None, session=None,
-                  _adaptor=None, _adaptor_state={}, _ttype=None) : 
+                  _adaptor=None, _adaptor_state={}, _ttype=None) :
         """
         __init__(url)
 
@@ -65,20 +65,20 @@ class Manager (sb.Base, async.Async) :
             session = ss.Session (default=True)
 
         self._base = super  (Manager, self)
-        self._base.__init__ (scheme, _adaptor, _adaptor_state, 
+        self._base.__init__ (scheme, _adaptor, _adaptor_state,
                              _url, session, ttype=_ttype)
 
 
     # --------------------------------------------------------------------------
     #
     @classmethod
-    @rus.takes   ('Manager', 
-                  rus.optional ((ru.Url, str)), 
+    @rus.takes   ('Manager',
+                  rus.optional ((ru.Url, str)),
                   rus.optional (ss.Session),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns (st.Task)
     def create   (cls, url_in=None, session=None, ttype=sc.SYNC) :
-        """ 
+        """
         This is the asynchronous class constructor, returning
         a :class:`saga:Task` instance.  For details on the accepted parameters,
         please see the description of :func:`__init__`.
@@ -88,17 +88,17 @@ class Manager (sb.Base, async.Async) :
 
 
     # --------------------------------------------------------------------------
-    # 
-    @rus.takes   ('Manager', 
+    #
+    @rus.takes   ('Manager',
                   rus.optional (rus.one_of (c.COMPUTE, c.STORAGE, c.NETWORK)),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((rus.list_of (str), st.Task))
     def list     (self, rtype=None, ttype=None) :
-        """ 
+        """
         list(rtype=None)
 
-        List known resource instances (which can be acquired). 
-        Returns a list of IDs.  
+        List known resource instances (which can be acquired).
+        Returns a list of IDs.
 
         :type  rtype: None or enum (COMPUTE | STORAGE | NETWORK)
         :param rtype: filter for one or more resource types
@@ -108,13 +108,13 @@ class Manager (sb.Base, async.Async) :
 
 
     # --------------------------------------------------------------------------
-    # 
-    @rus.takes   ('Manager', 
+    #
+    @rus.takes   ('Manager',
                   rus.optional (str),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((descr.Description, st.Task))
     def get_description (self, rid, ttype=None) :
-        """ 
+        """
         get_description(rid)
 
         Get the resource :class:`Description` for the specified resource.
@@ -123,13 +123,13 @@ class Manager (sb.Base, async.Async) :
         :param rid: identifies the resource to be described.
         """
 
-        # TODO / NOTE: if rid is None, should we return a description of 
-        # the managed resources?  
+        # TODO / NOTE: if rid is None, should we return a description of
+        # the managed resources?
         return self._adaptor.get_description (id, ttype=ttype)
 
     # --------------------------------------------------------------------------
-    # 
-    @rus.takes   ('Manager', 
+    #
+    @rus.takes   ('Manager',
                   rus.optional (rus.one_of (c.COMPUTE, c.STORAGE, c.NETWORK)),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((rus.list_of (str), st.Task))
@@ -148,8 +148,8 @@ class Manager (sb.Base, async.Async) :
 
 
     # --------------------------------------------------------------------------
-    # 
-    @rus.takes   ('Manager', 
+    #
+    @rus.takes   ('Manager',
                   rus.optional (str),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((descr.Description, st.Task))
@@ -173,8 +173,8 @@ class Manager (sb.Base, async.Async) :
 
 
     # --------------------------------------------------------------------------
-    # 
-    @rus.takes   ('Manager', 
+    #
+    @rus.takes   ('Manager',
                   rus.optional (rus.one_of (c.COMPUTE, c.STORAGE, c.NETWORK)),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((rus.list_of (str), st.Task))
@@ -192,8 +192,8 @@ class Manager (sb.Base, async.Async) :
 
 
     # --------------------------------------------------------------------------
-    # 
-    @rus.takes   ('Manager', 
+    #
+    @rus.takes   ('Manager',
                   str,
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((dict, st.Task))
@@ -211,8 +211,8 @@ class Manager (sb.Base, async.Async) :
 
 
     # --------------------------------------------------------------------------
-    # 
-    @rus.takes   ('Manager', 
+    #
+    @rus.takes   ('Manager',
                   (str, ru.Url, descr.Description),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((resrc.Resource, st.Task))
@@ -220,7 +220,7 @@ class Manager (sb.Base, async.Async) :
         """
         acquire(desc)
 
-        Create a new :class:`saga.resource.Resource` handle for a 
+        Create a new :class:`saga.resource.Resource` handle for a
         resource specified by the description.
 
         :type  spec: :class:`Description` or Url
@@ -229,9 +229,9 @@ class Manager (sb.Base, async.Async) :
         Depending on the `RTYPE` attribute in the description, the
         returned resource may be a :class:`saga.resource.Compute`,
         :class:`saga.resource.Storage` or :class:`saga.resource.Network`
-        instance. 
+        instance.
 
-        If the `spec` parameter is 
+        If the `spec` parameter is
         """
 
         if  isinstance (spec, ru.Url) or \
@@ -252,8 +252,8 @@ class Manager (sb.Base, async.Async) :
 
 
     # --------------------------------------------------------------------------
-    # 
-    @rus.takes   ('Manager', 
+    #
+    @rus.takes   ('Manager',
                   str,
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((rus.nothing, st.Task))
@@ -261,7 +261,7 @@ class Manager (sb.Base, async.Async) :
         """
         destroy(rid)
 
-        Destroy / release a resource. 
+        Destroy / release a resource.
 
         :type  rid   : string
         :param rid   : identifies the resource to be released

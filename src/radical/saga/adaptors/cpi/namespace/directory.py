@@ -6,7 +6,7 @@ __license__   = "MIT"
 
 from .. import decorators as cpi_dec
 from .. import base       as cpi_base
-from .. import async      as cpi_async
+from .. import sasync     as cpi_async
 
 from .  import entry
 
@@ -31,7 +31,7 @@ class Directory (entry.Entry) :
     @SYNC
     def init_instance           (self, url, flags, session)    : pass
     @ASYNC
-    def init_instance_async     (self, url, flags, session)    : pass 
+    def init_instance_async     (self, url, flags, session)    : pass
 
 
     # ----------------------------------------------------------------
