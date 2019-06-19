@@ -3,17 +3,16 @@ __author__    = "Andre Merzky, Ole Weidner"
 __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
-import copy
 
 import radical.utils.signatures as rus
 
-from . import adaptors.base    as sab
-from . import attributes       as sa
-from . import base             as sb
+from .adaptors import base   as sab
+from . import attributes as sa
+from . import base       as sb
 
-from   .constants import TYPE,       SERVER,    USER_CERT,   CERT_REPOSITORY
-from   .constants import USER_PROXY, USER_KEY,  USER_ID,     USER_PASS,   USER_VO
-from   .constants import LIFE_TIME,  REMOTE_ID, REMOTE_HOST, REMOTE_PORT, TOKEN
+from .constants import TYPE,       SERVER,    USER_CERT,   CERT_REPOSITORY
+from .constants import USER_PROXY, USER_KEY,  USER_ID,     USER_PASS,   USER_VO
+from .constants import LIFE_TIME,  REMOTE_ID, REMOTE_HOST, REMOTE_PORT, TOKEN
 
 # ------------------------------------------------------------------------------
 #
@@ -44,7 +43,7 @@ class Context (sb.Base, sa.Attributes) :
         session.add_context(ctx)
 
         # create a job service in this session -- that job service can now
-        # *only* use that ssh context. 
+        # *only* use that ssh context.
         j = saga.job.Service('ssh://remote.host.net/', session=session)
 
 
@@ -65,12 +64,12 @@ class Context (sb.Base, sa.Attributes) :
 
     # --------------------------------------------------------------------------
     #
-    @rus.takes   ('Context', 
-                  str, 
+    @rus.takes   ('Context',
+                  str,
                   rus.optional (sab.Base),
                   rus.optional (dict))
     @rus.returns (rus.nothing)
-    def __init__ (self, ctype, _adaptor=None, _adaptor_state={}) : 
+    def __init__ (self, ctype, _adaptor=None, _adaptor_state={}) :
         '''
         ctype: string
         ret:   None
@@ -134,7 +133,7 @@ class Context (sb.Base, sa.Attributes) :
 
     # --------------------------------------------------------------------------
     #
-    @rus.takes      ('Context', 
+    @rus.takes      ('Context',
                      ('Session', '_DefaultSession'))
     @rus.returns    (rus.nothing)
     def _initialize (self, session) :

@@ -10,10 +10,9 @@ import radical.utils.signatures as rus
 
 from . import exceptions               as se
 
-from . import engine.engine
+from .engine import engine
 from . import context
 from . import base
-
 
 
 # ------------------------------------------------------------------------------
@@ -35,14 +34,13 @@ class _ContextList (list) :
 
         self._session = session
 
-        if  session : 
+        if  session :
             self._logger  = session._logger
         else :
             self._logger  = ru.Logger('radical.saga')
 
         base_list = super  (_ContextList, self)
         base_list.__init__ (*args, **kwargs)
-
 
     # --------------------------------------------------------------------------
     #
@@ -52,7 +50,6 @@ class _ContextList (list) :
 
         # context initialized ok, add it to the list of known contexts
         super (_ContextList, self).append (ctx_clone)
-    
 
     # --------------------------------------------------------------------------
     #
@@ -62,12 +59,12 @@ class _ContextList (list) :
 
         # context initialized ok, add it to the list of known contexts
         super (_ContextList, self).insert (0, ctx_clone)
-    
+
 
     # --------------------------------------------------------------------------
     # Initialise a context to be added to the list of known contexts
     # Returns a cloned, initialised context that can be added to the context
-    # list. 
+    # list.
     def _initialise_context(self, ctx, session=None):
 
         if  not isinstance (ctx, context.Context) :
@@ -100,7 +97,6 @@ class _ContextList (list) :
 
         return ctx_clone
 
-
     # --------------------------------------------------------------------------
     #
     def __deepcopy__(self, memo):
@@ -128,7 +124,7 @@ class Session (base.SimpleBase) :
     which security mechanism should be used for what interaction, and (2) it
     helps SAGA to find security credentials which would be difficult to pick up
     automatically.
-    
+
     The use of a session is as follows:
 
 
@@ -145,7 +141,7 @@ class Session (base.SimpleBase) :
         s.add_context(c)
 
         # create a job service in this session -- that job service can now
-        # *only* use that ssh context. 
+        # *only* use that ssh context.
         j = saga.job.Service('ssh://remote.host.net/', s)
 
 
@@ -156,14 +152,14 @@ class Session (base.SimpleBase) :
 
     A session instance exposes a `context` property, which is a list of
     authentication contexts managed by this session.  As the contexts and the
-    session are stateless, it is safe to modify this list as needed.  
+    session are stateless, it is safe to modify this list as needed.
     """
 
     # FIXME: session deep copy not implemented
 
     # --------------------------------------------------------------------------
     #
-    @rus.takes   ('Session', 
+    @rus.takes   ('Session',
                   rus.optional(bool))
     @rus.returns (rus.nothing)
     def __init__ (self, default=True, uid=None):
@@ -190,9 +186,9 @@ class Session (base.SimpleBase) :
         else :
             self.contexts       = _ContextList (session=self)
 
-            # FIXME: at the moment, the lease manager is owned by the session.  
+            # FIXME: at the moment, the lease manager is owned by the session.
             # Howevwer, the pty layer is the main user of the lease manager,
-            # and we thus keep the lease manager options in the pty subsection.  
+            # and we thus keep the lease manager options in the pty subsection.
             # So here we are, in the session, evaluating the pty config options...
             self._cfg = ru.Config(module='radical.saga')
             self._lease_manager = ru.LeaseManager (
@@ -214,7 +210,7 @@ class Session (base.SimpleBase) :
 
     # ----------------------------------------------------------------
     #
-    @rus.takes      ('Session', 
+    @rus.takes      ('Session',
                      context.Context)
     @rus.returns    (rus.nothing)
     def add_context (self, ctx) :
@@ -223,7 +219,7 @@ class Session (base.SimpleBase) :
         ret:     None
 
         Add a security L{Context} to the session.
-        It is encouraged to use the L{contexts} property instead. 
+        It is encouraged to use the L{contexts} property instead.
         """
 
         return self.contexts.insert (0, ctx=ctx, session=self)
@@ -231,7 +227,7 @@ class Session (base.SimpleBase) :
 
     # ----------------------------------------------------------------
     #
-    @rus.takes   ('Session', 
+    @rus.takes   ('Session',
                   context.Context)
     @rus.returns (rus.nothing)
     def remove_context (self, ctx) :
@@ -254,7 +250,7 @@ class Session (base.SimpleBase) :
     def list_contexts  (self) :
         """
         ret:     list[saga.Context]
-        
+
         Retrieve all L{Context} objects attached to the session.
         It is encouraged to use the L{contexts} property instead.
         """
@@ -282,7 +278,7 @@ class DefaultSession(Session, metaclass=ru.Singleton):
         # adaptors.  To implemented, we have to do some legwork: get the engine,
         # dig through the registered context adaptors, and ask each of them for
         # default contexts.
-        
+
         super(DefaultSession, self).__init__(default=False, uid=uid)
 
         _engine = engine.engine.Engine()
@@ -296,14 +292,14 @@ class DefaultSession(Session, metaclass=ru.Singleton):
 
                 default_ctxs = []
 
-                try : 
+                try :
                     default_ctxs = info['adaptor_instance']._get_default_contexts ()
 
                 except se.SagaException as e :
                     self._logger.debug   ("adaptor %s failed to provide default" \
                                           "contexts: %s" % (info['adaptor_name'], e))
                     continue
-                    
+
 
                 for default_ctx in default_ctxs :
 
