@@ -70,10 +70,10 @@ def main():
             rid = sys.argv[1]
 
             # reconnect to the given resource
-            print 'reconnecting to %s' % rid
+            print('reconnecting to %s' % rid)
             cr = rs.resource.Compute(id=rid, session=session)
-            print 'reconnected  to %s' % rid
-            print "  state : %s (%s)" % (cr.state, cr.state_detail)
+            print('reconnected  to %s' % rid)
+            print("  state : %s (%s)" % (cr.state, cr.state_detail))
 
 
         # ----------------------------------------------------------------------
@@ -96,7 +96,7 @@ def main():
             cr  = rm.acquire(cd)
             rid = cr.id
 
-            print "\nWaiting for VM to become active..."
+            print("\nWaiting for VM to become active...")
 
 
         # ----------------------------------------------------------------------
@@ -107,9 +107,9 @@ def main():
         cr.wait(rs.resource.ACTIVE)
 
         # Query some information about the newly created VM
-        print "Created VM: %s"      %  cr.id
-        print "  state   : %s (%s)" % (cr.state, cr.state_detail)
-        print "  access  : %s"      %  cr.access
+        print("Created VM: %s"      %  cr.id)
+        print("  state   : %s (%s)" % (cr.state, cr.state_detail))
+        print("  access  : %s"      %  cr.access)
 
         # give the VM some time to start up comlpetely, otherwise the subsequent
         # job submission might end up failing...
@@ -125,21 +125,21 @@ def main():
         job = js.create_job(jd)
         job.run()
 
-        print "\nRunning Job: %s" % job.id
-        print "  state : %s" % job.state
+        print("\nRunning Job: %s" % job.id)
+        print("  state : %s" % job.state)
         job.wait()
-        print "  state : %s" % job.state
+        print("  state : %s" % job.state)
 
 
-    except rs.SagaException, ex:
+    except rs.SagaException as ex:
         # Catch all saga exceptions
-        print "An exception occured: (%s) %s " % (ex.type, (str(ex)))
+        print("An exception occured: (%s) %s " % (ex.type, (str(ex))))
         raise
 
 
     except Exception as e:
         # Catch all other exceptions
-        print "An Exception occured: %s " % e
+        print("An Exception occured: %s " % e)
         raise
 
 
@@ -150,8 +150,8 @@ def main():
         # shut VM down (only when id was specified on command line)
         if cr and rid:
             cr.destroy()
-            print "\nDestroyed VM: %s" % cr.id
-            print "  state : %s (%s)" % (cr.state, cr.state_detail)
+            print("\nDestroyed VM: %s" % cr.id)
+            print("  state : %s (%s)" % (cr.state, cr.state_detail))
 
 
 # ------------------------------------------------------------------------------

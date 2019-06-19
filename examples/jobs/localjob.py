@@ -39,21 +39,21 @@ def main():
             touchjob = js.create_job(jd)
 
             # Check our job's id and state
-            print "Job ID    : %s" % (touchjob.id)
-            print "Job State : %s" % (touchjob.state)
+            print("Job ID    : %s" % (touchjob.id))
+            print("Job State : %s" % (touchjob.state))
 
             # Now we can start our job.
-            print "\n...starting job...\n"
+            print("\n...starting job...\n")
             touchjob.run()
 
-            print "Job ID    : %s" % (touchjob.id)
-            print "Job State : %s" % (touchjob.state)
+            print("Job ID    : %s" % (touchjob.id))
+            print("Job State : %s" % (touchjob.state))
 
             # List all jobs that are known by the adaptor.
             # This should show our job as well.
-            print "\nListing active jobs: "
+            print("\nListing active jobs: ")
             for job in js.list():
-                print " * %s" % job
+                print(" * %s" % job)
 
             # Now we disconnect and reconnect to our job by using the get_job()
             # method and our job's id. While this doesn't make a lot of sense
@@ -62,24 +62,24 @@ def main():
             touchjob_clone = js.get_job(touchjob.id)
 
             # wait for our job to complete
-            print "\n...waiting for job...\n"
+            print("\n...waiting for job...\n")
             touchjob_clone.wait()
 
-            print "Job State   : %s" % (touchjob_clone.state)
-            print "Exitcode    : %s" % (touchjob_clone.exit_code)
-            print "Exec. hosts : %s" % (touchjob_clone.execution_hosts)
-            print "Create time : %s" % (touchjob_clone.created)
-            print "Start time  : %s" % (touchjob_clone.started)
-            print "End time    : %s" % (touchjob_clone.finished)
+            print("Job State   : %s" % (touchjob_clone.state))
+            print("Exitcode    : %s" % (touchjob_clone.exit_code))
+            print("Exec. hosts : %s" % (touchjob_clone.execution_hosts))
+            print("Create time : %s" % (touchjob_clone.created))
+            print("Start time  : %s" % (touchjob_clone.started))
+            print("End time    : %s" % (touchjob_clone.finished))
 
         js.close()
         return 0
 
-    except saga.SagaException, ex:
+    except saga.SagaException as ex:
         # Catch all saga exceptions
-        print "An exception occured: %s " % ex
+        print("An exception occured: %s " % ex)
         # Trace back the exception. That can be helpful for debugging.
-        print " \n*** Backtrace:\n %s" % ex.traceback
+        print(" \n*** Backtrace:\n %s" % ex.traceback)
         return -1
 
 

@@ -98,10 +98,10 @@ def main():
             task_desc1.error = 'stderr1.txt'
  
             task1 = pilotjob1.submit_compute_unit(task_desc1)
-            print "* Submitted task '%s' with id '%s' to %s" % (i, task1.get_id(), EC2url)
+            print("* Submitted task '%s' with id '%s' to %s" % (i, task1.get_id(), EC2url))
             tasks1.append(task1)
  
-        print "Waiting for tasks to finish..."
+        print("Waiting for tasks to finish...")
         pilotjob1.wait()
  
         # submit tasks2 to pilot job2
@@ -117,16 +117,16 @@ def main():
             task_desc2.error = 'stderr2.txt'
  
             task2 = pilotjob2.submit_compute_unit(task_desc2)
-            print "* Submitted task '%s' with id '%s' to %s" % (i, task2.get_id(), EC2url)
+            print("* Submitted task '%s' with id '%s' to %s" % (i, task2.get_id(), EC2url))
             tasks2.append(task2)
  
-        print "Waiting for tasks to finish..."
+        print("Waiting for tasks to finish...")
         pilotjob2.wait()
         
         return(0)
  
-    except Exception, ex:
-            print "AN ERROR OCCURED: %s" % ((str(ex)))
+    except Exception as ex:
+            print("AN ERROR OCCURED: %s" % ((str(ex))))
             # print a stack trace in case of an exception -
             # this can be helpful for debugging the problem
             traceback.print_exc()

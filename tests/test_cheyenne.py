@@ -20,7 +20,7 @@ import radical.saga as rs
 # registered with a saga.Job object and get 'fired' asynchronously on
 # certain conditions.
 def job_state_change_cb(src_obj, fire_on, value):
-    print "Callback    : job state changed to '%s'\n" % value
+    print("Callback    : job state changed to '%s'\n" % value)
     return True
 
 
@@ -67,41 +67,41 @@ def main():
         job.add_callback(rs.STATE, job_state_change_cb)
 
         # Check our job's id and state
-        print "Job ID      : %s" % (job.id)
-        print "Job State   : %s" % (job.state)
+        print("Job ID      : %s" % (job.id))
+        print("Job State   : %s" % (job.state))
 
         # Now we can start our job.
-        print "\n...starting job...\n"
+        print("\n...starting job...\n")
         job.run()
 
-        print "Job ID      : %s" % (job.id)
+        print("Job ID      : %s" % (job.id))
 
         # List all jobs that are known by the adaptor.
         # This should show our job as well.
-        print "\nListing active jobs: "
+        print("\nListing active jobs: ")
         for jid in js.list():
-            print " * %s" % jid
+            print(" * %s" % jid)
 
         # wait for our job to complete
-        print "\n...waiting for job...\n"
+        print("\n...waiting for job...\n")
         job.wait()
 
-        print "Job State   : %s" % (job.state)
-        print "Exitcode    : %s" % (job.exit_code)
-        print "Exec. hosts : %s" % (job.execution_hosts)
-        print "Create time : %s" % (job.created)
-        print "Start time  : %s" % (job.started)
-        print "End time    : %s" % (job.finished)
+        print("Job State   : %s" % (job.state))
+        print("Exitcode    : %s" % (job.exit_code))
+        print("Exec. hosts : %s" % (job.execution_hosts))
+        print("Create time : %s" % (job.created))
+        print("Start time  : %s" % (job.started))
+        print("End time    : %s" % (job.finished))
 
         js.close()
         return 0
 
-    except rs.SagaException, ex:
+    except rs.SagaException as ex:
         # Catch all saga exceptions
-        print "An exception occured: (%s) %s " % (ex.type, (str(ex)))
+        print("An exception occured: (%s) %s " % (ex.type, (str(ex))))
         # Get the whole traceback in case of an exception -
         # this can be helpful for debugging the problem
-        print " \n*** Backtrace:\n %s" % ex.traceback
+        print(" \n*** Backtrace:\n %s" % ex.traceback)
         return -1
 
 if __name__ == "__main__":

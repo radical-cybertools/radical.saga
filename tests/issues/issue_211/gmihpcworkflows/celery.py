@@ -1,5 +1,5 @@
 
-from celery import Celery
+from .celery import Celery
 
 celery = Celery('gmihpcworkflows', include=['gmihpcworkflows.hpc_tasks'])
  

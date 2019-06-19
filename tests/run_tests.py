@@ -12,20 +12,20 @@ try:
 
     dh = ru.DebugHelper()
 
-    print "____________________________________________________________________"
-    print "Using radical.saga from: %s" % str(rs)
-    print "____________________________________________________________________"
+    print("____________________________________________________________________")
+    print("Using radical.saga from: %s" % str(rs))
+    print("____________________________________________________________________")
 
-except Exception, e:
+except Exception as e:
     srcdir = "%s/../" % os.path.dirname(os.path.realpath(__file__))
     sys.path.insert(0, os.path.abspath(srcdir))
     import radical.saga                   as rs
     import radical.saga.utils.test_config as sutc
     import radical.utils.testing          as rut
 
-    print "____________________________________________________________________"
-    print "Using radical.saga from: %s" % str(rs)
-    print "____________________________________________________________________"
+    print("____________________________________________________________________")
+    print("Using radical.saga from: %s" % str(rs))
+    print("____________________________________________________________________")
 
 
 # ------------------------------------------------------------------------------
@@ -33,14 +33,14 @@ except Exception, e:
 if __name__ == "__main__":
 
     if len(sys.argv) < 2:
-        print "ERROR: provide test config files as arguments"
+        print("ERROR: provide test config files as arguments")
         sys.exit (-1)
 
     configs = sys.argv[1:]
 
     for config in configs :
         if  not os.path.exists (config) :
-            print "ERROR: config '%s' does not exist." % config
+            print("ERROR: config '%s' does not exist." % config)
             sys.exit (-1)
 
     test_cfgs = sys.argv[1:]

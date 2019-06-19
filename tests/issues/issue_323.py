@@ -52,17 +52,17 @@ for x in range (threads) :
     p = mp.Process (target=worker_jobs)
     p.start()
     procs.append (p)
-    print 'started job  worker %s' % p
+    print('started job  worker %s' % p)
 
     p = mp.Process (target=worker_files)
     p.start()
     procs.append (p)
-    print 'started file worker %s' % p
+    print('started file worker %s' % p)
 
 
 for p in procs :
     p.join ()
-    print 'joined worker %s' % p
+    print('joined worker %s' % p)
 
 
 
