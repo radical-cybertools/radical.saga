@@ -21,7 +21,7 @@ mod_root = 'src/radical/saga/'
 try:
     from setuptools import setup, Command, find_packages
 except ImportError as e:
-    print("%s needs setuptools to install" % name)
+    print(("%s needs setuptools to install" % name))
     sys.exit(1)
 
 
@@ -187,7 +187,7 @@ def makeDataFiles(prefix, dir):
     return found
 
 
-def visit((prefix, strip, found), dirname, names):
+def visit(data, dirname, names):
     """ Visit directory, create distutil tuple
 
     Add distutil tuple for each directory using this format:
@@ -195,6 +195,7 @@ def visit((prefix, strip, found), dirname, names):
 
     distutil will copy later file1, file2, ... info destination.
     """
+    (prefix, strip, found) = data
     files = []
     # Iterate over a copy of names, modify names
     for name in names[:]:
@@ -283,7 +284,7 @@ setup_args = {
                                  'VERSION', 'SDIST', sdist_name]},
   # 'setup_requires'     : ['pytest-runner'],
     'install_requires'   : ['radical.utils>=0.50',
-                            'apache-libcloud', 
+                            'apache-libcloud',
                             'parse'
                            ],
     'tests_require'      : ['pytest', 'coverage'],
