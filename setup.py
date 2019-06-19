@@ -14,6 +14,7 @@ import sys
 import shutil
 
 import subprocess as sp
+import radical.utils as ru
 
 name     = 'radical.saga'
 mod_root = 'src/radical/saga/'
@@ -53,7 +54,7 @@ def get_version(mod_root):
 
         # get version from './VERSION'
         src_root = os.path.dirname(__file__)
-        if  not src_root:
+        if not src_root:
             src_root = '.'
 
         with open(src_root + '/VERSION', 'r') as f:
@@ -80,12 +81,11 @@ def get_version(mod_root):
         version_detail = re.sub('[/ ]+', '-', version_detail)
         version_detail = re.sub('[^a-zA-Z0-9_+@.-]+', '', version_detail)
 
-        if  p.returncode   !=  0  or \
-            version_detail == '@' or \
-            'git-error'      in version_detail or \
-            'not-a-git-repo' in version_detail or \
-            'not-found'      in version_detail or \
-            'fatal'          in version_detail    :
+        if p.returncode   !=  0  or version_detail == '@' or \
+           'git-error'      in version_detail or \
+           'not-a-git-repo' in version_detail or \
+           'not-found'      in version_detail or \
+           'fatal'          in version_detail    :
             version = version_base
         elif '@' not in version_base:
             version = '%s-%s' % (version_base, version_detail)
@@ -129,9 +129,9 @@ def get_version(mod_root):
 
 
 # ------------------------------------------------------------------------------
-# check python version. we need >= 2.7, <3.x
-if  sys.hexversion < 0x02070000 or sys.hexversion >= 0x03000000:
-    raise RuntimeError("%s requires Python 2.x (2.7 or higher)" % name)
+# check python version. we need => 3.5
+if sys.hexversion <= 0x03050000:
+    raise RuntimeError("%s requires Python 3.5 or higher" % name)
 
 
 # ------------------------------------------------------------------------------
@@ -183,7 +183,8 @@ def makeDataFiles(prefix, dir):
     dir = dir.rstrip('/')
     strip = len(dir) + 1
     found = []
-    os.path.walk(dir, visit, (prefix, strip, found))
+    # NOTE Python 3: os.path.walk -> os.walk
+    os.walk(dir, visit, (prefix, strip, found))
     return found
 
 
@@ -223,9 +224,8 @@ def isbad(name):
 def isgood(name):
     """ Whether name should be installed """
     if not isbad(name):
-        if  name.endswith('.py')   or \
-            name.endswith('.json') or \
-            name.endswith('.tar'):
+        if name.endswith('.py') or name.endswith('.json') or \
+           name.endswith('.tar'):
             return True
     return False
 
@@ -234,17 +234,17 @@ def isgood(name):
 #
 class RunTwine(Command):
     user_options = []
-    def initialize_options (self) : pass
-    def finalize_options   (self) : pass
-    def run (self) :
+    def initialize_options(self): pass
+    def finalize_options(self): pass
+    def run(self):
         out,  err, ret = ru.sh_callout('python setup.py sdist upload -r pypi')
         raise SystemExit(ret)
 
 
 # ------------------------------------------------------------------------------
 #
-if  sys.hexversion < 0x02070000 or sys.hexversion >= 0x03000000:
-    raise RuntimeError("SETUP ERROR: %s requires Python 2.7 or higher" % name)
+if sys.hexversion <= 0x03050000:
+    raise RuntimeError("SETUP ERROR: %s requires Python 3.5 or higher" % name)
 
 
 # -------------------------------------------------------------------------------
