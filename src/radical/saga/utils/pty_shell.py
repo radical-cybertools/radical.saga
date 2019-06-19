@@ -937,10 +937,10 @@ class PTYShell (object) :
             self.pty_shell.flush ()
 
             info = self.pty_info
-            repl = dict ({'src'      : src, 
+            repl = dict (list({'src'      : src, 
                           'tgt'      : tgt,
                           'cp_flags' : cp_flags
-                          }.items () + info.items ())
+                          }.items ()) + list(info.items ()))
 
             # at this point, we do have a valid, living master
             s_cmd = info['scripts'][info['copy_mode']]['copy_to']    % repl
@@ -1066,9 +1066,9 @@ class PTYShell (object) :
             self.pty_shell.flush ()
 
             info = self.pty_info
-            repl = dict ({'src'      : src, 
+            repl = dict (list({'src'      : src, 
                           'tgt'      : tgt, 
-                          'cp_flags' : cp_flags}.items() + info.items ())
+                          'cp_flags' : cp_flags}.items()) + list(info.items ()))
 
             # at this point, we do have a valid, living master
             s_cmd = info['scripts'][info['copy_mode']]['copy_from']    % repl

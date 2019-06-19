@@ -14,7 +14,7 @@ import time
 import threading
 import datetime
 
-from urlparse import parse_qs
+from urllib.parse import parse_qs
 
 import radical.utils  as ru
 
@@ -61,7 +61,7 @@ class _job_state_monitor(threading.Thread):
                 # do bulk updates here! we don't want to pull information
                 # job by job. that would be too inefficient!
                 jobs = self.js.jobs
-                job_keys = jobs.keys()
+                job_keys = list(jobs.keys())
 
                 for job in job_keys:
                     # if the job hasn't been started, we can't update its
@@ -130,7 +130,7 @@ def _lsfscript_generator(url, logger, jd, ppn, lsf_version, queue, span):
 
     if jd.environment is not None:
         env_variable_list = "export "
-        for key in jd.environment.keys():
+        for key in list(jd.environment.keys()):
             env_variable_list += " %s=%s " % (key, jd.environment[key])
     else:
         env_variable_list = ""
@@ -401,7 +401,7 @@ class LSFJobService (cpi.job.Service):
         # this adaptor supports options that can be passed via the
         # 'query' component of the job service URL.
         if rm_url.query:
-            for key, val in parse_qs(rm_url.query).iteritems():
+            for key, val in parse_qs(rm_url.query).items():
                 if key == 'queue':
                     self.queue = val[0]
                 elif key == 'span':
@@ -438,7 +438,7 @@ class LSFJobService (cpi.job.Service):
     #
     def initialize(self):
         # check if all required lsf tools are available
-        for cmd in self._commands.keys():
+        for cmd in list(self._commands.keys()):
             ret, out, _ = self.shell.run_sync("which %s " % cmd)
             if ret != 0:
                 message = "Couldn't find LSF tools: %s" % out
@@ -512,7 +512,7 @@ class LSFJobService (cpi.job.Service):
                                          queue=self.queue, span=self.span)
 
             self._logger.info("Generated LSF script: %s" % script)
-        except Exception, ex:
+        except Exception as ex:
             log_error_and_raise(str(ex), BadParameter, self._logger)
 
         # try to create the working directory (if defined)
@@ -542,7 +542,7 @@ class LSFJobService (cpi.job.Service):
             # parse the job id. bsub's output looks like this:
             # Job <901545> is submitted to queue <regular>
             lines = out.split("\n")
-            lines = filter(lambda lines: lines != '', lines)  # remove empty
+            lines = [lines for lines in lines if lines != '']  # remove empty
 
             self._logger.info('bsub: %s' % ''.join(lines))
 

@@ -44,7 +44,7 @@ class SimpleBase (object) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('SimpleBase')
-    @rus.returns (basestring)
+    @rus.returns (str)
     def _get_apitype (self) :
 
         # apitype for saga.job.service.Service should be saga.job.Service --
@@ -77,7 +77,7 @@ class Base (SimpleBase) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Base',
-                  basestring, 
+                  str, 
                   rus.optional (sab.Base), 
                   rus.optional (dict), 
                   rus.optional (rus.anything),

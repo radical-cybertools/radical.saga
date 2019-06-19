@@ -40,7 +40,7 @@ class Manager (sb.Base, async.Async) :
     # --------------------------------------------------------------------------
     # 
     @rus.takes   ('Manager', 
-                  rus.optional (basestring, ru.Url), 
+                  rus.optional (str, ru.Url), 
                   rus.optional (ss.Session),
                   rus.optional (sab.Base), 
                   rus.optional (dict), 
@@ -73,7 +73,7 @@ class Manager (sb.Base, async.Async) :
     #
     @classmethod
     @rus.takes   ('Manager', 
-                  rus.optional ((ru.Url, basestring)), 
+                  rus.optional ((ru.Url, str)), 
                   rus.optional (ss.Session),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns (st.Task)
@@ -92,7 +92,7 @@ class Manager (sb.Base, async.Async) :
     @rus.takes   ('Manager', 
                   rus.optional (rus.one_of (c.COMPUTE, c.STORAGE, c.NETWORK)),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
-    @rus.returns ((rus.list_of (basestring), st.Task))
+    @rus.returns ((rus.list_of (str), st.Task))
     def list     (self, rtype=None, ttype=None) :
         """ 
         list(rtype=None)
@@ -110,7 +110,7 @@ class Manager (sb.Base, async.Async) :
     # --------------------------------------------------------------------------
     # 
     @rus.takes   ('Manager', 
-                  rus.optional (basestring),
+                  rus.optional (str),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((descr.Description, st.Task))
     def get_description (self, rid, ttype=None) :
@@ -132,7 +132,7 @@ class Manager (sb.Base, async.Async) :
     @rus.takes   ('Manager', 
                   rus.optional (rus.one_of (c.COMPUTE, c.STORAGE, c.NETWORK)),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
-    @rus.returns ((rus.list_of (basestring), st.Task))
+    @rus.returns ((rus.list_of (str), st.Task))
     def list_templates (self, rtype=None, ttype=None) :
         """
         list_templates(rtype=None)
@@ -150,7 +150,7 @@ class Manager (sb.Base, async.Async) :
     # --------------------------------------------------------------------------
     # 
     @rus.takes   ('Manager', 
-                  rus.optional (basestring),
+                  rus.optional (str),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((descr.Description, st.Task))
     def get_template (self, name, ttype=None) :
@@ -177,7 +177,7 @@ class Manager (sb.Base, async.Async) :
     @rus.takes   ('Manager', 
                   rus.optional (rus.one_of (c.COMPUTE, c.STORAGE, c.NETWORK)),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
-    @rus.returns ((rus.list_of (basestring), st.Task))
+    @rus.returns ((rus.list_of (str), st.Task))
     def list_images (self, rtype=None, ttype=None) :
         """
         list_images(rtype=None)
@@ -194,7 +194,7 @@ class Manager (sb.Base, async.Async) :
     # --------------------------------------------------------------------------
     # 
     @rus.takes   ('Manager', 
-                  basestring,
+                  str,
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((dict, st.Task))
     def get_image (self, name, ttype=None) :
@@ -213,7 +213,7 @@ class Manager (sb.Base, async.Async) :
     # --------------------------------------------------------------------------
     # 
     @rus.takes   ('Manager', 
-                  (basestring, ru.Url, descr.Description),
+                  (str, ru.Url, descr.Description),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((resrc.Resource, st.Task))
     def acquire  (self, spec, ttype=None) :
@@ -235,7 +235,7 @@ class Manager (sb.Base, async.Async) :
         """
 
         if  isinstance (spec, ru.Url) or \
-            isinstance (spec, basestring)  :
+            isinstance (spec, str)  :
 
             return self._adaptor.acquire_by_id(spec, ttype=ttype)
 
@@ -254,7 +254,7 @@ class Manager (sb.Base, async.Async) :
     # --------------------------------------------------------------------------
     # 
     @rus.takes   ('Manager', 
-                  basestring,
+                  str,
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((rus.nothing, st.Task))
     def destroy  (self, rid, ttype=None) :

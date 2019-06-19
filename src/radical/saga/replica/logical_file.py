@@ -24,7 +24,7 @@ class LogicalFile (nsentry.Entry, sa.Attributes) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('LogicalFile', 
-                  rus.optional ((ru.Url, basestring)), 
+                  rus.optional ((ru.Url, str)), 
                   rus.optional (int, rus.nothing), 
                   rus.optional (ss.Session),
                   rus.optional (sab.Base), 
@@ -55,7 +55,7 @@ class LogicalFile (nsentry.Entry, sa.Attributes) :
     #
     @classmethod
     @rus.takes   ('LogicalFile', 
-                  rus.optional ((ru.Url, basestring)), 
+                  rus.optional ((ru.Url, str)), 
                   rus.optional (int, rus.nothing), 
                   rus.optional (ss.Session),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
@@ -123,7 +123,7 @@ class LogicalFile (nsentry.Entry, sa.Attributes) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('LogicalFile', 
-                  rus.optional ((ru.Url, basestring)), 
+                  rus.optional ((ru.Url, str)), 
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((rus.nothing, st.Task))
     def add_location (self, name, ttype=None) :
@@ -142,7 +142,7 @@ class LogicalFile (nsentry.Entry, sa.Attributes) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('LogicalFile', 
-                  rus.optional ((ru.Url, basestring)), 
+                  rus.optional ((ru.Url, str)), 
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((rus.nothing, st.Task))
     def remove_location (self, name, ttype=None) :
@@ -161,8 +161,8 @@ class LogicalFile (nsentry.Entry, sa.Attributes) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('LogicalFile', 
-                  rus.optional ((ru.Url, basestring)), 
-                  rus.optional ((ru.Url, basestring)), 
+                  rus.optional ((ru.Url, str)), 
+                  rus.optional ((ru.Url, str)), 
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((rus.nothing, st.Task))
     def update_location (self, old, new, ttype=None) :
@@ -199,7 +199,7 @@ class LogicalFile (nsentry.Entry, sa.Attributes) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('LogicalFile', 
-                  (ru.Url, basestring), 
+                  (ru.Url, str), 
                   rus.optional (int, rus.nothing),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((rus.nothing, st.Task))
@@ -222,8 +222,8 @@ class LogicalFile (nsentry.Entry, sa.Attributes) :
     # non-GFD.90
     #
     @rus.takes   ('LogicalFile', 
-                  (ru.Url, basestring), 
-                  rus.optional ((ru.Url, basestring)),
+                  (ru.Url, str), 
+                  rus.optional ((ru.Url, str)),
                   rus.optional (int, rus.nothing),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((rus.nothing, st.Task))
@@ -247,8 +247,8 @@ class LogicalFile (nsentry.Entry, sa.Attributes) :
     # non-GFD.90
     #
     @rus.takes   ('LogicalFile', 
-                  (ru.Url, basestring), 
-                  rus.optional ((ru.Url, basestring)),
+                  (ru.Url, str), 
+                  rus.optional ((ru.Url, str)),
                   rus.optional (int, rus.nothing),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((rus.nothing, st.Task))

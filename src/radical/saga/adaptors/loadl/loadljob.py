@@ -14,7 +14,7 @@ import os
 import re
 import time
 
-from   urlparse import parse_qs
+from   urllib.parse import parse_qs
 from   datetime import datetime
 
 import radical.utils as ru
@@ -265,7 +265,7 @@ class LOADLJobService (cpi.job.Service):
         # this adaptor supports options that can be passed via the
         # 'query' component of the job service URL.
         if rm_url.query is not None:
-            for key, val in parse_qs(rm_url.query).iteritems():
+            for key, val in parse_qs(rm_url.query).items():
                 if key == 'cluster':
                     self.cluster_option = " -X %s" % val[0]
                 elif key == 'energy_policy_tag':
@@ -469,7 +469,7 @@ class LOADLJobService (cpi.job.Service):
 
         if jd.environment is not None:
             variable_list = ''
-            for key in jd.environment.keys():
+            for key in list(jd.environment.keys()):
                 variable_list += "%s=%s;" % (key, jd.environment[key])
             loadl_params += "#@ environment = %s \n" % variable_list
 
@@ -615,7 +615,7 @@ class LOADLJobService (cpi.job.Service):
             script = self.__generate_llsubmit_script(jd)
 
             self._logger.debug("Generated LoadLeveler script: %s" % script)
-        except Exception, ex:
+        except Exception as ex:
             log_error_and_raise(str(ex), BadParameter, self._logger)
 
         # try to create the working/output/error directories (if defined)

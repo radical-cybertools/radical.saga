@@ -12,7 +12,7 @@ import os
 import time
 import datetime
 
-from urlparse import parse_qs
+from urllib.parse import parse_qs
 from tempfile import NamedTemporaryFile
 
 import radical.utils as ru
@@ -95,7 +95,7 @@ def _condorscript_generator(url, logger, jds, option_dict=None):
             condor_file += "\n+ProjectName = \"%s\"" % jd.project
 
         if option_dict:
-            for key,value in option_dict.iteritems():
+            for key,value in option_dict.items():
                 condor_file += "\n%s = %s" % (key, value)
 
 
@@ -109,7 +109,7 @@ def _condorscript_generator(url, logger, jds, option_dict=None):
         # http://research.cs.wisc.edu/htcondor/manual/current/condor_submit.html#SECTION0012514000000000000000
         if jd.environment:
             environment = ''
-            for key,val in jd.environment.iteritems():
+            for key,val in jd.environment.items():
                 environment += ' "%s=%s"'     % (key, val)
               # condor_file += "\n%-25s = %s" % (key, val)
             condor_file += "\nenvironment               = %s\n" % environment
@@ -405,7 +405,7 @@ class CondorJobService (cpi.job.Service):
         # this adaptor supports options that can be passed via the
         # 'query' component of the job service URL.
         if rm_url.query is not None:
-            for key, val in parse_qs(rm_url.query).iteritems():
+            for key, val in parse_qs(rm_url.query).items():
                 self.query_options[key] = val[0]
 
         # we need to extract the scheme for PTYShell. That's basically the
@@ -450,7 +450,7 @@ class CondorJobService (cpi.job.Service):
     def initialize(self):
 
         # check if all required condor tools are available
-        commands = self._commands.keys()
+        commands = list(self._commands.keys())
         ret, out, _ = self.shell.run_sync("which %s " % ' '.join(commands))
 
         if ret != 0:
@@ -458,7 +458,7 @@ class CondorJobService (cpi.job.Service):
             log_error_and_raise(message, NoSuccess, self._logger)
 
         # split and remove empty lines
-        lines = filter(bool, out.split('\n'))
+        lines = list(filter(bool, out.split('\n')))
 
         if len(lines) != len(commands):
             message = "Error finding some Condor tools: %s" % out
@@ -889,7 +889,7 @@ class CondorJobService (cpi.job.Service):
             # JobStatus = 5
             # ExitStatus = 0
             # CompletionDate = 0
-            results = filter(bool, out.split('\n'))
+            results = list(filter(bool, out.split('\n')))
             for result in results:
                 key, val = result.split('=', 1)
                 key = key.strip()
@@ -990,7 +990,7 @@ class CondorJobService (cpi.job.Service):
         if ret != 0:
             raise Exception("condor_q failed\n[%s]\n[%s]" % (out, err))
 
-        results = filter(bool, out.split('\n'))
+        results = list(filter(bool, out.split('\n')))
         ts      = time.time()
         for row in results:
 
@@ -1050,7 +1050,7 @@ class CondorJobService (cpi.job.Service):
                 out = ''
 
             else:
-                results = filter(bool, out.split('\n'))
+                results = list(filter(bool, out.split('\n')))
                 ts      = time.time()
                 for row in results:
 
@@ -1493,7 +1493,7 @@ class CondorJobService (cpi.job.Service):
 
             clusters[project].append(job)
 
-        for project, _jobs in clusters.iteritems():
+        for project, _jobs in clusters.items():
             self._run_cluster(project, _jobs)
 
 

@@ -35,7 +35,7 @@ except Exception as e:
 
 ################################################################################
 #
-class Engine(object):
+class Engine(object, metaclass=ru.Singleton):
     """ Represents the SAGA engine runtime system.
 
         The Engine is a singleton class that takes care of adaptor
@@ -115,8 +115,6 @@ class Engine(object):
                       # successfully bound to adaptor
                       return
     """
-
-    __metaclass__ = ru.Singleton
 
 
     # --------------------------------------------------------------------------
@@ -466,8 +464,8 @@ class Engine(object):
             interact with other adaptors.
         '''
 
-        for ctype in self._adaptor_registry.keys () :
-            for schema in self._adaptor_registry[ctype].keys () :
+        for ctype in list(self._adaptor_registry.keys ()) :
+            for schema in list(self._adaptor_registry[ctype].keys ()) :
                 for info in self._adaptor_registry[ctype][schema] :
                     if info['adaptor_name'] == adaptor_name:
                         return info['adaptor_instance']
@@ -564,7 +562,7 @@ class Engine(object):
 
         import pprint
 
-        print 'adaptors'
+        print('adaptors')
         pprint.pprint (self._adaptor_registry)
 
 

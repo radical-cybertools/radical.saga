@@ -24,7 +24,7 @@ class LogicalDirectory (nsdir.Directory, sa.Attributes) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('LogicalDirectory', 
-                  rus.optional ((ru.Url, basestring)), 
+                  rus.optional ((ru.Url, str)), 
                   rus.optional (int, rus.nothing), 
                   rus.optional (ss.Session),
                   rus.optional (sab.Base), 
@@ -57,7 +57,7 @@ class LogicalDirectory (nsdir.Directory, sa.Attributes) :
     #
     @classmethod
     @rus.takes   ('LogicalDirectory', 
-                  rus.one_of (ru.Url, basestring), 
+                  rus.one_of (ru.Url, str), 
                   rus.optional (int, rus.nothing), 
                   rus.optional (ss.Session),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
@@ -77,7 +77,7 @@ class LogicalDirectory (nsdir.Directory, sa.Attributes) :
 
 
     @rus.takes   ('LogicalDirectory', 
-                  rus.one_of (ru.Url, basestring), 
+                  rus.one_of (ru.Url, str), 
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((bool, st.Task))
     def is_file (self, tgt=None, ttype=None) :
@@ -93,7 +93,7 @@ class LogicalDirectory (nsdir.Directory, sa.Attributes) :
 
 
     @rus.takes   ('LogicalDirectory', 
-                  rus.one_of (ru.Url, basestring), 
+                  rus.one_of (ru.Url, str), 
                   rus.optional (int, rus.nothing),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns (('LogicalFile', st.Task))
@@ -114,7 +114,7 @@ class LogicalDirectory (nsdir.Directory, sa.Attributes) :
     # ----------------------------------------------------------------
     #
     @rus.takes   ('LogicalDirectory', 
-                  rus.one_of (ru.Url, basestring), 
+                  rus.one_of (ru.Url, str), 
                   rus.optional (int, rus.nothing),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns (('LogicalDirectory', st.Task))
@@ -150,7 +150,7 @@ class LogicalDirectory (nsdir.Directory, sa.Attributes) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('LogicalDirectory', 
-                  rus.one_of (ru.Url, basestring),
+                  rus.one_of (ru.Url, str),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((int, st.Task))
     def get_size (self, tgt, ttype=None) :
@@ -180,8 +180,8 @@ class LogicalDirectory (nsdir.Directory, sa.Attributes) :
     # ----------------------------------------------------------------
     #
     @rus.takes   ('LogicalDirectory', 
-                  rus.optional (basestring),
-                  rus.optional (basestring),
+                  rus.optional (str),
+                  rus.optional (str),
                   rus.optional (int, rus.nothing),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((rus.list_of (ru.Url), st.Task))

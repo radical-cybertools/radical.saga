@@ -354,7 +354,7 @@ class SLURMJobService (cpi_job.Service) :
         # verify our SLURM environment contains the commands we need for this
         # adaptor to work properly
         self._logger.debug("Verifying existence of remote SLURM tools.")
-        for cmd in self._commands.keys():
+        for cmd in list(self._commands.keys()):
             ret, out, _ = self.shell.run_sync("which %s " % cmd)
             if ret != 0:
                 message = "Error finding SLURM tool %s on remote server %s!\n" \
@@ -548,7 +548,7 @@ class SLURMJobService (cpi_job.Service) :
 
         if env:
             slurm_script += "\n## ENVIRONMENT\n"
-            for key,val in env.iteritems():
+            for key,val in env.items():
                 slurm_script += 'export "%s"="%s"\n'  %  (key, val)
 
         if pre:
@@ -1053,7 +1053,7 @@ class SLURMJob(cpi_job.Job):
 
             return self.js._slurm_to_saga_jobstate(slurm_state)
 
-        except Exception, ex:
+        except Exception as ex:
             self._logger.exception('failed to get job state')
             raise rse.NoSuccess("Error getting the job state for "
                             "job %s:\n%s" % (pid,ex))

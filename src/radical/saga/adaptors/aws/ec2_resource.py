@@ -893,7 +893,7 @@ class EC2ResourceManager (cpi_resource.Manager) :
         if  'name' not in descr :
             descr['name'] = self.images_dict[img_id].name
 
-        for key in descr.keys () :
+        for key in list(descr.keys ()) :
             if  not descr[key] :
                 descr.pop (key)
 

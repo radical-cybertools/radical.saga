@@ -79,7 +79,7 @@ class Resource (sb.Base, sa.Attributes, async.Async) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Resource', 
-                  rus.optional (basestring), 
+                  rus.optional (str), 
                   rus.optional (ss.Session),
                   rus.optional (sab.Base), 
                   rus.optional (dict), 
@@ -183,7 +183,7 @@ class Resource (sb.Base, sa.Attributes, async.Async) :
     #
     @classmethod
     @rus.takes   ('resource', 
-                  rus.optional (basestring), 
+                  rus.optional (str), 
                   rus.optional (ss.Session),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns (st.Task)
@@ -227,7 +227,7 @@ class Resource (sb.Base, sa.Attributes, async.Async) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Resource', 
-                  basestring,
+                  str,
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((rus.nothing, st.Task))
     def destroy  (self, ttype=None) :
@@ -284,7 +284,7 @@ class Resource (sb.Base, sa.Attributes, async.Async) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Resource', rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
-    @rus.returns ((rus.nothing, basestring, st.Task))
+    @rus.returns ((rus.nothing, str, st.Task))
     def get_id   (self, ttype=None) : 
         """
         get_id()
@@ -333,7 +333,7 @@ class Resource (sb.Base, sa.Attributes, async.Async) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Resource', rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
-    @rus.returns ((rus.nothing, basestring, st.Task))
+    @rus.returns ((rus.nothing, str, st.Task))
     def get_state_detail (self, ttype=None) : 
         """
         get_state_detail()
@@ -346,7 +346,7 @@ class Resource (sb.Base, sa.Attributes, async.Async) :
     # --------------------------------------------------------------------------
     #
     @rus.takes     ('Resource', rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
-    @rus.returns   ((rus.nothing, basestring, st.Task))
+    @rus.returns   ((rus.nothing, str, st.Task))
     def get_access (self, ttype=None) : 
         """
         get_access()
@@ -359,7 +359,7 @@ class Resource (sb.Base, sa.Attributes, async.Async) :
     # --------------------------------------------------------------------------
     #
     @rus.takes      ('Resource', rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
-    @rus.returns    ((basestring, st.Task))
+    @rus.returns    ((str, st.Task))
     def get_manager (self, ttype=None) :
         """
         get_manager()
@@ -428,7 +428,7 @@ class Storage (Resource) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('StorageResource', 
-                  rus.optional (basestring), 
+                  rus.optional (str), 
                   rus.optional (ss.Session),
                   rus.optional (sab.Base), 
                   rus.optional (dict), 
@@ -455,7 +455,7 @@ class Network (Resource) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('NetworkResource', 
-                  rus.optional (basestring), 
+                  rus.optional (str), 
                   rus.optional (ss.Session),
                   rus.optional (sab.Base), 
                   rus.optional (dict), 

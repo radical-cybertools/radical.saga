@@ -39,7 +39,7 @@ class Entry (sb.Base, sasync.Async) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Entry', 
-                  rus.optional ((ru.Url, basestring)), 
+                  rus.optional ((ru.Url, str)), 
                   rus.optional (int, rus.nothing), 
                   rus.optional (ss.Session),
                   rus.optional (sab.Base), 
@@ -91,7 +91,7 @@ class Entry (sb.Base, sasync.Async) :
     #
     @classmethod
     @rus.takes   ('Entry', 
-                  rus.optional ((ru.Url, basestring)), 
+                  rus.optional ((ru.Url, str)), 
                   rus.optional (int, rus.nothing), 
                   rus.optional (ss.Session),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
@@ -142,7 +142,7 @@ class Entry (sb.Base, sasync.Async) :
     #
     @rus.takes   ('Entry',
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
-    @rus.returns ((basestring, st.Task))
+    @rus.returns ((str, st.Task))
     def get_cwd  (self, ttype=None) :
         '''
         ttype:         saga.task.type enum
@@ -155,7 +155,7 @@ class Entry (sb.Base, sasync.Async) :
     #
     @rus.takes   ('Entry',
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
-    @rus.returns ((basestring, st.Task))
+    @rus.returns ((str, st.Task))
     def get_name (self, ttype=None) :
         '''
         ttype:         saga.task.type enum
@@ -234,7 +234,7 @@ class Entry (sb.Base, sasync.Async) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Entry',
-                  (ru.Url, basestring),
+                  (ru.Url, str),
                   rus.optional (int, rus.nothing),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((rus.nothing, st.Task))
@@ -267,7 +267,7 @@ class Entry (sb.Base, sasync.Async) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Entry',
-                  (ru.Url, basestring),
+                  (ru.Url, str),
                   rus.optional (int, rus.nothing),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((rus.nothing, st.Task))
@@ -286,7 +286,7 @@ class Entry (sb.Base, sasync.Async) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Entry',
-                  (ru.Url, basestring),
+                  (ru.Url, str),
                   rus.optional (int, rus.nothing),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((rus.nothing, st.Task))

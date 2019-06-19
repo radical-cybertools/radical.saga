@@ -107,7 +107,7 @@ class PTYProcess (object) :
         self.logger.debug ("PTYProcess init %s" % self)
 
 
-        if isinstance (command, basestring) :
+        if isinstance (command, str) :
             command = shlex.split (command)
 
         if not isinstance (command, list) :
@@ -446,7 +446,7 @@ class PTYProcess (object) :
                             # child disappeared, go to zombie cleanup routine
                             break
 
-                        raise ("waitpid failed on wait (%s)" % e)
+                        raise "waitpid failed on wait (%s)"
 
                     # did we get a note about child termination?
                     if 0 == wpid :
@@ -743,11 +743,11 @@ class PTYProcess (object) :
                     if  not data :
                         data += self.read (timeout=_POLLDELAY)
 
-                    if  _debug : print ">>%s<<" % data
+                    if  _debug : print((">>%s<<" % data))
 
                     escaped = escape (data)
-                    if _debug : print 'data    ==%s==' % data
-                    if _debug : print 'escaped ==%s==' % escaped
+                    if _debug : print(('data    ==%s==' % data))
+                    if _debug : print(('escaped ==%s==' % escaped))
 
                     # check current data for any matching pattern
                     for n in range (0, len(patts)) :
@@ -758,8 +758,8 @@ class PTYProcess (object) :
                       # print '-- 2 --%s--' % escaped
 
                         match = patts[n].search (escaped)
-                        if _debug : print "==%s==" % patterns[n]
-                        if _debug : print match
+                        if _debug : print(("==%s==" % patterns[n]))
+                        if _debug : print(match)
 
                         if match :
                             # a pattern matched the current data: return a tuple
@@ -771,10 +771,10 @@ class PTYProcess (object) :
                             if _debug:
                                 m = match
                                 e = escaped
-                                print "~~match!~~ %s" % e[m.start():m.end()]
-                                print "~~match!~~ %s" % (len(e))
-                                print "~~match!~~ %s" % (str(m.span()))
-                                print "~~match!~~ %s" % (ret)
+                                print(("~~match!~~ %s" % e[m.start():m.end()]))
+                                print(("~~match!~~ %s" % (len(e))))
+                                print(("~~match!~~ %s" % (str(m.span()))))
+                                print(("~~match!~~ %s" % (ret)))
 
                             return (n, ret.replace('\r', ''))
 

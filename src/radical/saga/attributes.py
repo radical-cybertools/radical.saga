@@ -9,7 +9,7 @@ __license__   = "MIT"
 import radical.utils            as ru
 import radical.utils.signatures as rus
 
-import exceptions as se
+from . import exceptions as se
 
 # ------------------------------------------------------------------------------
 
@@ -336,13 +336,13 @@ class Attributes (_AttributesBase, ru.DictMixin) :
             elif isinstance (arg, dict):
                 d['extensible']  = True   # it is just being extended ;)
                 d['camelcasing'] = True   # default for dict inits
-                for key in arg.keys():
+                for key in list(arg.keys()):
                     us_key = self._attributes_t_underscore(key)
                     self._attributes_i_set(us_key, arg[key], force=True, flow=self._UP)
             else:
                 raise se.BadParameter("initialization expects dictionary")
 
-        for key in kwargs.keys () :
+        for key in list(kwargs.keys ()) :
             self.set_attribute (key, kwargs[key])
 
         # make iterable
@@ -361,7 +361,7 @@ class Attributes (_AttributesBase, ru.DictMixin) :
     # Naming: _attributes_t_*
     #
     @rus.takes   ('Attributes', 
-                  rus.optional (basestring))
+                  rus.optional (str))
     @rus.returns (dict)
     def _attributes_t_init (self, key=None) :
         """
@@ -412,8 +412,8 @@ class Attributes (_AttributesBase, ru.DictMixin) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Attributes', 
-                  basestring)
-    @rus.returns (basestring)
+                  str)
+    @rus.returns (str)
     def _attributes_t_keycheck (self, key) :
         """
         This internal function is not to be used by the consumer of this API.
@@ -443,7 +443,7 @@ class Attributes (_AttributesBase, ru.DictMixin) :
             # check if we know about the given attribute
             if  d['attributes'][key]['mode'] == ALIAS :
                 alias = d['attributes'][key]['alias']
-                print "attribute '%s' is deprecated - use '%s'"  %  (key, alias)
+                print("attribute '%s' is deprecated - use '%s'"  %  (key, alias))
                 key   = alias
 
         return key
@@ -452,7 +452,7 @@ class Attributes (_AttributesBase, ru.DictMixin) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Attributes', 
-                  basestring,
+                  str,
                   rus.anything)
     @rus.returns (rus.nothing)
     def _attributes_t_call_cb (self, key, val) :
@@ -497,7 +497,7 @@ class Attributes (_AttributesBase, ru.DictMixin) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Attributes', 
-                  basestring,
+                  str,
                   rus.anything)
     @rus.returns (rus.nothing)
     def _attributes_t_call_setter (self, key, val) :
@@ -563,7 +563,7 @@ class Attributes (_AttributesBase, ru.DictMixin) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Attributes', 
-                  basestring)
+                  str)
     @rus.returns (rus.nothing)
     def _attributes_t_call_getter (self, key) :
         """
@@ -644,8 +644,8 @@ class Attributes (_AttributesBase, ru.DictMixin) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Attributes', 
-                  basestring)
-    @rus.returns (rus.list_of (basestring))
+                  str)
+    @rus.returns (rus.list_of (str))
     def _attributes_t_call_lister (self) :
         """
         This internal function is not to be used by the consumer of this API.
@@ -680,7 +680,7 @@ class Attributes (_AttributesBase, ru.DictMixin) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Attributes', 
-                  basestring,
+                  str,
                   int,
                   callable)
     @rus.returns (rus.anything)
@@ -724,8 +724,8 @@ class Attributes (_AttributesBase, ru.DictMixin) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Attributes', 
-                  basestring)
-    @rus.returns (basestring)
+                  str)
+    @rus.returns (str)
     def _attributes_t_underscore (self, key, force=False) :
         """ 
         This internal function is not to be used by the consumer of this API.
@@ -751,7 +751,7 @@ class Attributes (_AttributesBase, ru.DictMixin) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Attributes', 
-                  basestring)
+                  str)
     @rus.returns (rus.anything)
     def _attributes_t_conversion (self, key, val) :
         """
@@ -799,7 +799,7 @@ class Attributes (_AttributesBase, ru.DictMixin) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Attributes', 
-                  basestring, 
+                  str, 
                   rus.anything)
     @rus.returns (rus.anything)
     def _attributes_t_conversion_flavor (self, key, val) :
@@ -834,7 +834,7 @@ class Attributes (_AttributesBase, ru.DictMixin) :
                 return ret
             else :
                 # need to create vec from scalar
-                if  isinstance (val, basestring) :
+                if  isinstance (val, str) :
                     # for string values, we split on white spaces and type-convert 
                     # all elements
                     vec = val.split ()
@@ -865,7 +865,7 @@ class Attributes (_AttributesBase, ru.DictMixin) :
                     out[key] = val
                 return out
 
-            if  isinstance (val, basestring) :
+            if  isinstance (val, str) :
                 # we assume a colon or comma separated list of = separated
                 # key/value pairs
                 elems = val.split (':')
@@ -919,7 +919,7 @@ class Attributes (_AttributesBase, ru.DictMixin) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Attributes', 
-                  basestring, 
+                  str, 
                   rus.anything)
     @rus.returns (rus.anything)
     def _attributes_t_conversion_type (self, key, val) :
@@ -951,8 +951,8 @@ class Attributes (_AttributesBase, ru.DictMixin) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Attributes', 
-                  basestring)
-    @rus.returns (basestring)
+                  str)
+    @rus.returns (str)
     def _attributes_t_wildcard2regex (self, pattern) :
         """ 
         This internal function is not to be used by the consumer of this API.
@@ -1176,7 +1176,7 @@ class Attributes (_AttributesBase, ru.DictMixin) :
         self._attributes_t_call_lister ()
 
         ret    = []
-        for key in sorted(d['attributes'].iterkeys()) :
+        for key in sorted(d['attributes'].keys()) :
             if d['attributes'][key]['mode'] != ALIAS :
                 if d['attributes'][key]['exists'] :
 
@@ -1259,7 +1259,7 @@ class Attributes (_AttributesBase, ru.DictMixin) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Attributes', 
-                  basestring, 
+                  str, 
                   rus.one_of (_UP, _DOWN))
     @rus.returns (bool)
     def _attributes_i_exists (self, key, flow) :
@@ -1288,7 +1288,7 @@ class Attributes (_AttributesBase, ru.DictMixin) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Attributes', 
-                  basestring, 
+                  str, 
                   rus.one_of (_UP, _DOWN))
     @rus.returns (bool)
     def _attributes_i_is_extended (self, key, flow) :
@@ -1311,7 +1311,7 @@ class Attributes (_AttributesBase, ru.DictMixin) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Attributes', 
-                  basestring, 
+                  str, 
                   rus.one_of (_UP, _DOWN))
     @rus.returns (bool)
     def _attributes_i_is_private (self, key, flow) :
@@ -1334,7 +1334,7 @@ class Attributes (_AttributesBase, ru.DictMixin) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Attributes', 
-                  basestring, 
+                  str, 
                   rus.one_of (_UP, _DOWN))
     @rus.returns (bool)
     def _attributes_i_is_readonly (self, key, flow) :
@@ -1362,7 +1362,7 @@ class Attributes (_AttributesBase, ru.DictMixin) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Attributes', 
-                  basestring, 
+                  str, 
                   rus.one_of (_UP, _DOWN))
     @rus.returns (bool)
     def _attributes_i_is_writeable (self, key, flow) :
@@ -1381,7 +1381,7 @@ class Attributes (_AttributesBase, ru.DictMixin) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Attributes', 
-                  basestring, 
+                  str, 
                   rus.one_of (_UP, _DOWN))
     @rus.returns (bool)
     def _attributes_i_is_removable (self, key, flow) :
@@ -1403,7 +1403,7 @@ class Attributes (_AttributesBase, ru.DictMixin) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Attributes', 
-                  basestring, 
+                  str, 
                   rus.one_of (_UP, _DOWN))
     @rus.returns (bool)
     def _attributes_i_is_vector (self, key, flow) :
@@ -1427,7 +1427,7 @@ class Attributes (_AttributesBase, ru.DictMixin) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Attributes', 
-                  basestring, 
+                  str, 
                   rus.one_of (_UP, _DOWN))
     @rus.returns (bool)
     def _attributes_i_is_final (self, key, flow) :
@@ -1454,7 +1454,7 @@ class Attributes (_AttributesBase, ru.DictMixin) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Attributes', 
-                  basestring, 
+                  str, 
                   callable,
                   rus.one_of (_UP, _DOWN))
     @rus.returns (int)
@@ -1482,7 +1482,7 @@ class Attributes (_AttributesBase, ru.DictMixin) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Attributes', 
-                  basestring, 
+                  str, 
                   rus.optional (int),
                   rus.one_of (_UP, _DOWN))
     @rus.returns (rus.nothing)
@@ -1523,7 +1523,7 @@ class Attributes (_AttributesBase, ru.DictMixin) :
     # Naming: _attributes_*
     #
     @rus.takes   ('Attributes', 
-                  basestring, 
+                  str, 
                   rus.optional (rus.optional (rus.anything)),
                   rus.optional (rus.one_of (ANY, URL, INT, FLOAT, STRING, BOOL, ENUM, TIME)),
                   rus.optional (rus.one_of (ANY, SCALAR, VECTOR, DICT)),
@@ -1623,8 +1623,8 @@ class Attributes (_AttributesBase, ru.DictMixin) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Attributes', 
-                  basestring, 
-                  basestring, 
+                  str, 
+                  str, 
                   rus.one_of (_UP, _DOWN))
     @rus.returns (rus.nothing)
     def _attributes_register_deprecated (self, key, alias, flow=_DOWN) :
@@ -1691,7 +1691,7 @@ class Attributes (_AttributesBase, ru.DictMixin) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Attributes', 
-                  basestring, 
+                  str, 
                   rus.one_of (_UP, _DOWN))
     @rus.returns (rus.nothing)
     def _attributes_unregister (self, key, flow) :
@@ -1724,7 +1724,7 @@ class Attributes (_AttributesBase, ru.DictMixin) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Attributes', 
-                  basestring, 
+                  str, 
                   rus.one_of (_UP, _DOWN))
     @rus.returns (rus.nothing)
     def _attributes_remove (self, key, flow) :
@@ -1749,7 +1749,7 @@ class Attributes (_AttributesBase, ru.DictMixin) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Attributes', 
-                  basestring, 
+                  str, 
                   rus.optional (rus.list_of (rus.anything)),
                   rus.optional (rus.one_of  (_UP, _DOWN)))
     @rus.returns (rus.nothing)
@@ -1933,7 +1933,7 @@ class Attributes (_AttributesBase, ru.DictMixin) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Attributes', 
-                  rus.optional (basestring),
+                  rus.optional (str),
                   rus.optional (rus.one_of  (_UP, _DOWN)))
     @rus.returns (rus.nothing)
     def _attributes_dump (self, msg=None, flow=_DOWN) :
@@ -1948,20 +1948,20 @@ class Attributes (_AttributesBase, ru.DictMixin) :
         d = self._attributes_t_init ()
 
 
-        keys_all = sorted (d['attributes'].iterkeys ())
+        keys_all = sorted (d['attributes'].keys ())
 
-        print "---------------------------------------"
-        print str (type (self))
+        print("---------------------------------------")
+        print(str (type (self)))
 
         if msg :
-            print "---------------------------------------"
-            print msg
+            print("---------------------------------------")
+            print(msg)
 
-        print "---------------------------------------"
-        print " %-30s : %s"  %  ("Extensible"  , d['extensible'])
-        print " %-30s : %s"  %  ("Private"     , d['private'])
-        print " %-30s : %s"  %  ("CamelCasing" , d['camelcasing'])
-        print "---------------------------------------"
+        print("---------------------------------------")
+        print(" %-30s : %s"  %  ("Extensible"  , d['extensible']))
+        print(" %-30s : %s"  %  ("Private"     , d['private']))
+        print(" %-30s : %s"  %  ("CamelCasing" , d['camelcasing']))
+        print("---------------------------------------")
 
         keys_exist = []
         for key in keys_all :
@@ -1969,70 +1969,70 @@ class Attributes (_AttributesBase, ru.DictMixin) :
                 d['attributes'][key]['exists']   :
                 keys_exist.append (key)
 
-        print "'Registered' attributes"
+        print("'Registered' attributes")
         for key in keys_all :
             if key not in keys_exist :
                 if not  d['attributes'][key]['mode'] == ALIAS and \
                    not  d['attributes'][key]['extended'] :
-                    print " %-30s [%6s, %6s, %9s, %3d]: %s"  % \
+                    print(" %-30s [%6s, %6s, %9s, %3d]: %s"  % \
                              (d['attributes'][key]['camelcase'],
                               d['attributes'][key]['type'],
                               d['attributes'][key]['flavor'],
                               d['attributes'][key]['mode'],
                           len(d['attributes'][key]['callbacks']),
                               d['attributes'][key]['value']
-                              )
+                              ))
 
-        print "---------------------------------------"
+        print("---------------------------------------")
 
-        print "'Existing' attributes"
+        print("'Existing' attributes")
         keys_exist.sort ()
         for key in keys_exist :
             if not  d['attributes'][key]['mode'] == ALIAS :
-                print " %-30s [%6s, %6s, %9s, %3d]: %s"  % \
+                print(" %-30s [%6s, %6s, %9s, %3d]: %s"  % \
                          (d['attributes'][key]['camelcase'],
                           d['attributes'][key]['type'],
                           d['attributes'][key]['flavor'],
                           d['attributes'][key]['mode'],
                       len(d['attributes'][key]['callbacks']),
                           d['attributes'][key]['value']
-                          )
+                          ))
 
-        print "---------------------------------------"
+        print("---------------------------------------")
 
-        print "'Extended' attributes"
+        print("'Extended' attributes")
         for key in keys_all :
             if key not in keys_exist :
                 if not  d['attributes'][key]['mode'] == ALIAS and \
                         d['attributes'][key]['extended'] :
-                    print " %-30s [%6s, %6s, %9s, %3d]: %s"  % \
+                    print(" %-30s [%6s, %6s, %9s, %3d]: %s"  % \
                              (d['attributes'][key]['camelcase'],
                               d['attributes'][key]['type'],
                               d['attributes'][key]['flavor'],
                               d['attributes'][key]['mode'],
                           len(d['attributes'][key]['callbacks']),
                               d['attributes'][key]['value']
-                              )
+                              ))
 
-        print "---------------------------------------"
+        print("---------------------------------------")
 
-        print "'Deprecated' attributes (aliases)"
+        print("'Deprecated' attributes (aliases)")
         for key in keys_all :
             if key not in keys_exist :
                 if d['attributes'][key]['mode'] == ALIAS :
-                    print " %-30s [%24s]:  %s"  % \
+                    print(" %-30s [%24s]:  %s"  % \
                              (d['attributes'][key]['camelcase'],
                               ' ',
                               d['attributes'][key]['alias']
-                              )
+                              ))
 
-        print "---------------------------------------"
+        print("---------------------------------------")
 
 
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Attributes', 
-                  basestring,
+                  str,
                   rus.optional (rus.anything),
                   rus.optional (rus.one_of (_UP, _DOWN)))
     @rus.returns (rus.nothing)
@@ -2076,7 +2076,7 @@ class Attributes (_AttributesBase, ru.DictMixin) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Attributes', 
-                  basestring,
+                  str,
                   rus.optional (float),
                   rus.optional (rus.one_of (_UP, _DOWN)))
     @rus.returns (rus.nothing)
@@ -2094,7 +2094,7 @@ class Attributes (_AttributesBase, ru.DictMixin) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Attributes', 
-                  basestring,
+                  str,
                   callable,
                   rus.optional (rus.one_of (_UP, _DOWN)))
     @rus.returns (rus.nothing)
@@ -2125,7 +2125,7 @@ class Attributes (_AttributesBase, ru.DictMixin) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Attributes', 
-                  basestring,
+                  str,
                   callable,
                   rus.optional (rus.one_of (_UP, _DOWN)))
     @rus.returns (rus.nothing)
@@ -2187,7 +2187,7 @@ class Attributes (_AttributesBase, ru.DictMixin) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Attributes', 
-                  basestring,
+                  str,
                   callable,
                   rus.optional (rus.one_of (_UP, _DOWN)))
     @rus.returns (rus.nothing)
@@ -2295,7 +2295,7 @@ class Attributes (_AttributesBase, ru.DictMixin) :
     # underscore before using them.
     # 
     @rus.takes   ('Attributes', 
-                  basestring,
+                  str,
                   rus.anything,
                   rus.optional (rus.one_of (_UP, _DOWN)))
     @rus.returns (rus.nothing)
@@ -2335,7 +2335,7 @@ class Attributes (_AttributesBase, ru.DictMixin) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Attributes', 
-                  basestring,
+                  str,
                   rus.optional (rus.one_of (_UP, _DOWN)))
     @rus.returns (rus.anything)
     def get_attribute (self, key, _flow=_DOWN) :
@@ -2356,7 +2356,7 @@ class Attributes (_AttributesBase, ru.DictMixin) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Attributes', 
-                  basestring,
+                  str,
                   rus.list_of (rus.anything),
                   rus.optional (rus.one_of (_UP, _DOWN)))
     @rus.returns (rus.nothing)
@@ -2379,7 +2379,7 @@ class Attributes (_AttributesBase, ru.DictMixin) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Attributes', 
-                  basestring,
+                  str,
                   rus.optional (rus.one_of (_UP, _DOWN)))
     @rus.returns (rus.list_of (rus.anything))
     def get_vector_attribute (self, key, _flow=_DOWN) :
@@ -2401,7 +2401,7 @@ class Attributes (_AttributesBase, ru.DictMixin) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Attributes', 
-                  basestring,
+                  str,
                   rus.optional (rus.one_of (_UP, _DOWN)))
     @rus.returns (rus.nothing)
     def remove_attribute (self, key, _flow=_DOWN) :
@@ -2423,7 +2423,7 @@ class Attributes (_AttributesBase, ru.DictMixin) :
     #
     @rus.takes   ('Attributes', 
                   rus.optional (rus.one_of (_UP, _DOWN)))
-    @rus.returns (rus.list_of (basestring))
+    @rus.returns (rus.list_of (str))
     def list_attributes (self, _flow=_DOWN) :
         """
         list_attributes ()
@@ -2437,9 +2437,9 @@ class Attributes (_AttributesBase, ru.DictMixin) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Attributes', 
-                  basestring,
+                  str,
                   rus.optional (rus.one_of (_UP, _DOWN)))
-    @rus.returns (rus.list_of (basestring))
+    @rus.returns (rus.list_of (str))
     def find_attributes (self, pattern, _flow=_DOWN) :
         """
         find_attributes (pattern)
@@ -2456,7 +2456,7 @@ class Attributes (_AttributesBase, ru.DictMixin) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Attributes', 
-                  basestring,
+                  str,
                   rus.optional (rus.one_of (_UP, _DOWN)))
     @rus.returns (bool)
     def attribute_exists (self, key, _flow=_DOWN) :
@@ -2475,7 +2475,7 @@ class Attributes (_AttributesBase, ru.DictMixin) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Attributes', 
-                  basestring,
+                  str,
                   rus.optional (rus.one_of (_UP, _DOWN)))
     @rus.returns (bool)
     def attribute_is_readonly (self, key, _flow=_DOWN) :
@@ -2494,7 +2494,7 @@ class Attributes (_AttributesBase, ru.DictMixin) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Attributes', 
-                  basestring,
+                  str,
                   rus.optional (rus.one_of (_UP, _DOWN)))
     @rus.returns (bool)
     def attribute_is_writeable (self, key, _flow=_DOWN) :
@@ -2512,7 +2512,7 @@ class Attributes (_AttributesBase, ru.DictMixin) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Attributes', 
-                  basestring,
+                  str,
                   rus.optional (rus.one_of (_UP, _DOWN)))
     @rus.returns (bool)
     def attribute_is_removable (self, key, _flow=_DOWN) :
@@ -2530,7 +2530,7 @@ class Attributes (_AttributesBase, ru.DictMixin) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Attributes', 
-                  basestring,
+                  str,
                   rus.optional (rus.one_of (_UP, _DOWN)))
     @rus.returns (bool)
     def attribute_is_vector (self, key, _flow=_DOWN) :
@@ -2550,7 +2550,7 @@ class Attributes (_AttributesBase, ru.DictMixin) :
     # fold the GFD.90 monitoring API into the attributes API
     #
     @rus.takes   ('Attributes', 
-                  basestring,
+                  str,
                   callable, 
                   rus.optional (rus.one_of (_UP, _DOWN)))
     @rus.returns (int)
@@ -2592,7 +2592,7 @@ class Attributes (_AttributesBase, ru.DictMixin) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Attributes', 
-                  basestring,
+                  str,
                   int, 
                   rus.optional (rus.one_of (_UP, _DOWN)))
     @rus.returns (rus.nothing)
@@ -2621,7 +2621,7 @@ class Attributes (_AttributesBase, ru.DictMixin) :
     # we assume that properties are always used in under_score notation.
     #
     @rus.takes   ('Attributes', 
-                  basestring)
+                  str)
     @rus.returns (rus.anything)
     def __getattr__ (self, key) :
         """ see L{get_attribute} (key) for details. """
@@ -2633,7 +2633,7 @@ class Attributes (_AttributesBase, ru.DictMixin) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Attributes', 
-                  basestring, 
+                  str, 
                   rus.anything)
     @rus.returns (rus.nothing)
     def __setattr__ (self, key, val) :
@@ -2646,7 +2646,7 @@ class Attributes (_AttributesBase, ru.DictMixin) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Attributes', 
-                  basestring)
+                  str)
     @rus.returns (rus.nothing)
     def __delattr__ (self, key) :
         """ see L{remove_attribute} (key) for details. """
@@ -2657,7 +2657,7 @@ class Attributes (_AttributesBase, ru.DictMixin) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Attributes')
-    @rus.returns (basestring)
+    @rus.returns (str)
     def __str__  (self) :
         """ return a string representation of all set attributes """
 
@@ -2674,7 +2674,7 @@ class Attributes (_AttributesBase, ru.DictMixin) :
     def from_dict (self, seed):
         """ set attributes from dict """
 
-        for k,v in seed.iteritems():
+        for k,v in seed.items():
             self.set_attribute(k,v)
 
 
@@ -2726,7 +2726,7 @@ class Attributes (_AttributesBase, ru.DictMixin) :
 
     # --------------------------------------------------------------------------
     #
-    def next (self) :
+    def __next__ (self) :
 
         iterlist = self._attributes_i_list (CamelCase=False)
         

@@ -255,7 +255,7 @@ class RedisDirectory (cpi.Directory) :
 
         data = self._nsdir.get_data ()
 
-        for key in data.keys () :
+        for key in list(data.keys ()) :
             self._api ()._attributes_i_set (key, data[key], self._api ()._UP)
 
 
@@ -492,7 +492,7 @@ class RedisEntry (cpi.Entry) :
 
         data = self._nsentry.get_data ()
 
-        for key in data.keys () :
+        for key in list(data.keys ()) :
             self._api ()._attributes_i_set (key, data[key], self._api ()._UP)
 
 

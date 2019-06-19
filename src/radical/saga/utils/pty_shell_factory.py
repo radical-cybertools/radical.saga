@@ -101,7 +101,7 @@ _SCRIPTS = {
 
 # ------------------------------------------------------------------------------
 #
-class PTYShellFactory (object) :
+class PTYShellFactory (object, metaclass=ru.Singleton) :
     """
     This is the place where all master and all client shell connections get
     created.  But also, this factory maintains a registry of master connections,
@@ -139,8 +139,6 @@ class PTYShellFactory (object) :
     for gsiscp and gsisftp slaves; and sh master for file slaves
 
     """
-
-    __metaclass__ = ru.Singleton
 
 
     # --------------------------------------------------------------------------
@@ -571,7 +569,7 @@ class PTYShellFactory (object) :
                 # FIXME: note that get_host_latency is considered broken (see
                 # saga/utils/misc.py line 73), and will return a constant 250ms.
 
-            except Exception  as e :
+            except Exception as e :
                 info['latency'] = 1.0  # generic value assuming slow link
                 info['logger'].warning("Could not contact host '%s': %s"
                                       % (url, e))

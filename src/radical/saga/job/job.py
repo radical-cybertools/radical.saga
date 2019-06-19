@@ -55,7 +55,7 @@ class Job (sb.Base, st.Task, sasync.Async) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Job',
-                  rus.optional (basestring),
+                  rus.optional (str),
                   rus.optional (sab.Base),
                   rus.optional (dict),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
@@ -129,7 +129,7 @@ class Job (sb.Base, st.Task, sasync.Async) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Job')
-    @rus.returns (basestring)
+    @rus.returns (str)
     def __str__  (self) :
         """
         __str__()
@@ -147,7 +147,7 @@ class Job (sb.Base, st.Task, sasync.Async) :
     #
     @rus.takes   ('Job',
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
-    @rus.returns ((rus.nothing, basestring, st.Task))
+    @rus.returns ((rus.nothing, str, st.Task))
     def get_id   (self, ttype=None) :
         """
         get_id()
@@ -162,7 +162,7 @@ class Job (sb.Base, st.Task, sasync.Async) :
     #
     @rus.takes   ('Job',
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
-    @rus.returns ((rus.nothing, basestring, st.Task))
+    @rus.returns ((rus.nothing, str, st.Task))
     def get_name (self, ttype=None) :
         """
         get_name()
@@ -176,7 +176,7 @@ class Job (sb.Base, st.Task, sasync.Async) :
     #
     @rus.takes          ('Job',
                          rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
-    @rus.returns        ((basestring, st.Task))
+    @rus.returns        ((str, st.Task))
     def get_description (self, ttype=None) :
         """
         get_description()
@@ -724,7 +724,7 @@ class Job (sb.Base, st.Task, sasync.Async) :
     #
     @rus.takes       ('Job',
                       rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
-    @rus.returns     ((rus.nothing, rus.list_of (basestring), st.Task))
+    @rus.returns     ((rus.nothing, rus.list_of (str), st.Task))
     def _get_execution_hosts (self, ttype=None) :
         return self._adaptor.get_execution_hosts (ttype=ttype)
 
@@ -814,7 +814,7 @@ class Self (Job) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Self',
-                  rus.optional (basestring),
+                  rus.optional (str),
                   rus.optional (sab.Base),
                   rus.optional (dict),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))

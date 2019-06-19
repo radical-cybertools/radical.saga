@@ -585,9 +585,9 @@ class SRMFile(cpi.File):
 
 
     def _dump(self):
-        print "url    : %s"  % self._url
-        print "flags  : %s"  % self._flags
-        print "session: %s"  % self._session
+        print("url    : %s"  % self._url)
+        print("flags  : %s"  % self._flags)
+        print("session: %s"  % self._session)
 
 
     # --------------------------------------------------------------------------

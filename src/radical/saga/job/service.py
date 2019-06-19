@@ -62,7 +62,7 @@ class Service (sb.Base, sasync.Async) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Service', 
-                  rus.optional ((basestring, ru.Url)), 
+                  rus.optional ((str, ru.Url)), 
                   rus.optional (ss.Session), 
                   rus.optional (sab.Base),
                   rus.optional (dict),
@@ -121,7 +121,7 @@ class Service (sb.Base, sasync.Async) :
     #
     @classmethod
     @rus.takes   ('Service', 
-                  rus.optional ((ru.Url, basestring)), 
+                  rus.optional ((ru.Url, str)), 
                   rus.optional (ss.Session), 
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns (st.Task)
@@ -149,7 +149,7 @@ class Service (sb.Base, sasync.Async) :
     # --------------------------------------------------------------------------
     #
     @rus.takes     ('Service')
-    @rus.returns   (basestring)
+    @rus.returns   (str)
     def __str__ (self):
         """
         __str__()
@@ -281,8 +281,8 @@ class Service (sb.Base, sasync.Async) :
                 default = jd_default.get_attribute (key)
 
                 # Also, we make string compares case insensitive
-                if isinstance (val,     basestring) : val     = val    .lower ()
-                if isinstance (default, basestring) : default = default.lower ()
+                if isinstance (val,     str) : val     = val    .lower ()
+                if isinstance (default, str) : default = default.lower ()
 
                 # supported keys are also valid, as are keys with default or
                 # None values
@@ -301,7 +301,7 @@ class Service (sb.Base, sasync.Async) :
 
         # convert environment to string
         if jd_copy.attribute_exists ('Environment') :
-            for (key, value) in jd_copy.environment.iteritems():
+            for (key, value) in jd_copy.environment.items():
                 jd_copy.environment[key] = str(value)
 
         return self._adaptor.create_job (jd_copy, ttype=ttype)
@@ -310,8 +310,8 @@ class Service (sb.Base, sasync.Async) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Service', 
-                  basestring,
-                  rus.optional (basestring),
+                  str,
+                  rus.optional (str),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((j.Job, st.Task))
     def run_job  (self, cmd, host=None, ttype=None) :
@@ -350,7 +350,7 @@ class Service (sb.Base, sasync.Async) :
     #
     @rus.takes   ('Service',
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
-    @rus.returns ((rus.list_of (basestring), st.Task))
+    @rus.returns ((rus.list_of (str), st.Task))
     def list     (self, ttype=None) :
         """ 
         list()
@@ -419,7 +419,7 @@ class Service (sb.Base, sasync.Async) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Service',
-                  basestring,
+                  str,
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((j.Job, st.Task))
     def get_job  (self, job_id, ttype=None) :

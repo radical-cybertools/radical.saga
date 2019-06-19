@@ -42,7 +42,7 @@ class Monitorable (sa.Attributes) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Monitorable')
-    @rus.returns (rus.list_of (basestring))
+    @rus.returns (rus.list_of (str))
     def list_metrics (self) :
 
         self._check ()
@@ -64,7 +64,7 @@ class Monitorable (sa.Attributes) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Monitorable',
-                  basestring,
+                  str,
                   rus.one_of ('saga.Callback', callable))
     @rus.returns (int)
     def add_callback (self, name, cb) :

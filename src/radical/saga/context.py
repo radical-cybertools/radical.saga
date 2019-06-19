@@ -7,9 +7,9 @@ import copy
 
 import radical.utils.signatures as rus
 
-import adaptors.base    as sab
-import attributes       as sa
-import base             as sb
+from . import adaptors.base    as sab
+from . import attributes       as sa
+from . import base             as sb
 
 from   .constants import TYPE,       SERVER,    USER_CERT,   CERT_REPOSITORY
 from   .constants import USER_PROXY, USER_KEY,  USER_ID,     USER_PASS,   USER_VO
@@ -66,7 +66,7 @@ class Context (sb.Base, sa.Attributes) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Context', 
-                  basestring, 
+                  str, 
                   rus.optional (sab.Base),
                   rus.optional (dict))
     @rus.returns (rus.nothing)
@@ -79,7 +79,7 @@ class Context (sb.Base, sa.Attributes) :
         sb.Base.__init__ (self, ctype.lower(), _adaptor, _adaptor_state, ctype, ttype=None)
 
 
-        import attributes as sa
+        from . import attributes as sa
 
         # set attribute interface propertiesP
         self._attributes_extensible  (False)
@@ -107,7 +107,7 @@ class Context (sb.Base, sa.Attributes) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Context')
-    @rus.returns (basestring)
+    @rus.returns (str)
     def __str__  (self) :
 
         d = self.as_dict ()
@@ -126,7 +126,7 @@ class Context (sb.Base, sa.Attributes) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Context')
-    @rus.returns (basestring)
+    @rus.returns (str)
     def __repr__ (self) :
 
         return str(self)

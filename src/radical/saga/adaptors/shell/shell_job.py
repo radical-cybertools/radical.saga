@@ -703,7 +703,7 @@ class ShellJobService (cpi.Service) :
             raise rse.NoSuccess("failed to run Job '%s': (%s)(%s)"
                                % (cmd, ret, out))
 
-        lines = filter (None, out.split ("\n"))
+        lines = [_f for _f in out.split ("\n") if _f]
         self._logger.debug (lines)
 
         if  len (lines) < 2 :
@@ -746,7 +746,7 @@ class ShellJobService (cpi.Service) :
                           % (id, ret, out))
 
         # the filter removes also empty lines from stdout/stderr.  Oh well...
-        lines = filter (None, out.split ("\n"))
+        lines = [_f for _f in out.split ("\n") if _f]
         self._logger.debug (lines)
 
         if lines[0] != "OK" :
@@ -813,7 +813,7 @@ class ShellJobService (cpi.Service) :
                                % (id, ret, out))
             return None
 
-        lines = filter (None, out.split ("\n"))
+        lines = [_f for _f in out.split ("\n") if _f]
         self._logger.debug (lines)
 
         if  len (lines) == 3 :
@@ -877,7 +877,7 @@ class ShellJobService (cpi.Service) :
             raise rse.NoSuccess("failed to cancel job '%s': (%s)(%s)"
                                % (id, ret, out))
 
-        lines = filter (None, out.split ("\n"))
+        lines = [_f for _f in out.split ("\n") if _f]
         self._logger.debug (lines)
 
         if  len (lines) == 3 :
@@ -951,7 +951,7 @@ class ShellJobService (cpi.Service) :
         if  ret != 0 :
             raise rse.NoSuccess ("failed to list jobs: (%s)(%s)" % (ret, out))
 
-        lines = filter (None, out.split ("\n"))
+        lines = [_f for _f in out.split ("\n") if _f]
         self._logger.debug (lines)
 
         if lines[0] != "OK" :
@@ -1045,7 +1045,7 @@ class ShellJobService (cpi.Service) :
                         ("failed to run job: (%s)(%s)" % (ret, out))
                 continue
 
-            lines = filter (None, out.split ("\n"))
+            lines = [_f for _f in out.split ("\n") if _f]
 
             if  len (lines) < 2 :
                 job._adaptor._set_state (api.FAILED)
@@ -1081,7 +1081,7 @@ class ShellJobService (cpi.Service) :
                               % (ret, out))
             return
 
-        lines = filter (None, out.split ("\n"))
+        lines = [_f for _f in out.split ("\n") if _f]
 
         if  len (lines) < 2 :
             self._logger.error("no status of bulk job submission: (%s)(%s)"
@@ -1135,7 +1135,7 @@ class ShellJobService (cpi.Service) :
                         ("failed to wait for job: (%s)(%s)" % (ret, out))
                 continue
 
-            lines = filter (None, out.split ("\n"))
+            lines = [_f for _f in out.split ("\n") if _f]
 
             if  len (lines) < 2 :
                 job._adaptor._set_state (api.FAILED)
@@ -1157,7 +1157,7 @@ class ShellJobService (cpi.Service) :
                               % (ret, out))
             return
 
-        lines = filter (None, out.split ("\n"))
+        lines = [_f for _f in out.split ("\n") if _f]
 
         if  len (lines) < 2 :
             self._logger.error("no status of bulk job wait: (%s)(%s)"
@@ -1196,7 +1196,7 @@ class ShellJobService (cpi.Service) :
                         ("failed to cancel job: (%s)(%s)" % (ret, out))
                 continue
 
-            lines = filter (None, out.split ("\n"))
+            lines = [_f for _f in out.split ("\n") if _f]
 
             if  len (lines) < 2 :
                 job._adaptor._set_state (api.FAILED)
@@ -1218,7 +1218,7 @@ class ShellJobService (cpi.Service) :
                               % (ret, out))
             return
 
-        lines = filter (None, out.split ("\n"))
+        lines = [_f for _f in out.split ("\n") if _f]
 
         if  len (lines) < 2 :
             self._logger.error("no status of bulk job cancel: (%s)(%s)"
@@ -1262,7 +1262,7 @@ class ShellJobService (cpi.Service) :
                         ("failed to get job state: (%s)(%s)" % (ret, out))
                 continue
 
-            lines = filter (None, out.split ("\n"))
+            lines = [_f for _f in out.split ("\n") if _f]
 
             if  len (lines) < 2 :
                 job._adaptor._set_state (api.FAILED)
@@ -1290,7 +1290,7 @@ class ShellJobService (cpi.Service) :
                               % (ret, out))
             return
 
-        lines = filter (None, out.split ("\n"))
+        lines = [_f for _f in out.split ("\n") if _f]
 
         if  len (lines) < 2 :
             self._logger.error("Cannot eval status of bulk job: (%s)(%s)"
@@ -1493,7 +1493,7 @@ class ShellJob (cpi.Job) :
                     ("failed to get job stdout for '%s': (%s)(%s)"
                      % (self._id, ret, out))
 
-        lines = filter (None, out.split ("\n"))
+        lines = [_f for _f in out.split ("\n") if _f]
 
         if lines[0] != "OK" :
             raise rse.NoSuccess \
@@ -1527,7 +1527,7 @@ class ShellJob (cpi.Job) :
                     ("failed to get job stderr for '%s': (%s)(%s)"
                      % (self._id, ret, out))
 
-        lines = filter (None, out.split ("\n"))
+        lines = [_f for _f in out.split ("\n") if _f]
 
         if lines[0] != "OK" :
             raise rse.NoSuccess \
@@ -1560,7 +1560,7 @@ class ShellJob (cpi.Job) :
                     ("failed to get job log for '%s': (%s)(%s)"
                      % (self._id, ret, out))
 
-        lines = filter (None, out.split ("\n"))
+        lines = [_f for _f in out.split ("\n") if _f]
 
         if lines[0] != "OK" :
             raise rse.NoSuccess \

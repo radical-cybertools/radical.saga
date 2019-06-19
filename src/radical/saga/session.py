@@ -8,11 +8,11 @@ import copy
 import radical.utils            as ru
 import radical.utils.signatures as rus
 
-import exceptions               as se
+from . import exceptions               as se
 
-import engine.engine
-import context
-import base
+from . import engine.engine
+from . import context
+from . import base
 
 
 
@@ -71,7 +71,7 @@ class _ContextList (list) :
     def _initialise_context(self, ctx, session=None):
 
         if  not isinstance (ctx, context.Context) :
-            raise TypeError, "item to add is not a saga.Context instance"
+            raise TypeError("item to add is not a saga.Context instance")
 
         # create a deep copy of the context (this keeps _adaptor etc)
         ctx_clone = context.Context  (ctx.type)
@@ -205,7 +205,7 @@ class Session (base.SimpleBase) :
     # ----------------------------------------------------------------
     #
     @rus.takes   ('Session')
-    @rus.returns (basestring)
+    @rus.returns (str)
     def __str__  (self):
         """String represenation."""
 
@@ -272,13 +272,8 @@ class Session (base.SimpleBase) :
 
 # ------------------------------------------------------------------------------
 #
-class DefaultSession(Session):
+class DefaultSession(Session, metaclass=ru.Singleton):
 
-    __metaclass__ = ru.Singleton
-
-
-    # --------------------------------------------------------------------------
-    #
     @rus.takes   ('DefaultSession')
     @rus.returns (rus.nothing)
     def __init__ (self, uid=None):
