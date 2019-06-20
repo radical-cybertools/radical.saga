@@ -47,14 +47,14 @@ class SagaException (Exception) :
     catched exceptions are available via :func:`get_all_exceptions`, or via the
     `exceptions` property.
 
-    The rank of an exception defines its explicity: in general terms: the higher
-    the rank, the better defined / known is the cause of the problem.
+    The rank of an exception defines its explicity: in general terms: the
+    higher the rank, the better defined / known is the cause of the problem.
     """
 
     # --------------------------------------------------------------------------
     #
     def __init__ (self, msg, parent=None, api_object=None, from_log=False) :
-        """ 
+        """
         Create a new exception object.
 
         :param msg:         The exception message.
@@ -70,14 +70,14 @@ class SagaException (Exception) :
         self._exceptions    = [self]
         self._top_exception = self
         self._ptype         = type(parent).__name__   # parent exception type
-        self._stype         = type(self  ).__name__   # own exception    type 
+        self._stype         = type(self  ).__name__   # own exception    type
 
         ignore_stack = 2
-        if  from_log : 
+        if  from_log :
             ignore_stack += 1
 
 
-        if api_object : 
+        if api_object :
             self._object    = weakref.ref (api_object)
         else :
             self._object    = None
@@ -97,7 +97,8 @@ class SagaException (Exception) :
                 self._traceback = parent.traceback
 
                 frame           = traceback.extract_stack ()[- ignore_stack]
-                line            = "%s +%s (%s)  :  %s" % frame 
+                print("DEBUG: frame=%s" % frame)
+                line            = "%s +%s (%s)  :  %s" % frame
                 self._message   = "  %-20s: %s (%s)\n%s" \
                                 % (self._stype, msg, line, parent.msg)
 
@@ -105,7 +106,7 @@ class SagaException (Exception) :
                 if self._stype != "NoneType" :
                     # ... but if parent is a native (or any other) exception
                     # type, we don't have a traceback really -- so we dig it
-                    # out of sys.exc_info. 
+                    # out of sys.exc_info.
                     trace           = sys.exc_info ()[2]
                     stack           = traceback.extract_tb  (trace)
                     traceback_list  = traceback.format_list (stack)
@@ -115,7 +116,7 @@ class SagaException (Exception) :
                     # the parent exception type inconspicuously somewhere (above
                     # that was part of 'parent.message' already).
                     frame          = traceback.extract_stack ()[- ignore_stack]
-                    line           = "%s +%s (%s)  :  %s" % frame 
+                    line           = "%s +%s (%s)  :  %s" % frame
                     self._message  = "  %-20s: %s (%s)\n  %-20s: %s" \
                                 % (self._stype, msg, line, self._ptype, parent)
 
@@ -130,7 +131,7 @@ class SagaException (Exception) :
             traceback_list  = traceback.format_list (stack)
             self._traceback = "".join (traceback_list[:-1])
             frame           = traceback.extract_stack ()[- ignore_stack -1]
-            line            = "%s +%s (%s)  :  %s" % frame 
+            line            = "%s +%s (%s)  :  %s" % frame
             self._message   = "%s (%s)" % (msg, line)
 
         # we can't do that earlier as _msg was not set up before
@@ -264,7 +265,7 @@ class SagaException (Exception) :
     # --------------------------------------------------------------------------
     #
     def _get_exception_stack (self) :
-        """ 
+        """
         This method is internally used by the radical.saga engine, and is only
         relevant for operations which (potentially) bind to more than one
         adaptor.
@@ -332,7 +333,7 @@ class NotImplemented(SagaException, NotImplementedError):
 
 # ------------------------------------------------------------------------------
 #
-class IncorrectURL(SagaException, ValueError): 
+class IncorrectURL(SagaException, ValueError):
     """ The given URL could not be interpreted, for example due to an incorrect
         / unknown schema. (rank: 10)"""
 
@@ -344,7 +345,7 @@ class IncorrectURL(SagaException, ValueError):
 
 # ------------------------------------------------------------------------------
 #
-class BadParameter(SagaException, ValueError): 
+class BadParameter(SagaException, ValueError):
     """ A given parameter is out of bound or ill formatted. (rank: 9)"""
 
     _rank = 9
@@ -355,7 +356,7 @@ class BadParameter(SagaException, ValueError):
 
 # ------------------------------------------------------------------------------
 #
-class AlreadyExists(SagaException, ValueError): 
+class AlreadyExists(SagaException, ValueError):
     """ The entity to be created already exists. (rank: 8)"""
 
     _rank = 8
@@ -377,7 +378,7 @@ class DoesNotExist(SagaException, KeyError):
 
 # ------------------------------------------------------------------------------
 #
-class IncorrectState(SagaException, RuntimeError): 
+class IncorrectState(SagaException, RuntimeError):
     """ The operation is not allowed on the entity
         in its current state. (rank: 6)"""
 
@@ -389,7 +390,7 @@ class IncorrectState(SagaException, RuntimeError):
 
 # ------------------------------------------------------------------------------
 #
-class PermissionDenied(SagaException, RuntimeError): 
+class PermissionDenied(SagaException, RuntimeError):
     """ The used identity is not permitted to perform the
         requested operation. (rank: 5)"""
 
@@ -401,7 +402,7 @@ class PermissionDenied(SagaException, RuntimeError):
 
 # ------------------------------------------------------------------------------
 #
-class AuthorizationFailed(SagaException, RuntimeError): 
+class AuthorizationFailed(SagaException, RuntimeError):
     """ The backend could not establish a valid identity. (rank: 4)"""
 
     _rank = 4
@@ -412,7 +413,7 @@ class AuthorizationFailed(SagaException, RuntimeError):
 
 # ------------------------------------------------------------------------------
 #
-class AuthenticationFailed(SagaException, RuntimeError): 
+class AuthenticationFailed(SagaException, RuntimeError):
     """ The backend could not establish a valid identity. (rank: 3)"""
 
     _rank = 3
@@ -423,7 +424,7 @@ class AuthenticationFailed(SagaException, RuntimeError):
 
 # ------------------------------------------------------------------------------
 #
-class Timeout(SagaException, RuntimeError): 
+class Timeout(SagaException, RuntimeError):
     """ The interaction with the backend times out. (rank: 2)"""
 
     _rank = 2
@@ -434,7 +435,7 @@ class Timeout(SagaException, RuntimeError):
 
 # ------------------------------------------------------------------------------
 #
-class NoSuccess(SagaException, RuntimeError): 
+class NoSuccess(SagaException, RuntimeError):
     """ Some other error occurred. (rank: 1)"""
 
     _rank = 1

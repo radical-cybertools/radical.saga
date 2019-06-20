@@ -284,7 +284,7 @@ class DefaultSession(Session, metaclass=ru.Singleton):
         _engine = engine.Engine()
 
         if not 'saga.Context' in _engine._adaptor_registry :
-            self._logger.warn ("no context adaptors found")
+            self._logger.warning ("no context adaptors found")
             return
 
         for schema   in _engine._adaptor_registry['saga.Context'] :

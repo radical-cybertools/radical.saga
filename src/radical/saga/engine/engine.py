@@ -17,7 +17,7 @@ from .. import exceptions as rse
 _share_mode_default = 'auto'
 try:
     import subprocess as sp
-    _p = sp.Popen ('lsb_release -a | grep "Distributor ID" | cut -f 2 -d ":"', 
+    _p = sp.Popen ('lsb_release -a | grep "Distributor ID" | cut -f 2 -d ":"',
                    stdout=sp.PIPE, stderr=sp.STDOUT, shell=True)
     _os_flavor = _p.communicate()[0].strip().lower()
 
@@ -139,7 +139,7 @@ class Engine(object, metaclass=ru.Singleton):
     # --------------------------------------------------------------------------
     #
     def _load_adaptors (self, inject_registry=None):
-        """ 
+        """
         Try to load all adaptors that are registered in saga.engine.registry.py.
         This method is called from the constructor.  As Engine is a singleton,
         this method is called once after the module is first loaded in any
@@ -169,7 +169,7 @@ class Engine(object, metaclass=ru.Singleton):
                 adaptor_module = ru.import_module(module_name)
 
             except Exception:
-                self._logger.warn("skip adaptor %s: import failed",
+                self._logger.warning("skip adaptor %s: import failed",
                                   module_name, exc_info=True)
                 continue
 
@@ -184,12 +184,12 @@ class Engine(object, metaclass=ru.Singleton):
                 adaptor_info     = adaptor_instance.register ()
 
             except rse.SagaException:
-                self._logger.warn("skip adaptor %s: failed to load",
+                self._logger.warning("skip adaptor %s: failed to load",
                                   module_name, exc_info=True)
                 continue
 
             except Exception:
-                self._logger.warn("skip adaptor %s: init failed",
+                self._logger.warning("skip adaptor %s: init failed",
                                   module_name, exc_info=True)
                 continue
 
@@ -202,14 +202,14 @@ class Engine(object, metaclass=ru.Singleton):
                 adaptor_instance.sanity_check ()
 
             except Exception:
-                self._logger.warn("skip adaptor %s: test failed",
+                self._logger.warning("skip adaptor %s: test failed",
                                   module_name, exc_info=True)
                 continue
 
 
             # check if we have a valid adaptor_info
             if adaptor_info is None :
-                self._logger.warn("skip adaptor %s: invalid adaptor data",
+                self._logger.warning("skip adaptor %s: invalid adaptor data",
                                   module_name)
                 continue
 
@@ -218,7 +218,7 @@ class Engine(object, metaclass=ru.Singleton):
                 'cpis'    not in adaptor_info or \
                 'version' not in adaptor_info or \
                 'schemas' not in adaptor_info    :
-                self._logger.warn("skip adaptor %s: incomplete data",
+                self._logger.warning("skip adaptor %s: incomplete data",
                                   module_name)
                 continue
 
@@ -235,7 +235,7 @@ class Engine(object, metaclass=ru.Singleton):
                 if 'alpha' in adaptor_version.lower() or \
                    'beta'  in adaptor_version.lower()    :
 
-                    self._logger.warn("skip beta adaptor %s (version %s)",
+                    self._logger.warning("skip beta adaptor %s (version %s)",
                                       module_name, adaptor_version)
                     continue
 
@@ -251,25 +251,25 @@ class Engine(object, metaclass=ru.Singleton):
                 adaptor_enabled = adaptor_config.get('enabled', True)
 
             except rse.SagaException:
-                self._logger.warn("skip adaptor %s: init failed",
+                self._logger.warning("skip adaptor %s: init failed",
                                   module_name, exc_info=True)
                 continue
 
             except Exception as e:
-                self._logger.warn("skip adaptor %s: init error",
+                self._logger.warning("skip adaptor %s: init error",
                                   module_name, exc_info=True)
                 continue
 
 
             # only load adaptor if it is not disabled via config files
             if not adaptor_enabled:
-                self._logger.warn("skip adaptor %s: disabled", module_name)
+                self._logger.warning("skip adaptor %s: disabled", module_name)
                 continue
 
 
             # check if the adaptor has anything to register
             if 0 == len (adaptor_info['cpis']) :
-                self._logger.warn("skip adaptor %s: adaptor has no cpis",
+                self._logger.warning("skip adaptor %s: adaptor has no cpis",
                                   module_name)
                 continue
 
@@ -281,7 +281,7 @@ class Engine(object, metaclass=ru.Singleton):
                 # check cpi information details for completeness
                 if  'type'  not in cpi_info or \
                     'class' not in cpi_info    :
-                    self._logger.warn("skip %s cpi: incomplete info detail",
+                    self._logger.warning("skip %s cpi: incomplete info detail",
                                       module_name)
                     continue
 
@@ -297,7 +297,7 @@ class Engine(object, metaclass=ru.Singleton):
                 except Exception:
                     # this exception likely means that the adaptor does not call
                     # the radical.saga.adaptors.Base initializer (correctly)
-                    self._logger.warn("skip adaptor %s: invalid %s",
+                    self._logger.warning("skip adaptor %s: invalid %s",
                                       module_name, cpi_info['class'],
                                       exc_info=True)
                     continue
@@ -331,13 +331,13 @@ class Engine(object, metaclass=ru.Singleton):
 
                 if  len(cpi_type_nselems) < 3 or \
                     len(cpi_type_nselems) > 4    :
-                    self._logger.warn("skip adaptor %s invalid cpi %s",
+                    self._logger.warning("skip adaptor %s invalid cpi %s",
                                       module_name, cpi_type)
                     continue
 
                 if  cpi_type_nselems[0] != 'radical' and \
                     cpi_type_nselems[1] != 'saga'    :
-                    self._logger.warn("skip adaptor %s: invalid cpi ns %s",
+                    self._logger.warning("skip adaptor %s: invalid cpi ns %s",
                                       module_name, cpi_type, exc_info=True)
                     continue
 
@@ -367,7 +367,7 @@ class Engine(object, metaclass=ru.Singleton):
              #      cpi_type_modname = cpi_type_modname_2
              #
              #  if  not cpi_type_modname :
-             #      self._logger.warn("skip adaptor %s: unknown cpi %s",
+             #      self._logger.warning("skip adaptor %s: unknown cpi %s",
              #                        module_name, cpi_type, exc_info=True)
              #      sys.exit()
              #      continue
@@ -383,7 +383,7 @@ class Engine(object, metaclass=ru.Singleton):
              #              cpi_ok = True
              #
              #  if not cpi_ok :
-             #      self._logger.warn("skip adaptor %s: no cpi %s (%s)",
+             #      self._logger.warning("skip adaptor %s: no cpi %s (%s)",
              #                        module_name, cpi_class, cpi_type,
              #                       exc_info=True)
              #      continue
@@ -415,7 +415,7 @@ class Engine(object, metaclass=ru.Singleton):
 
                     # make sure this tuple was not registered, yet
                     if info in self._adaptor_registry[cpi_type][adaptor_schema]:
-                        self._logger.warn("skip adaptor %s: exists %s: %s",
+                        self._logger.warning("skip adaptor %s: exists %s: %s",
                                           module_name, cpi_class,
                                           adaptor_instance, exc_info=True)
                         continue

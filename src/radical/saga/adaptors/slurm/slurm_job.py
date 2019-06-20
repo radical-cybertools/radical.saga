@@ -213,7 +213,7 @@ _ADAPTOR_INFO          = {
 
 
 ################################################################################
-# 
+#
 # The adaptor class
 #
 class Adaptor (a_base.Base):
@@ -382,7 +382,7 @@ class SLURMJobService (cpi_job.Service) :
         self._version = out.split()[1].strip()
         self._logger.info('slurm version: %s' % self._version)
 
-        ppn_pat   = '\'s/.*\\(CPUTot=[0-9]*\\).*/\\1/g\'' 
+        ppn_pat   = '\'s/.*\\(CPUTot=[0-9]*\\).*/\\1/g\''
         ppn_cmd   = 'scontrol show nodes ' + \
                     '| grep CPUTot'        + \
                     '| sed -e ' + ppn_pat  + \
@@ -511,7 +511,7 @@ class SLURMJobService (cpi_job.Service) :
         # FIXME: these should be moved into resource config files
         if 'bridges' in self.rm.host.lower():
 
-            if total_gpu_count: 
+            if total_gpu_count:
                 if cpu_arch: gpu_arch = cpu_arch.lower()
                 else       : gpu_arch = 'p100'
                 slurm_script += "#SBATCH --gres=gpu:%s:%s\n" % (gpu_arch, total_gpu_count)
@@ -533,13 +533,13 @@ class SLURMJobService (cpi_job.Service) :
             if total_gpu_count: slurm_script += "#SBATCH --gpus=%s\n" % total_gpu_count
 
 
-        if cwd:             slurm_script += "#SBATCH --workdir %s\n"     % cwd 
-        if output:          slurm_script += "#SBATCH --output %s\n"      % output 
-        if error:           slurm_script += "#SBATCH --error %s\n"       % error 
+        if cwd:             slurm_script += "#SBATCH --workdir %s\n"     % cwd
+        if output:          slurm_script += "#SBATCH --output %s\n"      % output
+        if error:           slurm_script += "#SBATCH --error %s\n"       % error
         if queue:           slurm_script += "#SBATCH --partition %s\n"   % queue
         if job_name:        slurm_script += '#SBATCH -J "%s"\n'          % job_name
-        if job_memory:      slurm_script += "#SBATCH --mem=%s\n"         % job_memory 
-        if candidate_hosts: slurm_script += "#SBATCH --nodelist=%s\n"    % candidate_hosts 
+        if job_memory:      slurm_script += "#SBATCH --mem=%s\n"         % job_memory
+        if candidate_hosts: slurm_script += "#SBATCH --nodelist=%s\n"    % candidate_hosts
         if job_contact:     slurm_script += "#SBATCH --mail-user=%s\n"   % job_contact
         if account:         slurm_script += "#SBATCH --account %s\n"     % account
         if reservation:     slurm_script += "#SBATCH --reservation %s\n" % reservation
@@ -1066,7 +1066,7 @@ class SLURMJob(cpi_job.Job):
     # --------------------------------------------------------------------------
     #
     def _sacct_jobstate_match (self, pid):
-        ''' 
+        '''
         get the job state from the slurm accounting data
         '''
 
@@ -1086,7 +1086,7 @@ class SLURMJob(cpi_job.Job):
                     return slurm_state.split()[0].strip()
 
         except Exception:
-            self._logger.warn('cannot parse sacct output:\n%s' % sacct_out)
+            self._logger.warning('cannot parse sacct output:\n%s' % sacct_out)
 
         return None
 
