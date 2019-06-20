@@ -97,8 +97,8 @@ class SagaException (Exception) :
                 self._traceback = parent.traceback
 
                 frame           = traceback.extract_stack ()[- ignore_stack]
-                print("DEBUG: frame=%s" % frame)
-                line            = "%s +%s (%s)  :  %s" % frame
+                line            = "%s +%s (%s)  :  %s" % (frame.filename,
+                    frame.lineno, frame.name, frame.line)
                 self._message   = "  %-20s: %s (%s)\n%s" \
                                 % (self._stype, msg, line, parent.msg)
 
@@ -116,7 +116,8 @@ class SagaException (Exception) :
                     # the parent exception type inconspicuously somewhere (above
                     # that was part of 'parent.message' already).
                     frame          = traceback.extract_stack ()[- ignore_stack]
-                    line           = "%s +%s (%s)  :  %s" % frame
+                    line           = "%s +%s (%s)  :  %s" % (frame.filename,
+                        frame.lineno, frame.name, frame.line)
                     self._message  = "  %-20s: %s (%s)\n  %-20s: %s" \
                                 % (self._stype, msg, line, self._ptype, parent)
 
@@ -131,7 +132,8 @@ class SagaException (Exception) :
             traceback_list  = traceback.format_list (stack)
             self._traceback = "".join (traceback_list[:-1])
             frame           = traceback.extract_stack ()[- ignore_stack -1]
-            line            = "%s +%s (%s)  :  %s" % frame
+            line            = "%s +%s (%s)  :  %s" % (frame.filename,
+                frame.lineno, frame.name, frame.line)
             self._message   = "%s (%s)" % (msg, line)
 
         # we can't do that earlier as _msg was not set up before
