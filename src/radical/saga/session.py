@@ -281,7 +281,7 @@ class DefaultSession(Session, metaclass=ru.Singleton):
 
         super(DefaultSession, self).__init__(default=False, uid=uid)
 
-        _engine = engine.engine.Engine()
+        _engine = engine.Engine()
 
         if not 'saga.Context' in _engine._adaptor_registry :
             self._logger.warn ("no context adaptors found")
