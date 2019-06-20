@@ -157,8 +157,9 @@ def _to_saga_jobstate(job_state, retcode, logger=None):
     elif job_state == 'X': ret = api.CANCELED  # PBSPro
     else                 : ret = api.UNKNOWN
 
-    logger.debug('check state: %s', job_state)
-    logger.debug('use   state: %s', ret)
+    if logger:
+        logger.debug('check state: %s', job_state)
+        logger.debug('use   state: %s', ret)
 
     return ret
 
@@ -681,14 +682,14 @@ class TORQUEJobService (cpi.Service):
         # let's try to figure out if we're working on a Cray machine.
         # naively, we assume that if we can find the 'aprun' command in the
         # path that we're logged in to a Cray machine.
-        if self.is_cray == "":
+        if not self.is_cray:
             ret, out, _ = self.shell.run_sync('which aprun')
             if ret != 0:
-                self.is_cray = ""
+                self.is_cray = False
             else:
                 self._logger.info("Host '%s' seems to be a Cray machine." 
                     % self.rm.host)
-                self.is_cray = "unknowncray"
+                self.is_cray = True
         else: 
             self._logger.info("host is cray: %s" % self.is_cray)
 
@@ -985,7 +986,8 @@ class TORQUEJobService (cpi.Service):
             # TORQUE doesn't allow us to distinguish DONE/FAILED on
             # final state alone,  we need to consider the exit_status.
             retcode = job_info.get('returncode', -1)
-            job_info['state'] = _to_saga_jobstate(job_state, retcode)
+            job_info['state'] = _to_saga_jobstate(job_state, retcode,
+                                                  logger=self._logger)
 
             # FIXME: workaround for time zone problem described above
             if job_info['state'] in [api.RUNNING] + api.FINAL \
