@@ -67,7 +67,7 @@ class _job_state_monitor(threading.Thread):
     #
     def run(self):
 
-        while not self.self._stop.isSet():
+        while not self._stop.isSet():
 
             try:
                 # do bulk updates here! we don't want to pull information
@@ -80,17 +80,17 @@ class _job_state_monitor(threading.Thread):
                         # we only need to monitor jobs that are not in a
                         # terminal state, so we can skip the ones that are 
                         # either done, failed or canceled
-                        state = job[rsj.STATE]
+                        state = job['state']
                         if state not in [rsj.DONE, rsj.FAILED, rsj.CANCELED]:
 
                             job_info = self.js._job_get_info(job)
 
-                            if job_info[rsj.STATE] != state:
-                                # fire job state callback if rsj.STATE has changed
+                            if job_info['state'] != state:
+                                # fire job state callback if 'state' has changed
                                 self.logger.info("update Job %s (state: %s)" 
-                                                % (job, job_info[rsj.STATE]))
-                                job._api()._attributes_i_set(rsj.STATE, 
-                                        job_info[rsj.STATE], job._api()._UP, True)
+                                                % (job, job_info['state']))
+                                job._api()._attributes_i_set('state',
+                                        job_info['state'], job._api()._UP, True)
 
                             # replace job info
                             self.js.jobs[job] = job_info
@@ -584,9 +584,9 @@ class LSFJobService (cpi.job.Service):
 
         # set status to 'pending' and trigger callback
         # a guard is in place to not trigger this twice on state updates
-        self.jobs[job_obj][rsj.STATE] = rsj.PENDING
-        job_obj._api()._attributes_i_set(rsj.STATE, 
-                      self.jobs[job_obj][rsj.STATE], job_obj._api()._UP, True)
+        self.jobs[job_obj]['state'] = rsj.PENDING
+        job_obj._api()._attributes_i_set('state',
+                      self.jobs[job_obj]['state'], job_obj._api()._UP, True)
 
         # return the job id
         return job_id
@@ -638,7 +638,7 @@ class LSFJobService (cpi.job.Service):
         if results[0] != '-': job_info['returncode'] = int(results[0])
         else                : job_info['returncode'] = None
 
-        job_info[rsj.STATE]     = _lsf_to_saga_jobstate(results[1])
+        job_info['state']       = _lsf_to_saga_jobstate(results[1])
         job_info['exec_hosts']  = results[2]
         job_info['create_time'] = results[3]
         job_info['start_time']  = results[4]
@@ -700,7 +700,7 @@ class LSFJobService (cpi.job.Service):
         if not ret:
             # parse the result
             results = out.split()
-            curr_info[rsj.STATE]      = _lsf_to_saga_jobstate(results[2])
+            curr_info['state']      = _lsf_to_saga_jobstate(results[2])
             curr_info['exec_hosts'] = results[5]
 
         else:
@@ -714,10 +714,10 @@ class LSFJobService (cpi.job.Service):
             curr_info['gone'] = True
             self._logger.warning("job disappeared - set to DONE")
 
-            if prev_info[rsj.STATE] in [rsj.RUNNING, rsj.PENDING]:
-                curr_info[rsj.STATE] = rsj.DONE
+            if prev_info['state'] in [rsj.RUNNING, rsj.PENDING]:
+                curr_info['state'] = rsj.DONE
             else:
-                curr_info[rsj.STATE] = rsj.FAILED
+                curr_info['state'] = rsj.FAILED
 
         # return the new job info dict
         return curr_info
@@ -727,7 +727,7 @@ class LSFJobService (cpi.job.Service):
     #
     def _job_get_state(self, job_obj):
 
-        return self.jobs[job_obj][rsj.STATE]
+        return self.jobs[job_obj]['state']
 
 
     # --------------------------------------------------------------------------
@@ -784,7 +784,7 @@ class LSFJobService (cpi.job.Service):
             raise rse.NoSuccess("qdel error: %s" % out)
 
         # assume the job was succesfully canceled
-        self.jobs[job_obj][rsj.STATE] = rsj.CANCELED
+        self.jobs[job_obj]['state'] = rsj.CANCELED
 
 
     # --------------------------------------------------------------------------
@@ -799,7 +799,7 @@ class LSFJobService (cpi.job.Service):
 
         while True:
 
-            state = self.jobs[job_obj][rsj.STATE]  # this gets updated in the bg.
+            state = self.jobs[job_obj]['state']  # this gets updated in the bg.
 
             if state in [rsj.DONE, rsj.FAILED, rsj.CANCELED]:
                 return True
@@ -835,7 +835,7 @@ class LSFJobService (cpi.job.Service):
 
         # add job to internal list of known jobs.
         self.jobs[job_obj._adaptor] = {
-            rsj.STATE:        rsj.NEW,
+            'state':        rsj.NEW,
             'job_id':       None,
             'exec_hosts':   None,
             'returncode':   None,
