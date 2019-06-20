@@ -397,8 +397,9 @@ def _script_generator(url, logger, jd, ppn, gpn, gres, version,
         if jd.total_cpu_count < ppn:
             ppn = jd.total_cpu_count
 
-        pbs_params += "#PBS -l nodes=%d:ppn=%d%s\n" % (
-            nnodes, ppn, ''.join([':%s' % prop for prop in node_properties]))
+      # pbs_params += "#PBS -l nodes=%d:ppn=%d%s\n" % (
+        pbs_params += "#PBS -l nodes=%d%s\n" % (
+            nnodes, ''.join([':%s' % prop for prop in node_properties]))
 
     # Process Generic Resource specification request
     if gres:
