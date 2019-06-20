@@ -302,11 +302,11 @@ _ADAPTOR_INFO = {"name"        : _ADAPTOR_NAME,
                  "capabilities": _ADAPTOR_CAPABILITIES,
                  "cpis": [
                              {
-                                 "type": "saga.job.Service",
+                                 "type": "radical.saga.job.Service",
                                  "class": "LSFJobService"
                              },
                              {
-                                 "type": "saga.job.Job",
+                                 "type": "radical.saga.job.Job",
                                  "class": "LSFJob"
                              }
                          ]
