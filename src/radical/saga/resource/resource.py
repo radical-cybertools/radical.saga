@@ -166,7 +166,7 @@ class Resource (sb.Base, sa.Attributes, async.Async) :
                 scheme = _adaptor_state['resource_schema']
         else :
             # ID is formatted as '[manager-url]-[resource-id]'
-            import parse
+            import parse   # FIXME: use regex to reduce number of dependencies
             res      = parse.parse('[{}]-[{}]', id)
             url      = ru.Url(res[0])
             scheme   = url.scheme.lower ()

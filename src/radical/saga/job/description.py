@@ -12,7 +12,12 @@ from ..         import attributes as sa
 from .constants import *
 
 
-#-------------------------------------------------------------------------------
+# TODO: file transfer to accept strings *and* dicts like in RP
+# TODO: flags: cacheable: don't stage twice in same session
+#              remove   : remove src after staging
+
+
+# ------------------------------------------------------------------------------
 #
 class Description (sa.Attributes) :
     """ The job description class. """
@@ -45,7 +50,7 @@ class Description (sa.Attributes) :
         self._attributes_register  (INPUT                , None, sa.STRING, sa.SCALAR, sa.WRITEABLE)
         self._attributes_register  (OUTPUT               , None, sa.STRING, sa.SCALAR, sa.WRITEABLE)
         self._attributes_register  (ERROR                , None, sa.STRING, sa.SCALAR, sa.WRITEABLE)
-        self._attributes_register  (FILE_TRANSFER        , None, sa.STRING, sa.VECTOR, sa.WRITEABLE)
+        self._attributes_register  (FILE_TRANSFER        , None, sa.ANY,    sa.VECTOR, sa.WRITEABLE)
         self._attributes_register  (CLEANUP              , None, sa.BOOL,   sa.SCALAR, sa.WRITEABLE)
         self._attributes_register  (JOB_START_TIME       , None, sa.TIME,   sa.SCALAR, sa.WRITEABLE)
         self._attributes_register  (WALL_TIME_LIMIT      , None, sa.INT,    sa.SCALAR, sa.WRITEABLE)

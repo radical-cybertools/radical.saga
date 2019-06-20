@@ -6,6 +6,11 @@ __license__   = "MIT"
 
 """ shell based job adaptor implementation """
 
+import re
+import time
+import threading
+
+import radical.utils as ru
 
 from ...               import exceptions as rse
 from ..                import base
@@ -14,10 +19,6 @@ from ..cpi             import job as cpi
 from ...               import job as api
 from ...utils.job      import TransferDirectives
 from ...utils          import pty_shell
-
-import re
-import time
-import threading
 
 from . import shell_wrapper
 
@@ -330,13 +331,9 @@ class Adaptor (base.Base):
     #
     def __init__ (self) :
 
-        base.Base.__init__ (self, _ADAPTOR_INFO)
+        base.Base.__init__ (self, _ADAPTOR_INFO, expand_env=False)
 
         self.id_re = re.compile ('^\[(.*)\]-\[(.*?)\]$')
-
-        self.notifications  = self._cfg['enable_notifications']
-        self.purge_on_start = self._cfg['purge_on_start']
-        self.base_workdir   = self._cfg['base_workdir']
 
 
     # ----------------------------------------------------------------
@@ -515,6 +512,28 @@ class ShellJobService (cpi.Service) :
     #
     def initialize (self) :
 
+        # very first step: get the remote environment, and expand the config
+        # settings
+        ret, out, err = self.shell.run_sync (' env')
+        if  ret != 0 :
+            raise rse.NoSuccess("env query failed (%s): (%s) (%s)"
+                    % (ret, out, err))
+
+        env = dict()
+        for line in out.split('\n'):
+            line = line.strip()
+            if '=' in line:
+                key, val = line.split('=', 1)
+                env[key] = val
+
+        cfg = self._adaptor._cfg
+
+        # expand those config entries we want to use (where needed)
+        self.notifications  = cfg['enable_notifications']
+        self.purge_on_start = cfg['purge_on_start']
+        self.base_workdir   = ru.expand_env(cfg['base_workdir'], env)
+
+
         # start the shell, find its prompt.  If that is up and running, we can
         # bootstrap our wrapper script, and then run jobs etc.
 
@@ -522,7 +541,7 @@ class ShellJobService (cpi.Service) :
         # and running, we can requests job start / management operations via its
         # stdio.
 
-        base = self._adaptor.base_workdir
+        base = self.base_workdir
 
         ret, out, _ = self.shell.run_sync (" mkdir -p %s" % base)
         if  ret != 0 :
@@ -541,7 +560,7 @@ class ShellJobService (cpi.Service) :
                 # yep, need to stage...
                 src = shell_wrapper._WRAPPER_SCRIPT
                 src = src.replace('%(PURGE_ON_START)s',
-                                  str(self._adaptor.purge_on_start))
+                                  str(self.purge_on_start))
 
                 # If the target directory begins with $HOME or ${HOME} then we
                 # need to remove this since scp won't expand the variable and
