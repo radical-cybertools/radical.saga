@@ -10,7 +10,7 @@ import radical.utils.signatures    as rus
 from ..constants import SYNC, ASYNC, TASK
 from ..adaptors  import base       as sab
 
-from .. import sasync              as async
+from .. import sasync
 from .. import task                as st
 from .. import base                as sb
 from .. import session             as ss
@@ -24,7 +24,7 @@ from .  import constants           as c
 
 # ------------------------------------------------------------------------------
 #
-class Manager (sb.Base, async.Async) :
+class Manager (sb.Base, sasync.Async) :
     """
     In the context of RADICAL-SAGA, a *ResourceManager* is a service which
     asserts control over a set of resources.  That manager can, on request,

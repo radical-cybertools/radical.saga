@@ -10,7 +10,7 @@ import radical.utils.signatures    as rus
 from ..constants import SYNC, ASYNC, TASK
 from ..adaptors  import base       as sab
 
-from .. import sasync              as async
+from .. import sasync
 from .. import task                as st
 from .. import base                as sb
 from .. import session             as ss
@@ -24,7 +24,7 @@ from .  import constants           as c
 
 # ------------------------------------------------------------------------------
 #
-class Resource (sb.Base, sa.Attributes, async.Async) :
+class Resource (sb.Base, sa.Attributes, sasync.Async) :
     """
     A :class:`Resource` class instance represents a specific slice of resource
     which is, if in `RUNNING` state, under the applications control and ready to
