@@ -62,16 +62,17 @@ class Job (sb.Base, st.Task, sasync.Async) :
     @rus.returns (rus.nothing)
     def __init__ (self, _method_type='run', _adaptor=None, _adaptor_state={}, _ttype=None) :
         '''
-        _adaptor`` references the adaptor class instance which created this task
-        instance.
+        _adaptor`` references the adaptor class instance which created this
+        task instance.
 
         The ``_method_type`` parameter is flattened into the job constructor to
         satisfy the bulk optimization properties of the saga.Task class, whose
-        interface is implemented by saga.job.Job.
-        ``_method_type`` specifies the SAGA API method which task is
-        representing.  For jobs, that is the 'run' method.
+        interface is implemented by saga.job.Job. ``_method_type`` specifies
+        the SAGA API method which task is representing.  For jobs, that is the
+        'run' method.
 
-        We don't have a create classmethod -- jobs are never constructed by the user
+        We don't have a create classmethod -- jobs are never constructed by the
+        user
         '''
 
         if not _adaptor :
@@ -216,7 +217,7 @@ class Job (sb.Base, st.Task, sasync.Async) :
     #
     @rus.takes    ('Job',
                    rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
-    @rus.returns  ((file, st.Task))
+    @rus.returns  ((str, st.Task))
     def get_stdin (self, ttype=None) :
         """
         get_stdin()
@@ -235,7 +236,7 @@ class Job (sb.Base, st.Task, sasync.Async) :
     #
     @rus.takes     ('Job',
                     rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
-    @rus.returns   ((file, st.Task))
+    @rus.returns   ((str, st.Task))
     def get_stdout (self, ttype=None) :
         """
         get_stdout()
@@ -272,7 +273,7 @@ class Job (sb.Base, st.Task, sasync.Async) :
     #
     @rus.takes     ('Job',
                     rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
-    @rus.returns   ((file, st.Task))
+    @rus.returns   ((str, st.Task))
     def get_stderr (self, ttype=None) :
         """
         get_stderr()
