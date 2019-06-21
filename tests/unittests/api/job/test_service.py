@@ -46,7 +46,7 @@ def test_close():
     except saga.NotImplemented as ni:
             assert tc.notimpl_warn_only, "%s " % ni
             if tc.notimpl_warn_only:
-                print "%s " % ni
+                print("%s " % ni)
     except saga.SagaException:
         assert True
 
@@ -67,7 +67,7 @@ def test_open_close():
     except saga.NotImplemented as ni:
             assert tc.notimpl_warn_only, "%s " % ni
             if tc.notimpl_warn_only:
-                print "%s " % ni
+                print("%s " % ni)
     except saga.SagaException as se:
         assert False, "Unexpected exception: %s" % se
     finally:
@@ -89,7 +89,7 @@ def test_get_url():
     except saga.NotImplemented as ni:
             assert tc.notimpl_warn_only, "%s " % ni
             if tc.notimpl_warn_only:
-                print "%s " % ni
+                print("%s " % ni)
     except saga.SagaException as se:
         assert False, "Unexpected exception: %s" % se
     finally:
@@ -125,7 +125,7 @@ def test_list_jobs():
     except saga.NotImplemented as ni:
         assert tc.notimpl_warn_only, "%s " % ni
         if tc.notimpl_warn_only:
-            print "%s " % ni
+            print("%s " % ni)
     except saga.SagaException as se:
         assert False, "Unexpected exception: %s" % se
     finally:
@@ -149,7 +149,7 @@ def test_run_job():
     except saga.NotImplemented as ni:
         assert tc.notimpl_warn_only, "%s " % ni
         if tc.notimpl_warn_only:
-            print "%s " % ni
+            print("%s " % ni)
     except saga.SagaException as se:
         assert False, "Unexpected exception: %s" % se
     finally:
@@ -184,7 +184,7 @@ def test_get_job():
     except saga.NotImplemented as ni:
         assert tc.notimpl_warn_only, "%s " % ni
         if tc.notimpl_warn_only:
-            print "%s " % ni
+            print("%s " % ni)
     except saga.SagaException as se:
         assert False, "Unexpected exception: %s" % se
     finally:
@@ -222,7 +222,7 @@ def test_multiple_services():
     except saga.NotImplemented as ni:
         assert tc.notimpl_warn_only, "%s " % ni
         if tc.notimpl_warn_only:
-            print "%s " % ni
+            print("%s " % ni)
 
     except saga.SagaException as se:
         assert False, "Unexpected exception: %s" % se

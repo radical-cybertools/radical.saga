@@ -20,7 +20,7 @@ def test_Exceptions():
         msg = 'this is the message'
         raise saga.SagaException(msg)
         assert False
-    except saga.SagaException, se:
+    except saga.SagaException as se:
         assert (msg in str(se)), "'%s' not in '%s'" % (msg, se)
 
 

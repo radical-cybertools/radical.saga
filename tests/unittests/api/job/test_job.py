@@ -376,7 +376,7 @@ def test_get_stdio():
     except rs.NotImplemented as ni:
         assert tc.notimpl_warn_only, "%s " % ni
         if tc.notimpl_warn_only:
-            print "%s " % ni
+            print("%s " % ni)
     except rs.SagaException as se:
         assert False, "Unexpected exception: %s" % se
     finally:
