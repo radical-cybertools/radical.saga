@@ -197,26 +197,43 @@ def _lsfscript_generator(url, logger, jd, ppn, lsf_version, queue, span):
     if jd.job_contact is not None:
         lsf_params += "#BSUB -u %s \n" % str(jd.job_contact)
 
-    # Request enough nodes to cater for the number of cores requested
+    # Request enough nodes to cater for the number of gpus and cores requested
     if not jd.total_cpu_count:
         total_cpu_count = 1
     else:
         total_cpu_count = jd.total_cpu_count
+
+    if not jd.total_gpu_count:
+        total_gpu_count = 1
+    else:
+        total_gpu_count = jd.total_gpu_count
 
     out, err, ret = ru.sh_callout('hostname -f')
 
     if ret: hostname = os.environ.get('HOSTNAME', '')
     else  : hostname = out.strip()
 
-    if   'summitdev' in hostname: ppn = 20
-    elif 'summit'    in hostname: ppn = 42 * SMT
+    if   'summitdev' in hostname: cpn = 20
+    elif 'summit'    in hostname: cpn = 42 * SMT
     else:
         raise ValueError('we do not support this LSF host (%s), yet' % hostname)
 
-    number_of_nodes = int(total_cpu_count / ppn)
-    if total_cpu_count % ppn > 0:
-        number_of_nodes += 1
-    lsf_params += "#BSUB -nnodes %s \n" % str(number_of_nodes)
+    if   'summitdev' in hostname: gpn = 4
+    elif 'summit'    in hostname: gpn = 6
+    else:
+        raise ValueError('we do not support this LSF host (%s), yet' % hostname)
+
+    cpu_nodes = int(total_cpu_count / cpn)
+    if total_cpu_count % cpn > 0:
+        cpu_nodes += 1
+
+    gpu_nodes = int(total_gpu_count / gpn)
+    if total_gpu_count % gpn > 0:
+        gpu_nodes += 1
+
+    nodes = max(cpu_nodes, gpu_nodes)
+
+    lsf_params += "#BSUB -nnodes %s \n" % str(nodes)
     lsf_params += "#BSUB -alloc_flags 'gpumps smt%d' \n" % SMT
 
     # span parameter allows us to influence core spread over nodes
@@ -265,7 +282,8 @@ _ADAPTOR_CAPABILITIES = {
                           rsj.WORKING_DIRECTORY,
                           rsj.SPMD_VARIATION,
                           rsj.PROCESSES_PER_HOST,
-                          rsj.TOTAL_CPU_COUNT],
+                          rsj.TOTAL_CPU_COUNT,
+                          rsj.TOTAL_GPU_COUNT],
     "job_attributes":    [rsj.EXIT_CODE,
                           rsj.EXECUTION_HOSTS,
                           rsj.CREATED,

@@ -54,6 +54,7 @@ def main():
         jd.arguments         = ['$FILENAME']
 
         jd.total_cpu_count   = 42
+        jd.total_cpu_count   = 4
 
         jd.queue             = "batch"
         jd.project           = "GEO111" 
