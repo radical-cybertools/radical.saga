@@ -53,10 +53,11 @@ def main():
         jd.executable        = '/bin/touch'
         jd.arguments         = ['$FILENAME']
 
-        jd.total_cpu_count   = 16
+        jd.total_cpu_count   = 42
+        jd.total_cpu_count   = 4
 
-        jd.queue             = "regular"
-        jd.project           = "URTG0003" 
+        jd.queue             = "batch"
+        jd.project           = "GEO111" 
 
         jd.working_directory = "$HOME/A/B/C"
         jd.output            = "examplejob.out"
