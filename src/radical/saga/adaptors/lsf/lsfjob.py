@@ -4,33 +4,29 @@ __copyright__ = "Copyright 2012-2019, The SAGA Project"
 __license__   = "MIT"
 
 
-""" LSF job adaptor implementation
-"""
+'''
+LSF job adaptor implementation
+'''
 
 import re
 import os
-import copy
 import time
 import threading
 import datetime
+import tempfile
 
-from urlparse import parse_qs
+import radical.utils as ru
 
-import radical.utils  as ru
+from ...job           import constants   as c
+from ...utils         import pty_shell   as rsups
+from ...              import job         as api
+from ...              import exceptions  as rse
+from ..               import base        as a_base
+from ..cpi            import job         as cpi
+from ..cpi            import decorators  as cpi_decs
 
-from .. import base
-from .. import cpi
-
-from ...              import exceptions as rse
-from ...              import job        as api
-from ...utils         import pty_shell  as rsups
-
-
-SYNC_CALL  = cpi.decorators.SYNC_CALL
-ASYNC_CALL = cpi.decorators.ASYNC_CALL
-
-SYNC_WAIT_UPDATE_INTERVAL = 1  # seconds
-MONITOR_UPDATE_INTERVAL   = 3  # seconds
+SYNC_CALL  = cpi_decs.SYNC_CALL
+ASYNC_CALL = cpi_decs.ASYNC_CALL
 
 # newer (2019) Intel LSF hosts have SMT default to 4
 # FIXME: move to a resource config
@@ -40,9 +36,9 @@ SMT = 4
 # ------------------------------------------------------------------------------
 #
 class _job_state_monitor(threading.Thread):
-    """ 
+    '''
     thread that periodically monitors job states
-    """
+    '''
 
     # --------------------------------------------------------------------------
     #
@@ -72,14 +68,14 @@ class _job_state_monitor(threading.Thread):
             try:
                 # do bulk updates here! we don't want to pull information
                 # job by job. that would be too inefficient!
-                for job in self.js.jobs:
-                    job_info = self.js.jobs[job]
+                for job in self.js._jobs:
+                    job_info = self.js._jobs[job]
                     # if the job hasn't been started, we can't update its
                     # state. we can tell if a job has been started if it
                     # has a job id
                     if job_info.get('id'):
                         # we only need to monitor jobs that are not in a
-                        # terminal state, so we can skip the ones that are 
+                        # terminal state, so we can skip the ones that are
                         # either done, failed or canceled
                         state = job_info['state']
                         if state not in [api.DONE, api.FAILED, api.CANCELED]:
@@ -88,13 +84,13 @@ class _job_state_monitor(threading.Thread):
 
                             if new_info['state'] != state:
                                 # fire job state callback if 'state' has changed
-                                self.logger.info("update Job %s (state: %s)" 
+                                self.logger.info("update Job %s (state: %s)"
                                                 % (job, new_info['state']))
                                 job._api()._attributes_i_set('state',
                                         new_info['state'], job._api()._UP, True)
 
                             # replace job info
-                            self.js.jobs[job] = new_info
+                            self.js._jobs[job] = new_info
 
                 time.sleep(MONITOR_UPDATE_INTERVAL)
 
@@ -105,8 +101,9 @@ class _job_state_monitor(threading.Thread):
 # ------------------------------------------------------------------------------
 #
 def _lsf_to_saga_jobstate(lsfjs):
-    """ translates a lsf one-letter state to saga
-    """
+    '''
+    translates a lsf one-letter state to saga
+    '''
     if   lsfjs in ['RUN']                     : return api.RUNNING
     elif lsfjs in ['WAIT', 'PEND']            : return api.PENDING
     elif lsfjs in ['DONE']                    : return api.DONE
@@ -117,9 +114,10 @@ def _lsf_to_saga_jobstate(lsfjs):
 
 # ------------------------------------------------------------------------------
 #
-def _lsfscript_generator(url, logger, jd, ppn, lsf_version, queue, span):
-    """ generates an LSF script from a SAGA job description
-    """
+def _lsfscript_generator(url, logger, jd, ppn, lsf_version):
+    '''
+    generates an LSF script from a SAGA job description
+    '''
     lsf_params = str()
     exec_n_args = str()
 
@@ -149,7 +147,7 @@ def _lsfscript_generator(url, logger, jd, ppn, lsf_version, queue, span):
             if os.path.isabs(jd.output):
                 lsf_params += "#BSUB -o %s \n" % jd.output
             else:
-                # user provided a relative path for STDOUT. in this case 
+                # user provided a relative path for STDOUT. in this case
                 # we prepend the working directory path before passing
                 # it on to LSF.
                 lsf_params += "#BSUB -o %s/%s \n" \
@@ -158,9 +156,9 @@ def _lsfscript_generator(url, logger, jd, ppn, lsf_version, queue, span):
             lsf_params += "#BSUB -o %s \n" % jd.output
 
     if jd.error is not None:
-        # if working directory is set, we want stderr to end up in 
+        # if working directory is set, we want stderr to end up in
         # the working directory as well, unless it contains a specific
-        # path name. 
+        # path name.
         if jd.working_directory is not None:
             if os.path.isabs(jd.error):
                 lsf_params += "#BSUB -e %s \n" % jd.error
@@ -180,12 +178,8 @@ def _lsfscript_generator(url, logger, jd, ppn, lsf_version, queue, span):
         lsf_params += "#BSUB -W %s:%s \n" \
             % (str(hours), str(minutes))
 
-    if (jd.queue is not None) and (queue is not None):
-        lsf_params += "#BSUB -q %s \n" % queue
-    elif (jd.queue is not None) and (queue is None):
+    if jd.queue:
         lsf_params += "#BSUB -q %s \n" % jd.queue
-    elif (jd.queue is None) and (queue is not None):
-        lsf_params += "#BSUB -q %s \n" % queue
 
     if jd.project is not None and ':' in jd.project:
         account, reservation = jd.project.split(':',1)
@@ -219,10 +213,6 @@ def _lsfscript_generator(url, logger, jd, ppn, lsf_version, queue, span):
     lsf_params += "#BSUB -nnodes %s \n" % str(number_of_nodes)
     lsf_params += "#BSUB -alloc_flags 'gpumps smt%d' \n" % SMT
 
-    # span parameter allows us to influence core spread over nodes
-    if span:
-        lsf_params += '#BSUB -R "span[%s]"\n' % span
-
     # escape all double quotes and dollar signs, otherwise 'echo |'
     # further down won't work
     # only escape '$' in args and exe. not in the params
@@ -246,48 +236,64 @@ _PTY_TIMEOUT = 2.0
 #
 _ADAPTOR_NAME          = "radical.saga.adaptors.lsfjob"
 _ADAPTOR_SCHEMAS       = ["lsf", "lsf+ssh", "lsf+gsissh"]
-
+_ADAPTOR_OPTIONS       = []
 
 # ------------------------------------------------------------------------------
 # the adaptor capabilities & supported attributes
 #
-_ADAPTOR_CAPABILITIES = {
-    "jdes_attributes":   [api.NAME,
-                          api.EXECUTABLE,
-                          api.ARGUMENTS,
-                          api.ENVIRONMENT,
-                          api.INPUT,
-                          api.OUTPUT,
-                          api.ERROR,
-                          api.QUEUE,
-                          api.PROJECT,
-                          api.WALL_TIME_LIMIT,
-                          api.WORKING_DIRECTORY,
-                          api.SPMD_VARIATION,
-                          api.PROCESSES_PER_HOST,
-                          api.TOTAL_CPU_COUNT],
-    "job_attributes":    [api.EXIT_CODE,
-                          api.EXECUTION_HOSTS,
-                          api.CREATED,
-                          api.STARTED,
-                          api.FINISHED],
-    "metrics":           [api.STATE],
-    "callbacks":         [api.STATE],
-    "contexts":          {"ssh": "SSH public/private keypair",
-                          "x509": "GSISSH X509 proxy context",
-                          "userpass": "username/password pair (ssh)"}
+# TODO: FILL ALL IN FOR SLURM
+_ADAPTOR_CAPABILITIES  = {
+    "jdes_attributes"  : [c.NAME,
+                          c.EXECUTABLE,
+                          c.PRE_EXEC,
+                          c.POST_EXEC,
+                          c.ARGUMENTS,
+                          c.ENVIRONMENT,
+                          c.SPMD_VARIATION,
+                          c.TOTAL_CPU_COUNT,
+                        # c.TOTAL_GPU_COUNT,
+                          c.NUMBER_OF_PROCESSES,
+                          c.PROCESSES_PER_HOST,
+                          c.THREADS_PER_PROCESS,
+                          c.WORKING_DIRECTORY,
+                        # c.INTERACTIVE,
+                          c.INPUT,
+                          c.OUTPUT,
+                          c.ERROR,
+                          c.FILE_TRANSFER,
+                          c.CLEANUP,
+                          c.WALL_TIME_LIMIT,
+                          c.TOTAL_PHYSICAL_MEMORY,
+                          c.CPU_ARCHITECTURE,
+                        # c.OPERATING_SYSTEM_TYPE,
+                          c.CANDIDATE_HOSTS,
+                          c.QUEUE,
+                          c.PROJECT,
+                          c.JOB_CONTACT],
+    "job_attributes"   : [c.EXIT_CODE,
+                          c.EXECUTION_HOSTS,
+                          c.CREATED,
+                          c.STARTED,
+                          c.FINISHED],
+    "metrics"          : [c.STATE,
+                          c.STATE_DETAIL],
+    "contexts"         : {"ssh"      : "public/private keypair",
+                          "x509"     : "X509 proxy for gsissh",
+                          "userpass" : "username/password pair for simple ssh"}
 }
 
 # ------------------------------------------------------------------------------
 # the adaptor documentation
 #
-_ADAPTOR_DOC = {
-    "name":          _ADAPTOR_NAME,
-    "capabilities":  _ADAPTOR_CAPABILITIES,
-    "description":  """
-The LSF adaptor allows to run and manage jobs on
-`LSF <https://en.wikipedia.org/wiki/Platform_LSF>`_ controlled HPC clusters.
-""",
+_ADAPTOR_DOC           = {
+    "name"             : _ADAPTOR_NAME,
+    "cfg_options"      : _ADAPTOR_OPTIONS,
+    "capabilities"     : _ADAPTOR_CAPABILITIES,
+    "description"      : '''
+        The LSF adaptor allows to run and manage jobs on
+        `LSF <https://en.wikipedia.org/wiki/Platform_LSF>`_
+        controlled HPC clusters.
+        ''',
     "example": "examples/jobs/lsfjob.py",
     "schemas": {"lsf":        "connect to a local cluster",
                 "lsf+ssh":    "conenct to a remote cluster via SSH",
@@ -297,37 +303,40 @@ The LSF adaptor allows to run and manage jobs on
 # ------------------------------------------------------------------------------
 # the adaptor info is used to register the adaptor with SAGA
 #
-_ADAPTOR_INFO = {"name"        : _ADAPTOR_NAME,
-                 "version"     : "v0.2",
-                 "schemas"     : _ADAPTOR_SCHEMAS,
-                 "capabilities": _ADAPTOR_CAPABILITIES,
-                 "cpis": [
-                             {
-                                 "type": "radical.saga.job.Service",
-                                 "class": "LSFJobService"
-                             },
-                             {
-                                 "type": "radical.saga.job.Job",
-                                 "class": "LSFJob"
-                             }
-                         ]
-                }
+_ADAPTOR_INFO          = {
+    "name"             : _ADAPTOR_NAME,
+    "version"          : "v0.2",
+    "schemas"          : _ADAPTOR_SCHEMAS,
+    "capabilities"     : _ADAPTOR_CAPABILITIES,
+    "cpis"             : [
+        {
+            "type"     : "radical.saga.job.Service",
+            "class"    : "LSFJobService"
+        },
+        {
+            "type"     : "radical.saga.job.Job",
+            "class"    : "LSFJob"
+        }
+    ]
+}
 
 
 # ------------------------------------------------------------------------------
 # The adaptor class
-class Adaptor (base.Base):
+#
+class Adaptor (a_base.Base):
     '''
     This is the actual adaptor class, which gets loaded by SAGA (i.e. by the
     SAGA engine), and which registers the CPI implementation classes which
     provide the adaptor's functionality.
     '''
 
+
     # --------------------------------------------------------------------------
     #
     def __init__(self):
 
-        base.Base.__init__(self, _ADAPTOR_INFO)
+        a_base.Base.__init__(self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
 
         self.id_re = re.compile('^\[(.*)\]-\[(.*?)\]$')
         self.epoch = datetime.datetime(1970,1,1)
@@ -336,7 +345,6 @@ class Adaptor (base.Base):
     # --------------------------------------------------------------------------
     #
     def sanity_check(self):
-        # FIXME: also check for gsissh
         pass
 
     # --------------------------------------------------------------------------
@@ -354,20 +362,21 @@ class Adaptor (base.Base):
 
 # ------------------------------------------------------------------------------
 #
-class LSFJobService (cpi.job.Service):
-    """
+class LSFJobService(cpi.Service):
+    '''
     implements cpi.job.Service
-    """
+    '''
 
     # --------------------------------------------------------------------------
     #
     def __init__(self, api, adaptor):
 
-        self._mt  = None
         _cpi_base = super(LSFJobService, self)
         _cpi_base.__init__(api, adaptor)
 
         self._adaptor = adaptor
+        self._shell   = None
+        self._monitor = None
 
     # --------------------------------------------------------------------------
     #
@@ -380,115 +389,81 @@ class LSFJobService (cpi.job.Service):
     #
     def close(self):
 
-        if  self.mt :
-            self.mt.stop()
-            self.mt.join(10)  # don't block forever on join()
+        if  self._monitor:
+            self._monitor.stop()
+            self._monitor.join(10)  # don't block forever on join()
 
         self._logger.info("Job monitoring thread stopped.")
 
-        self.finalize(True)
-
-
-    # --------------------------------------------------------------------------
-    #
-    def finalize(self, kill_shell=False):
-
-        if  kill_shell :
-            if  self.shell :
-                self.shell.finalize (True)
+        if  self._shell:
+            self._shell.finalize(True)
+            del(self._shell)
 
 
     # --------------------------------------------------------------------------
     #
     @SYNC_CALL
     def init_instance(self, adaptor_state, rm_url, session):
-        """ service instance constructor
-        """
+        '''
+        service instance constructor
+        '''
+
         self.rm      = rm_url
         self.session = session
         self.ppn     = 1
-        self.queue   = None
-        self.span    = None
-        self.shell   = None
-        self.jobs    = dict()
+        self._shell  = None
+        self._jobs   = dict()
 
         # the monitoring thread - one per service instance
-        self.mt = _job_state_monitor(job_service=self)
-        self.mt.start()
-
-        rm_scheme = rm_url.scheme
-        pty_url   = ru.Url (rm_url)
-
-        # this adaptor supports options that can be passed via the
-        # 'query' component of the job service URL.
-        if rm_url.query:
-            for key, val in parse_qs(rm_url.query).iteritems():
-                if key == 'queue':
-                    self.queue = val[0]
-                elif key == 'span':
-                    self.span = val[0]
+        self._monitor = _job_state_monitor(job_service=self)
+        self._monitor.start()
 
         # we need to extrac the scheme for PTYShell. That's basically the
         # job.Serivce Url withou the lsf+ part. We use the PTYShell to execute
         # lsf commands either locally or via gsissh or ssh.
-        elems = rm_scheme.split('+')
+        rm_scheme = rm_url.scheme
+        pty_url   = ru.Url(rm_url)
+        elems     = rm_scheme.split('+')
         if   'gsissh' in elems: pty_url.scheme = "gsissh"
         elif 'ssh'    in elems: pty_url.scheme = "ssh"
         else                  : pty_url.scheme = "fork"
 
         # these are the commands that we need in order to interact with LSF.
-        # the adaptor will try to find them during initialize(self) and bail
-        # out in case they are note avaialbe.
-        self._commands = {'bqueues':  dict(),
-                          'bjobs':    dict(),
-                          'bsub':     dict(),
-                          'bkill':    dict()}
+        # the adaptor will try to find them when it first opens the shell
+        # connection, and bails out in case they are not available.
+        self._commands = {'bqueues': None,
+                          'bjobs':   None,
+                          'bsub':    None,
+                          'bkill':   None}
 
-        self.shell = rsups.PTYShell(pty_url, self.session)
+        self._shell = rsups.PTYShell(pty_url, self.session)
 
-      # self.shell.set_initialize_hook(self.initialize)
-      # self.shell.set_finalize_hook(self.finalize)
-
-        self.initialize()
-        return self.get_api()
-
-
-    # --------------------------------------------------------------------------
-    #
-    def initialize(self):
         # check if all required lsf tools are available
         for cmd in self._commands.keys():
-            ret, out, _ = self.shell.run_sync("which %s " % cmd)
-            if ret != 0:
+            ret, out, _ = self._shell.run_sync("which %s " % cmd)
+            if ret:
                 raise rse.NoSuccess("Couldn't find LSF tools: %s" % out)
-            else:
-                path = out.strip()  # strip removes newline
-                ret, out, _ = self.shell.run_sync("%s -V" % cmd)
-                if ret != 0:
-                    raise rse.NoSuccess("Couldn't find LSF tools: %s" % out)
-                else:
-                    # version is reported as: "version: x.y.z"
-                    version = out.split("\n")[0]
 
-                    # add path and version to the command dictionary
-                    self._commands[cmd]["path"]    = path
-                    self._commands[cmd]["version"] = version
+            self._commands[cmd] = out.strip()
 
-        self._logger.info("Found LSF tools: %s" % self._commands)
+        _, out, _ = self._shell.run_sync('bsub -V 2>&1 | cut -f 1')
+        self._version = out.split()[1].strip()
+        self._logger.info('LSF version: %s' % self._version)
+
 
       # # see if we can get some information about the cluster, e.g.,
       # # different queues, number of processes per node, etc.
       # # TODO: this is quite a hack. however, it *seems* to work quite
       # #       well in practice.
-      # ret, out, _ = self.shell.run_sync(
+      # ret, out, _ = self._shell.run_sync(
       #                   'unset GREP_OPTIONS; %s -a | grep -E "(np|pcpu)"'
       #                   % self._commands['pbsnodes']['path'])
       # if ret != 0:
-      # 
+      #
       #     raise rse.NoSuccess("Error running pbsnodes: %s" % out)
       # else:
       #    # this is black magic. we just assume that the highest occurence
-      #    # of a specific np is the number of processors (cores) per compute
+      #    # of a specific np is the number of processors(cores) per compute
       #    # node. this equals max "PPN" for job scripts
       #     ppn_list = dict()
       #     for line in out.split('\n'):
@@ -501,34 +476,28 @@ class LSFJobService (cpi.job.Service):
       #                 ppn_list[np] = 1
       #     self.ppn = max(ppn_list, key=ppn_list.get)
       #     self._logger.debug("Found the following 'ppn' configurations: %s. \
-      #                         Using %s as default ppn." 
+      #                         Using %s as default ppn."
       #                       % (ppn_list, self.ppn))
 
 
     # --------------------------------------------------------------------------
     #
-    def _job_run(self, job_obj):
-        """ runs a job via qsub
-        """
+    def _job_run(self, jd):
+        '''
+        runs a job via qsub
+        '''
         # get the job description
-        jd       = job_obj.jd
         job_name = jd.name
 
         # normalize working directory path
-        if  jd.working_directory :
-            jd.working_directory = os.path.normpath (jd.working_directory)
-
-        if (self.queue is not None) and (jd.queue is not None):
-            self._logger.warning("Job service for queue '%s', \
-                                  job goes to queue: '%s'. Using '%s'." %
-                                  (self.queue, jd.queue, self.queue))
+        if  jd.working_directory:
+            jd.working_directory = os.path.normpath(jd.working_directory)
 
         try:
             # create an LSF job script from SAGA job description
             script = _lsfscript_generator(url=self.rm, logger=self._logger,
                                 jd=jd, ppn=self.ppn,
-                                lsf_version=self._commands['bjobs']['version'],
-                                queue=self.queue, span=self.span)
+                                lsf_version=self._commands['bjobs']['version'])
 
             self._logger.info("Generated LSF script: %s" % script)
 
@@ -541,12 +510,12 @@ class LSFJobService (cpi.job.Service):
         if jd.working_directory:
             pwd = jd.working_directory
             self._logger.info("Creating working directory %s" % pwd)
-            ret, out, _ = self.shell.run_sync("mkdir -p %s" % pwd)
+            ret, out, _ = self._shell.run_sync("mkdir -p %s" % pwd)
 
             if ret:
                 raise rse.NoSuccess("Couldn't create workdir %s" % out)
 
-        # (1) create a temporary file with 'mktemp' and write the contents of 
+        # (1) create a temporary file with 'mktemp' and write the contents of
         #     the generated PBS script into it
         # (2) call 'qsub <tmpfile>' to submit the script to the batch system
         #
@@ -555,7 +524,7 @@ class LSFJobService (cpi.job.Service):
              && echo \"%s\" > $SCRIPTFILE \
              && %s $SCRIPTFILE \
              && rm -f $SCRIPTFILE" % (script, self._commands['bsub']['path'])
-        ret, out, _ = self.shell.run_sync(cmdline)
+        ret, out, _ = self._shell.run_sync(cmdline)
 
         if ret:
             raise rse.NoSuccess("bsub error: %s [%s]" % (out, cmdline))
@@ -581,20 +550,16 @@ class LSFJobService (cpi.job.Service):
 
         # populate job info dict
         state = api.PENDING
-        self.jobs[job_id] = {'obj'         : job_obj,
-                             'job_id'      : job_id,
-                             'name'        : job_name,
-                             'state'       : state,
-                             'exec_hosts'  : None,
-                             'returncode'  : None,
-                             'create_time' : time.time(),
-                             'start_time'  : None,
-                             'end_time'    : None,
-                             'gone'        : False
+        self._jobs[job_id] = {'job_id'      : job_id,
+                              'name'        : job_name,
+                              'state'       : state,
+                              'exec_hosts'  : None,
+                              'returncode'  : None,
+                              'create_time' : time.time(),
+                              'start_time'  : None,
+                              'end_time'    : None,
+                              'gone'        : False
                              }
-
-        # trigger state callback
-        job_obj._attributes_i_set('state', state, job_obj._UP, True)
 
         # return the job id
         return job_id
@@ -603,12 +568,13 @@ class LSFJobService (cpi.job.Service):
     # --------------------------------------------------------------------------
     #
     def _retrieve_job(self, job_id):
-        """ see if we can get some info about a job that we don't
+        '''
+        see if we can get some info about a job that we don't
             know anything about
-        """
+        '''
         rm, pid = self._adaptor.parse_id(job_id)
 
-        # bjobs -noheader -o 'stat exec_host exit_code submit_time start_time 
+        # bjobs -noheader -o 'stat exec_host exit_code submit_time start_time
         # finish_time command job_name delimiter=","' 344077
         # EXIT,summitdev-login1:summitdev-r0c1n12:summitdev-r0c1n12:
         # summitdev-r0c1n12:summitdev-r0c1n12:summitdev-r0c1n12:
@@ -625,14 +591,14 @@ class LSFJobService (cpi.job.Service):
         # #BSUB -q batch;
         # #BSUB -P CSC190SPECFEM;
         # #BSUB -nnodes 1;
-        # #BSUB -alloc_flags 'gpumps smt4'; 
-        # export  FILENAME=testfile;/bin/touch \$FILENAME " > $SCRIPTFILE && 
+        # #BSUB -alloc_flags 'gpumps smt4';
+        # export  FILENAME=testfile;/bin/touch \$FILENAME " > $SCRIPTFILE &&
         # /sw/sources/lsf-tools/bin/bsub $SCRIPTFILE && rm -f $SCRIPTFILE,
         # saga-test
 
-        ret, out, _ = self.shell.run_sync("%s -noheader -o 'exit_code stat "
+        ret, out, _ = self._shell.run_sync("%s -noheader -o 'exit_code stat "
                 "exec_host submit_time start_time finish_time job_name command "
-                "delimiter=\",\"' %s" 
+                "delimiter=\",\"' %s"
                 % (self._commands['bjobs']['path'], pid))
 
         if ret != 0:
@@ -669,17 +635,17 @@ class LSFJobService (cpi.job.Service):
     # --------------------------------------------------------------------------
     #
     def _job_get_info(self, job_id):
-        """
+        '''
         get job attributes via bjob
-        """
+        '''
 
         # if we don't have the job in our dictionary, we don't want it
-        if job_id not in self.jobs:
+        if job_id not in self._jobs:
             raise rse.NoSuccess("Unknown job %s" % job_id)
 
         # prev. info contains the info collect when _job_get_info
         # was called the last time
-        prev_info = self.jobs[job_id]
+        prev_info = self._jobs[job_id]
 
         # if the 'gone' flag is set, there's no need to query the job
         # state again. it's gone forever
@@ -687,7 +653,7 @@ class LSFJobService (cpi.job.Service):
             return prev_info
 
         # curr. info will contain the new job info collect. it starts off
-        # as a copy of prev_info (don't use deepcopy because there is an API 
+        # as a copy of prev_info (don't use deepcopy because there is an API
         # object in the dict -> recursion)
 
         curr_info = copy.deepcopy(prev_info)
@@ -696,13 +662,13 @@ class LSFJobService (cpi.job.Service):
 
         # run the LSF 'bjobs' command to get some infos about our job
         # the result of bjobs <id> looks like this:
-        #  
+        #
         # JOBID USER  STAT QUEUE   FROM_HOST   EXEC_HOST  JOB_NAME  SUBMIT_TIME
-        # 90154 oweid DONE regular yslogin5-ib ys3833-ib  *FILENAME Nov 11 12:06 
-        # 
-        # If we add the -nodeader flag, the first row is ommited 
+        # 90154 oweid DONE regular yslogin5-ib ys3833-ib  *FILENAME Nov 11 12:06
+        #
+        # If we add the -nodeader flag, the first row is ommited
 
-        ret, out, _ = self.shell.run_sync("%s -noheader %s" 
+        ret, out, _ = self._shell.run_sync("%s -noheader %s"
                                        % (self._commands['bjobs']['path'], pid))
 
         if not ret:
@@ -713,7 +679,7 @@ class LSFJobService (cpi.job.Service):
 
         else:
 
-            if ("Illegal job ID" not in out):
+            if "Illegal job ID" not in out:
                 raise rse.NoSuccess("bjobs error: %s" % out)
 
             # Let's see if the previous job state was running or pending. in
@@ -735,79 +701,79 @@ class LSFJobService (cpi.job.Service):
     #
     def _job_get_state(self, job_id):
 
-        return self.jobs[job_id]['state']
+        return self._jobs[job_id]['state']
 
 
     # --------------------------------------------------------------------------
     #
     def _job_get_exit_code(self, job_id):
 
-        ret = self.jobs[job_id]['returncode']
+        ret = self._jobs[job_id]['returncode']
 
         # FIXME: 'None' should cause an exception
-        if ret is None : return None
-        else           : return int(ret)
+        if ret is None: return None
+        else          : return int(ret)
 
 
     # --------------------------------------------------------------------------
     #
     def _job_get_execution_hosts(self, job_id):
 
-        return self.jobs[job_id]['exec_hosts']
+        return self._jobs[job_id]['exec_hosts']
 
 
     # --------------------------------------------------------------------------
     #
     def _job_get_create_time(self, job_id):
 
-        return self.jobs[job_id]['create_time']
+        return self._jobs[job_id]['create_time']
 
 
     # --------------------------------------------------------------------------
     #
     def _job_get_start_time(self, job_id):
 
-        return self.jobs[job_id]['start_time']
+        return self._jobs[job_id]['start_time']
 
 
     # --------------------------------------------------------------------------
     #
     def _job_get_end_time(self, job_id):
         # FIXME: convert to EPOCH
-        return self.jobs[job_id]['end_time']
+        return self._jobs[job_id]['end_time']
 
 
     # --------------------------------------------------------------------------
     #
     def _job_cancel(self, job_id):
-        """
+        '''
         cancel the job via 'qdel'
-        """
+        '''
 
         rm, pid     = self._adaptor.parse_id(job_id)
-        ret, out, _ = self.shell.run_sync("%s %s\n" 
+        ret, out, _ = self._shell.run_sync("%s %s\n"
                                        % (self._commands['bkill']['path'], pid))
 
         if ret:
             raise rse.NoSuccess("qdel error: %s" % out)
 
         # assume the job was succesfully canceled
-        self.jobs[job_id]['state'] = api.CANCELED
+        self._jobs[job_id]['state'] = api.CANCELED
 
 
     # --------------------------------------------------------------------------
     #
     def _job_wait(self, job_id, timeout):
-        """
+        '''
         wait for the job to finish or fail
-        """
+        '''
 
         time_start = time.time()
         rm, pid    = self._adaptor.parse_id(job_id)
 
         while True:
 
-            state = self.jobs[job_id]['state']  # this gets updated in the bg.
+            state = self._jobs[job_id]['state']  # this gets updated in the bg.
 
             if state in [api.DONE, api.FAILED, api.CANCELED]:
                 return True
@@ -825,9 +791,9 @@ class LSFJobService (cpi.job.Service):
     #
     @SYNC_CALL
     def create_job(self, jd):
-        """
+        '''
         implements cpi.job.Service.create_job()
-        """
+        '''
 
         # this dict is passed on to the job adaptor class -- use it to pass any
         # state information you need there.
@@ -848,8 +814,9 @@ class LSFJobService (cpi.job.Service):
     #
     @SYNC_CALL
     def get_job(self, jobid):
-        """ Implements cpi.job.Service.get_job()
-        """
+        '''
+        Implements cpi.job.Service.get_job()
+        '''
 
         # try to get some information about this job
         job_info, job_desc = self._retrieve_job(jobid)
@@ -869,7 +836,7 @@ class LSFJobService (cpi.job.Service):
                      _adaptor_state=adaptor_state)
 
         # throw it into our job dictionary.
-        self.jobs[job._adaptor] = job_info
+        self._jobs[job._adaptor] = job_info
         return job
 
 
@@ -877,9 +844,9 @@ class LSFJobService (cpi.job.Service):
     #
     @SYNC_CALL
     def get_url(self):
-        """
+        '''
         implements cpi.job.Service.get_url()
-        """
+        '''
 
         return self.rm
 
@@ -888,12 +855,12 @@ class LSFJobService (cpi.job.Service):
     #
     @SYNC_CALL
     def list(self):
-        """
+        '''
         implements cpi.job.Service.list()
-        """
+        '''
 
         ids = list()
-        ret, out, _ = self.shell.run_sync("%s -a"
+        ret, out, _ = self._shell.run_sync("%s -a"
                                          % self._commands['bjobs']['path'])
 
         if ret != 0 and len(out) > 0:
@@ -916,16 +883,16 @@ class LSFJobService (cpi.job.Service):
 
     # --------------------------------------------------------------------------
     #
-    def container_run (self, jobs) :
+    def container_run(self, jobs):
 
         # TODO: this is not optimized yet
         for job in jobs:
-            job.run ()
+            job.run()
 
 
     # --------------------------------------------------------------------------
     #
-    def container_wait (self, jobs, mode, timeout) :
+    def container_wait(self, jobs, mode, timeout):
 
         if timeout:
             raise rse.NoSuccess("bulk wait timeout is not implemented")
@@ -937,7 +904,7 @@ class LSFJobService (cpi.job.Service):
 
     # --------------------------------------------------------------------------
     #
-    def container_cancel (self, jobs, timeout) :
+    def container_cancel(self, jobs, timeout):
 
         if timeout:
             raise rse.NoSuccess("bulk cancel timeout is not implemented")
@@ -949,10 +916,10 @@ class LSFJobService (cpi.job.Service):
 
 # ------------------------------------------------------------------------------
 #
-class LSFJob (cpi.job.Job):
-    """
+class LSFJob(cpi.job.Job):
+    '''
     implements cpi.job.Job
-    """
+    '''
 
     # --------------------------------------------------------------------------
     #
@@ -973,8 +940,9 @@ class LSFJob (cpi.job.Job):
     #
     @SYNC_CALL
     def init_instance(self, job_info):
-        """ implements cpi.job.Job.init_instance()
-        """
+        '''
+        implements cpi.job.Job.init_instance()
+        '''
         # init_instance is called for every new Job object
         # that is created
         self.jd = job_info["job_description"]
@@ -994,19 +962,13 @@ class LSFJob (cpi.job.Job):
 
     # --------------------------------------------------------------------------
     #
-    @SYNC_CALL
-    def get_state(self):
-        """ implements cpi.job.Job.get_state()
-        """
-        return self.js._job_get_state(job_id=self._id)
-
-
     # --------------------------------------------------------------------------
     #
     @SYNC_CALL
     def wait(self, timeout):
-        """ implements cpi.job.Job.wait()
-        """
+        '''
+        implements cpi.job.Job.wait()
+        '''
         if not self._started:
             raise rse.IncorrectState("job has not been started")
 
@@ -1017,9 +979,9 @@ class LSFJob (cpi.job.Job):
     #
     @SYNC_CALL
     def cancel(self, timeout):
-        """
+        '''
         implements cpi.job.Job.cancel()
-        """
+        '''
 
         if not self._started:
             raise rse.IncorrectState("job has not been started")
@@ -1031,21 +993,36 @@ class LSFJob (cpi.job.Job):
     #
     @SYNC_CALL
     def run(self):
-        """
+        '''
         implements cpi.job.Job.run()
-        """
+        '''
 
-        self._id = self.js._job_run(self)
+        self._id = self.js._job_run(self.jd)
+
+        # trigger state callback
+        self._attributes_i_set('state', api.PENDING, self._UP, True)
+
         self._started = True
 
 
     # --------------------------------------------------------------------------
     #
     @SYNC_CALL
+    def get_state(self):
+        '''
+        implements cpi.job.Job.get_state()
+        '''
+        self._state = self.js._job_get_state(job_id=self._id)
+        return self._state
+
+
+    # --------------------------------------------------------------------------
+    #
+    @SYNC_CALL
     def get_service_url(self):
-        """
+        '''
         implements cpi.job.Job.get_service_url()
-        """
+        '''
 
         return self.js.rm
 
@@ -1054,9 +1031,9 @@ class LSFJob (cpi.job.Job):
     #
     @SYNC_CALL
     def get_id(self):
-        """
+        '''
         implements cpi.job.Job.get_id()
-        """
+        '''
 
         return self._id
 
@@ -1064,10 +1041,10 @@ class LSFJob (cpi.job.Job):
     # --------------------------------------------------------------------------
     #
     @SYNC_CALL
-    def get_name (self):
-        """
+    def get_name(self):
+        '''
         Implements cpi.job.Job.get_name()
-        """
+        '''
 
         return self._name
 
@@ -1076,9 +1053,9 @@ class LSFJob (cpi.job.Job):
     #
     @SYNC_CALL
     def get_exit_code(self):
-        """
+        '''
         implements cpi.job.Job.get_exit_code()
-        """
+        '''
 
         if not self._started:
             return None
@@ -1090,9 +1067,9 @@ class LSFJob (cpi.job.Job):
     #
     @SYNC_CALL
     def get_created(self):
-        """
+        '''
         implements cpi.job.Job.get_created()
-        """
+        '''
 
         if not self._started:
             return None
@@ -1104,9 +1081,9 @@ class LSFJob (cpi.job.Job):
     #
     @SYNC_CALL
     def get_started(self):
-        """
+        '''
         implements cpi.job.Job.get_started()
-        """
+        '''
 
         if not self._started:
             return None
@@ -1118,9 +1095,9 @@ class LSFJob (cpi.job.Job):
     #
     @SYNC_CALL
     def get_finished(self):
-        """
+        '''
         implements cpi.job.Job.get_finished()
-        """
+        '''
 
         if not self._started:
             return None
@@ -1133,9 +1110,9 @@ class LSFJob (cpi.job.Job):
     #
     @SYNC_CALL
     def get_execution_hosts(self):
-        """
+        '''
         implements cpi.job.Job.get_execution_hosts()
-        """
+        '''
 
         if not self._started:
             return None

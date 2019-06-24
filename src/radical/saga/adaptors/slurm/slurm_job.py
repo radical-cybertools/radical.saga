@@ -1,14 +1,12 @@
 
-__author__    = "Andre Merzky, Ashley Z, Ole Weidner"
-__copyright__ = "Copyright 2012-2013, The SAGA Project"
+__author__    = "The RADICAL Team"
+__copyright__ = "Copyright 2012-2019, The SAGA Project"
 __license__   = "MIT"
 
 
-""" SLURM job adaptor implementation """
-
-# TODO: Throw errors if a user does not specify the MINIMUM number of
-#       attributes required for SLURM in a job description
-
+'''
+SLURM job adaptor implementation
+'''
 
 import re
 import os
@@ -21,10 +19,10 @@ import radical.utils as ru
 
 from ...job           import constants   as c
 from ...utils         import pty_shell   as rsups
-from ...              import job         as api_job
+from ...              import job         as api
 from ...              import exceptions  as rse
 from ..               import base        as a_base
-from ..cpi            import job         as cpi_job
+from ..cpi            import job         as cpi
 from ..cpi            import decorators  as cpi_decs
 
 SYNC_CALL  = cpi_decs.SYNC_CALL
@@ -33,9 +31,6 @@ ASYNC_CALL = cpi_decs.ASYNC_CALL
 
 # ------------------------------------------------------------------------------
 #
-def log_error_and_raise(message, exception, logger):
-    logger.error(message)
-    raise exception(message)
 
 
 # ------------------------------------------------------------------------------
@@ -164,7 +159,7 @@ _ADAPTOR_DOC           = {
     "name"             : _ADAPTOR_NAME,
     "cfg_options"      : _ADAPTOR_OPTIONS,
     "capabilities"     : _ADAPTOR_CAPABILITIES,
-    "description"      : """
+    "description"      : '''
         The SLURM adaptor allows to run and manage jobs on a
         `SLURM <https://computing.llnl.gov/linux/slurm/>`_ HPC cluster.
 
@@ -184,7 +179,7 @@ _ADAPTOR_DOC           = {
          - Relating to the above, _job_get_info is written, but unused/untested
            (mostly from PBS adaptor)
 
-        """,
+        ''',
     "example": "examples/jobs/slurmjob.py",
     "schemas": {"slurm":        "connect to a local cluster",
                 "slurm+ssh":    "conenct to a remote cluster via SSH",
@@ -193,7 +188,7 @@ _ADAPTOR_DOC           = {
 
 # ------------------------------------------------------------------------------
 # the adaptor info is used to register the adaptor with SAGA
-
+#
 _ADAPTOR_INFO          = {
     "name"             : _ADAPTOR_NAME,
     "version"          : "v0.2.1",
@@ -212,56 +207,62 @@ _ADAPTOR_INFO          = {
 }
 
 
-################################################################################
-# 
+# ------------------------------------------------------------------------------
 # The adaptor class
 #
 class Adaptor (a_base.Base):
-    """
+    '''
     This is the actual adaptor class, which gets loaded by SAGA (i.e. by the
     SAGA engine), and which registers the CPI implementation classes which
     provide the adaptor's functionality.
-    """
+    '''
 
 
     # --------------------------------------------------------------------------
     #
-    def __init__ (self) :
+    def __init__(self):
 
-        a_base.Base.__init__ (self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
+        a_base.Base.__init__(self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
 
-        self.id_re = re.compile ('^\[(.*)\]-\[(.*?)\]$')
+        self.id_re = re.compile('^\[(.*)\]-\[(.*?)\]$')
         self.epoch = datetime.datetime(1970,1,1)
 
 
     # --------------------------------------------------------------------------
     #
-    def sanity_check (self) :
+    def sanity_check(self):
         pass
-
-
-    def parse_id (self, id) :
-        # split the id '[rm]-[pid]' in its parts, and return them.
-
-        match = self.id_re.match (id)
-
-        if  not match or len (match.groups()) != 2 :
-            raise rse.BadParameter ("Cannot parse job id '%s'" % id)
-
-        return (match.group(1), match.group (2))
-
-
-###############################################################################
-#
-class SLURMJobService (cpi_job.Service) :
-    """ Implements cpi_job.Service """
 
     # --------------------------------------------------------------------------
     #
-    def __init__ (self, api, adaptor) :
+    def parse_id(self, id):
+        # split the id '[rm]-[pid]' in its parts, and return them.
 
-        _cpi_base = super  (SLURMJobService, self)
-        _cpi_base.__init__ (api, adaptor)
+        match = self.id_re.match(id)
+
+        if not match or len(match.groups()) != 2:
+            raise rse.BadParameter("Cannot parse job id '%s'" % id)
+
+        return (match.group(1), match.group(2))
+
+
+# ------------------------------------------------------------------------------
+#
+class SLURMJobService(cpi.Service):
+    '''
+    implements cpi.job.Service
+    '''
+
+    # --------------------------------------------------------------------------
+    #
+    def __init__(self, api, adaptor):
+
+        _cpi_base = super(SLURMJobService, self)
+        _cpi_base.__init__(api, adaptor)
+
+        self._adaptor = adaptor
+        self._shell   = None
+        self._monitor = None
 
         # TODO make sure this formats properly and works right!
         self.exit_code_re            = re.compile(r"\bExitCode  \b=(\d*)", re.VERBOSE)
@@ -273,6 +274,52 @@ class SLURMJobService (cpi_job.Service) :
         self.scontrol_comp_time_re   = re.compile(r"\bRunTime   \b=(\S*)", re.VERBOSE)
         self.scontrol_exec_hosts_re  = re.compile(r"\bNodeList  \b=(\S*)", re.VERBOSE)
 
+
+    # --------------------------------------------------------------------------
+    #
+    def __del__(self):
+
+        self.close()
+
+
+    # --------------------------------------------------------------------------
+    #
+    def close(self):
+
+        if  self._monitor:
+            self._monitor.stop()
+            self._monitor.join(10)  # don't block forever on join()
+
+        self._logger.info("Job monitoring thread stopped.")
+
+        if  self._shell:
+            self._shell.finalize(True)
+            del(self._shell)
+
+
+    # --------------------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def init_instance(self, adaptor_state, rm_url, session):
+        '''
+        service instance constructor
+        '''
+
+        self.rm      = rm_url
+        self.session = session
+        self._shell  = None
+        self._jobs   = dict()
+
+        # we need to extrac the scheme for PTYShell. That's basically the
+        # job.Serivce Url withou the lsf+ part. We use the PTYShell to execute
+        # lsf commands either locally or via gsissh or ssh.
+        rm_scheme = rm_url.scheme
+        pty_url   = ru.Url(rm_url)
+        elems     = rm_scheme.split('+')
+        if   'gsissh' in elems: pty_url.scheme = "gsissh"
+        elif 'ssh'    in elems: pty_url.scheme = "ssh"
+        else                  : pty_url.scheme = "fork"
+
         # these are the commands that we need in order to interact with SLURM
         # the adaptor will try to find them when it first opens the shell
         # connection, and bails out in case they are not available.
@@ -281,108 +328,21 @@ class SLURMJobService (cpi_job.Service) :
                           'scontrol': None,
                           'scancel' : None}
 
-    # --------------------------------------------------------------------------
-    #
-    def __del__ (self) :
-        try :
-            if self.shell : del (self.shell)
-        except :
-            pass
+        self._shell = rsups.PTYShell(pty_url, self.session)
 
-
-    # --------------------------------------------------------------------------
-    #
-    @SYNC_CALL
-    def init_instance (self, adaptor_state, rm_url, session) :
-        """ Service instance constructor """
-
-        self.rm      = rm_url
-        self.session = session
-
-        self.jobs = {}
-        self._open()
-
-        return self.get_api()
-
-
-    # --------------------------------------------------------------------------
-    #
-    def close (self) :
-        if  self.shell :
-            self.shell.finalize (True)
-
-
-    # --------------------------------------------------------------------------
-    #
-    def _open(self):
-        """
-        Open our persistent shell for this job adaptor.  We use
-        the pty_shell functionality for this.
-        """
-        # check to see what kind of connection we will want to create
-        if   self.rm.schema == "slurm":        shell_schema = "fork://"
-        elif self.rm.schema == "slurm+ssh":    shell_schema = "ssh://"
-        elif self.rm.schema == "slurm+gsissh": shell_schema = "gsissh://"
-        else: raise rse.IncorrectURL("Schema %s not supported by SLURM adaptor."
-                                     % self.rm.schema)
-
-        # <scheme>://<user>:<pass>@<host>:<port>/<path>?<query>#<fragment>
-        # build our shell URL
-        shell_url = shell_schema
-
-        # did we provide a username and password?
-        if self.rm.username and self.rm.password:
-            shell_url += self.rm.username + ":" + self.rm.password + "@"
-
-        # only provided a username
-        if self.rm.username and not self.rm.password:
-            shell_url += self.rm.username + "@"
-
-        # add hostname
-        shell_url += self.rm.host
-
-        # add port
-        if  self.rm.port:
-            shell_url += ":" + str(self.rm.port)
-
-        shell_url = ru.Url(shell_url)
-
-        # establish shell connection
-        self._logger.debug("Opening shell of type: %s" % shell_url)
-        self.shell = rsups.PTYShell (shell_url, self.session, self._logger)
-
-        # verify our SLURM environment contains the commands we need for this
-        # adaptor to work properly
-        self._logger.debug("Verifying existence of remote SLURM tools.")
+        # check if all required lsf tools are available
         for cmd in self._commands.keys():
-            ret, out, _ = self.shell.run_sync("which %s " % cmd)
-            if ret != 0:
-                message = "Error finding SLURM tool %s on remote server %s!\n" \
-                          "Locations searched:\n%s\n" \
-                          "Is SLURM installed on that machine? " \
-                          "If so, is your remote SLURM environment "\
-                          "configured properly? " % (cmd, self.rm, out)
-                raise rse.NoSuccess._log (self._logger, message)
+            ret, out, _ = self._shell.run_sync("which %s " % cmd)
+            if ret:
+                raise rse.NoSuccess("Couldn't find SLURM tools: %s" % out)
 
-        self._logger.debug ("got cmd prompt (%s)(%s)" % (ret, out))
+            self._commands[cmd] = out.strip()
 
-        self.rm.detected_username = self.rm.username
-        # figure out username if it wasn't made explicit
-        # important if .ssh/config info read+connected with
-        # a different username than what we expect
-        if not self.rm.username:
-            self._logger.debug ("No username provided in URL %s, so we are"
-                                " going to find it with whoami" % self.rm)
-            ret, out, _ = self.shell.run_sync("whoami")
-            self.rm.detected_username = out.strip()
-            self._logger.debug("Username detected as: %s",
-                               self.rm.detected_username)
-
-        _, out, _ = self.shell.run_sync('scontrol --version')
+        _, out, _ = self._shell.run_sync('scontrol --version')
         self._version = out.split()[1].strip()
-        self._logger.info('slurm version: %s' % self._version)
+        self._logger.info('SLURM version: %s' % self._version)
 
-        ppn_pat   = '\'s/.*\\(CPUTot=[0-9]*\\).*/\\1/g\'' 
+        ppn_pat   = '\'s/.*\\(CPUTot=[0-9]*\\).*/\\1/g\''
         ppn_cmd   = 'scontrol show nodes ' + \
                     '| grep CPUTot'        + \
                     '| sed -e ' + ppn_pat  + \
@@ -390,7 +350,7 @@ class SLURMJobService (cpi_job.Service) :
                     '| uniq -c '           + \
                     '| cut -f 2 -d = '     + \
                     '| xargs echo'
-        _, out, _ = self.shell.run_sync(ppn_cmd)
+        _, out, _ = self._shell.run_sync(ppn_cmd)
         ppn_vals  = [o.strip() for o in out.split() if o.strip()]
         if len(ppn_vals) >= 1: self._ppn = int(ppn_vals[0])
         else                 : self._ppn = None
@@ -398,21 +358,17 @@ class SLURMJobService (cpi_job.Service) :
         self._logger.info(" === ppn: %s", self._ppn)
 
 
-    # --------------------------------------------------------------------------
-    #
-    def _close (self) :
-        """
-        Close our shell connection
-        """
-        del (self.shell)
-        self.shell = None
+
+        return self.get_api()
 
 
     # --------------------------------------------------------------------------
     #
     #
-    def _job_run (self, jd) :
-        """ runs a job on the wrapper via pty, and returns the job id """
+    def _job_run(self, jd):
+        '''
+        runs a job on the wrapper via pty, and returns the job id
+        '''
 
         # define a bunch of default args
         exe                 = jd.executable
@@ -446,11 +402,10 @@ class SLURMJobService (cpi_job.Service) :
         #       comnpute nodes.
         if cwd:
             self._logger.info("Creating working directory %s" % cwd)
-            ret, out, _ = self.shell.run_sync("mkdir -p %s"   % cwd)
+            ret, out, _ = self._shell.run_sync("mkdir -p %s"   % cwd)
             if ret:
                 # something went wrong
-                message = "Couldn't create working directory - %s" % (out)
-                log_error_and_raise(message, rse.NoSuccess, self._logger)
+                raise rse.NoSuccess("Couldn't create working dir: %s" % out)
 
 
         if isinstance(candidate_hosts, list):
@@ -511,7 +466,7 @@ class SLURMJobService (cpi_job.Service) :
         # FIXME: these should be moved into resource config files
         if 'bridges' in self.rm.host.lower():
 
-            if total_gpu_count: 
+            if total_gpu_count:
                 if cpu_arch: gpu_arch = cpu_arch.lower()
                 else       : gpu_arch = 'p100'
                 slurm_script += "#SBATCH --gres=gpu:%s:%s\n" % (gpu_arch, total_gpu_count)
@@ -533,13 +488,13 @@ class SLURMJobService (cpi_job.Service) :
             if total_gpu_count: slurm_script += "#SBATCH --gpus=%s\n" % total_gpu_count
 
 
-        if cwd:             slurm_script += "#SBATCH --workdir %s\n"     % cwd 
-        if output:          slurm_script += "#SBATCH --output %s\n"      % output 
-        if error:           slurm_script += "#SBATCH --error %s\n"       % error 
+        if cwd:             slurm_script += "#SBATCH --workdir %s\n"     % cwd
+        if output:          slurm_script += "#SBATCH --output %s\n"      % output
+        if error:           slurm_script += "#SBATCH --error %s\n"       % error
         if queue:           slurm_script += "#SBATCH --partition %s\n"   % queue
         if job_name:        slurm_script += '#SBATCH -J "%s"\n'          % job_name
-        if job_memory:      slurm_script += "#SBATCH --mem=%s\n"         % job_memory 
-        if candidate_hosts: slurm_script += "#SBATCH --nodelist=%s\n"    % candidate_hosts 
+        if job_memory:      slurm_script += "#SBATCH --mem=%s\n"         % job_memory
+        if candidate_hosts: slurm_script += "#SBATCH --nodelist=%s\n"    % candidate_hosts
         if job_contact:     slurm_script += "#SBATCH --mail-user=%s\n"   % job_contact
         if account:         slurm_script += "#SBATCH --account %s\n"     % account
         if reservation:     slurm_script += "#SBATCH --reservation %s\n" % reservation
@@ -549,7 +504,7 @@ class SLURMJobService (cpi_job.Service) :
         if env:
             slurm_script += "\n## ENVIRONMENT\n"
             for key,val in env.iteritems():
-                slurm_script += 'export "%s"="%s"\n'  %  (key, val)
+                slurm_script += 'export "%s"="%s"\n'  % (key, val)
 
         if pre:
             slurm_script += "\n## PRE_EXEC\n" + "\n".join(pre)
@@ -560,20 +515,20 @@ class SLURMJobService (cpi_job.Service) :
         slurm_script += '%s%s %s' % (mpi_cmd, exe, ' '.join(args))
         slurm_script += '\n'
 
-        if post :
+        if post:
             slurm_script += "\n## POST_EXEC\n" + '\n'.join(post)
             slurm_script += '\n'
 
         # write script into a tmp file for staging
-        self._logger.info ("SLURM script generated:\n%s" % slurm_script)
+        self._logger.info("SLURM script generated:\n%s" % slurm_script)
 
-        tgt = os.path.basename (tempfile.mktemp (suffix='.slurm', prefix='tmp_'))
-        self.shell.write_to_remote (src=slurm_script, tgt=tgt)
+        tgt = os.path.basename(tempfile.mktemp(suffix='.slurm', prefix='tmp_'))
+        self._shell.write_to_remote(src=slurm_script, tgt=tgt)
 
         # submit the job
-        ret, out, _ = self.shell.run_sync ("sbatch '%s'; rm -f '%s'" % (tgt, tgt))
+        ret, out, _ = self._shell.run_sync("sbatch '%s'; rm -f '%s'" % (tgt, tgt))
 
-        self._logger.debug ("submit SLURM script (%s) (%s)" % (tgt, ret))
+        self._logger.debug("submit SLURM script (%s) (%s)" % (tgt, ret))
 
         # find out what our job ID is
         # TODO: Could make this more efficient
@@ -594,7 +549,7 @@ class SLURMJobService (cpi_job.Service) :
         self._logger.debug("Batch system output:\n%s" % out)
 
         # create local jobs dictionary entry
-        self.jobs[self.job_id] = {'state'      : c.PENDING,
+        self._jobs[self.job_id] = {'state'      : c.PENDING,
                                   'create_time': None,
                                   'start_time' : None,
                                   'end_time'   : None,
@@ -633,9 +588,9 @@ class SLURMJobService (cpi_job.Service) :
     #    TO  TIMEOUT         Job terminated upon reaching its time limit.
     #
     def _slurm_to_saga_jobstate(self, slurmjs):
-        """
+        '''
         translates a slurm one-letter state to saga
-        """
+        '''
 
         if   slurmjs in ['CA', "CANCELLED"  ]: return c.CANCELED
         elif slurmjs in ['CD', "COMPLETED"  ]: return c.DONE
@@ -653,11 +608,11 @@ class SLURMJobService (cpi_job.Service) :
 
     # --------------------------------------------------------------------------
     #
-    def _job_cancel (self, job):
-        """
+    def _job_cancel(self, job):
+        '''
         Given a job id, attempt to cancel it through use of commandline
         scancel.  Raises exception when unsuccessful.
-        """
+        '''
 
         if job._state in c.FINAL:
             # job is already final - nothing to do
@@ -673,7 +628,7 @@ class SLURMJobService (cpi_job.Service) :
                     "Could not cancel job: no job ID")
 
         rm,  pid    = self._adaptor.parse_id(job._id)
-        ret, out, _ = self.shell.run_sync("scancel %s" % pid)
+        ret, out, _ = self._shell.run_sync("scancel %s" % pid)
 
         if ret != 0:
             raise rse.NoSuccess._log(self._logger,
@@ -684,19 +639,19 @@ class SLURMJobService (cpi_job.Service) :
 
     # --------------------------------------------------------------------------
     #
-    def _job_suspend (self, job):
-        """
+    def _job_suspend(self, job):
+        '''
         Attempt to suspend a job with commandline scontrol.  Raise
         exception when unsuccessful.
-        """
+        '''
 
         if job._state in [c.DONE, c.FAILED, c.CANCELED, c.NEW, c.SUSPENDED]:
             raise rse.IncorrectState._log(self._logger,
                     "Could not suspend job %s in state %s" % (job._id, job._state))
 
 
-        rm,  pid    = self._adaptor.parse_id (job._id)
-        ret, out, _ = self.shell.run_sync("scontrol suspend %s" % pid)
+        rm,  pid    = self._adaptor.parse_id(job._id)
+        ret, out, _ = self._shell.run_sync("scontrol suspend %s" % pid)
 
         if ret == 0:
             return True
@@ -713,19 +668,19 @@ class SLURMJobService (cpi_job.Service) :
 
     # --------------------------------------------------------------------------
     #
-    def _job_resume (self, job):
-        """
+    def _job_resume(self, job):
+        '''
         Attempt to resume a job with commandline scontrol.  Raise
         exception when unsuccessful.
-        """
+        '''
 
         if job._state in [c.DONE, c.FAILED, c.CANCELED, c.NEW, c.RUNNING]:
             raise rse.IncorrectState._log(self._logger,
                     "Could not resume job %s in state %s" % (job._id, job._state))
 
 
-        rm,  pid    = self._adaptor.parse_id (job._id)
-        ret, out, _ = self.shell.run_sync("scontrol resume %s" % pid)
+        rm,  pid    = self._adaptor.parse_id(job._id)
+        ret, out, _ = self._shell.run_sync("scontrol resume %s" % pid)
 
         if ret == 0:
             return True
@@ -744,9 +699,10 @@ class SLURMJobService (cpi_job.Service) :
     # --------------------------------------------------------------------------
     #
     @SYNC_CALL
-    def create_job (self, jd) :
-        """ Implements cpi_job.Service.create_job()
-        """
+    def create_job(self, jd):
+        '''
+        Implements cpi.Service.create_job()
+        '''
 
         # this dict is passed on to the job adaptor class -- use it to pass any
         # state information you need there.
@@ -755,15 +711,16 @@ class SLURMJobService (cpi_job.Service) :
                          "job_schema"      : self.rm.schema,
                          "reconnect"       : False}
 
-        return api_job.Job (_adaptor=self._adaptor,
-                             _adaptor_state=adaptor_state)
+        return api.Job(_adaptor=self._adaptor,
+                           _adaptor_state=adaptor_state)
 
     # --------------------------------------------------------------------------
     #
     @SYNC_CALL
-    def get_url (self) :
-        """ Implements cpi_job.Service.get_url()
-        """
+    def get_url(self):
+        '''
+        Implements cpi.Service.get_url()
+        '''
         return self.rm
 
 
@@ -771,8 +728,9 @@ class SLURMJobService (cpi_job.Service) :
     #
     @SYNC_CALL
     def list(self):
-        """ Implements rs.adaptors.cpi.job.Service.list()
-        """
+        '''
+        Implements rs.adaptors.cpi.job.Service.list()
+        '''
 
         # ashleyz@login1:~$ squeue -h -o "%i" -u ashleyz
         # 255042
@@ -781,8 +739,7 @@ class SLURMJobService (cpi_job.Service) :
         # 255018
 
         # this line gives us a nothing but jobids for our user
-        ret, out, _ = self.shell.run_sync('squeue -h -o "%%i" -u %s'
-                                          % self.rm.detected_username)
+        ret, out, _ = self._shell.run_sync('squeue -h -o "%%i" -u $(id -un)')
 
         # mangle our results into the proper id format
         output = ["[%s]-[%s]" % (self.rm, i) for i in out.strip().split("\n")]
@@ -792,18 +749,18 @@ class SLURMJobService (cpi_job.Service) :
     # --------------------------------------------------------------------------
     #
     @SYNC_CALL
-    def get_job (self, jobid):
+    def get_job(self, jobid):
 
         # this dict is passed on to the job adaptor class -- use it to pass any
         # state information you need there.  The job adaptor will run 'scontrol
         # show job $jobid' to complement the information.
         adaptor_state = {"job_service"    : self,
-                         "job_description": api_job.Description(),
+                         "job_description": api.Description(),
                          "job_schema"     : self.rm.schema,
                          "reconnect"      : True,
                          "reconnect_jobid": jobid
                         }
-        return api_job.Job(_adaptor=self._adaptor,
+        return api.Job(_adaptor=self._adaptor,
                             _adaptor_state=adaptor_state)
 
 
@@ -846,13 +803,13 @@ class SLURMJobService (cpi_job.Service) :
 
 # ------------------------------------------------------------------------------
 #
-class SLURMJob(cpi_job.Job):
+class SLURMJob(cpi.Job):
 
     # --------------------------------------------------------------------------
     #
     def __init__(self, api, adaptor):
 
-        _cpi_base = super (SLURMJob, self)
+        _cpi_base = super(SLURMJob, self)
         _cpi_base.__init__(api, adaptor)
 
 
@@ -888,20 +845,20 @@ class SLURMJob(cpi_job.Job):
         else:
             self._started = False
 
-        return self.get_api ()
+        return self.get_api()
 
 
     # --------------------------------------------------------------------------
     #
-    def _job_get_info (self):
-        """
+    def _job_get_info(self):
+        '''
         use scontrol to grab job info
         NOT CURRENTLY USED/TESTED, here for later
-        """
+        '''
 
         # prev. info contains the info collect when _job_get_info
         # was called the last time
-        prev_info = self.js.jobs.get(self._id)
+        prev_info = self.js._jobs.get(self._id)
 
         # if the 'gone' flag is set, there's no need to query the job
         # state again. it's gone forever
@@ -1021,8 +978,10 @@ class SLURMJob(cpi_job.Job):
 
     # --------------------------------------------------------------------------
     #
-    def _job_get_state (self, job_id) :
-        """ get the job state from the wrapper shell """
+    def _job_get_state(self, job_id):
+        '''
+        get the job state from the wrapper shell
+        '''
 
         # if the state is NEW and we haven't sent out a run command, keep
         # it listed as NEW
@@ -1034,7 +993,7 @@ class SLURMJob(cpi_job.Job):
         if self._state in c.FINAL:
             return self._state
 
-        rm, pid = self._adaptor.parse_id (job_id)
+        rm, pid = self._adaptor.parse_id(job_id)
 
         try:
             ret, out, _ = self.js.shell.run_sync('scontrol show job %s' % pid)
@@ -1058,15 +1017,15 @@ class SLURMJob(cpi_job.Job):
             raise rse.NoSuccess("Error getting the job state for "
                             "job %s:\n%s" % (pid,ex))
 
-        raise rse.NoSuccess._log (self._logger,
-                                   "Internal SLURM adaptor error"
-                                   " in _job_get_state")
+        raise rse.NoSuccess._log(self._logger,
+                                 "Internal SLURM adaptor error"
+                                 " in _job_get_state")
 
 
     # --------------------------------------------------------------------------
     #
-    def _sacct_jobstate_match (self, pid):
-        ''' 
+    def _sacct_jobstate_match(self, pid):
+        '''
         get the job state from the slurm accounting data
         '''
 
@@ -1094,15 +1053,48 @@ class SLURMJob(cpi_job.Job):
     # --------------------------------------------------------------------------
     #
     @SYNC_CALL
+    def cancel(self, timeout):
+        '''
+        implements cpi.job.Job.cancel()
+        '''
+
+        if not self._started:
+            raise rse.IncorrectState("job has not been started")
+
+        self.js._job_cancel(self)
+
+
+    # --------------------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def run(self):
+        '''
+        implements cpi.job.Job.run()
+        '''
+
+        self._id = self.js._job_run(self.jd)
+
+        # trigger state callback
+        self._attributes_i_set('state', api.PENDING, self._UP, True)
+
+        self._started = True
+
+
+    # --------------------------------------------------------------------------
+    #
+    @SYNC_CALL
     def get_state(self):
-        self._state = self._job_get_state (self._id)
+        '''
+        implements cpi.job.Job.get_state()
+        '''
+        self._state = self._job_get_state(self._id)
         return self._state
 
 
     # --------------------------------------------------------------------------
     #
     @SYNC_CALL
-    def get_description (self):
+    def get_description(self):
         return self.jd
 
 
@@ -1125,9 +1117,8 @@ class SLURMJob(cpi_job.Job):
             state = self._job_get_state(self._id)
             self._logger.debug("wait() state for job id %s:%s" % (self._id, state))
 
-            if state == c.UNKNOWN :
-                log_error_and_raise("cannot get job state",
-                                    rse.IncorrectState, self._logger)
+            if state == c.UNKNOWN:
+                raise rse.IncorrectState("cannot get job state")
 
             if state in c.FINAL:
                 return True
@@ -1154,7 +1145,7 @@ class SLURMJob(cpi_job.Job):
     # create a new job service instance.
     #
     @SYNC_CALL
-    def get_id (self) :
+    def get_id(self):
 
         return self._id
 
@@ -1162,7 +1153,7 @@ class SLURMJob(cpi_job.Job):
     # --------------------------------------------------------------------------
     #
     @SYNC_CALL
-    def get_name (self):
+    def get_name(self):
 
         if not self._name:
             self._name = self._job_get_info()['job_name']
@@ -1172,7 +1163,7 @@ class SLURMJob(cpi_job.Job):
     # --------------------------------------------------------------------------
     #
     @SYNC_CALL
-    def get_exit_code(self) :
+    def get_exit_code(self):
 
         # FIXME: use cache
         return self._job_get_info()['exit_code']
@@ -1181,14 +1172,14 @@ class SLURMJob(cpi_job.Job):
     # --------------------------------------------------------------------------
     #
     @SYNC_CALL
-    def suspend(self) :
+    def suspend(self):
 
         return self.js._job_suspend(self)
 
 
     # --------------------------------------------------------------------------
     @SYNC_CALL
-    def resume(self) :
+    def resume(self):
 
         return self.js._job_resume(self)
 
@@ -1196,7 +1187,7 @@ class SLURMJob(cpi_job.Job):
     # --------------------------------------------------------------------------
     #
     @SYNC_CALL
-    def get_created(self) :
+    def get_created(self):
 
         # FIXME: use cache
         # FIXME: convert to EOPCH
@@ -1206,7 +1197,7 @@ class SLURMJob(cpi_job.Job):
     # --------------------------------------------------------------------------
     #
     @SYNC_CALL
-    def get_started(self) :
+    def get_started(self):
 
         # FIXME: use cache
         # FIXME: convert to EPOCH
@@ -1216,7 +1207,7 @@ class SLURMJob(cpi_job.Job):
     # --------------------------------------------------------------------------
     #
     @SYNC_CALL
-    def get_finished(self) :
+    def get_finished(self):
 
         # FIXME: use cache
         # FIXME: convert to EPOCH
@@ -1226,27 +1217,10 @@ class SLURMJob(cpi_job.Job):
     # --------------------------------------------------------------------------
     #
     @SYNC_CALL
-    def get_execution_hosts(self) :
+    def get_execution_hosts(self):
 
         # FIXME: use cache
         return self._job_get_info()['exec_hosts']
-
-
-    # --------------------------------------------------------------------------
-    #
-    @SYNC_CALL
-    def cancel(self, timeout):
-
-        self.js._job_cancel(self)
-
-
-    # --------------------------------------------------------------------------
-    #
-    @SYNC_CALL
-    def run(self):
-
-        self._id      = self.js._job_run(self.jd)
-        self._started = True
 
 
 # ------------------------------------------------------------------------------
