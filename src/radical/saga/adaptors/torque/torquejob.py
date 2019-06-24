@@ -809,48 +809,47 @@ class TORQUEJobService (cpi.Service):
             """ %  (script, self._commands['qsub']['path'])
         ret, out, _ = self.shell.run_sync(cmdline)
 
-        if ret != 0:
+        if ret:
             # something went wrong
             message = "Error running job via 'qsub': %s. Commandline was: %s" \
                 % (out, cmdline)
             log_error_and_raise(message, rse.NoSuccess, self._logger)
-        else:
-            # parse the job id. qsub usually returns just the job id, but
-            # sometimes there are a couple of lines of warnings before.
-            # if that's the case, we log those as 'warnings'
-            lines = out.split('\n')
-            lines = filter(lambda lines: lines != '', lines)  # remove empty
 
-            if len(lines) > 1:
-                self._logger.warning('qsub: %s' % ''.join(lines[:-2]))
+        # parse the job id. qsub usually returns just the job id, but
+        # sometimes there are a couple of lines of warnings before.
+        # if that's the case, we log those as 'warnings'
+        lines = out.split('\n')
+        lines = filter(lambda lines: lines != '', lines)  # remove empty
 
-            # we asssume job id is in the last line
-            job_id = "[%s]-[%s]" % (self.rm, lines[-1].strip().split('.')[0])
-            self._logger.info("Submitted PBS job with id: %s" % job_id)
+        if len(lines) > 1:
+            self._logger.warning('qsub: %s' % ''.join(lines[:-2]))
 
-            state = api.PENDING
+        # we asssume job id is in the last line
+        job_id = "[%s]-[%s]" % (self.rm, lines[-1].strip().split('.')[0])
+        self._logger.info("Submitted PBS job with id: %s" % job_id)
 
-            # populate job info dict
-            self.jobs[job_id] = {'obj'         : job_obj,
-                                 'job_id'      : job_id,
-                                 'name'        : job_name,
-                                 'state'       : state,
-                                 'exec_hosts'  : None,
-                                 'returncode'  : None,
-                                 'create_time' : time.time(),
-                                 'start_time'  : None,
-                                 'end_time'    : None,
-                                 'gone'        : False
-                                 }
+        # populate job info dict
+        state = api.PENDING
+        self.jobs[job_id] = {'obj'         : job_obj,
+                             'job_id'      : job_id,
+                             'name'        : job_name,
+                             'state'       : state,
+                             'exec_hosts'  : None,
+                             'returncode'  : None,
+                             'create_time' : time.time(),
+                             'start_time'  : None,
+                             'end_time'    : None,
+                             'gone'        : False
+                             }
 
-            self._logger.info ("assign job id  %s / %s / %s to watch list (%s)"
-                            % (job_name, job_id, job_obj, self.jobs.keys()))
+        self._logger.info ("assign job id  %s / %s / %s to watch list (%s)"
+                        % (job_name, job_id, job_obj, self.jobs.keys()))
 
-            # set status to 'pending' and manually trigger callback
-            job_obj._attributes_i_set('state', state, job_obj._UP, True)
+        # set status to 'pending' and manually trigger callback
+        job_obj._attributes_i_set('state', state, job_obj._UP, True)
 
-            # return the job id
-            return job_id
+        # return the job id
+        return job_id
 
 
     # ----------------------------------------------------------------

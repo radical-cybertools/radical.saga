@@ -22,7 +22,7 @@ from .. import base
 from .. import cpi
 
 from ...              import exceptions as rse
-from ...              import job        as rsj
+from ...              import job        as api
 from ...utils         import pty_shell  as rsups
 
 
@@ -73,27 +73,28 @@ class _job_state_monitor(threading.Thread):
                 # do bulk updates here! we don't want to pull information
                 # job by job. that would be too inefficient!
                 for job in self.js.jobs:
+                    job_info = self.js.jobs[job]
                     # if the job hasn't been started, we can't update its
                     # state. we can tell if a job has been started if it
                     # has a job id
-                    if  job.get('job_id'):
+                    if job_info.get('id'):
                         # we only need to monitor jobs that are not in a
                         # terminal state, so we can skip the ones that are 
                         # either done, failed or canceled
-                        state = job['state']
-                        if state not in [rsj.DONE, rsj.FAILED, rsj.CANCELED]:
+                        state = job_info['state']
+                        if state not in [api.DONE, api.FAILED, api.CANCELED]:
 
-                            job_info = self.js._job_get_info(job)
+                            new_info = self.js._job_get_info(job)
 
-                            if job_info['state'] != state:
+                            if new_info['state'] != state:
                                 # fire job state callback if 'state' has changed
                                 self.logger.info("update Job %s (state: %s)" 
-                                                % (job, job_info['state']))
+                                                % (job, new_info['state']))
                                 job._api()._attributes_i_set('state',
-                                        job_info['state'], job._api()._UP, True)
+                                        new_info['state'], job._api()._UP, True)
 
                             # replace job info
-                            self.js.jobs[job] = job_info
+                            self.js.jobs[job] = new_info
 
                 time.sleep(MONITOR_UPDATE_INTERVAL)
 
@@ -106,12 +107,12 @@ class _job_state_monitor(threading.Thread):
 def _lsf_to_saga_jobstate(lsfjs):
     """ translates a lsf one-letter state to saga
     """
-    if   lsfjs in ['RUN']                     : return rsj.RUNNING
-    elif lsfjs in ['WAIT', 'PEND']            : return rsj.PENDING
-    elif lsfjs in ['DONE']                    : return rsj.DONE
-    elif lsfjs in ['UNKNOWN', 'ZOMBI', 'EXIT']: return rsj.FAILED
-    elif lsfjs in ['USUSP', 'SSUSP', 'PSUSP'] : return rsj.SUSPENDED
-    else                                      : return rsj.UNKNOWN
+    if   lsfjs in ['RUN']                     : return api.RUNNING
+    elif lsfjs in ['WAIT', 'PEND']            : return api.PENDING
+    elif lsfjs in ['DONE']                    : return api.DONE
+    elif lsfjs in ['UNKNOWN', 'ZOMBI', 'EXIT']: return api.FAILED
+    elif lsfjs in ['USUSP', 'SSUSP', 'PSUSP'] : return api.SUSPENDED
+    else                                      : return api.UNKNOWN
 
 
 # ------------------------------------------------------------------------------
@@ -251,27 +252,27 @@ _ADAPTOR_SCHEMAS       = ["lsf", "lsf+ssh", "lsf+gsissh"]
 # the adaptor capabilities & supported attributes
 #
 _ADAPTOR_CAPABILITIES = {
-    "jdes_attributes":   [rsj.NAME,
-                          rsj.EXECUTABLE,
-                          rsj.ARGUMENTS,
-                          rsj.ENVIRONMENT,
-                          rsj.INPUT,
-                          rsj.OUTPUT,
-                          rsj.ERROR,
-                          rsj.QUEUE,
-                          rsj.PROJECT,
-                          rsj.WALL_TIME_LIMIT,
-                          rsj.WORKING_DIRECTORY,
-                          rsj.SPMD_VARIATION,
-                          rsj.PROCESSES_PER_HOST,
-                          rsj.TOTAL_CPU_COUNT],
-    "job_attributes":    [rsj.EXIT_CODE,
-                          rsj.EXECUTION_HOSTS,
-                          rsj.CREATED,
-                          rsj.STARTED,
-                          rsj.FINISHED],
-    "metrics":           [rsj.STATE],
-    "callbacks":         [rsj.STATE],
+    "jdes_attributes":   [api.NAME,
+                          api.EXECUTABLE,
+                          api.ARGUMENTS,
+                          api.ENVIRONMENT,
+                          api.INPUT,
+                          api.OUTPUT,
+                          api.ERROR,
+                          api.QUEUE,
+                          api.PROJECT,
+                          api.WALL_TIME_LIMIT,
+                          api.WORKING_DIRECTORY,
+                          api.SPMD_VARIATION,
+                          api.PROCESSES_PER_HOST,
+                          api.TOTAL_CPU_COUNT],
+    "job_attributes":    [api.EXIT_CODE,
+                          api.EXECUTION_HOSTS,
+                          api.CREATED,
+                          api.STARTED,
+                          api.FINISHED],
+    "metrics":           [api.STATE],
+    "callbacks":         [api.STATE],
     "contexts":          {"ssh": "SSH public/private keypair",
                           "x509": "GSISSH X509 proxy context",
                           "userpass": "username/password pair (ssh)"}
@@ -510,7 +511,8 @@ class LSFJobService (cpi.job.Service):
         """ runs a job via qsub
         """
         # get the job description
-        jd = job_obj.jd
+        jd       = job_obj.jd
+        job_name = jd.name
 
         # normalize working directory path
         if  jd.working_directory :
@@ -575,18 +577,24 @@ class LSFJobService (cpi.job.Service):
             raise Exception("Failed to detect job id after submission.")
 
         job_id = "[%s]-[%s]" % (self.rm, lsf_job_id)
-
         self._logger.info("Submitted LSF job with id: %s" % job_id)
 
-        # update job dictionary
-        self.jobs[job_obj]['job_id']    = job_id
-        self.jobs[job_obj]['submitted'] = job_id
+        # populate job info dict
+        state = api.PENDING
+        self.jobs[job_id] = {'obj'         : job_obj,
+                             'job_id'      : job_id,
+                             'name'        : job_name,
+                             'state'       : state,
+                             'exec_hosts'  : None,
+                             'returncode'  : None,
+                             'create_time' : time.time(),
+                             'start_time'  : None,
+                             'end_time'    : None,
+                             'gone'        : False
+                             }
 
-        # set status to 'pending' and trigger callback
-        # a guard is in place to not trigger this twice on state updates
-        self.jobs[job_obj]['state'] = rsj.PENDING
-        job_obj._api()._attributes_i_set('state',
-                      self.jobs[job_obj]['state'], job_obj._api()._UP, True)
+        # trigger state callback
+        job_obj._attributes_i_set('state', state, job_obj._UP, True)
 
         # return the job id
         return job_id
@@ -650,7 +658,7 @@ class LSFJobService (cpi.job.Service):
         exe  = cmd.split()[0]
         args = cmd.split()[1:]
 
-        jd = rsj.Description()
+        jd = api.Description()
         jd.executable = exe
         jd.arguments  = args
         jd.name       = results[7]
@@ -660,18 +668,18 @@ class LSFJobService (cpi.job.Service):
 
     # --------------------------------------------------------------------------
     #
-    def _job_get_info(self, job_obj):
+    def _job_get_info(self, job_id):
         """
         get job attributes via bjob
         """
 
         # if we don't have the job in our dictionary, we don't want it
-        if job_obj not in self.jobs:
-            raise rse.NoSuccess("Unknown job %s" % job_obj._id)
+        if job_id not in self.jobs:
+            raise rse.NoSuccess("Unknown job %s" % job_id)
 
         # prev. info contains the info collect when _job_get_info
         # was called the last time
-        prev_info = self.jobs[job_obj]
+        prev_info = self.jobs[job_id]
 
         # if the 'gone' flag is set, there's no need to query the job
         # state again. it's gone forever
@@ -684,7 +692,7 @@ class LSFJobService (cpi.job.Service):
 
         curr_info = copy.deepcopy(prev_info)
 
-        rm, pid = self._adaptor.parse_id(job_obj._id)
+        rm, pid = self._adaptor.parse_id(job_id)
 
         # run the LSF 'bjobs' command to get some infos about our job
         # the result of bjobs <id> looks like this:
@@ -714,10 +722,10 @@ class LSFJobService (cpi.job.Service):
             curr_info['gone'] = True
             self._logger.warning("job disappeared - set to DONE")
 
-            if prev_info['state'] in [rsj.RUNNING, rsj.PENDING]:
-                curr_info['state'] = rsj.DONE
+            if prev_info['state'] in [api.RUNNING, api.PENDING]:
+                curr_info['state'] = api.DONE
             else:
-                curr_info['state'] = rsj.FAILED
+                curr_info['state'] = api.FAILED
 
         # return the new job info dict
         return curr_info
@@ -725,16 +733,16 @@ class LSFJobService (cpi.job.Service):
 
     # --------------------------------------------------------------------------
     #
-    def _job_get_state(self, job_obj):
+    def _job_get_state(self, job_id):
 
-        return self.jobs[job_obj]['state']
+        return self.jobs[job_id]['state']
 
 
     # --------------------------------------------------------------------------
     #
-    def _job_get_exit_code(self, job_obj):
+    def _job_get_exit_code(self, job_id):
 
-        ret = self.jobs[job_obj]['returncode']
+        ret = self.jobs[job_id]['returncode']
 
         # FIXME: 'None' should cause an exception
         if ret is None : return None
@@ -743,40 +751,40 @@ class LSFJobService (cpi.job.Service):
 
     # --------------------------------------------------------------------------
     #
-    def _job_get_execution_hosts(self, job_obj):
+    def _job_get_execution_hosts(self, job_id):
 
-        return self.jobs[job_obj]['exec_hosts']
-
-
-    # --------------------------------------------------------------------------
-    #
-    def _job_get_create_time(self, job_obj):
-
-        return self.jobs[job_obj]['create_time']
+        return self.jobs[job_id]['exec_hosts']
 
 
     # --------------------------------------------------------------------------
     #
-    def _job_get_start_time(self, job_obj):
+    def _job_get_create_time(self, job_id):
 
-        return self.jobs[job_obj]['start_time']
+        return self.jobs[job_id]['create_time']
 
 
     # --------------------------------------------------------------------------
     #
-    def _job_get_end_time(self, job_obj):
+    def _job_get_start_time(self, job_id):
+
+        return self.jobs[job_id]['start_time']
+
+
+    # --------------------------------------------------------------------------
+    #
+    def _job_get_end_time(self, job_id):
         # FIXME: convert to EPOCH
-        return self.jobs[job_obj]['end_time']
+        return self.jobs[job_id]['end_time']
 
 
     # --------------------------------------------------------------------------
     #
-    def _job_cancel(self, job_obj):
+    def _job_cancel(self, job_id):
         """
         cancel the job via 'qdel'
         """
 
-        rm, pid     = self._adaptor.parse_id(job_obj._id)
+        rm, pid     = self._adaptor.parse_id(job_id)
         ret, out, _ = self.shell.run_sync("%s %s\n" 
                                        % (self._commands['bkill']['path'], pid))
 
@@ -784,24 +792,24 @@ class LSFJobService (cpi.job.Service):
             raise rse.NoSuccess("qdel error: %s" % out)
 
         # assume the job was succesfully canceled
-        self.jobs[job_obj]['state'] = rsj.CANCELED
+        self.jobs[job_id]['state'] = api.CANCELED
 
 
     # --------------------------------------------------------------------------
     #
-    def _job_wait(self, job_obj, timeout):
+    def _job_wait(self, job_id, timeout):
         """
         wait for the job to finish or fail
         """
 
         time_start = time.time()
-        rm, pid    = self._adaptor.parse_id(job_obj._id)
+        rm, pid    = self._adaptor.parse_id(job_id)
 
         while True:
 
-            state = self.jobs[job_obj]['state']  # this gets updated in the bg.
+            state = self.jobs[job_id]['state']  # this gets updated in the bg.
 
-            if state in [rsj.DONE, rsj.FAILED, rsj.CANCELED]:
+            if state in [api.DONE, api.FAILED, api.CANCELED]:
                 return True
 
             # avoid busy poll
@@ -830,21 +838,8 @@ class LSFJobService (cpi.job.Service):
                          }
 
         # create a new job object
-        job_obj = rsj.Job(_adaptor=self._adaptor,
+        job_obj = api.Job(_adaptor=self._adaptor,
                          _adaptor_state=adaptor_state)
-
-        # add job to internal list of known jobs.
-        self.jobs[job_obj._adaptor] = {
-            'state':        rsj.NEW,
-            'job_id':       None,
-            'exec_hosts':   None,
-            'returncode':   None,
-            'create_time':  None,
-            'start_time':   None,
-            'end_time':     None,
-            'gone':         False,
-            'submitted':    False
-        }
 
         return job_obj
 
@@ -870,7 +865,7 @@ class LSFJobService (cpi.job.Service):
                          "reconnect_jobid": jobid
                          }
 
-        job = rsj.Job(_adaptor=self._adaptor,
+        job = api.Job(_adaptor=self._adaptor,
                      _adaptor_state=adaptor_state)
 
         # throw it into our job dictionary.
@@ -987,11 +982,11 @@ class LSFJob (cpi.job.Job):
 
         if job_info['reconnect'] is True:
             self._id      = job_info['reconnect_jobid']
-            self._name    = self.jd.get(rsj.NAME)
+            self._name    = self.jd.get(api.NAME)
             self._started = True
         else:
             self._id      = None
-            self._name    = self.jd.get(rsj.NAME)
+            self._name    = self.jd.get(api.NAME)
             self._started = False
 
         return self.get_api()
@@ -1003,7 +998,7 @@ class LSFJob (cpi.job.Job):
     def get_state(self):
         """ implements cpi.job.Job.get_state()
         """
-        return self.js._job_get_state(job_obj=self)
+        return self.js._job_get_state(job_id=self._id)
 
 
     # --------------------------------------------------------------------------
@@ -1015,7 +1010,7 @@ class LSFJob (cpi.job.Job):
         if not self._started:
             raise rse.IncorrectState("job has not been started")
 
-        self.js._job_wait(job_obj=self, timeout=timeout)
+        self.js._job_wait(job_id=self._id, timeout=timeout)
 
 
     # --------------------------------------------------------------------------

@@ -30,14 +30,7 @@ def job_state_change_cb(src_obj, fire_on, value):
 def main():
 
     try:
-        # Your ssh identity on the remote machine.
-        ctx = rs.Context("ssh")
-
-        # Change e.g., if you have a differnent username on the remote machine
-        #ctx.user_id = "your_ssh_username"
-
         session = rs.Session()
-        session.add_context(ctx)
 
         # Create a job service object that represent a remote pbs cluster.
         # The keyword 'pbs' in the url scheme triggers the PBS adaptors
@@ -55,8 +48,8 @@ def main():
 
         jd.total_cpu_count   = 16
 
-        jd.queue             = "regular"
-        jd.project           = "URTG0003" 
+        jd.queue             = "batch"
+        jd.project           = "GEO111" 
 
         jd.working_directory = "$HOME/A/B/C"
         jd.output            = "examplejob.out"
