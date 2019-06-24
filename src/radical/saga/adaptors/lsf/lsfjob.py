@@ -76,24 +76,25 @@ class _job_state_monitor(threading.Thread):
                     # if the job hasn't been started, we can't update its
                     # state. we can tell if a job has been started if it
                     # has a job id
-                    if  job.get('job_id'):
+                    job_info = self.js.jobs[job]
+                    if  job_info.get('job_id'):
                         # we only need to monitor jobs that are not in a
                         # terminal state, so we can skip the ones that are 
                         # either done, failed or canceled
-                        state = job['state']
+                        state = job_info['state']
                         if state not in [rsj.DONE, rsj.FAILED, rsj.CANCELED]:
 
-                            job_info = self.js._job_get_info(job)
+                            new_info = self.js._job_get_info(job)
 
-                            if job_info['state'] != state:
+                            if new_info['state'] != state:
                                 # fire job state callback if 'state' has changed
                                 self.logger.info("update Job %s (state: %s)" 
-                                                % (job, job_info['state']))
+                                                % (job, new_info['state']))
                                 job._api()._attributes_i_set('state',
-                                        job_info['state'], job._api()._UP, True)
+                                        new_info['state'], job._api()._UP, True)
 
                             # replace job info
-                            self.js.jobs[job] = job_info
+                            self.js.jobs[job] = new_info
 
                 time.sleep(MONITOR_UPDATE_INTERVAL)
 
