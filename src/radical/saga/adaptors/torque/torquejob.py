@@ -8,7 +8,7 @@ __license__   = "MIT"
 """
 
 import re
-import os 
+import os
 import time
 import datetime
 import threading
@@ -70,26 +70,26 @@ class _job_state_monitor(threading.Thread):
                     job_info = jobs[job_id]
 
                     # we only need to monitor jobs that are not in a
-                    # terminal state, so we can skip the ones that are 
+                    # terminal state, so we can skip the ones that are
                     # either done, failed or canceled
                     if  job_info['state'] not in api.FINAL:
 
-                        # Store the current state since the current state 
+                        # Store the current state since the current state
                         # variable is updated when _job_get_info is called
                         pre_update_state = job_info['state']
 
                         new_job_info = self.js._job_get_info(job_id,
                                                              reconnect=False)
                         self.logger.info ("Job monitoring thread updating Job "
-                                          "%s (old state: %s, new state: %s)" % 
+                                          "%s (old state: %s, new state: %s)" %
                                           (job_id, pre_update_state,
                                            new_job_info['state']))
 
                         # fire job state callback if 'state' has changed
                         if  new_job_info['state'] != pre_update_state:
                             job_obj = job_info['obj']
-                            job_obj._attributes_i_set('state', 
-                                                      new_job_info['state'], 
+                            job_obj._attributes_i_set('state',
+                                                      new_job_info['state'],
                                                       job_obj._UP, True)
 
                         # update job info
@@ -201,7 +201,7 @@ def _script_generator(url, logger, jd, ppn, gpn, gres, version,
 
     if jd.environment:
         pbs_params += "#PBS -v %s\n" % \
-                ','.join (["%s=%s" % (k,v) 
+                ','.join (["%s=%s" % (k,v)
                            for k,v in jd.environment.iteritems()])
 
     # apparently this doesn't work with older PBS installations
@@ -226,7 +226,7 @@ def _script_generator(url, logger, jd, ppn, gpn, gres, version,
             if os.path.isabs(jd.output):
                 pbs_params += "#PBS -o %s \n" % jd.output
             else:
-                # user provided a relative path for STDOUT. in this case 
+                # user provided a relative path for STDOUT. in this case
                 # we prepend the workind directory path before passing
                 # it on to PBS
                 pbs_params += "#PBS -o %s/%s \n" % (jd.working_directory,
@@ -235,14 +235,14 @@ def _script_generator(url, logger, jd, ppn, gpn, gres, version,
             pbs_params += "#PBS -o %s \n" % jd.output
 
     if jd.error:
-        # if working directory is set, we want stderr to end up in 
+        # if working directory is set, we want stderr to end up in
         # the working directory as well, unless it contains a specific
-        # path name. 
+        # path name.
         if jd.working_directory:
             if os.path.isabs(jd.error):
                 pbs_params += "#PBS -e %s \n" % jd.error
             else:
-                # user provided a realtive path for STDERR. in this case 
+                # user provided a realtive path for STDERR. in this case
                 # we prepend the workind directory path before passing
                 # it on to PBS
                 pbs_params += "#PBS -e %s/%s \n" % (jd.working_directory,
@@ -397,8 +397,9 @@ def _script_generator(url, logger, jd, ppn, gpn, gres, version,
         if jd.total_cpu_count < ppn:
             ppn = jd.total_cpu_count
 
-        pbs_params += "#PBS -l nodes=%d:ppn=%d%s\n" % (
-            nnodes, ppn, ''.join([':%s' % prop for prop in node_properties]))
+      # pbs_params += "#PBS -l nodes=%d:ppn=%d%s\n" % (
+        pbs_params += "#PBS -l nodes=%d%s\n" % (
+            nnodes, ''.join([':%s' % prop for prop in node_properties]))
 
     # Process Generic Resource specification request
     if gres:
@@ -508,8 +509,8 @@ _ADAPTOR_INFO = {
 ###############################################################################
 # The adaptor class
 class Adaptor (a_base.Base):
-    """ this is the actual adaptor class, which gets loaded by SAGA (i.e. by 
-        the SAGA engine), and which registers the CPI implementation classes 
+    """ this is the actual adaptor class, which gets loaded by SAGA (i.e. by
+        the SAGA engine), and which registers the CPI implementation classes
         which provide the adaptor's functionality.
     """
 
@@ -638,7 +639,7 @@ class TORQUEJobService (cpi.Service):
         self._commands = {'pbsnodes': None,
                           'qstat':    None,
                           'qsub':     None,
-                          'qdel':     None, 
+                          'qdel':     None,
                           'checkjob': None}
 
         self.shell = rsups.PTYShell(pty_url, self.session)
@@ -687,10 +688,10 @@ class TORQUEJobService (cpi.Service):
             if ret != 0:
                 self.is_cray = False
             else:
-                self._logger.info("Host '%s' seems to be a Cray machine." 
+                self._logger.info("Host '%s' seems to be a Cray machine."
                     % self.rm.host)
                 self.is_cray = True
-        else: 
+        else:
             self._logger.info("host is cray: %s" % self.is_cray)
 
         #
@@ -759,7 +760,7 @@ class TORQUEJobService (cpi.Service):
         try:
             # create a PBS job script from SAGA job description
             script = _script_generator(url=self.rm, logger=self._logger,
-                                   jd=jd, ppn=self.ppn, gpn=self.gpn, 
+                                   jd=jd, ppn=self.ppn, gpn=self.gpn,
                                    gres=self.gres,
                                    version=self._pbs_version,
                                    is_cray=self.is_cray, queue=self.queue
@@ -782,7 +783,7 @@ class TORQUEJobService (cpi.Service):
                 log_error_and_raise(message, rse.NoSuccess, self._logger)
 
         # Now we want to execute the script. This process consists of two steps:
-        # (1) we create a temporary file with 'mktemp' and write the contents of 
+        # (1) we create a temporary file with 'mktemp' and write the contents of
         #     the generated PBS script into it
         # (2) we call 'qsub <tmpfile>' to submit the script to the
         #     queueing system
@@ -874,65 +875,64 @@ class TORQUEJobService (cpi.Service):
             }
 
         rm, pid = self._adaptor.parse_id(job_id)
+
+        # try `qstat`.  If that doesn't work, fall back to `checkjob`
         ok = False
 
-        if not ok:
+        # TODO: move to config file
+        #       if 'PBSPro_1' in self._pbs_version:
+        qstat_flag = '-f1'
 
-            # try `qstat`
-            # TODO: move to config file
-            #       if 'PBSPro_1' in self._pbs_version:
-            qstat_flag = '-f1'
+        ret, out1, err1 = self.shell.run_sync("unset GREP_OPTIONS; %s %s %s | "
+                "grep -E -i '(job_state)|(exec_host)|(exit_status)|"
+                 "(ctime)|(start_time)|(stime)|(mtime)'"
+                % (self._commands['qstat'], qstat_flag, pid))
 
-            ret, out1, err1 = self.shell.run_sync("unset GREP_OPTIONS; %s %s %s | "
-                    "grep -E -i '(job_state)|(exec_host)|(exit_status)|"
-                     "(ctime)|(start_time)|(stime)|(mtime)'"
-                    % (self._commands['qstat'], qstat_flag, pid))
+        if ret != 0:
+            self._logger.warn('qstat failed with: %s', err1)
 
-            if ret != 0:
-                self._logger.warn('qstat failed with: %s', err1)
+        else:
 
-            else:
+            # qstat worked - parse output
+            ok = True
 
-                # qstat worked - parse output
-                ok = True
+            # the result should look something like this:
+            #     job_state = C
+            #     exec_host = i72/0
+            #     exit_status = 0
+            for line in out1.split('\n'):
 
-                # the result should look something like this:
-                #     job_state = C
-                #     exec_host = i72/0
-                #     exit_status = 0
-                for line in out1.split('\n'):
+                if '=' not in line:
+                    continue
 
-                    if '=' not in line:
-                        continue
+                key, val = line.split('=', 1)
+                key = key.strip().lower
+                val = val.strip()
 
-                    key, val = line.split('=', 1)
-                    key = key.strip().lower
-                    val = val.strip()
+                if   key in ['job_state'  ]: job_state = val
+                elif key in ['job_name'   ]: job_info['name'] = val
+                elif key in ['exit_status']: job_info['returncode' ] = int(val)
+                elif key in ['exec_host'  ]: job_info['exec_hosts' ] = val.split('+')
+                                             # format i73/7+i73/6+...
 
-                    if   key in ['job_state'  ]: job_state = val 
-                    elif key in ['job_name'   ]: job_info['name'] = val
-                    elif key in ['exit_status']: job_info['returncode' ] = int(val)
-                    elif key in ['exec_host'  ]: job_info['exec_hosts' ] = val.split('+')
-                                                 # format i73/7+i73/6+...
+              # FIXME: qstat will not tell us time zones, so we cannot
+              #        convert to EPOCH (which is UTC).  We thus take
+              #        times ourself.  A proper solution would be to
+              #        either do the time conversion on the target host,
+              #        or to inspect time zone settings on the host.
+              #
+              # # PBS Pro doesn't provide "end time", but
+              # # "resources_used.walltime" could be added up to the
+              # # start time.  Alternatively, we can use mtime, (latest
+              # # modification time) which is generally also end time.
+              # # TORQUE has an "comp_time" (completion? time), that is
+              # # generally the same as mtime.  # # For now we  use
+              # mtime for both TORQUE and PBS Pro.
 
-                  # FIXME: qstat will not tell us time zones, so we cannot
-                  #        convert to EPOCH (which is UTC).  We thus take
-                  #        times ourself.  A proper solution would be to
-                  #        either do the time conversion on the target host,
-                  #        or to inspect time zone settings on the host.
-                  #
-                  # # PBS Pro doesn't provide "end time", but
-                  # # "resources_used.walltime" could be added up to the
-                  # # start time.  Alternatively, we can use mtime, (latest
-                  # # modification time) which is generally also end time.
-                  # # TORQUE has an "comp_time" (completion? time), that is
-                  # # generally the same as mtime.  # # For now we  use
-                  # mtime for both TORQUE and PBS Pro.
-
-                    elif key in ['start_time',  # TORQUE / PBS Pro
-                                 'stime'      ]: job_info['start_time' ] = val
-                    elif key in ['ctime'      ]: job_info['create_time'] = val
-                    elif key in ['mtime'      ]: job_info['end_time'   ] = val
+                elif key in ['start_time',  # TORQUE / PBS Pro
+                             'stime'      ]: job_info['start_time' ] = val
+                elif key in ['ctime'      ]: job_info['create_time'] = val
+                elif key in ['mtime'      ]: job_info['end_time'   ] = val
 
 
         if not ok:
@@ -951,13 +951,13 @@ class TORQUEJobService (cpi.Service):
 
                 # the result should look something like this:
                 #     job 4683422
-                #     
+                #
                 #     AName: titan.qsub
                 #     State: Running
                 #     Creds:  user:merzky1  group:merzky1  account:BIP149 \
                 #             class:debug  qos:smallplcmnt
                 #     WallTime:   00:00:52 of 00:05:00
-                #     SubmitTime: Mon Apr 29 06:38:53 
+                #     SubmitTime: Mon Apr 29 06:38:53
                 #     ...
                 #
                 # See also parse comments on qstat values
@@ -972,13 +972,13 @@ class TORQUEJobService (cpi.Service):
                     key = key.strip().lower()
                     val = val.strip()
 
-                    if   key in ['state'     ]: job_state               = val 
-                    elif key in ['aname'     ]: job_info['name']        = val 
+                    if   key in ['state'     ]: job_state               = val
+                    elif key in ['aname'     ]: job_info['name']        = val
                     elif key in ['submittime']: job_info['create_time'] = val
 
                     elif key in ['completion code']:
-                        job_info['end_time'  ] = str(val.split(':',1)[1])
-                        job_info['returncode'] = int(val.split(     )[0])
+                        job_info['end_time'  ] = str(val.split(':', 1)[1])
+                        job_info['returncode'] = int(val.split(      )[0])
 
         if ok:
 
@@ -1387,7 +1387,7 @@ class TORQUEJob (cpi.Job):
     #
     @SYNC_CALL
     def get_name (self):
-        """ Implements cpi.Job.get_name() """        
+        """ Implements cpi.Job.get_name() """
 
         return self._name
 
