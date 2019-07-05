@@ -17,7 +17,7 @@ from .. import exceptions as rse
 _share_mode_default = 'auto'
 try:
     import subprocess as sp
-    _p = sp.Popen ('lsb_release -a | grep "Distributor ID" | cut -f 2 -d ":"', 
+    _p = sp.Popen ('lsb_release -a | grep "Distributor ID" | cut -f 2 -d ":"',
                    stdout=sp.PIPE, stderr=sp.STDOUT, shell=True)
     _os_flavor = _p.communicate()[0].strip().lower()
 
@@ -141,7 +141,7 @@ class Engine(object):
     # --------------------------------------------------------------------------
     #
     def _load_adaptors (self, inject_registry=None):
-        """ 
+        """
         Try to load all adaptors that are registered in saga.engine.registry.py.
         This method is called from the constructor.  As Engine is a singleton,
         this method is called once after the module is first loaded in any

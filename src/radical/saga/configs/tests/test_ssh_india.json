@@ -1,0 +1,7 @@
+
+# Test the PBS Job adaptor via SSH on india.futuregrid.org
+
+{
+    "job_service_url": "ssh://india.futuregrid.org"
+}
+
