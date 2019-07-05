@@ -8,7 +8,7 @@ install:
 
 script:
   - pip install nose coverage codecov pytest
-  - pytest tests/
+  - tests/run_tests.sh
 
 notifications:
   email:
