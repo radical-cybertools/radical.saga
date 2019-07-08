@@ -5,6 +5,11 @@ sudo: disabled
 python:
   - "2.7"
 
+branches:
+  - master
+  - devel
+  - *
+
 os:
   - linux
 
