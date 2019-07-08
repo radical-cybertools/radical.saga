@@ -6,9 +6,6 @@ sudo:
 python:
   - "2.7"
 
-branches:
-  - *
-
 os:
   - linux
 
