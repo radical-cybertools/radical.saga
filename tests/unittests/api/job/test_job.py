@@ -13,6 +13,8 @@ import radical.utils as ru
 
 import radical.saga.utils.test_config as sutc
 
+# FIXME: use fixtures
+
 
 # ------------------------------------------------------------------------------
 #
@@ -28,6 +30,7 @@ def config():
 #
 def _silent_cancel(job_obj):
     # try to cancel job but silently ignore all errors
+
     try:
         job_obj.cancel()
     except Exception:
@@ -38,9 +41,11 @@ def _silent_cancel(job_obj):
 #
 def _silent_close_js(js_obj):
     # try to cancel job but silently ignore all errors
+
     try:
         js_obj.close()
         js_obj.close()
+
     except Exception:
         pass
 
@@ -75,9 +80,10 @@ class TestJob(unittest.TestCase):
     def test_job_service_get_url(self):
         """ Test if the job service URL is returned correctly
         """
+
         try:
-            assert self.js, "job service creation failed?"
-            assert (self.cfg['job_service_url'] == str(self.js.url))
+            assert(self.js), "job service creation failed?"
+            assert(self.cfg['job_service_url'] == str(self.js.url))
 
         except rs.SagaException as ex:
             assert False, "unexpected exception %s" % ex
@@ -94,22 +100,24 @@ class TestJob(unittest.TestCase):
         try:
             invalid_url      = rs.Url(self.cfg['job_service_url'])
             invalid_url.host = "does.not.exist"
-            tmp_js = rs.job.Service (invalid_url, self.session)
-            assert False, "Expected XYZ exception but got none."
 
-        except rs.BadParameter :
+            tmp_js = rs.job.Service(invalid_url, self.session)
+            assert False, "Expected BadParameter exception but got none."
+
+        except rs.BadParameter:
             assert True
 
         # we don't check DNS anymore, as that can take *ages* -- so we now also
         # see Timeout and NoSuccess exceptions...
-        except (rs.NoSuccess, rs.Timeout) :
+        except (rs.NoSuccess, rs.Timeout):
             assert True
 
         # other exceptions should never occur
         except rs.SagaException as ex:
-            assert False, "Expected BadParameter, Timeout or NoSuccess exception, but got %s (%s)" % (type(ex), ex)
+            assert False, 'Expected BadParameter, Timeout or NoSuccess' \
+                          'exception, but got %s (%s)' % (type(ex), ex)
 
-        finally :
+        finally:
             _silent_close_js(tmp_js)
 
 
@@ -118,72 +126,76 @@ class TestJob(unittest.TestCase):
     def test_job_service_create(self):
         """ Test service.create_job() - expecting state 'NEW'
         """
-        j  = None
+
+        j = None
         try:
             jd = rs.job.Description()
+
             jd.executable = '/bin/sleep'
-            jd.arguments = ['10']
+            jd.arguments  = ['10']
 
             # add options from the test .cfg file if set
-            sutc.configure_jd (self.cfg, jd)
+            sutc.configure_jd(self.cfg, jd)
 
             j = self.js.create_job(jd)
             assert j.state == j.get_state()
             assert j.state == rs.job.NEW
 
         except rs.SagaException as e:
-            sutc.assert_exception (self.cfg, e)
+            sutc.assert_exception(self.cfg, e)
 
-        finally :
-            sutc.silent_cancel (j)
+        finally:
+            sutc.silent_cancel(j)
 
 
     # --------------------------------------------------------------------------
     #
-    def test_job_run (self):
+    def test_job_run(self):
         """ Test job.run() - expecting state: RUNNING/PENDING
         """
-        j  = None
+        j = None
         try:
             jd = rs.job.Description()
+
             jd.executable = '/bin/sleep'
-            jd.arguments = ['10']
+            jd.arguments  = ['10']
 
             # add options from the test .cfg file if set
-            sutc.configure_jd (self.cfg, jd)
+            sutc.configure_jd(self.cfg, jd)
 
             j = self.js.create_job(jd)
-
             j.run()
 
-            assert (j.state in [rs.job.RUNNING, rs.job.PENDING]), "j.state: %s" % j.state
+            assert(j.state in [rs.job.RUNNING, rs.job.PENDING])
 
         except rs.SagaException as e:
-            sutc.assert_exception (self.cfg, e)
+            sutc.assert_exception(self.cfg, e)
 
-        finally :
-            sutc.silent_cancel (j)
+        finally:
+            sutc.silent_cancel(j)
 
 
     # --------------------------------------------------------------------------
     #
     def test_job_wait(self):
-        """ Test job.wait() - expecting state: DONE (this test might take a while)
         """
-        j  = None
+        Test job.wait() - expecting state: DONE
+        """
+
+        j = None
         try:
             t_min = time.time()
-            time.sleep(0.5)
+            time.sleep(0.1)
 
             jd = rs.job.Description()
+
             jd.executable = '/bin/sleep'
-            jd.arguments  = ['10']
+            jd.arguments  = ['2']
 
             # add options from the test .cfg file if set
-            sutc.configure_jd (self.cfg, jd)
+            sutc.configure_jd(self.cfg, jd)
 
             j = self.js.create_job(jd)
-
             j.run()
             j.wait()
 
@@ -194,15 +206,18 @@ class TestJob(unittest.TestCase):
             assert(j.state == rs.job.DONE), "%s != %s" % (j.state, rs.job.DONE)
 
             # expect job time information is be reported in seconds since epoch
-            assert(t_min <= j.created  <= t_max)
-            assert(t_min <= j.started  <= t_max)
-            assert(t_min <= j.finished <= t_max)
+            assert(int(t_min) <= int(j.created ) <= int(t_max))
+            assert(int(t_min) <= int(j.started ) <= int(t_max))
+            assert(int(t_min) <= int(j.finished) <= int(t_max))
+
+            assert(int(j.created) <= int(j.started))
+            assert(int(j.started) <= int(j.finished))
 
         except rs.SagaException as e:
-            sutc.assert_exception (self.cfg, e)
+            sutc.assert_exception(self.cfg, e)
 
-        finally :
-            sutc.silent_cancel (j)
+        finally:
+            sutc.silent_cancel(j)
 
 
     # --------------------------------------------------------------------------
@@ -210,32 +225,32 @@ class TestJob(unittest.TestCase):
     def test_job_multiline_run(self):
         """ Test job.run() with multiline command
         """
-        j  = None
+        j = None
         try:
             jd = rs.job.Description()
             jd.executable = '/bin/sh'
             jd.arguments  = ["""-c "python -c '
 import time
-if True :
-  if True :
-    time.sleep (3)
+if True:
+  if 1:
+    time.sleep(3)
 ' " """]
 
             # add options from the test .cfg file if set
-            sutc.configure_jd (self.cfg, jd)
+            sutc.configure_jd(self.cfg, jd)
 
             j = self.js.create_job(jd)
             j.run()
 
-            assert (j.state in [rs.job.RUNNING, rs.job.PENDING])
+            assert(j.state in [rs.job.RUNNING, rs.job.PENDING])
             j.wait()
-            assert (j.state in [rs.job.DONE])
+            assert(j.state in [rs.job.DONE])
 
         except rs.SagaException as e:
-            sutc.assert_exception (self.cfg, e)
+            sutc.assert_exception(self.cfg, e)
 
-        finally :
-            sutc.silent_cancel (j)
+        finally:
+            sutc.silent_cancel(j)
 
 
 
@@ -244,14 +259,14 @@ if True :
     def test_job_suspend_resume(self):
         """ Test job.suspend()/resume() - expecting state: SUSPENDED/RUNNING
         """
-        j  = None
+        j = None
         try:
             jd = rs.job.Description()
             jd.executable = '/bin/sleep'
             jd.arguments  = ['20']
 
             # add options from the test .cfg file if set
-            sutc.configure_jd (self.cfg, jd)
+            sutc.configure_jd(self.cfg, jd)
 
             j = self.js.create_job(jd)
             j.run()
@@ -265,10 +280,10 @@ if True :
             assert j.state == j.get_state()
 
         except rs.SagaException as e:
-            sutc.assert_exception (self.cfg, e)
+            sutc.assert_exception(self.cfg, e)
 
         finally:
-            sutc.silent_cancel (j)
+            sutc.silent_cancel(j)
 
 
     # --------------------------------------------------------------------------
@@ -276,14 +291,14 @@ if True :
     def test_job_cancel(self):
         """ Test job.cancel() - expecting state: CANCELED
         """
-        j  = None
+        j = None
         try:
             jd = rs.job.Description()
             jd.executable = '/bin/sleep'
             jd.arguments  = ['10']
 
             # add options from the test .cfg file if set
-            sutc.configure_jd (self.cfg, jd)
+            sutc.configure_jd(self.cfg, jd)
 
             j = self.js.create_job(jd)
 
@@ -292,10 +307,10 @@ if True :
             assert j.state == rs.job.CANCELED
 
         except rs.SagaException as e:
-            sutc.assert_exception (self.cfg, e)
+            sutc.assert_exception(self.cfg, e)
 
         finally:
-            sutc.silent_cancel (j)
+            sutc.silent_cancel(j)
 
 
     # --------------------------------------------------------------------------
@@ -303,17 +318,19 @@ if True :
     def test_job_run_many(self):
         """ Run a bunch of jobs concurrently via the same job service.
         """
-        NUM_JOBS = 32
 
-        jobs = []
+        NUM_JOBS = 32
+        jobs     = list()
+
         try:
 
             jd = rs.job.Description()
+
             jd.executable = '/bin/sleep'
             jd.arguments  = ['60']
 
             # add options from the test .cfg file if set
-            sutc.configure_jd (self.cfg, jd)
+            sutc.configure_jd(self.cfg, jd)
 
             for i in range(0, NUM_JOBS):
                 j = self.js.create_job(jd)
@@ -328,10 +345,10 @@ if True :
                 assert job.state == rs.job.CANCELED
 
         except rs.SagaException as e:
-            sutc.assert_exception (self.cfg, e)
+            sutc.assert_exception(self.cfg, e)
 
         finally:
-            sutc.silent_cancel (jobs)
+            sutc.silent_cancel(jobs)
 
 
     # --------------------------------------------------------------------------
@@ -339,13 +356,13 @@ if True :
     def test_get_exit_code(self):
         """ Test job.exit_code
         """
-        j  = None
+        j = None
         try:
             jd = rs.job.Description()
             jd.executable = "/bin/sleep"
 
             # add options from the test .cfg file if set
-            sutc.configure_jd (self.cfg, jd)
+            sutc.configure_jd(self.cfg, jd)
 
             j = self.js.create_job(jd)
             j.run()
@@ -355,10 +372,10 @@ if True :
             assert ec == 1, "%s != 1" % ec
 
         except rs.SagaException as e:
-            sutc.assert_exception (self.cfg, e)
+            sutc.assert_exception(self.cfg, e)
 
         finally:
-            sutc.silent_cancel (j)
+            sutc.silent_cancel(j)
 
 
     # --------------------------------------------------------------------------
@@ -366,10 +383,11 @@ if True :
     def test_get_stdio(self):
         """ Test job.get_stdin/get_stdout/get_log
         """
-        j  = None
+
+        j = None
         try:
             cfg = config()
-            jd = rs.job.Description()
+            jd  = rs.job.Description()
 
             jd.pre_exec   = ['echo pre' ]
             jd.executable = 'sh'
@@ -379,6 +397,7 @@ if True :
             # add options from the test .cfg file if set
             jd = sutc.configure_jd(cfg=cfg, jd=jd)
             j  = self.js.create_job(jd)
+
             j.run()
             j.wait()
 
@@ -398,8 +417,10 @@ if True :
             assert cfg.notimpl_warn_only, "%s " % ni
             if cfg.notimpl_warn_only:
                 print "%s " % ni
+
         except rs.SagaException as se:
             assert False, "Unexpected exception: %s" % se
+
         finally:
             _silent_cancel(j)
 
@@ -409,23 +430,25 @@ if True :
     def test_get_service_url(self):
         """ Test if job.service_url == Service.url
         """
+
         try:
             jd = rs.job.Description()
+
             jd.executable = '/bin/sleep'
-            jd.arguments = ['10']
+            jd.arguments  = ['10']
 
             # add options from the test .cfg file if set
-            sutc.configure_jd (self.cfg, jd)
+            sutc.configure_jd(self.cfg, jd)
 
             j = self.js.create_job(jd)
 
             assert j.service_url == self.js.url
 
         except rs.SagaException as e:
-            sutc.assert_exception (self.cfg, e)
+            sutc.assert_exception(self.cfg, e)
 
         finally:
-            sutc.silent_cancel (j)
+            sutc.silent_cancel(j)
 
 
     # --------------------------------------------------------------------------
@@ -433,14 +456,17 @@ if True :
     def test_get_id(self):
         """ Test job.get_id() / job.id
         """
-        j  = None
+
+        j = None
         try:
+
             jd = rs.job.Description()
+
             jd.executable = '/bin/sleep'
-            jd.arguments = ['10']
+            jd.arguments  = ['10']
 
             # add options from the test .cfg file if set
-            sutc.configure_jd (self.cfg, jd)
+            sutc.configure_jd(self.cfg, jd)
 
             j = self.js.create_job(jd)
             j.run()
@@ -449,10 +475,10 @@ if True :
             assert j.id == j.get_id()
 
         except rs.SagaException as e:
-            sutc.assert_exception (self.cfg, e)
+            sutc.assert_exception(self.cfg, e)
 
         finally:
-            sutc.silent_cancel (j)
+            sutc.silent_cancel(j)
 
 
 # ------------------------------------------------------------------------------
