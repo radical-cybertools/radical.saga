@@ -1,0 +1,9 @@
+
+# this config file will run the job package unit tests against over a local ssh
+# connection
+
+{
+    "job_service_url": "ssh://localhost/",
+    "context_type"   : "ssh"
+}
+

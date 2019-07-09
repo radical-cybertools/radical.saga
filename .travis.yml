@@ -1,25 +1,75 @@
 
 language: python
-python  : "2.7"
-services:
+sudo:
+  - disabled
 
-branches:
-  - *
+python:
+  - "2.7"
 
+os:
+  - linux
+
+git:
+  depth: 1
+
+env:
+  global:
+    - LOG=`git log -n 1 | grep Merge`
+    - OLD=`echo $LOG | cut -d ' ' -f2`
+    - NEW=`echo $LOG | cut -d ' ' -f3`
+    - DIFF=`git diff --name-only --diff-filter=b $OLD...$NEW`
+    - DIFF=$(echo $DIFF | grep -o -e '\b[^ ]*.py\b')
+    - LOC=/home/travis/virtualenv/python2.7  # Location where VE is created on travis
+    - CMD_PYTEST="coverage run -m pytest -vvv tests/"
+    - CMD_FLAKE8="if ! test -z \"$DIFF\"; then flake8 --config=.flake8 $DIFF;else echo 'Nothing to pep8'; fi"
+    - CMD_PYLINT="if ! test -z \"$DIFF\"; then pylint $DIFF;else echo 'Nothing to lint';fi"
+    - CMD_FLAKE8_TESTS="flake8 --config=.flake8 tests/"
+    - CMD_PYLINT_TESTS="pylint tests/"
+    - COVERAGE=false
+    - CODECOV_TOKEN="16dd1ace-95f8-4127-bc6a-04e2fd3ce2a5"
+  matrix:
+    - MAIN_CMD=$CMD_PYTEST COVERAGE=true
+    - MAIN_CMD=$CMD_FLAKE8
+    - MAIN_CMD=$CMD_PYLINT
+    - MAIN_CMD=$CMD_FLAKE8_TESTS
+    - MAIN_CMD=$CMD_PYLINT_TESTS
+
+before_install:
+  - uname -a
+  - ulimit -a
+  - python -V
+  - ssh-keygen -t rsa -N '' -f ~/.ssh/id_rsa
+  - cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys
+  - echo "Host localhost" >> /home/travis/.ssh/config
+  - echo "  StrictHostKeyChecking no" >> /home/travis/.ssh/config
+  - chmod g-rw,o-rw /home/travis/.ssh/*
+  - ssh localhost hostname
+  - ssh localhost uname -a
+
+# command to install dependencies
 install:
   - pip install .
+  - pip install coverage
+  - pip install flake8
+  - pip install pylint
+  - pip install codecov
 
 script:
-  - pip install nose coverage codecov pytest
-  - pytest tests/
+  - echo $MAIN_CMD
+  - eval $MAIN_CMD
+
+after_success:
+  - |
+    if [[ $COVERAGE == 'true' ]]; then \
+      coverage combine; \
+      coverage xml; \
+      coverage report; \
+      curl -s https://codecov.io/bash | bash
+    fi
 
 notifications:
   email:
-    recipients:
-      - andre@merzky.net
+    recipients: andre@merzky.net
     on_success: change
     on_failure: always
-
-after_success:
-  - codecov
 

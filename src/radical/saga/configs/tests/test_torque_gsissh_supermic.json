@@ -1,0 +1,12 @@
+
+# Test the SGE Job adaptor via GSISSH on lonestar.tacc.utexas.edu
+
+{
+    "job_service_url"     : "torque+gsissh://supermic.cct-lsu.xsede.org/",
+    "job_queue"           : "workq",
+    "job_walltime_limit"  : 4,
+    "job_project"         : "",
+    "job_spmd_variation"  : "",
+    "job_total_cpu_count" : 32
+}
+

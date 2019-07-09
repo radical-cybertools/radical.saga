@@ -1,0 +1,10 @@
+
+# Test the PBS Job adaptor via SSH on ARCHER
+
+{
+    "job_service_url"    : "pbs+ssh://login.archer.ac.uk",
+    "job_queue"          : "standard",
+    "job_walltime_limit" : 4,
+    "job_project"        : "e290"
+}
+
