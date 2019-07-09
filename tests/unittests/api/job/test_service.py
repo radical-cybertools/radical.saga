@@ -205,17 +205,31 @@ def test_get_job():
 # ------------------------------------------------------------------------------
 #
 def helper_multiple_services(i):
+
     cfg = config()
-    js = rs.job.Service(cfg.job_service_url, cfg.session)
-    jd = rs.job.Description()
+    js1 = rs.job.Service(cfg.job_service_url, cfg.session)
+    js2 = rs.job.Service(cfg.job_service_url, cfg.session)
+    jd  = rs.job.Description()
+
     jd.executable = '/bin/sleep'
-    jd.arguments = ['10']
+    jd.arguments  = ['3']
     jd = sutc.configure_jd(cfg=cfg, jd=jd)
-    j = js.create_job(jd)
-    j.run()
-    assert (j.state in [rs.job.RUNNING, rs.job.PENDING]), "job submission failed"
-    _silent_cancel(j)
-    _silent_close_js(js)
+
+    j1 = js1.create_job(jd)
+    j2 = js2.create_job(jd)
+    j1.run()
+    j2.run()
+
+    assert (j1.state in [rs.job.RUNNING, rs.job.PENDING])
+    assert (j2.state in [rs.job.RUNNING, rs.job.PENDING])
+
+    j1.wait()
+    j2.wait()
+
+    assert (j1.state == rs.job.DONE)
+    assert (j2.state == rs.job.DONE)
+
+    _silent_close_js(js1)
 
 
 # ------------------------------------------------------------------------------
