@@ -205,6 +205,12 @@ class TestJob(unittest.TestCase):
             # assert success
             assert(j.state == rs.job.DONE), "%s != %s" % (j.state, rs.job.DONE)
 
+            print t_min
+            print j.created
+            print j.started
+            print j.finished
+            print t_max
+
             # expect job time information is be reported in seconds since epoch
             assert(int(t_min) <= int(j.created ) <= int(t_max))
             assert(int(t_min) <= int(j.started ) <= int(t_max))
