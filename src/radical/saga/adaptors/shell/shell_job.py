@@ -34,7 +34,7 @@ class _job_state_monitor (threading.Thread) :
 
         self.js      = js
         self.channel = channel
-        self.rm      = rm 
+        self.rm      = rm
         self.logger  = logger
         self.stop    = False
         self.events  = dict()
@@ -174,7 +174,7 @@ _ADAPTOR_CAPABILITIES  = {
                           api.CREATED,
                           api.STARTED,
                           api.FINISHED],
-    "metrics"          : [api.STATE, 
+    "metrics"          : [api.STATE,
                           api.STATE_DETAIL],
     "contexts"         : {"ssh"      : "public/private keypair",
                           "x509"     : "X509 proxy for gsissh",
@@ -187,7 +187,7 @@ _ADAPTOR_CAPABILITIES  = {
 _ADAPTOR_DOC           = {
     "name"             : _ADAPTOR_NAME,
     "capabilities"     : _ADAPTOR_CAPABILITIES,
-    "description"      : """ 
+    "description"      : """
         The Shell job adaptor. This adaptor uses the sh command line tools (sh,
         ssh, gsissh) to run local and remote jobs.  The adaptor expects the
         login shell on the target host to be POSIX compliant.  However, one can
@@ -242,7 +242,7 @@ _ADAPTOR_DOC           = {
             instance).  Each remote job will create three additional processes:
             two for the job instance itself (double fork), and an additional
             process which monitors the job for state changes etc.  Additional
-            temporary processes may be needed as well.  
+            temporary processes may be needed as well.
 
             While marked as 'obsolete' by POSIX, the `ulimit` command is
             available on many systems, and reports the number of processes
@@ -261,7 +261,7 @@ _ADAPTOR_DOC           = {
             keep job state on the remote disk, in
             ``~/.radical/saga/adaptors/shell_job/``.
             Quota limitations may limit the number of files created there,
-            and/or the total size of that directory.  
+            and/or the total size of that directory.
 
             On quota or disk space limits, you may see error messages similar to
             the following ones::
@@ -290,9 +290,9 @@ _ADAPTOR_DOC           = {
 
         """,
     "example": "examples/jobs/localjob.py",
-    "schemas"          : {"fork"   :"use /bin/sh to run jobs", 
-                          "local"  :"alias for fork://", 
-                          "ssh"    :"use ssh to run remote jobs", 
+    "schemas"          : {"fork"   :"use /bin/sh to run jobs",
+                          "local"  :"alias for fork://",
+                          "ssh"    :"use ssh to run remote jobs",
                           "gsissh" :"use gsissh to run remote jobs"}
 }
 
@@ -305,11 +305,11 @@ _ADAPTOR_INFO          = {
     "schemas"          : _ADAPTOR_SCHEMAS,
     "capabilities"     : _ADAPTOR_CAPABILITIES,
     "cpis"             : [
-                             { 
+                             {
                                  "type"  : "radical.saga.job.Service",
                                  "class" : "ShellJobService"
-                             }, 
-                             { 
+                             },
+                             {
                                  "type"  : "radical.saga.job.Job",
                                  "class" : "ShellJob"
                              }
@@ -320,7 +320,7 @@ _ADAPTOR_INFO          = {
 ###############################################################################
 # The adaptor class
 class Adaptor (base.Base):
-    """ 
+    """
     This is the actual adaptor class, which gets loaded by SAGA (i.e. by the
     SAGA engine), and which registers the CPI implementation classes which
     provide the adaptor's functionality.
@@ -468,9 +468,9 @@ class ShellJobService (cpi.Service) :
             self.opts['shell'] = self.rm.path
 
         # create and initialize connection for starting jobs
-        self.shell   = pty_shell.PTYShell (self.rm, self.get_session(), 
+        self.shell   = pty_shell.PTYShell (self.rm, self.get_session(),
                                            self._logger, opts=self.opts)
-        self.channel = pty_shell.PTYShell (self.rm, self.get_session(), 
+        self.channel = pty_shell.PTYShell (self.rm, self.get_session(),
                                            self._logger, opts=self.opts)
         self.initialize ()
 
@@ -478,8 +478,8 @@ class ShellJobService (cpi.Service) :
         # initialize to finish to make sure that the shell_wrapper is set
         # up...
         self.monitor = _job_state_monitor (js      = self,
-                                           channel = self.channel, 
-                                           rm      = self.rm, 
+                                           channel = self.channel,
+                                           rm      = self.rm,
                                            logger  = self._logger)
         self.monitor.start ()
 
@@ -490,11 +490,11 @@ class ShellJobService (cpi.Service) :
     #
     def close (self) :
 
-        if  self.shell : 
+        if  self.shell :
 
             # FIXME: not sure if we should PURGE here -- that removes states
             # which might not be evaluated, yet.  Should we mark state
-            # evaluation separately? 
+            # evaluation separately?
             #   cmd_state () { touch $DIR/purgeable; ... }
             # When should that be done?
 
@@ -503,7 +503,7 @@ class ShellJobService (cpi.Service) :
             self.shell.finalize(kill_pty=True)
             self.shell = None
 
-        if  self.monitor : 
+        if  self.monitor :
             self.monitor.finalize()
             # we don't care about join, really
 
@@ -564,7 +564,7 @@ class ShellJobService (cpi.Service) :
 
                 # If the target directory begins with $HOME or ${HOME} then we
                 # need to remove this since scp won't expand the variable and
-                # the copy will end up attempting to copy the file to 
+                # the copy will end up attempting to copy the file to
                 # /<path_to_home_dir>/$HOME/.....
                 if tgt.startswith("$HOME") or tgt.startswith("${HOME}"):
                     tgt = tgt[tgt.find('/') + 1:]
@@ -926,7 +926,7 @@ class ShellJobService (cpi.Service) :
 
         # this dict is passed on to the job adaptor class -- use it to pass any
         # state information you need there.
-        adaptor_state = {"job_service"     : self, 
+        adaptor_state = {"job_service"     : self,
                          "job_description" : jd,
                          "job_schema"      : self.rm.schema }
 
@@ -996,7 +996,7 @@ class ShellJobService (cpi.Service) :
 
         # this dict is passed on to the job adaptor class -- use it to pass any
         # state information you need there.
-        adaptor_state = {"job_service"     : self, 
+        adaptor_state = {"job_service"     : self,
                          "job_id"          : job_id,
                          "job_schema"      : self.rm.schema }
 
@@ -1325,7 +1325,7 @@ class ShellJob (cpi.Job) :
 
         if  'job_description' in job_info :
             # comes from job.service.create_job()
-            self.js = job_info["job_service"] 
+            self.js = job_info["job_service"]
             self.jd = job_info["job_description"]
 
             # the js is responsible for job bulk operations -- which
@@ -1348,7 +1348,7 @@ class ShellJob (cpi.Job) :
 
         elif 'job_id' in job_info :
             # initialize job attribute values
-            self.js               = job_info["job_service"] 
+            self.js               = job_info["job_service"]
             self.jd               = None
             self._id              = job_info['job_id']
             self._name            = job_info.get('job_name')
@@ -1405,12 +1405,6 @@ class ShellJob (cpi.Job) :
         if  self._id is None :
             return self._state
 
-        # no need to re-fetch final states
-        if  self._state == api.DONE      or \
-            self._state == api.FAILED    or \
-            self._state == api.CANCELED     :
-                return self._state
-
         stats = self.js._job_get_stats (self._id)
 
         if 'start' in stats : self._started  = stats['start']
@@ -1418,6 +1412,12 @@ class ShellJob (cpi.Job) :
 
         if self._started  : self._started  = float(self._started)
         if self._finished : self._finished = float(self._finished)
+
+        # no need to re-check final states
+        if  self._state == api.DONE      or \
+            self._state == api.FAILED    or \
+            self._state == api.CANCELED     :
+                return self._state
 
         if 'state' not in stats :
             raise rse.NoSuccess("failed to get job state for '%s': (%s)"
@@ -1445,7 +1445,7 @@ class ShellJob (cpi.Job) :
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
-    def get_created (self) : 
+    def get_created (self) :
 
         # no need to refresh stats -- this is set locally
         return self._created
@@ -1454,7 +1454,7 @@ class ShellJob (cpi.Job) :
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
-    def get_started (self) : 
+    def get_started (self) :
 
         self.get_state()  # refresh stats
         return self._started
@@ -1463,7 +1463,7 @@ class ShellJob (cpi.Job) :
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
-    def get_finished (self) : 
+    def get_finished (self) :
 
         self.get_state()  # refresh stats
         return self._finished
@@ -1472,7 +1472,7 @@ class ShellJob (cpi.Job) :
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
-    def get_stdout (self) : 
+    def get_stdout (self) :
 
         state = self.get_state () # refresh stats
 
@@ -1506,7 +1506,7 @@ class ShellJob (cpi.Job) :
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
-    def get_stderr (self) : 
+    def get_stderr (self) :
 
         state = self.get_state () # refresh stats
 
@@ -1540,7 +1540,7 @@ class ShellJob (cpi.Job) :
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
-    def get_log (self) : 
+    def get_log (self) :
 
         state = self.get_state()  # refresh stats
 
@@ -1591,7 +1591,7 @@ class ShellJob (cpi.Job) :
     #
     @SYNC_CALL
     def wait (self, timeout):
-        """ 
+        """
         A call to the shell to do the WAIT would block the shell for any
         other interactions.  In particular, it would practically kill it if the
         Wait waits forever...
@@ -1666,7 +1666,7 @@ class ShellJob (cpi.Job) :
     # ----------------------------------------------------------------
     #
     @SYNC_CALL
-    def run (self): 
+    def run (self):
 
         self._id = self.js._job_run (self.jd)
         self.js.jobs[self._id] = self._api ()
@@ -1701,15 +1701,15 @@ class ShellJob (cpi.Job) :
     @SYNC_CALL
     def cancel (self, timeout):
 
-        if  self.get_state () not in [api.RUNNING, 
-                                      api.SUSPENDED, 
-                                      api.CANCELED, 
-                                      api.DONE, 
+        if  self.get_state () not in [api.RUNNING,
+                                      api.SUSPENDED,
+                                      api.CANCELED,
+                                      api.DONE,
                                       api.FAILED] :
             raise rse.IncorrectState ("Cannot cancel, job is not running")
 
-        if  self._state in [api.CANCELED, 
-                            api.DONE, 
+        if  self._state in [api.CANCELED,
+                            api.DONE,
                             api.FAILED] :
             self._set_state (api.CANCELED)
             return
