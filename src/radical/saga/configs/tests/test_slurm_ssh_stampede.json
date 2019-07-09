@@ -1,0 +1,14 @@
+
+# this config file will run the job package unit tests against over a local ssh
+# connection
+
+{
+    "job_service_url"    : "slurm+ssh://login1.stampede.tacc.utexas.edu/",
+    "job_queue"          : "normal",
+    "job_walltime_limit" : 1,
+    "job_project"        : "TG-MCB090174",
+
+    "context_type"       : "ssh",
+    "context_user_id"    : "tg803521"
+}
+
