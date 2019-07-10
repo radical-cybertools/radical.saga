@@ -6,37 +6,46 @@
     https://github.com/radical-cybertools/radical.saga/issues?q=is%3Aissue+is%3Aopen+
 
 
+Version 0.70.0  Release                                               2019-07-07
+--------------------------------------------------------------------------------
+
+  - support GPUs in lsf
+  - fix state notifications in lsf
+  - default lsf is summit-enabled
+  - torque: use checkjob on failing qstat
+
+
 Version 0.62.0  Release                                               2019-06-08
 --------------------------------------------------------------------------------
 
-  - better cray detection 
+  - better cray detection
   - code improvements
   - upport srun as (unsccheduled or scheduled) launch method
   - support tiger @ princeton
   - remove support for some legacy machines
- 
- 
+
+
 Version 0.60.0  Release                                               2019-04-10
 --------------------------------------------------------------------------------
 
   - radicalization! rename saga-python to radical.saga
-  - fix logger levels 
+  - fix logger levels
   - fix issue #661
   - Adding missing flags for Summit. add test case
   - fix job.cancel in some corner cases
-  - document missing path normalization 
+  - document missing path normalization
   - add support for summit
-  - get hostname from env variable 
+  - get hostname from env variable
   - clean out unsupported jod description attributes
   - LSF SMT level now defaults to 1 (summit)
   - convert to new config file format (json)
-  - get unit tests back in  working order 
-  - gpu support for bridges 
-  - linted, flaked, pepped, cleaned...  a bit... 
-  - make commtransparent flag optional 
-  - remove topology restriction on BW 
-  - sync torque and pbspro, remove deprecated pbs 
-  - make job adaptors uniformely emit EPOCH timestamps 
+  - get unit tests back in  working order
+  - gpu support for bridges
+  - linted, flaked, pepped, cleaned...  a bit...
+  - make commtransparent flag optional
+  - remove topology restriction on BW
+  - sync torque and pbspro, remove deprecated pbs
+  - make job adaptors uniformely emit EPOCH timestamps
 
 
 Version 0.50.5                                                        2018-12-19
@@ -73,17 +82,17 @@ Version 0.50.0                                                        2018-0&-03
 --------------------------------------------------------------------------------
 
   - partial support for heterogeneous clusters (slurm)
-  - (origin/pr/637) more thorough handling of $PROMPT_COMMAND 
+  - (origin/pr/637) more thorough handling of $PROMPT_COMMAND
   - Fix #680 - Corrected Error on LSF: module object has no attribute Event
   - Fix/issue 1514
   - Fix/issue 662
   - Fix/issue 663
-  - add gpu "support" to torque 
-  - correctly interprete candidate_hosts on pbspro 
-  - fix torque job name handling 
-  - make sure theh default session also inherits the uid (#671) 
-  - remove obsolete comment, add local GPUs 
-  - sync pbspro and torque adaptor. 
+  - add gpu "support" to torque
+  - correctly interprete candidate_hosts on pbspro
+  - fix torque job name handling
+  - make sure theh default session also inherits the uid (#671)
+  - remove obsolete comment, add local GPUs
+  - sync pbspro and torque adaptor.
 
 
 Version 0.47.6                                                        2018-06-02
@@ -107,18 +116,18 @@ Version 0.47.4                                                        2018-04-09
 Version 0.47.3                                                        2018-03-20
 --------------------------------------------------------------------------------
 
-  - accept SID settings from upper layers (RP) (#654) 
+  - accept SID settings from upper layers (RP) (#654)
   - add travis tests, badge
-  - cheyenne fix to pbspro 
-  - get titan back to work (#664) 
-  - fix task container get_state reval 
+  - cheyenne fix to pbspro
+  - get titan back to work (#664)
+  - fix task container get_state reval
 
 
 Version 0.47.2                                                        2018-02-28
 --------------------------------------------------------------------------------
 
-  - accept SID settings from upper layers (RP) (#654) 
-  - fix task container get_state reval 
+  - accept SID settings from upper layers (RP) (#654)
+  - fix task container get_state reval
 
 
 Version 0.47                                                          2017-11-19
@@ -126,8 +135,8 @@ Version 0.47                                                          2017-11-19
 
   - avoid use of `condor_history` if so configured
   - cleaner recovery for `condor_hist` when its used
-  - be more resilient against `sacct` errors 
-  - one more `PROMPT_COMMAND` setting 
+  - be more resilient against `sacct` errors
+  - one more `PROMPT_COMMAND` setting
 
 
 Version 0.46                                                          2017-08-23
@@ -140,35 +149,35 @@ Version 0.46                                                          2017-08-11
 --------------------------------------------------------------------------------
 
   - Fix several debug messages
-  - Fix/621 experiment aimes (#622) 
-  - Fixed run_job to run in service.py 
-  - Properly support SGE job name. (#624) 
-  - Anselm support in pbspro v.13 (#634) 
-  - fix a condor script syntax error 
-  - attempt to prevent job eviction 
-  - be resiliant against lingering NFS locks (hi titan) 
-  - clean bulk job info for condor 
+  - Fix/621 experiment aimes (#622)
+  - Fixed run_job to run in service.py
+  - Properly support SGE job name. (#624)
+  - Anselm support in pbspro v.13 (#634)
+  - fix a condor script syntax error
+  - attempt to prevent job eviction
+  - be resiliant against lingering NFS locks (hi titan)
+  - clean bulk job info for condor
   - clean up state management in condor adaptor,
-  - slim down condor log calls, simplify status updates, ensure output transfer 
-  - container_cancel needs to accept timeout parameter (#633) 
-  - don't barf on failing condor_history 
-  - don't limit status check length 
-  - iteration on slurm mpi support (#623) 
-  - fix logic error in directive evaluation 
+  - slim down condor log calls, simplify status updates, ensure output transfer
+  - container_cancel needs to accept timeout parameter (#633)
+  - don't barf on failing condor_history
+  - don't limit status check length
+  - iteration on slurm mpi support (#623)
+  - fix logic error in directive evaluation
   - fix parsing of condor_history for multi-file staging
-  - fixes on src/tgt ordering in osg staging 
-  - follow the rename of ru.Task to ru.Future 
-  - follow the rename of ru.Thread to ru.Future 
-  - implement bulk cancel for condor 
-  - iteration on bulk submission, data staging 
-  - iteration on run_job implementatio 
+  - fixes on src/tgt ordering in osg staging
+  - follow the rename of ru.Task to ru.Future
+  - follow the rename of ru.Thread to ru.Future
+  - implement bulk cancel for condor
+  - iteration on bulk submission, data staging
+  - iteration on run_job implementatio
   - improve condor scaling / performance
-  - make sure we alsways have a valid transfer directive in condor 
-  - make sure we do not fail on a missing exit code 
-  - more clarity on file staging semantics, some cleanup 
-  - better handling of $PROMPT_COMMAND 
-  - resilience against condor_history errors 
-  - update on torque to avoid triggering a check 
+  - make sure we alsways have a valid transfer directive in condor
+  - make sure we do not fail on a missing exit code
+  - more clarity on file staging semantics, some cleanup
+  - better handling of $PROMPT_COMMAND
+  - resilience against condor_history errors
+  - update on torque to avoid triggering a check
 
 
 Version 0.45.1                                                        2017-02-28
@@ -183,21 +192,21 @@ Version 0.45                                                          2017-02-28
   - Add srm adaptor - Thanks Mark!
   - Add cobalt adaptor (blue gene/q) - Thanks Manuel!
   - Add special case for Rhea
-  - Deal with timeouts. 
+  - Deal with timeouts.
   - Don't want our jobs to restart after eviction (OSG)
-  - Make pty shell url configurable. 
-  - Remove some more PBSPro remains. 
-  - address #585 
-  - fix #590 
-  - check that prev_info exists before populating curr_info with its info in _job_get_info 
+  - Make pty shell url configurable.
+  - Remove some more PBSPro remains.
+  - address #585
+  - fix #590
+  - check that prev_info exists before populating curr_info with its info in _job_get_info
   - clean up slurm adaptor to get it fit for the split branch in RP
-  - fix state interpretation for pbspro 
-  - make torque fit for rp split branch 
-  - remove some debug logs 
+  - fix state interpretation for pbspro
+  - make torque fit for rp split branch
+  - remove some debug logs
   - some consistency fixes
-  - update slurm example in context of #611 
-  - use `-o Port=%d` notation for ssh based channels 
-  - backport ft and bulk ops for torque from osg_optimization 
+  - update slurm example in context of #611
+  - use `-o Port=%d` notation for ssh based channels
+  - backport ft and bulk ops for torque from osg_optimization
 
 
 Version 0.44                                                          2016-11-01
@@ -205,18 +214,18 @@ Version 0.44                                                          2016-11-01
 
   - added basework_dir parameter to sge and proxy adaptors
   - added new PBS versions to pbsnodes CPU count check
-  - changed the regular expression to find the job-id on LSF adaptor. Fixes #568 
-  - re-enable fallback methods for slurm job containers, jd.name support for slurm 
+  - changed the regular expression to find the job-id on LSF adaptor. Fixes #568
+  - re-enable fallback methods for slurm job containers, jd.name support for slurm
   - fix for issue #586, removing invalid dirs from shell wrapper script file path
-  - fix parsing of file staging directives 
-  - make shell job adaptor workdir configurable 
-  - avoid double close for shell job service 
-  - raise error on missing tools 
-  - removed duplicate get_name function in job class 
-  - add missing container method to get job states 
-  - merged pull request #583 
-  - enforce version in radical stack 
-  - fix #555 
+  - fix parsing of file staging directives
+  - make shell job adaptor workdir configurable
+  - avoid double close for shell job service
+  - raise error on missing tools
+  - removed duplicate get_name function in job class
+  - add missing container method to get job states
+  - merged pull request #583
+  - enforce version in radical stack
+  - fix #555
 
 
 Version 0.41.3                                                        2016-07-07
@@ -240,31 +249,31 @@ Version 0.41.1                                                        2016-07-07
 Version 0.41                                                          2016-06-02
 --------------------------------------------------------------------------------
 
-  - Feature/job name shell (#541) 
-  - implementation of job names for shell job adaptor and on API level 
+  - Feature/job name shell (#541)
+  - implementation of job names for shell job adaptor and on API level
   - add job.name for condor
-  - address #552 
-  - allow for non-interative local pty shells 
+  - address #552
+  - allow for non-interative local pty shells
   - initialidir support for Condor
-  - change HOSTFILE settings 
+  - change HOSTFILE settings
 
-  - fix missing var setting in aws example 
-  - fix port opening directive, make sure port is opened just once 
-  - fix regression in job cancellation 
-  - fix rel path on open 
-  - fix staging calls 
-  - fix string formatting error 
-  - fix ssh context to handle passwords containing spaces 
-  - cleanup of the shell spawner, getting in sync with RP version 
-  - implement dir.exists 
-  - make sure we have a job description on reconnected jobs 
-  - make task passing to async calls optional 
-  - aws security group tweaking 
-  - remove invalid obj redirection 
-  - code simplification 
-  - simplify local mkdir in shell file adaptor 
-  - sync with updated benchmark tools 
-  - use shared shell connection for FS ops 
+  - fix missing var setting in aws example
+  - fix port opening directive, make sure port is opened just once
+  - fix regression in job cancellation
+  - fix rel path on open
+  - fix staging calls
+  - fix string formatting error
+  - fix ssh context to handle passwords containing spaces
+  - cleanup of the shell spawner, getting in sync with RP version
+  - implement dir.exists
+  - make sure we have a job description on reconnected jobs
+  - make task passing to async calls optional
+  - aws security group tweaking
+  - remove invalid obj redirection
+  - code simplification
+  - simplify local mkdir in shell file adaptor
+  - sync with updated benchmark tools
+  - use shared shell connection for FS ops
 
 
 Version 0.40.2                                                        2016-04-23
@@ -282,34 +291,34 @@ Version 0.40.1                                                        2016-02-05
 Version 0.40                                                          2016-01-19
 --------------------------------------------------------------------------------
 
-  - Added job monitor state update fix to PBSPro adapter. 
-  - Add session property to base class. Fix #480. 
+  - Added job monitor state update fix to PBSPro adapter.
+  - Add session property to base class. Fix #480.
   - add traceback property to exception
-  - support gsissh for condor job submission 
-  - pass span parameter to LSF. 
-  - support SLURM reservation. 
+  - support gsissh for condor job submission
+  - pass span parameter to LSF.
+  - support SLURM reservation.
   - file staging for shell adaptor
-  - Fix #477, set session for shell job service 
-  - Fixed job state monitor to correctly identify state changes. 
-  - Fixed string formatting error. 
-  - Fixes #501. Thanks Javi! 
+  - Fix #477, set session for shell job service
+  - Fixed job state monitor to correctly identify state changes.
+  - Fixed string formatting error.
+  - Fixes #501. Thanks Javi!
   - fix session documentation.  Thanks Jeremy!
-  - Fix to allow use of environment vars in ssh context key/cert property file paths. 
-  - Implement bulk submit, states and wait for condor. 
-  - Improve file staging directives handling. 
-  - Logging goes into working directory. 
-  - make ssh connection timeout configirable (defaults now to 10 seconds) 
-  - Passing ssh_timeout param to ssh ConnectTimeout option 
-  - Updated fix to #494 to take account of empty key/cert parameter. 
+  - Fix to allow use of environment vars in ssh context key/cert property file paths.
+  - Implement bulk submit, states and wait for condor.
+  - Improve file staging directives handling.
+  - Logging goes into working directory.
+  - make ssh connection timeout configirable (defaults now to 10 seconds)
+  - Passing ssh_timeout param to ssh ConnectTimeout option
+  - Updated fix to #494 to take account of empty key/cert parameter.
   - deprecate PBS adaptor
 
 
 Version 0.39                                                          2015-12-01
 --------------------------------------------------------------------------------
 
-  - support dynamic adaptor loading 
+  - support dynamic adaptor loading
   - fix #477, set session for shell job service (thanks Mehdi!)
-  - set session on file and directory instances, #480 
+  - set session on file and directory instances, #480
 
 
 Version 0.38.1 release                                                2015-11-11
@@ -346,8 +355,8 @@ Version 0.36 release                                                  2015-10-08
 
   - fix cray qsub arguments
   - fix interpretation of relative / absolute URLs in some cases
-  - fix #449 - thanks jcohen02! 
-  - keep up with logger changes in util 
+  - fix #449 - thanks jcohen02!
+  - keep up with logger changes in util
   - properly detect failed jobs.
   - follow changes on resource configurations (BW)
   - remove dead code.
@@ -394,7 +403,7 @@ Version 0.28 release 2015-04-16
   - implement pre/post_exec, support in slurm, cleanup slurm submission
   - clean up stdin/stdout/stderr/log handling for jobs
   - sync setup.py with recent changes in RP
-  - Fix rounding up cores for blacklight 
+  - Fix rounding up cores for blacklight
   - ignore SIGHUP in the shell monitor -- fixes #415
   - install sdist, export sdist location
 
@@ -410,8 +419,8 @@ Version 0.26 release 2015-02-24
 
   - Major iteration on Globus Online adaptor, including tests and
     examples
-  - move sources into src/ 
-  - short_version -> version 
+  - move sources into src/
+  - short_version -> version
   - long_version -> version_detail
   - use DebugHelper in test suite
   - implement #413
@@ -464,7 +473,7 @@ Version 0.24 release 2014-12-08
 Version 0.22 release 2014-11-03
 --------------------------------------------------------------------------------
 
-  - Hotfix release fixing incompatbile sftp flag "-2" 
+  - Hotfix release fixing incompatbile sftp flag "-2"
     - https://github.com/radical-cybertools/radical.saga/issues/397
 
 
@@ -482,7 +491,7 @@ Version 0.19 release 2014-09-15
 
   - LeaseManager for connection sharing.
   - Improved file transfer performance
-  - Small improvements in PBS (esp. Cray) and LSF adaptors. 
+  - Small improvements in PBS (esp. Cray) and LSF adaptors.
   - Closed tickets:
     - https://github.com/radical-cybertools/radical.saga/issues?q=is%3Aclosed+is%3Aissue+milestone%3A%22radical.saga+0.19%22+
 
@@ -554,7 +563,7 @@ Version 0.9.16 release 2014-01-13
 --------------------------------------------------------------------------------
 
   - Some improvements to sftp file adaptor
-  - Closed tickets: 
+  - Closed tickets:
     - https://github.com/radical-cybertools/radical.saga/issues?milestone=14&state=closed
 
 Version 0.9.15 release 2013-12-10
@@ -567,7 +576,7 @@ Version 0.9.14 release 2013-12-10
 
   - Migration to radical.utils
   - Numerous SFTP file adaptor improvements
-  - Closed tickets: 
+  - Closed tickets:
     - https://github.com/radical-cybertools/radical.saga/issues?milestone=13&state=closed
 
 Version 0.9.13 release 2013-11-26
@@ -596,7 +605,7 @@ Version 0.9.10 released 2013-08-12
 
   - Better support for Amazon EC2
   - Fixed working directory handling for PBS
-  - Closed tickets: 
+  - Closed tickets:
     - https://github.com/radical-cybertools/radical.saga/issues?milestone=3&state=closed
 
 Version 0.9.9 released 2013-07-19
@@ -636,10 +645,10 @@ Version 0.9.4 released 2013-06-01
 
   - jd.working_directory now gets created if it doesn't exist
   - Support for older Cray systems running PBS Pro 10
-  - Job state callback support for the PBS adaptor - others to follow 
+  - Job state callback support for the PBS adaptor - others to follow
   - A simple HTTP protocol file adaptor
   - Fixed some issues with user-pass and X.509 security contexts
-  - Over 40 bugfixes and improvements: 
+  - Over 40 bugfixes and improvements:
     - https://github.com/radical-cybertools/radical.saga/issues?milestone=2&state=closed
 
 Version 0.9.3 released 2013-04-08
@@ -683,9 +692,9 @@ Version 0.9.1 released 2013-03-03
 --------------------------------------------------------------------------------
 
   - Major re-write of engine and adaptor interface
-  - Support for asynchronous operations 
+  - Support for asynchronous operations
   - Improved PTYWrapper for ssh/gsissh remote execution
-  - Added SLURM job adaptor 
+  - Added SLURM job adaptor
   - Added Condor job adaptor
 
 Version 0.2.7 released 2012-11-09
@@ -781,7 +790,7 @@ Version 0.1.19 released 2012-02-29
 Version 0.1.18 released 2012-02-29
 --------------------------------------------------------------------------------
 
-  - Fixed issue with plugin introspection 
+  - Fixed issue with plugin introspection
   - Added template for job plug-in
 
 Version 0.1.17 released 2012-01-04
@@ -834,7 +843,7 @@ Version 0.1.12 released 2011-12-06
 Version 0.1.11 released 2011-11-28
 --------------------------------------------------------------------------------
 
-  - Fixed issues with PBS working directory 
+  - Fixed issues with PBS working directory
   - Added simple job API example that uses BFAST:
     https://github.com/oweidner/bliss/blob/master/examples/job-api/pbs_via_ssh_bfast_job.py
   - Updated apidoc: http://oweidner.github.com/bliss/apidoc/
@@ -864,7 +873,7 @@ Version 0.1.7 released 2011-11-09
 --------------------------------------------------------------------------------
 
   - More or less stable job API    
-  - First functional PBS over SSH plugin 
+  - First functional PBS over SSH plugin
 
 
 --------------------------------------------------------------------------------

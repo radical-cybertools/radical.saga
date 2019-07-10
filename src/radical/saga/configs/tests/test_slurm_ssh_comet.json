@@ -1,0 +1,11 @@
+
+# this config file will run the job package unit tests against over a local ssh
+# connection
+
+{
+    "job_service_url"    : "slurm+ssh://comet.sdsc.xsede.org/",
+    "job_queue"          : "normal",
+    "job_walltime_limit" : 1,
+    "job_project"        : "TG-MCB090174"
+}
+

@@ -1,0 +1,10 @@
+
+# Test the Condor Job adaptor via SSH on gw68.quarry.iu.teragrid.org
+
+{
+    "job_service_url"    : "condor+ssh://gw68.quarry.iu.teragrid.org/?WhenToTransferOutput=ON_EXIT&should_transfer_files=YES&notification=Always",
+    "job_queue"          : "",
+    "job_walltime_limit" : 4,
+    "job_project"        : "TG-MCB090174"
+}
+

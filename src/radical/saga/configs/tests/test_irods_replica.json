@@ -1,0 +1,9 @@
+
+# this config file will run the replica package unit tests
+# using the iRods adaptor
+
+{
+  # "job_replica_url"    : "irods://irods.host/tmp/tmp.txt"
+    "job_replica_url"    : "irods://localhost/osg/home/azebro1/"
+}
+
