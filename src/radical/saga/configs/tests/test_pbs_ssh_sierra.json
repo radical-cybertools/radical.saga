@@ -1,0 +1,10 @@
+
+# Test the PBS Job adaptor via SSH on alamo.futuregrid.org
+
+{
+    "job_service_url"    : "pbs+ssh://sierra.futuregrid.org",
+    "job_queue"          : "batch",
+    "job_walltime_limit" : 4,
+    "job_project"        : ""
+}
+

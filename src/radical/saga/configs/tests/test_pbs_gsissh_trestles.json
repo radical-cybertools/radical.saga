@@ -1,0 +1,10 @@
+
+# Test the PBS Job adaptor via SSH on trestles.sdsc.edu
+
+{
+    "job_service_url"    : "pbs+gsissh://trestles.sdsc.edu",
+    "job_queue"          : "normal",
+    "job_walltime_limit" : 4,
+    "job_project"        : "TG-MCB090174"
+}
+

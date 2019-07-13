@@ -1,0 +1,10 @@
+
+# Test the LSF Job adaptor on Yellowstone
+
+{
+    "job_service_url"    : "lsf://localhost",
+    "job_queue"          : "regular",
+    "job_walltime_limit" : 4,
+    "job_project"        : "URTG0003"
+}
+

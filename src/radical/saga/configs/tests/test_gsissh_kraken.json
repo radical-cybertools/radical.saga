@@ -1,0 +1,7 @@
+
+# Test the Shell Job adaptor via GSISSH on kraken.nics.xsede.org
+
+{
+    "job_service_url"   : "gsissh://gsissh.kraken.nics.xsede.org"
+}
+

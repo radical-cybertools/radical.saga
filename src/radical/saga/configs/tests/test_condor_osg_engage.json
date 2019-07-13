@@ -1,0 +1,10 @@
+
+# Test the Condor Job adaptor via localhost on engage-submit3.renci.org
+
+{
+    "job_service_url"    : "condor://localhost/?WhenToTransferOutput=ON_EXIT&should_transfer_files=YES&notification=Always",
+    "job_queue"          : "",
+    "job_walltime_limit" : 4,
+    "job_project"        : "",
+}
+

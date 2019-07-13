@@ -1,0 +1,13 @@
+
+{
+    "scheme"             : "local",
+
+    "context_type"       : "",
+    "context_user_id"    : "",
+    "context_user_pass"  : "",
+    "context_user_proxy" : "",
+    "context_user_cert"  : "",
+
+    "notimpl_warn_only"  : 1
+}
+
