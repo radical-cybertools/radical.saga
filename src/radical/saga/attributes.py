@@ -102,7 +102,7 @@ class Callback () :
               pass
 
           def cb (self, obj, key, val) :
-              print " %s\\n %s (%s) : %s"  %  self._msg, obj, key, val
+              print(" %s\\n %s (%s) : %s"  %  self._msg, obj, key, val)
 
       jd  = saga.job.Description ()
       jd.executable = "/bin/date"
@@ -218,7 +218,7 @@ class Attributes (_AttributesBase, ru.DictMixin) :
             def cb (key, val, obj) :
                 # the callback gets information about what attribute was changed
                 # on what object:
-                print "called: %s - %s - %s"  %  (key, str(val), type (obj))
+                print("called: %s - %s - %s"  %  (key, str(val), type (obj)))
 
                 # returning True will keep the callback registered for further
                 # attribute changes.
@@ -231,10 +231,10 @@ class Attributes (_AttributesBase, ru.DictMixin) :
 
             # use the property interface to mess with the pre-defined
             # 'apple' attribute
-            print "\\n -- apple"
-            print trans.apple
+            print("\\n -- apple")
+            print(trans.apple)
             trans.apple = 'Abbel'
-            print trans.apple
+            print(trans.apple)
 
             # add our callback to the apple attribute, and trigger some changes.
             # Note that the callback is also triggered when the attribute's
@@ -249,28 +249,28 @@ class Attributes (_AttributesBase, ru.DictMixin) :
             # concept though.  Callback is invoked on set_final().
             trans._attributes_set_final ('apple')
             trans.apple = 'Abbel'
-            print trans.apple
+            print(trans.apple)
 
             # mess around with the 'plum' attribute, which was marked as
             # ReadOnly on registration time.
-            print "\\n -- plum"
-            print trans.plum
+            print("\\n -- plum")
+            print(trans.plum)
           # trans.plum    = 'Pflaume'  # raises readonly exception
           # trans['plum'] = 'Pflaume'  # raises readonly exception
-            print trans.plum
+            print(trans.plum)
 
             # check if the 'cherry' attribute exists, which got created on
             # instantiation time.
-            print "\\n -- cherry"
-            print trans.cherry
+            print("\\n -- cherry")
+            print(trans.cherry)
 
             # as we have 'extensible' set, we can add a attribute on the fly,
             # via either the property interface, or via the GFD.90 API of
             # course.
-            print "\\n -- peach"
-            print trans.peach
+            print("\\n -- peach")
+            print(trans.peach)
             trans.peach = 'Birne'
-            print trans.peach
+            print(trans.peach)
 
 
     This example will result in::
@@ -2147,7 +2147,7 @@ class Attributes (_AttributesBase, ru.DictMixin) :
 
         For example, on::
 
-            print c.attrib
+            print(c.attrib)
 
         The attribute getter for the 'attrib' attribute will be invoked.  If for
         that attribute a getter hook is registered, that hook will first query

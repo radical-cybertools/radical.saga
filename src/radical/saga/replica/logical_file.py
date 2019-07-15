@@ -23,16 +23,16 @@ class LogicalFile (nsentry.Entry, sa.Attributes) :
 
     # --------------------------------------------------------------------------
     #
-    @rus.takes   ('LogicalFile', 
-                  rus.optional ((ru.Url, str)), 
-                  rus.optional (int, rus.nothing), 
+    @rus.takes   ('LogicalFile',
+                  rus.optional ((ru.Url, str)),
+                  rus.optional (int, rus.nothing),
                   rus.optional (ss.Session),
-                  rus.optional (sab.Base), 
-                  rus.optional (dict), 
+                  rus.optional (sab.Base),
+                  rus.optional (dict),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns (rus.nothing)
-    def __init__ (self, url=None, flags=c.READ, session=None, 
-                  _adaptor=None, _adaptor_state={}, _ttype=None) : 
+    def __init__ (self, url=None, flags=c.READ, session=None,
+                  _adaptor=None, _adaptor_state={}, _ttype=None) :
         '''
         __init__(url=None, flags=READ, session=None)
 
@@ -47,16 +47,16 @@ class LogicalFile (nsentry.Entry, sa.Attributes) :
         url = ru.Url (url)
 
         self._nsentry = super  (LogicalFile, self)
-        self._nsentry.__init__ (url, flags, session, 
+        self._nsentry.__init__ (url, flags, session,
                                 _adaptor, _adaptor_state, _ttype=_ttype)
 
 
     # --------------------------------------------------------------------------
     #
     @classmethod
-    @rus.takes   ('LogicalFile', 
-                  rus.optional ((ru.Url, str)), 
-                  rus.optional (int, rus.nothing), 
+    @rus.takes   ('LogicalFile',
+                  rus.optional ((ru.Url, str)),
+                  rus.optional (int, rus.nothing),
                   rus.optional (ss.Session),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns (st.Task)
@@ -76,7 +76,7 @@ class LogicalFile (nsentry.Entry, sa.Attributes) :
 
     # ----------------------------------------------------------------
     #
-    @rus.takes   ('LogicalFile', 
+    @rus.takes   ('LogicalFile',
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((bool, st.Task))
     def is_file (self, ttype=None) :
@@ -93,7 +93,7 @@ class LogicalFile (nsentry.Entry, sa.Attributes) :
     #
     # replica methods
     #
-    @rus.takes   ('LogicalFile', 
+    @rus.takes   ('LogicalFile',
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((int, st.Task))
     def get_size (self, ttype=None) :
@@ -114,7 +114,7 @@ class LogicalFile (nsentry.Entry, sa.Attributes) :
                lf = saga.replica.LogicalFile("irods://localhost/tmp/data.bin")
 
                # print the logical file's size
-               print lf.get_size ()
+               print(lf.get_size ())
 
         '''
         return self._adaptor.get_size_self (ttype=ttype)
@@ -122,8 +122,8 @@ class LogicalFile (nsentry.Entry, sa.Attributes) :
 
     # --------------------------------------------------------------------------
     #
-    @rus.takes   ('LogicalFile', 
-                  rus.optional ((ru.Url, str)), 
+    @rus.takes   ('LogicalFile',
+                  rus.optional ((ru.Url, str)),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((rus.nothing, st.Task))
     def add_location (self, name, ttype=None) :
@@ -141,8 +141,8 @@ class LogicalFile (nsentry.Entry, sa.Attributes) :
 
     # --------------------------------------------------------------------------
     #
-    @rus.takes   ('LogicalFile', 
-                  rus.optional ((ru.Url, str)), 
+    @rus.takes   ('LogicalFile',
+                  rus.optional ((ru.Url, str)),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((rus.nothing, st.Task))
     def remove_location (self, name, ttype=None) :
@@ -160,9 +160,9 @@ class LogicalFile (nsentry.Entry, sa.Attributes) :
 
     # --------------------------------------------------------------------------
     #
-    @rus.takes   ('LogicalFile', 
-                  rus.optional ((ru.Url, str)), 
-                  rus.optional ((ru.Url, str)), 
+    @rus.takes   ('LogicalFile',
+                  rus.optional ((ru.Url, str)),
+                  rus.optional ((ru.Url, str)),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((rus.nothing, st.Task))
     def update_location (self, old, new, ttype=None) :
@@ -172,7 +172,7 @@ class LogicalFile (nsentry.Entry, sa.Attributes) :
         Updates a physical location.
 
         old:            saga.Url
-        new:            saga.Url 
+        new:            saga.Url
         ttype:          saga.task.type enum
         ret:            None / saga.Task
         '''
@@ -181,7 +181,7 @@ class LogicalFile (nsentry.Entry, sa.Attributes) :
 
     # --------------------------------------------------------------------------
     #
-    @rus.takes   ('LogicalFile', 
+    @rus.takes   ('LogicalFile',
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((rus.list_of (ru.Url), st.Task))
     def list_locations (self, ttype=None) :
@@ -198,8 +198,8 @@ class LogicalFile (nsentry.Entry, sa.Attributes) :
 
     # --------------------------------------------------------------------------
     #
-    @rus.takes   ('LogicalFile', 
-                  (ru.Url, str), 
+    @rus.takes   ('LogicalFile',
+                  (ru.Url, str),
                   rus.optional (int, rus.nothing),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((rus.nothing, st.Task))
@@ -221,8 +221,8 @@ class LogicalFile (nsentry.Entry, sa.Attributes) :
     # --------------------------------------------------------------------------
     # non-GFD.90
     #
-    @rus.takes   ('LogicalFile', 
-                  (ru.Url, str), 
+    @rus.takes   ('LogicalFile',
+                  (ru.Url, str),
                   rus.optional ((ru.Url, str)),
                   rus.optional (int, rus.nothing),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
@@ -246,8 +246,8 @@ class LogicalFile (nsentry.Entry, sa.Attributes) :
     # --------------------------------------------------------------------------
     # non-GFD.90
     #
-    @rus.takes   ('LogicalFile', 
-                  (ru.Url, str), 
+    @rus.takes   ('LogicalFile',
+                  (ru.Url, str),
                   rus.optional ((ru.Url, str)),
                   rus.optional (int, rus.nothing),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))

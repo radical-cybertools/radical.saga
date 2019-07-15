@@ -463,18 +463,18 @@ class Job (sb.Base, st.Task, sasync.Async) :
             j  = js.create_job(jd)
 
             if j.get_state() == saga.job.NEW :
-                print "new"
+                print("new")
             else :
-                print "oops!"
+                print("oops!")
 
             j.run()
 
             if   j.get_state() == saga.job.PENDING :
-                print "pending"
+                print("pending")
             elif j.get_state() == saga.job.RUNNING :
-                print "running"
+                print("running")
             else :
-                print "oops!"
+                print("oops!")
           """
 
         return self._adaptor.run (ttype=ttype)
@@ -503,25 +503,25 @@ class Job (sb.Base, st.Task, sasync.Async) :
           j  = js.create_job(jd)
 
           if   j.get_state() == saga.job.NEW :
-              print "new"
+              print("new")
           else :
-              print "oops!"
+              print("oops!")
 
           j.run()
 
           if   j.get_state() == saga.job.PENDING :
-              print "pending"
+              print("pending")
           elif j.get_state() == saga.job.RUNNING :
-              print "running"
+              print("running")
           else :
-              print "oops!"
+              print("oops!")
 
           j.cancel()
 
           if   j.get_state() == saga.job.CANCELED :
-              print "canceled"
+              print("canceled")
           else :
-              print "oops!"
+              print("oops!")
         """
         return self._adaptor.cancel (timeout, ttype=ttype)
 
@@ -561,27 +561,27 @@ class Job (sb.Base, st.Task, sasync.Async) :
           j  = js.create_job(jd)
 
           if   j.get_state() == saga.job.NEW :
-              print "new"
+              print("new")
           else :
-              print "oops!"
+              print("oops!")
 
           j.run()
 
           if   j.get_state() == saga.job.PENDING :
-              print "pending"
+              print("pending")
           elif j.get_state() == saga.job.RUNNING :
-              print "running"
+              print("running")
           else :
-              print "oops!"
+              print("oops!")
 
           j.wait(-1.0)
 
           if   j.get_state() == saga.job.DONE :
-              print "done"
+              print("done")
           elif j.get_state() == saga.job.FAILED :
-              print "failed"
+              print("failed")
           else :
-              print "oops!"
+              print("oops!")
         """
 
         if  None == timeout :
@@ -609,18 +609,18 @@ class Job (sb.Base, st.Task, sasync.Async) :
           j  = js.create_job(jd)
 
           if   j.get_state() == saga.job.NEW :
-              print "new"
+              print("new")
           else :
-              print "oops!"
+              print("oops!")
 
           j.run()
 
           if   j.get_state() == saga.job.PENDING :
-              print "pending"
+              print("pending")
           elif j.get_state() == saga.job.RUNNING :
-              print "running"
+              print("running")
           else :
-              print "oops!"
+              print("oops!")
         """
         return self._adaptor.get_state (ttype=ttype)
 
@@ -765,9 +765,9 @@ class Job (sb.Base, st.Task, sasync.Async) :
 
       if j.get_state() == saga.job.FAILED :
         if j.exitcode == "42" :
-            print "Ah, galaxy bypass error!"
+            print("Ah, galaxy bypass error!")
         else :
-            print "oops!"
+            print("oops!")
 
     """)
 
@@ -799,9 +799,9 @@ class Job (sb.Base, st.Task, sasync.Async) :
       j  = js.create_job(jd)
 
       if j.serviceurl == "fork://localhost" :
-          print "yes!"
+          print("yes!")
       else :
-          print "oops!"
+          print("oops!")
 
     """)
 

@@ -38,23 +38,23 @@ class File (nsentry.Entry) :
 
     # --------------------------------------------------------------------------
     #
-    @rus.takes   ('File', 
-                  rus.optional ((ru.Url, str)), 
-                  rus.optional (int, rus.nothing), 
+    @rus.takes   ('File',
+                  rus.optional ((ru.Url, str)),
+                  rus.optional (int, rus.nothing),
                   rus.optional (ss.Session),
-                  rus.optional (sab.Base), 
-                  rus.optional (dict), 
+                  rus.optional (sab.Base),
+                  rus.optional (dict),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns (rus.nothing)
-    def __init__ (self, url=None, flags=READ, session=None, 
-                  _adaptor=None, _adaptor_state={}, _ttype=None) : 
+    def __init__ (self, url=None, flags=READ, session=None,
+                  _adaptor=None, _adaptor_state={}, _ttype=None) :
         """
         __init__(url, flags=READ, session)
 
         Construct a new file object
 
         :param url:     Url of the (remote) file
-        :type  url:     :class:`saga.Url` 
+        :type  url:     :class:`saga.Url`
 
         :fgs:   :ref:`filesystemflags`
         :param session: :class:`saga.Session`
@@ -69,7 +69,7 @@ class File (nsentry.Entry) :
             file = saga.filesystem.File("sftp://localhost/tmp/data/data.bin")
 
             # print the file's size
-            print file.get_size ()
+            print(file.get_size ())
         """
 
         # param checks
@@ -83,15 +83,15 @@ class File (nsentry.Entry) :
             url.host = 'localhost'
 
         self._nsentry = super  (File, self)
-        self._nsentry.__init__ (url, flags, session, 
+        self._nsentry.__init__ (url, flags, session,
                                 _adaptor, _adaptor_state, _ttype=_ttype)
 
     # --------------------------------------------------------------------------
     #
     @classmethod
-    @rus.takes   ('File', 
-                  rus.optional ((ru.Url, str)), 
-                  rus.optional (int, rus.nothing), 
+    @rus.takes   ('File',
+                  rus.optional ((ru.Url, str)),
+                  rus.optional (int, rus.nothing),
                   rus.optional (ss.Session),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns (st.Task)
@@ -116,21 +116,21 @@ class File (nsentry.Entry) :
     #
     # --------------------------------------------------------------------------
     #
-    @rus.takes   ('File', 
+    @rus.takes   ('File',
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((bool, st.Task))
     def is_file (self, ttype=None) :
         """
         is_file()
 
-        Returns `True` if instance points to a file, `False` otherwise. 
+        Returns `True` if instance points to a file, `False` otherwise.
         """
         return self._adaptor.is_file_self (ttype=ttype)
 
 
     # --------------------------------------------------------------------------
     #
-    @rus.takes   ('File', 
+    @rus.takes   ('File',
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((int, st.Task))
     def get_size (self, ttype=None) :
@@ -145,7 +145,7 @@ class File (nsentry.Entry) :
                file = saga.filesystem.File("sftp://localhost/tmp/data/data.bin")
 
                # print the file's size
-               print file.get_size ()
+               print(file.get_size ())
 
         '''
         return self._adaptor.get_size_self (ttype=ttype)
@@ -153,7 +153,7 @@ class File (nsentry.Entry) :
 
     # --------------------------------------------------------------------------
     #
-    @rus.takes   ('File', 
+    @rus.takes   ('File',
                   rus.optional (int),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((str, st.Task))
@@ -167,7 +167,7 @@ class File (nsentry.Entry) :
 
     # --------------------------------------------------------------------------
     #
-    @rus.takes   ('File', 
+    @rus.takes   ('File',
                   rus.optional (bool))
     @rus.returns (st.Task)
     def close     (self, kill=True, ttype=None) :
@@ -180,7 +180,7 @@ class File (nsentry.Entry) :
 
     # --------------------------------------------------------------------------
     #
-    @rus.takes   ('File', 
+    @rus.takes   ('File',
                   str,
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((int, st.Task))
@@ -195,7 +195,7 @@ class File (nsentry.Entry) :
 
     # --------------------------------------------------------------------------
     #
-    @rus.takes   ('File', 
+    @rus.takes   ('File',
                   int,
                   rus.optional (rus.one_of (START, CURRENT, END )),
                   rus.optional (rus.one_of (SYNC,  ASYNC,   TASK)))
@@ -212,7 +212,7 @@ class File (nsentry.Entry) :
 
     # --------------------------------------------------------------------------
     #
-    @rus.takes   ('File', 
+    @rus.takes   ('File',
                   rus.list_of  (rus.tuple_of (int)),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((str, st.Task))
@@ -227,7 +227,7 @@ class File (nsentry.Entry) :
 
     # --------------------------------------------------------------------------
     #
-    @rus.takes   ('File', 
+    @rus.takes   ('File',
                   rus.list_of  (rus.tuple_of ((int, str))),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((rus.list_of (int), st.Task))
@@ -242,13 +242,13 @@ class File (nsentry.Entry) :
 
     # --------------------------------------------------------------------------
     #
-    @rus.takes   ('File', 
+    @rus.takes   ('File',
                   str,
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((int, st.Task))
     def size_p (self, pattern, ttype=None) :
         '''
-        pattern:  string 
+        pattern:  string
         ttype:    saga.task.type enum
         ret:      int / saga.Task
         '''
@@ -257,7 +257,7 @@ class File (nsentry.Entry) :
 
     # --------------------------------------------------------------------------
     #
-    @rus.takes   ('File', 
+    @rus.takes   ('File',
                   str,
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((str, st.Task))
@@ -272,7 +272,7 @@ class File (nsentry.Entry) :
 
     # --------------------------------------------------------------------------
     #
-    @rus.takes   ('File', 
+    @rus.takes   ('File',
                   str,
                   str,
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
@@ -289,7 +289,7 @@ class File (nsentry.Entry) :
 
     # --------------------------------------------------------------------------
     #
-    @rus.takes   ('File', 
+    @rus.takes   ('File',
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((rus.list_of (str), st.Task))
     def modes_e (self, ttype=None) :
@@ -302,7 +302,7 @@ class File (nsentry.Entry) :
 
     # --------------------------------------------------------------------------
     #
-    @rus.takes   ('File', 
+    @rus.takes   ('File',
                   str,
                   str,
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
@@ -319,7 +319,7 @@ class File (nsentry.Entry) :
 
     # --------------------------------------------------------------------------
     #
-    @rus.takes   ('File', 
+    @rus.takes   ('File',
                   str,
                   str,
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
@@ -336,7 +336,7 @@ class File (nsentry.Entry) :
 
     # --------------------------------------------------------------------------
     #
-    @rus.takes   ('File', 
+    @rus.takes   ('File',
                   str,
                   str,
                   str,

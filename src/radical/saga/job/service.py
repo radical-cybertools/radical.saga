@@ -45,16 +45,16 @@ class Service (sb.Base, sasync.Async) :
         ids = service.list()
 
         for job_id in ids :
-            print job_id
+            print(job_id)
 
             j = service.get_job(job_id)
 
             if j.get_state() == saga.job.Job.Pending:
-                print "pending"
+                print("pending")
             elif j.get_state() == saga.job.Job.Running:
-                print "running"
+                print("running")
             else:
-                print "job is already final!"
+                print("job is already final!")
 
         service.close()
     """
@@ -243,12 +243,12 @@ class Service (sb.Base, sasync.Async) :
 
             # Run the job and wait for it to finish
             job.run()
-            print "Job ID    : %s" % (job.job_id)
+            print("Job ID    : %s" % (job.job_id))
             job.wait()
 
             # Get some info about the job
-            print "Job State : %s" % (job.state)
-            print "Exitcode  : %s" % (job.exit_code)
+            print("Job State : %s" % (job.state))
+            print("Exitcode  : %s" % (job.exit_code))
 
             service.close()
         """
@@ -377,7 +377,7 @@ class Service (sb.Base, sasync.Async) :
             ids = service.list()
 
             for job_id in ids :
-                print job_id
+                print(job_id)
 
             service.close()
         """
@@ -439,11 +439,11 @@ class Service (sb.Base, sasync.Async) :
             j  = service.get_job(my_job_id)
 
             if j.get_state() == saga.job.Job.Pending:
-                print "pending"
+                print("pending")
             elif j.get_state() == saga.job.Job.Running:
-                print "running"
+                print("running")
             else:
-                print "job is already final!"
+                print("job is already final!")
 
             service.close()
         """

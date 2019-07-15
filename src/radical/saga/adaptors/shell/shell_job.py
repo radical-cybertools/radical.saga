@@ -710,7 +710,7 @@ class ShellJobService (cpi.Service) :
             raise rse.NoSuccess ("Failed to run job (%s)" % lines)
 
       # for i in range (0, len(lines)) :
-      #     print "%d: %s" % (i, lines[i])
+      #     print("%d: %s" % (i, lines[i]))
 
         if lines[-2] != "OK" :
             raise rse.NoSuccess ("Failed to run Job (%s)" % lines)
@@ -1109,8 +1109,8 @@ class ShellJobService (cpi.Service) :
         bulk = "BULK\n"
 
         for job in jobs :
-          # print type (job)
-          # print type (job._adaptor)
+          # print(type (job))
+          # print(type (job._adaptor))
 
             if  not isinstance (job._adaptor, ShellJob) :
                 # this is not a job created by this adaptor.  Its probably
@@ -1243,7 +1243,7 @@ class ShellJobService (cpi.Service) :
 
         for job in jobs :
 
-          # print job
+          # print(job)
           # job._attributes_dump ()
 
             rm, pid = self._adaptor.parse_id (job.id)

@@ -68,7 +68,7 @@ class Entry (sb.Base, sasync.Async) :
             entry = saga.namespace.Entry("sftp://localhost/tmp/data/data.bin")
 
             # print the entry's url
-            print entry.get_url ()
+            print(entry.get_url ())
         '''
 
         self._session      = session
@@ -133,7 +133,7 @@ class Entry (sb.Base, sasync.Async) :
 
             # print URL of an entry
             entry = saga.namespace.Entry("sftp://localhost/etc/passwd")
-            print entry.get_url()
+            print(entry.get_url())
         '''
         return self._adaptor.get_url (ttype=ttype)
 

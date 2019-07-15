@@ -224,7 +224,7 @@ class PTYShellFactory (object, metaclass=ru.Singleton) :
         with self.rlock :
 
             # import pprint
-            # pprint.pprint (info)
+            # pprint.pprint(info)
 
             shell_pass = info['pass']
             key_pass   = info['key_pass']
@@ -429,7 +429,7 @@ class PTYShellFactory (object, metaclass=ru.Singleton) :
             if posix is None:
                 posix = info.get('copy_is_posix')
 
-          # print '> -- new cp  shell to %s' % s_cmd
+          # print('> -- new cp  shell to %s' % s_cmd)
 
             cp_slave = supp.PTYProcess (s_cmd, self.cfg, info['logger'])
             self._initialize_pty (cp_slave, info, posix)
@@ -551,7 +551,7 @@ class PTYShellFactory (object, metaclass=ru.Singleton) :
             # If an SSH timeout has been specified set up the ConnectTimeout
             # string
             if info['ssh_timeout']:
-                info['ssh_connect_timeout'] = ('-o ConnectTimeout=%s' 
+                info['ssh_connect_timeout'] = ('-o ConnectTimeout=%s'
                     % int(float(info['ssh_timeout'])))
             else:
                 info['ssh_connect_timeout'] = ''
@@ -590,7 +590,7 @@ class PTYShellFactory (object, metaclass=ru.Singleton) :
 
             else :
                 # avoid ansi escapes
-                info['ssh_env']   = "/usr/bin/env TERM=vt100 "  
+                info['ssh_env']   = "/usr/bin/env TERM=vt100 "
                 info['scp_env']   = "/usr/bin/env TERM=vt100 "
                 info['sftp_env']  = "/usr/bin/env TERM=vt100 "
                 info['ssh_args']  = "-t "  # force pty

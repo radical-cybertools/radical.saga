@@ -160,8 +160,8 @@ _ADAPTOR_INFO = {
 # The adaptor class
 #
 class Adaptor (base.Base):
-    """ this is the actual adaptor class, which gets loaded by SAGA (i.e. by 
-        the SAGA engine), and which registers the CPI implementation classes 
+    """ this is the actual adaptor class, which gets loaded by SAGA (i.e. by
+        the SAGA engine), and which registers the CPI implementation classes
         which provide the adaptor's functionality.
     """
 
@@ -449,7 +449,7 @@ class LOADLJobService (cpi.job.Service):
         return job_info
 
     def __generate_llsubmit_script(self, jd):
-        """ 
+        """
         generates a IMB LoadLeveler script from a SAGA job description
         :param jd: job descriptor
         :return: the llsubmit script
@@ -495,7 +495,7 @@ class LOADLJobService (cpi.job.Service):
             jd.total_cpu_count = 1
         else:
             if jd.total_cpu_count > 1:
-                if self.job_type not in ['bluegene']: 
+                if self.job_type not in ['bluegene']:
                     # 'bluegene' and total_tasks dont live well together
                     loadl_params += "#@ total_tasks = %s\n" % jd.total_cpu_count
 
@@ -555,7 +555,7 @@ class LOADLJobService (cpi.job.Service):
             loadl_params += "#@ notify_user = %s\n" % jd.job_contact[0]
             loadl_params += "#@ notification = always\n"
 
-        # some default (?) parameter that seem to work fine everywhere... 
+        # some default (?) parameter that seem to work fine everywhere...
         if jd.queue is not None:
             loadl_params += "#@ class = %s\n" % jd.queue
         else:
@@ -701,14 +701,14 @@ class LOADLJobService (cpi.job.Service):
 
             if lastStr.startswith('llq:'):
                 # llq: There is currently no job status to report
-                
+
                 job_info = None
                 retries  = 0
 
                 while job_info is None and retries < max_retries:
 
                     job_info = self.__get_remote_job_info(pid)
-                  # print "llq:", job_info
+                  # print("llq:", job_info)
 
                     if job_info is None and retries > 0:
                         message = "__get_remote_job_info get None, pid: %s and retries: %d" % (pid, retries)
@@ -1106,7 +1106,7 @@ class LOADLJob (cpi.job.Job):
     #
     @SYNC_CALL
     def get_name (self):
-        """ Implements cpi.job.Job.get_name() """        
+        """ Implements cpi.job.Job.get_name() """
         return self._name
 
     # ----------------------------------------------------------------

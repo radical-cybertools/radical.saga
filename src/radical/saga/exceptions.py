@@ -36,10 +36,10 @@ class SagaException (Exception) :
 
       except saga.Timeout as to :
           # maybe the network is down?
-          print "connection timed out"
+          print("connection timed out")
       except saga.Exception as e :
           # something else went wrong
-          print "Exception occurred: %s %s" % (e, e.traceback)
+          print("Exception occurred: %s %s" % (e, e.traceback))
 
     There are cases where multiple backends can report errors at the same time.
     In that case, the radical.saga implementation will collect the exceptions,

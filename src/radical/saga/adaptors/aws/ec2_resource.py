@@ -54,8 +54,8 @@ _ADAPTOR_CAPABILITIES  = {
                           c.MACHINE_ARCH  ,
                           c.SIZE          ,
                           c.MEMORY        ,
-                          c.ACCESS       ],    
-    "metrics"          : [c.STATE, 
+                          c.ACCESS       ],
+    "metrics"          : [c.STATE,
                           c.STATE_DETAIL],
     "contexts"         : {"ec2"         : "EC2 ID and Secret",
                           "ec2_keypair" : "ec2 keypair for node access"}
@@ -66,9 +66,9 @@ _ADAPTOR_CAPABILITIES  = {
 #
 _ADAPTOR_DOC           = {
     "name"             : _ADAPTOR_NAME,
-    "cfg_options"      : _ADAPTOR_OPTIONS, 
+    "cfg_options"      : _ADAPTOR_OPTIONS,
     "capabilities"     : _ADAPTOR_CAPABILITIES,
-    "description"      : """ 
+    "description"      : """
         The EC2 resource adaptor. This adaptor interacts with a variety of
         IaaS backends via the Apache LibCloud.  It also provides EC2 related
         context types.
@@ -86,15 +86,15 @@ _ADAPTOR_INFO          = {
     "version"          : "v0.1",
     "schemas"          : _ADAPTOR_SCHEMAS,
     "cpis"             : [
-                             { 
+                             {
                                  "type"  : "radical.saga.Context",
                                  "class" : "EC2Keypair"
-                             }, 
-                             { 
+                             },
+                             {
                                  "type"  : "radical.saga.resource.Manager",
                                  "class" : "EC2ResourceManager"
-                             }, 
-                             { 
+                             },
+                             {
                                  "type"  : "radical.saga.resource.Compute",
                                  "class" : "EC2ResourceCompute"
                              },
@@ -190,7 +190,7 @@ class Adaptor (a_base.Base):
             # information
             if  not self._EC2_URL        and \
                 not self._EC2_ACCESS_KEY and \
-                not self._EC2_SECRET_KEY : 
+                not self._EC2_SECRET_KEY :
                 # no default access info...
                 return []
 
@@ -279,7 +279,7 @@ class Adaptor (a_base.Base):
                     self._logger.debug ("eucalyptus backend")
                     conn = driver (ctx_id, ctx_key,
                                  # secure = True, # how do we know?
-                                   host   = ctx_url.host, 
+                                   host   = ctx_url.host,
                                    port   = ctx_url.port,
                                    path   = ctx_url.path)
                 else :
@@ -301,7 +301,7 @@ class Adaptor (a_base.Base):
 #
 class EC2Keypair (cpi_context.Context) :
 
-    """ 
+    """
     This context points to an EC2 keypair which is used to contextualize VM
     instances.
 
@@ -322,7 +322,7 @@ class EC2Keypair (cpi_context.Context) :
     Version 2: create (upload) a new keypair, and the use it
       - `Token`  : name of keypair to create   (required)
       - `UserKey`: private or public  ssh key  (required)
-      - `UserID` : username on VM instance     (optional, default 'root') 
+      - `UserID` : username on VM instance     (optional, default 'root')
       - `Server` : authentication server host  (optional, default for Amazon)
 
     When used in this version, the adaptor will attempt to create an EC2 keypair
@@ -355,11 +355,11 @@ class EC2Keypair (cpi_context.Context) :
     Alas, the `ex_describe_keypairs()` call is faulty and does not return
     footprints, and so we have no chance really to find the respective ssh key.
     We thus need to rely on the user to add the respective ssh key to the
-    session on her own.  
+    session on her own.
 
     I have filed a bug report with libcloud[1], lets see what happens.  At this
     point, this context adaptor does basically nothing than hosting the EC2
-    keypair for session authentication.  
+    keypair for session authentication.
 
     Update: It turns out that EC2 uses a non-standard and (worse) non-specified
     way to compute the fingerprints, and we can't use those to select local
@@ -410,7 +410,7 @@ class EC2Keypair (cpi_context.Context) :
         # nothing to do for simple ec2 id/secret containers
         # FIXME: we could in principle validate validity...
         if  self._type.lower () == 'ec2' :
-            return 
+            return
 
         # we first attempt to create an ssh context from the keypair
         # context -- this will take care of all eventual key checks etc.
@@ -447,7 +447,7 @@ class EC2Keypair (cpi_context.Context) :
             raise rse.BadParameter \
                   ("`ec2_keypair` context must specify keypair name as `token`")
 
-      # # valid context, connect to backend  
+      # # valid context, connect to backend
       # # FIXME: use 'Server' if defined
       # conn, backend = self._adaptor.connect (session)
       #
@@ -464,7 +464,7 @@ class EC2Keypair (cpi_context.Context) :
       # upload  = False
       # try:
       #     # try to find it
-      #     print 'describe %s' % token
+      #     print('describe %s' % token)
       #     keypair = conn.ex_describe_keypairs (token)
       #
       #     if  not keypair               or \
@@ -485,7 +485,7 @@ class EC2Keypair (cpi_context.Context) :
       #     # proper (ex_describe_keypairs is documented as EC2 only by
       #     # libcloud), so we only raise a warning on errors for other
       #     # backends.
-      #     
+      #
       #     if  backend == 'aws' :
       #
       #         if str(e).startswith ("InvalidKeyPair.NotFound") :
@@ -532,7 +532,7 @@ class EC2Keypair (cpi_context.Context) :
 
 
         # we add the thusly derived ssh context to the session which originally
-        # contained our ec2_keypair context.  We do that even for failed 
+        # contained our ec2_keypair context.  We do that even for failed
         # uploads, in the hope that some out-of-band setup kicks in.
         session.add_context (ssh_context)
 
@@ -703,10 +703,10 @@ class EC2ResourceManager (cpi_resource.Manager) :
         try :
 
             # make sure template and image are valid, and get handles
-            if  rd.template not in self.templates_dict : 
+            if  rd.template not in self.templates_dict :
                 self._refresh_templates (rd.template)
 
-            if  rd.image not in self.images_dict : 
+            if  rd.image not in self.images_dict :
                 self._refresh_images (uid=rd.image)
 
 
@@ -718,8 +718,8 @@ class EC2ResourceManager (cpi_resource.Manager) :
             _c   = self.conn
 
             # create/use the saga-sg security group which allows ssh access
-            try: 
-                ret = _c.ex_create_security_group('saga-sg','SAGA', None) 
+            try:
+                ret = _c.ex_create_security_group('saga-sg','SAGA', None)
                 ret = _c.ex_get_security_groups(group_names=['saga-sg'])
                 gid = ret[0].id
                 ret = _c.ex_authorize_security_group_ingress(gid, 22, 22,
@@ -733,18 +733,18 @@ class EC2ResourceManager (cpi_resource.Manager) :
 
             # it should be safe to create the VM instance now
             node = _c.create_node(name='radical.saga.resource.Compute.%s' % cid,
-                                  size=self.templates_dict[rd.template], 
-                                  image=self.images_dict[rd.image], 
-                                  ex_keyname=token, 
+                                  size=self.templates_dict[rd.template],
+                                  image=self.images_dict[rd.image],
+                                  ex_keyname=token,
                                   ex_security_groups=['saga-sg'])
 
             resource_info = {'backend'              : self.backend   ,
                              'resource'             : node           ,
                              'resource_type'        : rd.rtype       ,
                              'resource_description' : rd             ,
-                             'resource_manager'     : self.get_api (), 
-                             'resource_manager_url' : self.url       , 
-                             'resource_schema'      : self.url.schema, 
+                             'resource_manager'     : self.get_api (),
+                             'resource_manager_url' : self.url       ,
+                             'resource_schema'      : self.url.schema,
                              'connection'           : self.conn      }
 
         except Exception as e :
@@ -753,7 +753,7 @@ class EC2ResourceManager (cpi_resource.Manager) :
 
         if  resource_info :
             if  rd.rtype == c.COMPUTE :
-                return api_resource.Compute(_adaptor=self._adaptor, 
+                return api_resource.Compute(_adaptor=self._adaptor,
                                             _adaptor_state=resource_info)
 
         raise rse.NoSuccess ("Could not acquire requested resource")
@@ -786,16 +786,16 @@ class EC2ResourceManager (cpi_resource.Manager) :
                              'resource'             : node           ,
                              'resource_type'        : c.COMPUTE      ,
                              'resource_description' : None           ,
-                             'resource_manager'     : self.get_api (), 
-                             'resource_manager_url' : self.url       , 
-                             'resource_schema'      : self.url.schema, 
+                             'resource_manager'     : self.get_api (),
+                             'resource_manager_url' : self.url       ,
+                             'resource_schema'      : self.url.schema,
                              'connection'           : self.conn      }
 
         except Exception as e :
             # FIXME: translate errors more sensibly
             raise rse.NoSuccess ("Failed with %s" % e)
 
-        return api_resource.Compute(_adaptor=self._adaptor, 
+        return api_resource.Compute(_adaptor=self._adaptor,
                                     _adaptor_state=resource_info)
 
 
@@ -1026,7 +1026,7 @@ class EC2ResourceCompute (cpi_resource.Compute) :
                 self.state =  c.EXPIRED
 
         except Exception as e :
-            self._logger.error ("Could not obtain resource state (%s): %s" 
+            self._logger.error ("Could not obtain resource state (%s): %s"
                              % (self.id, e))
             self.state  =  c.UNKNOWN
 
@@ -1040,7 +1040,7 @@ class EC2ResourceCompute (cpi_resource.Compute) :
     # --------------------------------------------------------------------------
     #
     @SYNC_CALL
-    def get_id (self) : 
+    def get_id (self) :
 
         return self.id
 
@@ -1048,7 +1048,7 @@ class EC2ResourceCompute (cpi_resource.Compute) :
     # --------------------------------------------------------------------------
     #
     @SYNC_CALL
-    def get_rtype (self) : 
+    def get_rtype (self) :
 
         return self.rtype
 
@@ -1056,7 +1056,7 @@ class EC2ResourceCompute (cpi_resource.Compute) :
     # --------------------------------------------------------------------------
     #
     @SYNC_CALL
-    def get_state (self) : 
+    def get_state (self) :
 
         return self.state
 
@@ -1064,7 +1064,7 @@ class EC2ResourceCompute (cpi_resource.Compute) :
     # --------------------------------------------------------------------------
     #
     @SYNC_CALL
-    def get_state_detail (self) : 
+    def get_state_detail (self) :
 
         return self.detail
 
@@ -1072,7 +1072,7 @@ class EC2ResourceCompute (cpi_resource.Compute) :
     # --------------------------------------------------------------------------
     #
     @SYNC_CALL
-    def get_access (self) : 
+    def get_access (self) :
 
         if  not self.access :
             self._refresh_state ()
@@ -1083,7 +1083,7 @@ class EC2ResourceCompute (cpi_resource.Compute) :
     # --------------------------------------------------------------------------
     #
     @SYNC_CALL
-    def get_manager      (self) : 
+    def get_manager      (self) :
 
         return self.manager
 
@@ -1091,7 +1091,7 @@ class EC2ResourceCompute (cpi_resource.Compute) :
     # --------------------------------------------------------------------------
     #
     @SYNC_CALL
-    def get_description  (self) : 
+    def get_description  (self) :
 
         return self.descr
 
@@ -1116,7 +1116,7 @@ class EC2ResourceCompute (cpi_resource.Compute) :
     # --------------------------------------------------------------------------
     #
     @SYNC_CALL
-    def wait (self, state, timeout) : 
+    def wait (self, state, timeout) :
 
         import time
         start = time.time ()
@@ -1125,7 +1125,7 @@ class EC2ResourceCompute (cpi_resource.Compute) :
             self._refresh_state ()
 
         if  self.state == c.EXPIRED and \
-            not  state  & c.EXPIRED :      
+            not  state  & c.EXPIRED :
                 raise rse.IncorrectState ("resource is in final state (%s): %s"
                                         % (self.detail, self.id))
 
