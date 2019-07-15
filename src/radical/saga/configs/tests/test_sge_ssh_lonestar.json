@@ -1,0 +1,15 @@
+
+# Test the SGE Job adaptor via SSH on lonestar.tacc.utexas.edu
+
+{
+    "job_service_url"     : "sge+ssh://lonestar.tacc.utexas.edu",
+    "job_queue"           : "development",
+    "job_walltime_limit"  : 4,
+    "job_project"         : "TG-MCB090174",
+    "job_spmd_variation"  : "12way",
+    "job_total_cpu_count" : 12,
+
+    "context_type"        : "ssh",
+    "context_user_id"     : "tg802352"
+}
+

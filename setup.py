@@ -11,6 +11,7 @@ __license__   = 'MIT'
 import re
 import os
 import sys
+import glob
 import shutil
 
 import subprocess as sp
@@ -21,7 +22,7 @@ mod_root = 'src/radical/saga/'
 
 try:
     from setuptools import setup, Command, find_packages
-except ImportError as e:
+except ImportError:
     print(("%s needs setuptools to install" % name))
     sys.exit(1)
 
@@ -106,15 +107,14 @@ def get_version(mod_root):
         if '--record'    in sys.argv or \
            'bdist_egg'   in sys.argv or \
            'bdist_wheel' in sys.argv    :
-           # pip install stage 2 or easy_install stage 1
-           #
-           # pip install will untar the sdist in a tmp tree.  In that tmp
-           # tree, we won't be able to derive git version tags -- so we pack the
-           # formerly derived version as ./VERSION
+            # pip install stage 2 or easy_install stage 1
+            #
+            # pip install will untar the sdist in a tmp tree.  In that tmp
+            # tree, we won't be able to derive git version tags -- so we pack
+            # the formerly derived version as ./VERSION
             shutil.move("VERSION", "VERSION.bak")            # backup version
             shutil.copy("%s/VERSION" % path, "VERSION")      # use full version
             os.system  ("python setup.py sdist")             # build sdist
-            os.system  ("ls -la dist >> /tmp/t")
             shutil.copy('dist/%s' % sdist_name,
                         '%s/%s'   % (mod_root, sdist_name))  # copy into tree
             shutil.move("VERSION.bak", "VERSION")            # restore version
@@ -141,93 +141,23 @@ version, version_detail, sdist_name = get_version(mod_root)
 
 # ------------------------------------------------------------------------------
 #
-def read(*rnames):
-    try:
-        return open(os.path.join(os.path.dirname(__file__), *rnames)).read()
-
-    except Exception:
-        return ''
+class our_test(Command):
+    user_options = []
+    def initialize_options(self): pass
+    def finalize_options  (self): pass
+    def run(self):
+        testdir = "%s/tests/" % os.path.dirname(os.path.realpath(__file__))
+        retval  = sp.call(['pytest',testdir])
+        raise SystemExit(retval)
 
 
 # ------------------------------------------------------------------------------
 #
-# borrowed from the MoinMoin-wiki installer
-#
-def makeDataFiles(prefix, dir):
-    """ Create distutils data_files structure from dir
-
-    distutil will copy all file rooted under dir into prefix, excluding
-    dir itself, just like 'ditto src dst' works, and unlike 'cp -r src
-    dst, which copy src into dst'.
-
-    Typical usage:
-        # install the contents of 'wiki' under sys.prefix+'share/moin'
-        data_files = makeDataFiles('share/moin', 'wiki')
-
-    For this directory structure:
-        root
-            file1
-            file2
-            dir
-                file
-                subdir
-                    file
-
-    makeDataFiles('prefix', 'root')  will create this distutil
-    data_files structure:
-        [('prefix', ['file1', 'file2']),
-         ('prefix/dir', ['file']),
-         ('prefix/dir/subdir', ['file'])]
-    """
-    # Strip 'dir/' from of path before joining with prefix
-    dir = dir.rstrip('/')
-    strip = len(dir) + 1
-    found = []
-    # NOTE Python 3: os.path.walk -> os.walk
-    os.walk(dir, visit, (prefix, strip, found))
-    return found
-
-
-def visit(data, dirname, names):
-    """ Visit directory, create distutil tuple
-
-    Add distutil tuple for each directory using this format:
-        (destination, [dirname/file1, dirname/file2, ...])
-
-    distutil will copy later file1, file2, ... info destination.
-    """
-    (prefix, strip, found) = data
-    files = []
-    # Iterate over a copy of names, modify names
-    for name in names[:]:
-        path = os.path.join(dirname, name)
-        # Ignore directories -  we will visit later
-        if os.path.isdir(path):
-            # Remove directories we don't want to visit later
-            if isbad(name):
-                names.remove(name)
-            continue
-        elif isgood(name):
-            files.append(path)
-    destination = os.path.join(prefix, dirname[strip:])
-    found.append((destination, files))
-
-
-def isbad(name):
-    """ Whether name should not be installed """
-    return (name.startswith('.') or
-            name.startswith('#') or
-            name.endswith('.pickle') or
-            name == 'CVS')
-
-
-def isgood(name):
-    """ Whether name should be installed """
-    if not isbad(name):
-        if name.endswith('.py') or name.endswith('.json') or \
-           name.endswith('.tar'):
-            return True
-    return False
+def read(fname):
+    try :
+        return open(fname).read()
+    except Exception :
+        return ''
 
 
 # ------------------------------------------------------------------------------
@@ -247,11 +177,19 @@ if sys.hexversion <= 0x03050000:
     raise RuntimeError("SETUP ERROR: %s requires Python 3.5 or higher" % name)
 
 
-# -------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+#
+df = list()
+df.append(('share/%s/examples' % name, glob.glob('examples/*.py')))
+
+
+# ------------------------------------------------------------------------------
+#
 setup_args = {
     'name'               : name,
     'version'            : version,
-    'description'        : 'A light-weight access layer for distributed computing infrastructure'
+    'description'        : 'A light-weight access layer for distributed '
+                           'computing infrastructure '
                            '(http://radical.rutgers.edu/)',
   # 'long_description'   : (read('README.md') + '\n\n' + read('CHANGES.md')),
     'author'             : 'RADICAL Group at Rutgers University',
@@ -283,14 +221,14 @@ setup_args = {
     'package_data'       : {'': ['*.txt', '*.sh', '*.json', '*.gz',
                                  'VERSION', 'SDIST', sdist_name]},
   # 'setup_requires'     : ['pytest-runner'],
-    'install_requires'   : ['radical.utils>=0.50',
+    'install_requires'   : ['radical.utils>=0.70',
                             'apache-libcloud',
                             'parse'
                            ],
-    'tests_require'      : ['pytest', 'coverage'],
+    'tests_require'      : ['mock==2.0.0', 'pytest', 'coverage'],
     'test_suite'         : '%s.tests' % name,
     'zip_safe'           : False,
-    'data_files'         : makeDataFiles('share/%s/examples/' % name, 'examples'),
+    'data_files'         : df,
     'cmdclass'           : {'upload': RunTwine},
 }
 

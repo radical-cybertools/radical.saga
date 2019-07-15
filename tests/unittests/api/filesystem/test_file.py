@@ -5,22 +5,34 @@ __license__   = "MIT"
 
 
 import os
-import radical.saga as saga
 import unittest
 
 from copy import deepcopy
 
-import radical.utils.testing as testing
+import radical.saga  as rs
+import radical.utils as ru
 
 
+# ------------------------------------------------------------------------------
+#
+def config():
+
+    ru.set_test_config(ns='radical.saga')
+    ru.add_test_config(ns='radical.saga', cfg_name='file_localhost')
+
+    return ru.get_test_config()
+
+
+# ------------------------------------------------------------------------------
+#
 class TestFile(unittest.TestCase):
 
     # -------------------------------------------------------------------------
     #
     def setUp(self):
         """Setup called once per class instance"""
-        self.uniquefilename1 = "saga-unittests-1-"+str(os.getpid())
-        self.uniquefilename2 = "saga-unittests-2-"+str(os.getpid())
+        self.uniquefilename1 = "saga-unittests-1-" + str(os.getpid())
+        self.uniquefilename2 = "saga-unittests-2-" + str(os.getpid())
 
     # -------------------------------------------------------------------------
     #
@@ -28,11 +40,11 @@ class TestFile(unittest.TestCase):
         """Teardown called once per class instance"""
         try:
             # do the cleanup
-            tc = testing.get_test_config ()
-            d = saga.filesystem.Directory(tc.filesystem_url)
+            tc = config()
+            d = rs.filesystem.Directory(tc.filesystem_url)
             d.remove(self.uniquefilename1)
             d.remove(self.uniquefilename2)
-        except saga.SagaException as ex:
+        except rs.SagaException:
             pass
 
     # -------------------------------------------------------------------------
@@ -41,14 +53,14 @@ class TestFile(unittest.TestCase):
         """ Testing if opening a file on a non-existing host causes an exception.
         """
         try:
-            tc = testing.get_test_config ()
-            invalid_url = deepcopy(saga.Url(tc.filesystem_url))
+            tc = config()
+            invalid_url = deepcopy(rs.Url(tc.filesystem_url))
             invalid_url.host = "does.not.exist"
-            f = saga.filesystem.File(invalid_url)
+            _ = rs.filesystem.File(invalid_url)
             assert False, "Expected BadParameter exception but got none."
-        except saga.BadParameter:
+        except rs.BadParameter:
             assert True
-        except saga.SagaException as ex:
+        except rs.SagaException as ex:
             assert False, "Expected BadParameter exception, but got %s" % ex
 
 
@@ -59,14 +71,14 @@ class TestFile(unittest.TestCase):
         """
         try:
             pass
-            tc = testing.get_test_config ()
-            nonex_file = deepcopy(saga.Url(tc.filesystem_url))
+            tc = config()
+            nonex_file = deepcopy(rs.Url(tc.filesystem_url))
             nonex_file.path += "/file.does.not.exist"
-            f = saga.filesystem.File(nonex_file)
+            _ = rs.filesystem.File(nonex_file)
             assert False, "Expected DoesNotExist exception but got none."
-        except saga.DoesNotExist:
+        except rs.DoesNotExist:
             assert True
-        except saga.SagaException as ex:
+        except rs.SagaException as ex:
             assert False, "Expected DoesNotExist exception, but got %s" % ex
 
 
@@ -77,12 +89,12 @@ class TestFile(unittest.TestCase):
         """
         try:
             pass
-            tc = testing.get_test_config ()
-            nonex_file = deepcopy(saga.Url(tc.filesystem_url))
+            tc = config()
+            nonex_file = deepcopy(rs.Url(tc.filesystem_url))
             nonex_file.path += "/%s" % self.uniquefilename1
-            f = saga.filesystem.File(nonex_file, saga.filesystem.CREATE)
+            f = rs.filesystem.File(nonex_file, rs.filesystem.CREATE)
             assert f.size == 0  # this should fail if the file doesn't exist!
-        except saga.SagaException as ex:
+        except rs.SagaException as ex:
             assert False, "Unexpected exception: %s" % ex
 
 
@@ -92,15 +104,15 @@ class TestFile(unittest.TestCase):
         """ Testing if we can open an existing file.
         """
         try:
-            tc = testing.get_test_config ()
-            filename = deepcopy(saga.Url(tc.filesystem_url))
+            tc = config()
+            filename = deepcopy(rs.Url(tc.filesystem_url))
             filename.path += "/%s" % self.uniquefilename1
-            f = saga.filesystem.File(filename, saga.filesystem.CREATE)
+            f = rs.filesystem.File(filename, rs.filesystem.CREATE)
 
-            f2 = saga.filesystem.File(f.url)
+            f2 = rs.filesystem.File(f.url)
             assert f2.size == 0  # this should fail if the file doesn't exist!
 
-        except saga.SagaException as ex:
+        except rs.SagaException as ex:
             assert False, "Unexpected exception: %s" % ex
 
     # -------------------------------------------------------------------------
@@ -109,22 +121,22 @@ class TestFile(unittest.TestCase):
         """ Testing if get an exception if we try to copy an unsupported target scheme.
         """
         try:
-            tc = testing.get_test_config ()
+            tc = config()
 
             # Create the source file
-            source_file = deepcopy(saga.Url(tc.filesystem_url))
+            source_file = deepcopy(rs.Url(tc.filesystem_url))
             source_file.path += "/%s" % self.uniquefilename1
-            f1 = saga.filesystem.File(source_file, saga.filesystem.CREATE)
+            f1 = rs.filesystem.File(source_file, rs.filesystem.CREATE)
 
-            target_url = deepcopy(saga.Url(tc.filesystem_url))
+            target_url = deepcopy(rs.Url(tc.filesystem_url))
             target_url.scheme = "crapscheme"
 
             f1.copy(target_url)
 
             assert False, "Expected BadParameter exception but got none."
-        except saga.BadParameter:
+        except rs.BadParameter:
             assert True
-        except saga.SagaException as ex:
+        except rs.SagaException as ex:
             assert False, "Unexpected exception: %s" % ex
 
     # -------------------------------------------------------------------------
@@ -134,19 +146,19 @@ class TestFile(unittest.TestCase):
         """
         try:
             pass
-            tc = testing.get_test_config ()
-            filename1 = deepcopy(saga.Url(tc.filesystem_url))
+            tc = config()
+            filename1 = deepcopy(rs.Url(tc.filesystem_url))
             filename1.path += "/%s" % self.uniquefilename1
-            f1 = saga.filesystem.File(filename1, saga.filesystem.CREATE)
+            f1 = rs.filesystem.File(filename1, rs.filesystem.CREATE)
 
-            filename2 = deepcopy(saga.Url(tc.filesystem_url))
+            filename2 = deepcopy(rs.Url(tc.filesystem_url))
             filename2.path += "/%s" % self.uniquefilename2
 
             f1.copy(filename2)
-            f2 = saga.filesystem.File(filename2)
+            f2 = rs.filesystem.File(filename2)
             assert f2.size == 0  # this should fail if the file doesn't exist!
 
-        except saga.SagaException as ex:
+        except rs.SagaException as ex:
             assert False, "Unexpected exception: %s" % ex
 
     # -------------------------------------------------------------------------
@@ -156,18 +168,18 @@ class TestFile(unittest.TestCase):
         """
         try:
             pass
-            tc = testing.get_test_config ()
-            filename1 = deepcopy(saga.Url(tc.filesystem_url))
+            tc = config()
+            filename1 = deepcopy(rs.Url(tc.filesystem_url))
             filename1.path = "/etc/passwd"
-            f1 = saga.filesystem.File(filename1)
+            f1 = rs.filesystem.File(filename1)
 
             filename2 = "file://localhost/tmp/%s" % self.uniquefilename2
 
             f1.copy(filename2)
-            f2 = saga.filesystem.File(filename2)
+            f2 = rs.filesystem.File(filename2)
             assert f2.size != 0  # this should fail if the file doesn't exist!
 
-        except saga.SagaException as ex:
+        except rs.SagaException as ex:
             assert False, "Unexpected exception: %s" % ex
 
     # -------------------------------------------------------------------------
@@ -176,19 +188,19 @@ class TestFile(unittest.TestCase):
         """ Testing if the correct session is being used
         """
         try:
-            tc = testing.get_test_config ()
-            session = tc.session or saga.Session()
-            filename = deepcopy(saga.Url(tc.filesystem_url))
+            tc = config()
+            session = tc.session or rs.Session()
+            filename = deepcopy(rs.Url(tc.filesystem_url))
             filename.path += "/%s" % self.uniquefilename1
 
-            f = saga.filesystem.File(filename, saga.filesystem.CREATE,
+            f = rs.filesystem.File(filename, rs.filesystem.CREATE,
                                      session=session)
             assert f.get_session() == session, 'Failed setting the session'
 
-            f2 = saga.filesystem.File(f.url, session=session)
+            f2 = rs.filesystem.File(f.url, session=session)
             assert f2.get_session() == session, 'Failed setting the session'
 
-        except saga.SagaException as ex:
+        except rs.SagaException as ex:
             assert False, "Unexpected exception: %s" % ex
 
     # -------------------------------------------------------------------------
@@ -197,14 +209,14 @@ class TestFile(unittest.TestCase):
         """ Testing if the correct session is being used
         """
         try:
-            tc = testing.get_test_config()
-            session = tc.session or saga.Session()
+            tc = config()
+            session = tc.session or rs.Session()
 
-            d = saga.filesystem.Directory(tc.filesystem_url, session=session)
+            d = rs.filesystem.Directory(tc.filesystem_url, session=session)
 
             assert d.get_session() == session, 'Failed setting the session'
 
-        except saga.SagaException as ex:
+        except rs.SagaException as ex:
             assert False, "Unexpected exception: %s [%s]" % (ex,
                     tc.filesystem_url)
 

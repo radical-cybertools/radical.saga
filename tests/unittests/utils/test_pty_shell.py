@@ -5,21 +5,27 @@ __copyright__ = "Copyright 2013, The SAGA Project"
 __license__   = "MIT"
 
 
-# import os
-# import time
-# import signal
-import radical.saga as saga
-import radical.saga.utils.pty_shell   as sups
-# import radical.saga.utils.test_config as sutc
+import radical.utils as ru
 
-import radical.utils.testing as rut
+import radical.saga                 as saga
+import radical.saga.utils.pty_shell as sups
+
+
+# ------------------------------------------------------------------------------
+#
+def config():
+
+    ru.set_test_config(ns='radical.saga')
+    ru.add_test_config(ns='radical.saga', cfg_name='fork_localhost')
+
+    return ru.get_test_config()
 
 
 # ------------------------------------------------------------------------------
 #
 def test_ptyshell_ok () :
     """ Test pty_shell which runs command successfully """
-    conf  = rut.get_test_config ()
+    conf  = config()
     shell = sups.PTYShell (saga.Url(conf.job_service_url), conf.session)
 
     txt = "______1______2_____3_____"
@@ -36,7 +42,7 @@ def test_ptyshell_ok () :
 #
 def test_ptyshell_nok () :
     """ Test pty_shell which runs command unsuccessfully """
-    conf  = rut.get_test_config ()
+    conf  = config()
     shell = sups.PTYShell (saga.Url(conf.job_service_url), conf.session)
 
     txt = "______1______2_____3_____"
@@ -53,7 +59,7 @@ def test_ptyshell_nok () :
 #
 def test_ptyshell_async () :
     """ Test pty_shell which runs command successfully """
-    conf  = rut.get_test_config ()
+    conf  = config()
     shell = sups.PTYShell (saga.Url(conf.job_service_url), conf.session)
 
     txt = "______1______2_____3_____\n"
@@ -76,7 +82,7 @@ def test_ptyshell_async () :
 #
 def test_ptyshell_prompt () :
     """ Test pty_shell with prompt change """
-    conf  = rut.get_test_config ()
+    conf  = config()
     shell = sups.PTYShell (saga.Url(conf.job_service_url), conf.session)
 
     txt = "______1______2_____3_____"
@@ -101,7 +107,7 @@ def test_ptyshell_prompt () :
 #
 def test_ptyshell_file_stage () :
     """ Test pty_shell file staging """
-    conf  = rut.get_test_config ()
+    conf  = config()
     shell = sups.PTYShell (saga.Url(conf.job_service_url), conf.session)
 
     txt = "______1______2_____3_____"
@@ -124,3 +130,7 @@ if __name__ == '__main__':
     test_ptyshell_async()
     test_ptyshell_prompt()
     test_ptyshell_file_stage()
+
+
+# ------------------------------------------------------------------------------
+

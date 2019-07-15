@@ -1,0 +1,7 @@
+
+# this config file will run the job package tests with the local/fork adpator
+
+{
+    "job_service_url"    : "fork://localhost/"
+}
+

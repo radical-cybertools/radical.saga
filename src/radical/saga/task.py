@@ -404,6 +404,10 @@ class Container (sbase.SimpleBase, satt.Attributes) :
                 future.join ()
 
             if  future.state == c.FAILED :
+              # print '===='
+              # print future.exception
+              # print future.traceback
+              # print '===='
                 raise se.NoSuccess ("future exception: %s" % (future.exception))
 
 
