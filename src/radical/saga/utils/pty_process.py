@@ -53,14 +53,14 @@ class PTYProcess (object) :
 
             if n == 0 :
                 # found password prompt - tell the secret
-                pty.write ("secret\\n")
+                pty.write(b"secret\\n")
                 n, _ = pty.find (['password\s*:\s*$',
                                   'want to continue connecting.*\(yes/no\)\s*$',
                                   '[\$#>]\s*$'])
             elif n == 1 :
                 # found request to accept host key - sure we do... (who checks
                 # those keys anyways...?).  Then search again.
-                pty.write ("yes\\n")
+                pty.write(b"yes\\n")
                 n, _ = pty.find (['password\s*:\s*$',
                                   'want to continue connecting.*\(yes/no\)\s*$',
                                   '[\$#>]\s*$'])
@@ -73,7 +73,7 @@ class PTYProcess (object) :
             # go full Dornroeschen (Sleeping Beauty)...
             pty.alive (recover=True) or break      # check / restart process
             pty.find  (['[\$#>]\s*$'])             # find shell prompt
-            pty.write ("/bin/sleep "100 years"\\n") # sleep!  SLEEEP!
+            pty.write(b"/bin/sleep "100 years"\\n") # sleep!  SLEEEP!
 
         # something bad happened
         print(pty.autopsy ())
@@ -608,8 +608,9 @@ class PTYProcess (object) :
                             found_eof = True
                             raise se.NoSuccess("unexpected EOF: %s" % self.tail)
 
-                        self.cache += buf.replace ('\r', '')
-                        log         = buf.replace ('\r', '')
+                        tmp = buf.decode('utf-8')
+                        self.cache += tmp.replace ('\r', '')
+                        log         = tmp.replace ('\r', '')
                         log         = log.replace ('\n', '\\n')
                       # print("buf: --%s--" % buf)
                       # print("log: --%s--" % log)
@@ -833,7 +834,7 @@ class PTYProcess (object) :
                     for f in wlist :
 
                         # write will report the number of written bytes
-                        size = os.write (f, data)
+                        size = os.write(f, str.encode(data))
 
                         # otherwise, truncate by written data, and try again
                         data = data[size:]

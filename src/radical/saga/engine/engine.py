@@ -11,9 +11,12 @@ import radical.utils      as ru
 from .. import exceptions as rse
 
 
+# ------------------------------------------------------------------------------
+#
 # we set the default of the pty share mode to 'no' on CentOS, as that seems to
 # consistently come with old ssh versions which can't handle sharing for sftp
 # channels.
+#
 _share_mode_default = 'auto'
 try:
     import subprocess as sp
@@ -27,93 +30,94 @@ try:
        'cent os' in _os_flavor :
         _share_mode_default = 'no'
 
-except Exception as e:
+except Exception:
     # we ignore this then -- we are relatively sure that the above should work
     # on CentOS...
     pass
 
 
-################################################################################
+# ------------------------------------------------------------------------------
 #
 class Engine(object, metaclass=ru.Singleton):
-    """ Represents the SAGA engine runtime system.
+    """
+    Represents the SAGA engine runtime system.
 
-        The Engine is a singleton class that takes care of adaptor
-        loading and management, and which binds adaptor instances to
-        API object instances.   The Engine singleton is implicitly
-        instantiated as soon as SAGA is imported into Python.  It
-        will, on creation, load all available adaptors.  Adaptors
-        modules MUST provide an 'Adaptor' class, which will register
-        the adaptor in the engine with information like these
-        (simplified)::
+    The Engine is a singleton class that takes care of adaptor
+    loading and management, and which binds adaptor instances to
+    API object instances.   The Engine singleton is implicitly
+    instantiated as soon as SAGA is imported into Python.  It
+    will, on creation, load all available adaptors.  Adaptors
+    modules MUST provide an 'Adaptor' class, which will register
+    the adaptor in the engine with information like these
+    (simplified)::
 
-          _ADAPTOR_INFO = {
-            'name'    : _adaptor_name,
-            'version' : 'v1.3'
-            'schemas' : ['fork', 'local']
-            'cpis'    : [{
-              'type'    : 'radical.saga.job.Job',
-              'class'   : 'LocalJob',
-              },
-              {
-              'type'    : 'radical.saga.job.Service',
-              'class'   : 'LocalJobService',
-              }
-            ]
-          }
-
-        where 'class' points to the actual adaptor classes, and
-        'schemas' lists the URL schemas for which those adaptor
-        classes should be considered.  Note that schemas are case
-        insensitive.  More details on the adaptor registration process
-        and on adaptor meta data can be found in the adaptors writer
-        guide.
-
-        :todo: add link to adaptor writers documentation.
-
-        While loading adaptors, the Engine builds up an internal
-        registry of adaptor classes, hierarchically sorted like this
-        (simplified)::
-
-          _adaptor_registry =
+      _ADAPTOR_INFO = {
+        'name'    : _adaptor_name,
+        'version' : 'v1.3'
+        'schemas' : ['fork', 'local']
+        'cpis'    : [{
+          'type'    : 'radical.saga.job.Job',
+          'class'   : 'LocalJob',
+          },
           {
-              'job' :
-              {
-                  'gram' : [<gram job  adaptor, gram job adaptor class>]
-                  'ssh'  : [<ssh  job  adaptor, ssh  job adaptor class>]
-                  'http' : [<aws  job  adaptor, aws  job adaptor class>,
-                            <occi job  adaptor, occi job adaptor class>]
-                  ...
-              },
-              'file' :
-              {
-                  'ftp'  : <ftp file adaptor, ftp file adaptor class>
-                  'scp'  : <scp file adaptor, scp file adaptor class>
-                  ...
-              },
-              ...
+          'type'    : 'radical.saga.job.Service',
+          'class'   : 'LocalJobService',
           }
+        ]
+      }
 
-        to enable simple lookup operations when binding an API object
-        to an adaptor class instance.  For example, a
-        'saga.job.Service('http://remote.host.net/')' constructor
-        would use (simplified)::
+    where 'class' points to the actual adaptor classes, and
+    'schemas' lists the URL schemas for which those adaptor
+    classes should be considered.  Note that schemas are case
+    insensitive.  More details on the adaptor registration process
+    and on adaptor meta data can be found in the adaptors writer
+    guide.
 
-          def __init__ (self, url="", session=None) :
+    :todo: add link to adaptor writers documentation.
 
-              for (adaptor, adaptor_class) in \
-                      self._engine._adaptor_registry{'job'}{url.scheme}
+    While loading adaptors, the Engine builds up an internal
+    registry of adaptor classes, hierarchically sorted like this
+    (simplified)::
 
-                  try :
-                      self._adaptor = adaptor_class(self, url, session}
+      _adaptor_registry =
+      {
+          'job' :
+          {
+              'gram' : [<gram job  adaptor, gram job adaptor class>]
+              'ssh'  : [<ssh  job  adaptor, ssh  job adaptor class>]
+              'http' : [<aws  job  adaptor, aws  job adaptor class>,
+                        <occi job  adaptor, occi job adaptor class>]
+              ...
+          },
+          'file' :
+          {
+              'ftp'  : <ftp file adaptor, ftp file adaptor class>
+              'scp'  : <scp file adaptor, scp file adaptor class>
+              ...
+          },
+          ...
+      }
 
-                  except saga.Exception e :
-                      # adaptor bailed out
-                      continue
+    to enable simple lookup operations when binding an API object
+    to an adaptor class instance.  For example, a
+    'saga.job.Service('http://remote.host.net/')' constructor
+    would use (simplified)::
 
-                  else :
-                      # successfully bound to adaptor
-                      return
+      def __init__ (self, url="", session=None) :
+
+          for (adaptor, adaptor_class) in \
+                  self._engine._adaptor_registry{'job'}{url.scheme}
+
+              try :
+                  self._adaptor = adaptor_class(self, url, session}
+
+              except saga.Exception e :
+                  # adaptor bailed out
+                  continue
+
+              else :
+                  # successfully bound to adaptor
+                  return
     """
 
 
