@@ -714,6 +714,11 @@ class PTYProcess (object) :
         kept in the returned data.
         """
 
+        if timeout is None:
+            timeout = 0
+
+        timeout = int(timeout)
+
         def escape (txt) :
             pat = re.compile(r'\x1b[^m]*m')
             return pat.sub ('', txt)

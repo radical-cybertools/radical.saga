@@ -172,7 +172,7 @@ def _lsfscript_generator(url, logger, jd, ppn, lsf_version, queue):
 
     env_string += "export RADICAL_SAGA_SMT=%d" % SMT
     if jd.environment:
-        for k,v in jd.environment.iteritems():
+        for k,v in jd.environment.items():
             env_string += " %s=%s" % (k,v)
 
 
