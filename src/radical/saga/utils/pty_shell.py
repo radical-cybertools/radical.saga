@@ -811,7 +811,7 @@ class PTYShell (object) :
             # first, write data into a tmp file
             fhandle, fname = tempfile.mkstemp(suffix='.tmp',
                                               prefix='rs_pty_staging_')
-            os.write(fhandle, src)
+            os.write(fhandle, str.encode(src))
             os.fsync(fhandle)
             os.close(fhandle)
 
