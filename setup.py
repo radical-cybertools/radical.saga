@@ -15,7 +15,6 @@ import glob
 import shutil
 
 import subprocess as sp
-import radical.utils as ru
 
 name     = 'radical.saga'
 mod_root = 'src/radical/saga/'
@@ -25,6 +24,19 @@ try:
 except ImportError:
     print(("%s needs setuptools to install" % name))
     sys.exit(1)
+
+
+# ------------------------------------------------------------------------------
+#
+def sh_callout(cmd):
+
+    p = sp.Popen(cmd, stdout=sp.PIPE, stderr=sp.PIPE, shell=True)
+
+    stdout, stderr = p.communicate()
+    ret            = p.returncode
+    return stdout, stderr, ret
+
+
 
 
 # ------------------------------------------------------------------------------
@@ -129,12 +141,6 @@ def get_version(mod_root):
 
 
 # ------------------------------------------------------------------------------
-# check python version. we need => 3.5
-if sys.hexversion <= 0x03050000:
-    raise RuntimeError("%s requires Python 3.5 or higher" % name)
-
-
-# ------------------------------------------------------------------------------
 # get version info -- this will create VERSION and srcroot/VERSION
 version, version_detail, sdist_name = get_version(mod_root)
 
@@ -167,7 +173,7 @@ class RunTwine(Command):
     def initialize_options(self): pass
     def finalize_options(self): pass
     def run(self):
-        out,  err, ret = ru.sh_callout('python setup.py sdist upload -r pypi')
+        out,  err, ret = sh_callout('python setup.py sdist upload -r pypi')
         raise SystemExit(ret)
 
 
@@ -205,8 +211,8 @@ setup_args = {
         'Environment :: Console',
         'License :: OSI Approved :: MIT License',
         'Programming Language :: Python',
-        'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.5',
         'Topic :: Utilities',
         'Topic :: System :: Distributed Computing',
         'Topic :: Scientific/Engineering :: Interface Engine/Protocol Translator',
