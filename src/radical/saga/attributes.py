@@ -403,7 +403,6 @@ class Attributes (_AttributesBase, ru.DictMixin) :
         # check if we know about the given attribute
         if  key :
             if key not in d['attributes'] :
-                ru.print_stacktrace()
                 raise se.DoesNotExist ("attribute key is invalid: %s"  %  (key))
 
         # all is well
