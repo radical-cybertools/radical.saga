@@ -29,14 +29,22 @@ class SimpleBase (object) :
     @rus.returns (rus.nothing)
     def __init__  (self, uid=None):
 
-        if  not hasattr (self, '_apitype') :
-            self._apitype = self._get_apitype ()
+        ok = False
+        try:
+            ok = hasattr(self, '_apitype')
+
+        except:
+            pass
+
+        if not ok:
+            self._apitype = self._get_apitype()
+
 
         self._logger = ru.Logger('radical.saga')
         if uid:
             self._id = uid
         else:
-            self._id = ru.generate_id (self._get_apitype (), mode=ru.ID_SIMPLE)
+            self._id = ru.generate_id (self._apitype, mode=ru.ID_SIMPLE)
 
       # self._logger.debug ("[saga.Base] %s.__init__()" % self._apitype)
 
@@ -77,9 +85,9 @@ class Base (SimpleBase) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Base',
-                  str, 
-                  rus.optional (sab.Base), 
-                  rus.optional (dict), 
+                  str,
+                  rus.optional (sab.Base),
+                  rus.optional (dict),
                   rus.optional (rus.anything),
                   rus.optional (rus.anything))
     @rus.returns (rus.nothing)
@@ -119,7 +127,7 @@ class Base (SimpleBase) :
     @rus.takes   ('Base')
     @rus.returns ('saga.Session')
     def get_session (self) :
-        """ 
+        """
         Returns the session which is managing the object instance.  For objects
         which do not accept a session handle on construction, this call returns
         None.
