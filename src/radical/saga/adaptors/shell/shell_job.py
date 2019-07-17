@@ -136,7 +136,7 @@ def _decode (data) :
         elif c not in [' ', '\n'] :
             raise rse.BadParameter("Cannot decode '%s' in '%s'" % (c, data))
 
-    return bytes.fromhex(data).decode('utf-8')
+    return bytes.fromhex(code).decode('utf-8')
 
 
 # --------------------------------------------------------------------
