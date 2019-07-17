@@ -150,8 +150,8 @@ def _lsfscript_generator(url, logger, jd, ppn, lsf_version, queue):
     if jd.working_directory: lsf_bsubs += "#BSUB -cwd %s \n" \
                                                      %  jd.working_directory
     if jd.wall_time_limit  : lsf_bsubs += "#BSUB -W %s:%s \n" \
-                                                     % (jd.wall_time_limit / 60,
-                                                        jd.wall_time_limit % 60)
+                                                     % (int(jd.wall_time_limit / 60),
+                                                        int(jd.wall_time_limit % 60))
 
     # if working directory is set, we want stdout to end up in the
     # working directory as well, unless it containes a specific
