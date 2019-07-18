@@ -1,0 +1,11 @@
+
+# Test the PBS Job adaptor via GSISSH on kraken.nics.xsede.org
+
+{
+    "job_service_url"     : "pbs+gsissh://gsissh.kraken.nics.xsede.org",
+    "job_queue"           : "small",
+    "job_walltime_limit"  : 4,
+    "job_total_cpu_count" : 12,
+    "job_project"         : "TG-MCB090174"
+}
+

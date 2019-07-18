@@ -45,8 +45,8 @@ class _job_state_monitor(threading.Thread):
     def __init__(self, job_service):
 
         self.logger = job_service._logger
-        self.js = job_service
-        self._stop = threading.Event()
+        self.js     = job_service
+        self._stop  = threading.Event()
 
         super(_job_state_monitor, self).__init__()
         self.setDaemon(True)
@@ -118,17 +118,50 @@ def _lsfscript_generator(url, logger, jd, ppn, lsf_version):
     '''
     generates an LSF script from a SAGA job description
     '''
-    lsf_params = str()
+    lsf_params  = str()
     exec_n_args = str()
 
-    if jd.executable is not None:
-        exec_n_args += "%s " % (jd.executable)
-    if jd.arguments is not None:
-        for arg in jd.arguments:
-            exec_n_args += "%s " % (arg)
+    lsf_bsubs   = ''
+    command     = ''
+    env_string  = ''
 
-    if jd.name is not None:
-        lsf_params += "#BSUB -J %s \n" % jd.name
+    if jd.executable: command += "%s " % (jd.executable)
+    if jd.arguments : command += ' '.join(jd.arguments)
+
+    if       jd.queue and     queue: lsf_bsubs += "#BSUB -q %s \n" % queue
+    elif     jd.queue and not queue: lsf_bsubs += "#BSUB -q %s \n" % jd.queue
+    elif not jd.queue and     queue: lsf_bsubs += "#BSUB -q %s \n" % queue
+
+    if jd.name             : lsf_bsubs += "#BSUB -J %s \n" % jd.name
+    if jd.job_contact      : lsf_bsubs += "#BSUB -u %s \n" % jd.job_contact
+    if jd.working_directory: lsf_bsubs += "#BSUB -cwd %s \n" \
+                                                     %  jd.working_directory
+    if jd.wall_time_limit  : lsf_bsubs += "#BSUB -W %s:%s \n" \
+                                                     % (jd.wall_time_limit / 60,
+                                                        jd.wall_time_limit % 60)
+
+    # if working directory is set, we want stdout to end up in the
+    # working directory as well, unless it containes a specific
+    # path name - otherwise we pass `output` as is.
+    if jd.output:
+        if os.path.isabs(jd.output): path = ''
+        elif jd.working_directory  : path = '%s/' % jd.working_directory
+        else                       : path = ''
+        lsf_bsubs += "#BSUB -o %s%s \n" % (path, jd.output)
+
+    # same holds for stderr
+    if jd.error:
+        if os.path.isabs(jd.error): path = ''
+        elif jd.working_directory : path = '%s/' % jd.working_directory
+        else                      : path = ''
+        lsf_bsubs += "#BSUB -e %s%s \n" % (path, jd.error)
+
+
+    env_string += "export RADICAL_SAGA_SMT=%d" % SMT
+    if jd.environment:
+        for k,v in jd.environment.iteritems():
+            env_string += " %s=%s" % (k,v)
+
 
     env_variable_list = "export RADICAL_SAGA_SMT=%d" % SMT
     if jd.environment:
@@ -171,55 +204,50 @@ def _lsfscript_generator(url, logger, jd, ppn, lsf_version):
         else:
             lsf_params += "#BSUB -e %s \n" % jd.error
 
+    elif jd.project:
+        lsf_bsubs += "#BSUB -P %s \n" % jd.project
 
-    if jd.wall_time_limit is not None:
-        hours = jd.wall_time_limit / 60
-        minutes = jd.wall_time_limit % 60
-        lsf_params += "#BSUB -W %s:%s \n" \
-            % (str(hours), str(minutes))
 
     if jd.queue:
         lsf_params += "#BSUB -q %s \n" % jd.queue
 
-    if jd.project is not None and ':' in jd.project:
-        account, reservation = jd.project.split(':',1)
-        lsf_params += "#BSUB -P %s \n" % str(account)
-        lsf_params += "#BSUB -U %s \n" % str(reservation)
-    elif jd.project is not None:
-        lsf_params += "#BSUB -P %s \n" % str(jd.project)
+    if not jd.total_gpu_count: total_gpu_count = 1
+    else                     : total_gpu_count = jd.total_gpu_count
 
-    if jd.job_contact is not None:
-        lsf_params += "#BSUB -u %s \n" % str(jd.job_contact)
+    hostname = url.host
 
-    # Request enough nodes to cater for the number of cores requested
-    if not jd.total_cpu_count:
-        total_cpu_count = 1
-    else:
-        total_cpu_count = jd.total_cpu_count
+    if not hostname or 'localhost' in hostname:
+        out, _, ret = ru.sh_callout('hostname -f')
+        if ret: hostname = os.environ.get('HOSTNAME', '')
+        else  : hostname = out.strip()
 
-    out, err, ret = ru.sh_callout('hostname -f')
+    if not hostname:
+        raise RuntimeError('cannot determine target host f or %s' % url)
 
-    if ret: hostname = os.environ.get('HOSTNAME', '')
-    else  : hostname = out.strip()
+    if   'summitdev' in hostname: cpn = 20 * SMT
+    elif 'summit'    in hostname: cpn = 42 * SMT
+    else: raise ValueError('LSF host (%s) not yet supported' % hostname)
 
-    if   'summitdev' in hostname: ppn = 20
-    elif 'summit'    in hostname: ppn = 42 * SMT
-    else:
-        raise ValueError('we do not support this LSF host (%s), yet' % hostname)
+    if   'summitdev' in hostname: gpn = 4
+    elif 'summit'    in hostname: gpn = 6
 
-    number_of_nodes = int(total_cpu_count / ppn)
-    if total_cpu_count % ppn > 0:
-        number_of_nodes += 1
-    lsf_params += "#BSUB -nnodes %s \n" % str(number_of_nodes)
-    lsf_params += "#BSUB -alloc_flags 'gpumps smt%d' \n" % SMT
+    cpu_nodes = int(total_cpu_count / cpn)
+    if total_cpu_count > (cpu_nodes * cpn):
+        cpu_nodes += 1
 
     # escape all double quotes and dollar signs, otherwise 'echo |'
     # further down won't work
     # only escape '$' in args and exe. not in the params
     exec_n_args = exec_n_args.replace('$', '\\$')
 
-    lsfscript = "\n#!/bin/bash \n%s\n%s\n%s" % (lsf_params, env_variable_list,
-                                                exec_n_args)
+    lsf_bsubs += "#BSUB -nnodes %s \n" % str(nodes)
+    lsf_bsubs += "#BSUB -alloc_flags 'gpumps smt%d' \n" % SMT
+
+    # escape double quotes and dollar signs, otherwise 'echo |'
+    # further down won't work
+    # only escape '$' in args and exe. not in the bsubs
+    command   = command.replace('$', '\\$')
+    lsfscript = "\n#!/bin/bash \n%s\n%s\n%s" % (lsf_bsubs, env_string, command)
     lsfscript = lsfscript.replace('"', '\\"')
 
     return lsfscript
