@@ -484,7 +484,8 @@ class SLURMJobService (cpi_job.Service) :
             # we start N independent processes
             mpi_cmd = ''
 
-            if 'stampede2' in self.rm.host.lower():
+            if  'stampede2' in self.rm.host.lower() or \
+                'frontera'  in self.rm.host.lower():
 
                 assert(self._ppn), 'need unique number of cores per node'
                 number_of_nodes = int(math.ceil(float(total_cpu_count) / self._ppn))
@@ -533,7 +534,12 @@ class SLURMJobService (cpi_job.Service) :
             if total_gpu_count: slurm_script += "#SBATCH --gpus=%s\n" % total_gpu_count
 
 
-        if cwd:             slurm_script += "#SBATCH --workdir %s\n"     % cwd 
+        if cwd:
+            if 'frontera' in self.rm.host.lower():
+                slurm_script += "#SBATCH --chdir %s\n"   % cwd 
+            else:
+                slurm_script += "#SBATCH --workdir %s\n" % cwd 
+
         if output:          slurm_script += "#SBATCH --output %s\n"      % output 
         if error:           slurm_script += "#SBATCH --error %s\n"       % error 
         if queue:           slurm_script += "#SBATCH --partition %s\n"   % queue
