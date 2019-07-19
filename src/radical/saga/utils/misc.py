@@ -43,12 +43,20 @@ def host_is_local (host) :
     """ Returns True if the given host is the localhost
     """
 
-    if  not host                   or \
-        host == 'localhost'        or \
-        host == socket.gethostname () :
+    if  not host:
         return True
-    else :
-        return False
+
+    elif host == 'localhost':
+        return True
+
+    else:
+        sockhost = socket.gethostname()
+        while sockhost:
+            if host == sockhost:
+                return True
+            sockhost = '.'.join(sockhost.split('.')[1:])
+
+    return False
 
 
 # --------------------------------------------------------------------
