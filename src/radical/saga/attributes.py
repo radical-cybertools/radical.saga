@@ -741,7 +741,7 @@ class Attributes (_AttributesBase, ru.DictMixin) :
 
 
         if  force or d['camelcasing'] :
-            temp = Attributes._camel_case_regex_1.sub(r'\1_\2', key)
+            temp = Attributes._camel_case_regex_1.sub(r'\1_\2', str(key))
             return Attributes._camel_case_regex_2.sub(r'\1_\2', temp).lower()
         else :
             return key
