@@ -205,6 +205,7 @@ setup_args = {
     'url'                : 'http://radical-cybertools.github.io/radical.saga/',
     'license'            : 'MIT',
     'keywords'           : 'radical job saga',
+    'python_requires'    : '>=3.5',
     'classifiers'        : [
         'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Developers',
