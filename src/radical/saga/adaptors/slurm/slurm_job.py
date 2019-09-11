@@ -499,19 +499,35 @@ class SLURMJobService(cpi_job.Service):
 
         # target host specifica
         # FIXME: these should be moved into resource config files
-        if  'bridges' in self.rm.host.lower() or \
-            'tiger'   in self.rm.host.lower() :
+        self._logger.debug ("submit SLURM script to %s", self.rm)
+        if 'bridges' in self.rm.host.lower():
 
+            if total_gpu_count:
+                # gres resouurces are specified *per node*
+                assert(self._ppn), 'need unique number of cores per node'
+                number_of_nodes = int(math.ceil(float(total_cpu_count) / self._ppn))
+                count = int(total_gpu_count / number_of_nodes)
 
-            if gpu_count:
-                if cpu_arch: gpu_arch = cpu_arch.lower()
-                else       : gpu_arch = 'p100'
-
-                script += "#SBATCH --gres=gpu:%s:%s\n" % (gpu_arch, gpu_count)
+                if count:
+                    if cpu_arch: gpu_arch = cpu_arch.lower()
+                    else       : gpu_arch = 'p100'
+                    script += "#SBATCH --gres=gpu:%s:%s\n" % (gpu_arch, count)
 
             # use '-C EGRESS' to enable outbound network
             script += "#SBATCH -C EGRESS\n"
 
+
+        elif 'tiger' in self.rm.host.lower():
+
+            if total_gpu_count:
+
+                # gres resouurces are specified *per node*
+                assert(self._ppn), 'need unique number of cores per node'
+                number_of_nodes = int(math.ceil(float(total_cpu_count) / self._ppn))
+                count = int(total_gpu_count / number_of_nodes)
+
+                if count:
+                    script += "#SBATCH --gres=gpu:%s\n" % count
 
 
         elif 'cori' in self.rm.host.lower():
@@ -543,7 +559,6 @@ class SLURMJobService(cpi_job.Service):
         if reservation: script += "#SBATCH --reservation %s\n" % reservation
         if wall_time  : script += "#SBATCH --time %02d : %02d : 00\n" \
                                               % (wall_time / 60, wall_time % 60)
-
         if env:
             script += "\n## ENVIRONMENT\n"
             for key,val in env.items():
