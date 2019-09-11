@@ -208,6 +208,7 @@ _ADAPTOR_INFO          = {
 
 
 # ------------------------------------------------------------------------------
+#
 # The adaptor class
 #
 class Adaptor (a_base.Base):
@@ -465,18 +466,36 @@ class SLURMJobService(cpi.Service):
 
         # target host specifica
         # FIXME: these should be moved into resource config files
-        if  'bridges' in self.rm.host.lower() or \
-            'tiger'   in self.rm.host.lower() :
-
+        self._logger.debug ("submit SLURM script to %s", self.rm)
+        if 'bridges' in self.rm.host.lower():
 
             if total_gpu_count:
-                if cpu_arch: gpu_arch = cpu_arch.lower()
-                else       : gpu_arch = 'p100'
-                slurm_script += "#SBATCH --gres=gpu:%s:%s\n" % (gpu_arch, total_gpu_count)
+
+                # gres resouurces are specified *per node*
+                assert(self._ppn), 'need unique number of cores per node'
+                number_of_nodes = int(math.ceil(float(total_cpu_count) / self._ppn))
+                count = int(total_gpu_count / number_of_nodes)
+
+                if count:
+                    if cpu_arch: gpu_arch = cpu_arch.lower()
+                    else       : gpu_arch = 'p100'
+                    slurm_script += "#SBATCH --gres=gpu:%s:%s\n" % (gpu_arch, count)
 
             # use '-C EGRESS' to enable outbound network
             slurm_script += "#SBATCH -C EGRESS\n"
 
+
+        elif 'tiger' in self.rm.host.lower():
+
+            if total_gpu_count:
+
+                # gres resouurces are specified *per node*
+                assert(self._ppn), 'need unique number of cores per node'
+                number_of_nodes = int(math.ceil(float(total_cpu_count) / self._ppn))
+                count = int(total_gpu_count / number_of_nodes)
+
+                if count:
+                    slurm_script += "#SBATCH --gres=gpu:%s\n" % count
 
 
         elif 'cori' in self.rm.host.lower():
@@ -493,12 +512,12 @@ class SLURMJobService(cpi.Service):
 
         if cwd:
             if 'frontera' in self.rm.host.lower():
-                slurm_script += "#SBATCH --chdir %s\n"   % cwd 
+                slurm_script += "#SBATCH --chdir %s\n"   % cwd
             else:
-                slurm_script += "#SBATCH --workdir %s\n" % cwd 
+                slurm_script += "#SBATCH --workdir %s\n" % cwd
 
-        if output:          slurm_script += "#SBATCH --output %s\n"      % output 
-        if error:           slurm_script += "#SBATCH --error %s\n"       % error 
+        if output:          slurm_script += "#SBATCH --output %s\n"      % output
+        if error:           slurm_script += "#SBATCH --error %s\n"       % error
         if queue:           slurm_script += "#SBATCH --partition %s\n"   % queue
         if job_name:        slurm_script += '#SBATCH -J "%s"\n'          % job_name
         if job_memory:      slurm_script += "#SBATCH --mem=%s\n"         % job_memory

@@ -333,7 +333,7 @@ if True:
             jd = rs.job.Description()
 
             jd.executable = '/bin/sleep'
-            jd.arguments  = ['5']
+            jd.arguments  = ['15']
 
             # add options from the test .cfg file if set
             sutc.configure_jd(self.cfg, jd)

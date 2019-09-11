@@ -6,6 +6,13 @@
     https://github.com/radical-cybertools/radical.saga/issues?q=is%3Aissue+is%3Aopen+
 
 
+Version 0.72.0  Release                                               2019-09-11
+--------------------------------------------------------------------------------
+
+  - improved support GPUs in lsf (tiger)
+  - frontera support
+
+
 Version 0.70.0  Release                                               2019-07-07
 --------------------------------------------------------------------------------
 
