@@ -499,7 +499,9 @@ class SLURMJobService(cpi_job.Service):
 
         # target host specifica
         # FIXME: these should be moved into resource config files
-        if 'bridges' in self.rm.host.lower():
+        if  'bridges' in self.rm.host.lower() or \
+            'tiger'   in self.rm.host.lower() :
+
 
             if gpu_count:
                 if cpu_arch: gpu_arch = cpu_arch.lower()
