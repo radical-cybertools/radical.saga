@@ -551,7 +551,8 @@ class SLURMJobService (cpi_job.Service) :
 
 
         if cwd:
-            if 'frontera' in self.rm.host.lower():
+            if 'frontera' in self.rm.host.lower() or \
+               'tiger'    in self.rm.host.lower():
                 slurm_script += "#SBATCH --chdir %s\n"   % cwd
             else:
                 slurm_script += "#SBATCH --workdir %s\n" % cwd
