@@ -67,7 +67,7 @@ _ADAPTOR_DOC           = {
             Hitting the pty limit will cause the following error message
             (or similar)::
 
-              NoSuccess: pty_allocation or process creation failed 
+              NoSuccess: pty_allocation or process creation failed
                          (ENOENT: no more ptys)
 
             This limitation comes from radical.saga.utils.pty_process.  On Linux
@@ -119,19 +119,19 @@ _ADAPTOR_INFO          = {
     "version"          : "v0.1",
     "schemas"          : _ADAPTOR_SCHEMAS,
     "cpis"             : [
-        { 
+        {
             "type"     : "radical.saga.namespace.Directory",
             "class"    : "ShellDirectory"
-        },            
-        {             
+        },
+        {
             "type"     : "radical.saga.namespace.Entry",
             "class"    : "ShellFile"
-        },            
-        {             
+        },
+        {
             "type"     : "radical.saga.filesystem.Directory",
             "class"    : "ShellDirectory"
-        },            
-        {             
+        },
+        {
             "type"     : "radical.saga.filesystem.File",
             "class"    : "ShellFile"
         }
@@ -160,7 +160,7 @@ def _mkdir_p(path):
 # The adaptor class
 
 class Adaptor(a_base.Base):
-    """ 
+    """
     This is the actual adaptor class, which gets loaded by SAGA (i.e. by the
     SAGA engine), and which registers the CPI implementation classes which
     provide the adaptor's functionality.
@@ -367,7 +367,7 @@ class ShellDirectory(cpi_fs.Directory):
         if  rsumisc.url_is_relative(url):
             url = rsumisc.url_make_absolute(self.get_url(), url)
 
-        return api_fs.File(url=url, flags=flags, session=self.session, 
+        return api_fs.File(url=url, flags=flags, session=self.session,
                            _adaptor=self._adaptor, _adaptor_state=adaptor_state)
 
 
@@ -384,7 +384,7 @@ class ShellDirectory(cpi_fs.Directory):
         if  rsumisc.url_is_relative(url):
             url = rsumisc.url_make_absolute(self.get_url(), url)
 
-        return api_fs.Directory(url=url, flags=flags, session=self.session, 
+        return api_fs.Directory(url=url, flags=flags, session=self.session,
                                 _adaptor=self._adaptor,
                                 _adaptor_state=adaptor_state)
 
@@ -508,7 +508,7 @@ class ShellDirectory(cpi_fs.Directory):
             tgt = rsumisc.url_make_absolute(cwdurl, tgt)
 
         rec_flag = ""
-        if  flags & c.RECURSIVE: 
+        if  flags & c.RECURSIVE:
             rec_flag  += "-r "
 
         files_copied = list()
@@ -518,7 +518,7 @@ class ShellDirectory(cpi_fs.Directory):
         if  rsumisc.url_is_compatible(cwdurl, src) and \
             rsumisc.url_is_compatible(cwdurl, tgt):
 
-            if  flags & c.CREATE_PARENTS: 
+            if  flags & c.CREATE_PARENTS:
                 self._create_parent(cwdurl, tgt)
 
             ret, out, err = self._command(" cp %s '%s' '%s'\n"
@@ -535,7 +535,7 @@ class ShellDirectory(cpi_fs.Directory):
 
             # for a remote target, we need to manually create the target dir (if
             # needed)
-            if  flags & c.CREATE_PARENTS: 
+            if  flags & c.CREATE_PARENTS:
                 self._create_parent(cwdurl, tgt)
 
 
@@ -558,7 +558,7 @@ class ShellDirectory(cpi_fs.Directory):
                     lease_tgt = self._adaptor.get_lease_target(self.url)
                     with self.lm.lease(lease_tgt, self.shell_creator, self.url)\
                         as copy_shell:
-                        files_copied = copy_shell.stage_from_remote(src.path, 
+                        files_copied = copy_shell.stage_from_remote(src.path,
                                                            tgt.path, rec_flag)
 
                 else:
@@ -569,7 +569,7 @@ class ShellDirectory(cpi_fs.Directory):
             # if cwd is local, and src or tgt are remote, we need to actually
             # create a new pipe to the target host.  note that we may not have
             # a useful session for that!
-            else: 
+            else:
                 # rsumisc.url_is_local(cwdurl):
 
                 if  rsumisc.url_is_local(src):
@@ -583,7 +583,7 @@ class ShellDirectory(cpi_fs.Directory):
                     lease_tgt = self._adaptor.get_lease_target(tgt)
                     with self.lm.lease(lease_tgt, self.shell_creator, tgt) \
                         as copy_shell:
-                        files_copied = copy_shell.stage_to_remote(src.path, 
+                        files_copied = copy_shell.stage_to_remote(src.path,
                                                          tgt.path, rec_flag)
 
                 elif rsumisc.url_is_local(tgt):
@@ -609,6 +609,8 @@ class ShellDirectory(cpi_fs.Directory):
 
         if  _from_task:
             _from_task._set_metric('files_copied', files_copied)
+
+        return files_copied
 
 
     # --------------------------------------------------------------------------
@@ -636,10 +638,10 @@ class ShellDirectory(cpi_fs.Directory):
         src    = rsurl.Url(src_in)    # deep copy
         tgt    = rsurl.Url(tgt_in)    # deep copy
 
-        if  flags & c.RECURSIVE: 
+        if  flags & c.RECURSIVE:
             raise rse.BadParameter("'RECURSIVE' flag not  supported for link()")
 
-        if  flags & c.CREATE_PARENTS: 
+        if  flags & c.CREATE_PARENTS:
             self._create_parent(cwdurl, tgt)
 
         # if src and tgt point to the same host, we just run a shell link
@@ -647,7 +649,7 @@ class ShellDirectory(cpi_fs.Directory):
         if  rsumisc.url_is_compatible(cwdurl, src) and \
             rsumisc.url_is_compatible(cwdurl, tgt):
 
-            ret, out, err = self._command(" ln -s '%s' '%s'\n" 
+            ret, out, err = self._command(" ln -s '%s' '%s'\n"
                                          % (src.path, tgt.path))
             if ret:
                 raise rse.NoSuccess("link (%s -> %s) failed (%s): %s [%s]"
@@ -712,7 +714,7 @@ class ShellDirectory(cpi_fs.Directory):
         tgt    = rsurl.Url(tgt_in)    # deep copy
 
         rec_flag = ""
-        if  flags & c.RECURSIVE: 
+        if  flags & c.RECURSIVE:
             rec_flag += "-r "
 
         if  rsumisc.url_is_compatible(cwdurl, tgt):
@@ -743,7 +745,7 @@ class ShellDirectory(cpi_fs.Directory):
         if not path:
             path = '.'
 
-        if flags & c.EXCLUSIVE: 
+        if flags & c.EXCLUSIVE:
 
             # FIXME: this creates a race condition between testing for exclusive
             # mkdir and creating the dir.
@@ -869,7 +871,7 @@ class ShellDirectory(cpi_fs.Directory):
 
         tgt = rsurl.Url(tgt_in)  # deep copy
 
-        ret, out, _ = self._command(" test -f '%s' && test ! -h '%s'" 
+        ret, out, _ = self._command(" test -f '%s' && test ! -h '%s'"
                                    % (tgt.path, tgt.path))
         if ret: return False
         else  : return True
@@ -1085,7 +1087,7 @@ class ShellFile(cpi_fs.File):
 
         if  ret:
             if  self.flags & c.CREATE_PARENTS:
-                raise rse.BadParameter("cannot open/create: '%s' - %s" 
+                raise rse.BadParameter("cannot open/create: '%s' - %s"
                                   % (self.url.path, out))
             elif self.flags & c.CREATE:
                 raise rse.BadParameter("cannot open/create: '%s' - %s"
@@ -1180,7 +1182,7 @@ class ShellFile(cpi_fs.File):
                     lease_tgt = self._adaptor.get_lease_target(self.url)
                     with self.lm.lease(lease_tgt, self.shell_creator, self.url)\
                         as copy_shell:
-                        files_copied = copy_shell.stage_to_remote(src.path, 
+                        files_copied = copy_shell.stage_to_remote(src.path,
                                                          tgt.path, rec_flag)
 
                 elif rsumisc.url_is_local(tgt) and \
@@ -1231,7 +1233,7 @@ class ShellFile(cpi_fs.File):
                     lease_tgt = self._adaptor.get_lease_target(tgt)
                     with self.lm.lease(lease_tgt, self.shell_creator, tgt) \
                         as copy_shell:
-                        copy_shell.stage_from_remote(src.path, 
+                        copy_shell.stage_from_remote(src.path,
                                                      tgt.path, rec_flag)
                 else:
 
@@ -1432,7 +1434,7 @@ class ShellFile(cpi_fs.File):
 
         cwdurl = rsurl.Url(self.url)  # deep copy
 
-        ret, out, _ = self._run_sync(" test -f '%s' && test ! -h '%s'" 
+        ret, out, _ = self._run_sync(" test -f '%s' && test ! -h '%s'"
                                     % (cwdurl.path, cwdurl.path))
 
         return True if ret == 0 else False
@@ -1461,7 +1463,7 @@ class ShellFile(cpi_fs.File):
 
         cwdurl = rsurl.Url(self.url)  # deep copy
 
-        ret, out, _ = self._run_sync(" test -f '%s' && test ! -h '%s'" 
+        ret, out, _ = self._run_sync(" test -f '%s' && test ! -h '%s'"
                                     % (cwdurl.path, cwdurl.path))
 
         return True if ret == 0 else False
