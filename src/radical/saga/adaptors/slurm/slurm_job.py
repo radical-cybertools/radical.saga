@@ -558,7 +558,7 @@ class SLURMJobService(cpi_job.Service):
         if account    : script += "#SBATCH --account %s\n"     % account
         if reservation: script += "#SBATCH --reservation %s\n" % reservation
         if wall_time  : script += "#SBATCH --time %02d : %02d : 00\n" \
-                                              % (wall_time / 60, wall_time % 60)
+                                              % (int(wall_time / 60), wall_time % 60)
         if env:
             script += "\n## ENVIRONMENT\n"
             for key,val in env.items():
