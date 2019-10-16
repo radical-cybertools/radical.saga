@@ -557,7 +557,7 @@ class SLURMJobService(cpi_job.Service):
         if job_contact: script += "#SBATCH --mail-user=%s\n"   % job_contact
         if account    : script += "#SBATCH --account %s\n"     % account
         if reservation: script += "#SBATCH --reservation %s\n" % reservation
-        if wall_time  : script += "#SBATCH --time %02d : %02d : 00\n" \
+        if wall_time  : script += "#SBATCH --time %02d:%02d:00\n" \
                                               % (int(wall_time / 60), wall_time % 60)
         if env:
             script += "\n## ENVIRONMENT\n"
