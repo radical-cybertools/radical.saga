@@ -85,7 +85,7 @@ class PTYShell (object) :
 
     Usage Example::
 
-        # start the shell, find its prompt.  
+        # start the shell, find its prompt.
         self.shell = saga.utils.pty_shell.PTYShell("ssh://user@rem.host.net/",
                                                    contexts, self._logger)
 
@@ -99,7 +99,7 @@ class PTYShell (object) :
 
         # stage some data from a local string variable
         # into a file on the remote system
-        self.shell.stage_to_remote (src = pbs_job_script, 
+        self.shell.stage_to_remote (src = pbs_job_script,
                                     tgt = "/tmp/data.$$/job_1.pbs")
 
         # check size of staged script (this is actually done on PTYShell level
@@ -123,7 +123,7 @@ class PTYShell (object) :
     capabilities (see `ssh_config(5)`).
 
     For local shells, PTYShell will create an additional shell pty for data
-    management operations.  
+    management operations.
 
 
     **Asynchronous Notifications:**
@@ -179,7 +179,7 @@ class PTYShell (object) :
 
     """
 
-    # TODO: 
+    # TODO:
     #   - on client shell activitites, also mark the master as active, to
     #     avoid timeout garbage collection.
     #   - use ssh mechanisms for master timeout (and persist), as custom
@@ -190,11 +190,11 @@ class PTYShell (object) :
 
     # ----------------------------------------------------------------
     #
-    def __init__ (self, url, session=None, logger=None, opts=None, posix=True,
+    def __init__ (self, url, session=None, logger=None, cfg=None, posix=True,
             interactive=True):
 
         if logger : self.logger  = logger
-        else      : self.logger  = ru.Logger('radical.saga.pty') 
+        else      : self.logger  = ru.Logger('radical.saga.pty')
 
         if session: self.session = session
         else      : self.session = ss.Session(default=True)
@@ -212,11 +212,13 @@ class PTYShell (object) :
         self.pty_id       = PTYShell._pty_id
         PTYShell._pty_id += 1
 
-        self.cfg = ru.Config('radical.saga', 'utils')['pty']
+        name = 'default'
+        if isinstance(cfg, str):
+            name = cfg
+            cfg  = None
 
-        # opts passed on construction overwrite file config
-        if opts:
-            self.cfg = ru.dict_merge(self.cfg, opts, policy='overwrite')
+        self.cfg = ru.Config('radical.saga.utils', name=name, cfg=cfg)
+        self.cfg = self.cfg['pty']
 
         # get prompt pattern from config, or use default
         self.prompt    = self.cfg.get('prompt_pattern', DEFAULT_PROMPT)
@@ -233,12 +235,12 @@ class PTYShell (object) :
         except OSError as e:
             if e.errno == errno.EEXIST and os.path.isdir (self.base):
                 pass
-            else: 
+            else:
                 raise rse.NoSuccess ("could not create staging dir: %s" % e)
 
 
         self.factory    = supsf.PTYShellFactory   ()
-        self.pty_info   = self.factory.initialize (self.url,    self.session, 
+        self.pty_info   = self.factory.initialize (self.url,    self.session,
                                                    self.prompt, self.logger,
                                                    self.cfg,    self.posix,
                                                    interactive=self.interactive)
@@ -406,7 +408,7 @@ class PTYShell (object) :
     #
     def set_prompt (self, new_prompt) :
         """
-        :type  new_prompt:  string 
+        :type  new_prompt:  string
         :param new_prompt:  a regular expression matching the shell prompt
 
         The new_prompt regex is expected to be a regular expression with one set
@@ -415,7 +417,7 @@ class PTYShell (object) :
         find the prompt with the exit value '0'.
 
         As a side effect, this method will discard all previous data on the pty,
-        thus effectively flushing the pty output.  
+        thus effectively flushing the pty output.
 
         By encoding the exit value in the command prompt, we safe one roundtrip.
         The prompt on Posix compliant shells can be set, for example, via::
@@ -513,7 +515,7 @@ class PTYShell (object) :
 
                 # FIXME: better timout value?
                 fret, match = self.pty_shell.find(["SYNCHRONIZE_PROMPT"],
-                                                  timeout=10.0)  
+                                                  timeout=10.0)
 
                 if  fret is None :
                     # not find prompt after blocking?  BAD!  Restart the shell
@@ -601,12 +603,12 @@ class PTYShell (object) :
         I/O stream), and cannot be interrupted.
 
         :type  command: string
-        :param command: shell command to run.  
+        :param command: shell command to run.
 
         :type  iomode:  enum
-        :param iomode:  Defines how stdout and stderr are captured.  
+        :param iomode:  Defines how stdout and stderr are captured.
 
-        :type  new_prompt:  string 
+        :type  new_prompt:  string
         :param new_prompt:  regular expression matching the prompt after
         command succeeded.
 
@@ -620,11 +622,11 @@ class PTYShell (object) :
 
           * *IGNORE:*   both stdout and stderr are discarded, `None` will be
                         returned for each.
-          * *MERGED:*   both streams will be merged and returned as stdout; 
+          * *MERGED:*   both streams will be merged and returned as stdout;
                         stderr will be `None`.  This is the default.
           * *SEPARATE:* stdout and stderr will be captured separately, and
-                        returned individually.  Note that this will require 
-                        at least one more network hop!  
+                        returned individually.  Note that this will require
+                        at least one more network hop!
           * *STDOUT:*   only stdout is captured, stderr will be `None`.
           * *STDERR:*   only stderr is captured, stdout will be `None`.
           * *None:*     do not perform any redirection -- this is effectively
@@ -663,11 +665,11 @@ class PTYShell (object) :
                 _err  = "/tmp/radical.saga.ssh-job.stderr.$$"
 
                 if iomode is None    : redir  =  ""
-                if iomode == IGNORE  : redir  =  " 1>>/dev/null 2>>/dev/null" 
-                if iomode == MERGED  : redir  =  " 2>&1" 
-                if iomode == SEPARATE: redir  =  " 2>%s" % _err 
-                if iomode == STDOUT  : redir  =  " 2>/dev/null" 
-                if iomode == STDERR  : redir  =  " 2>&1 1>/dev/null" 
+                if iomode == IGNORE  : redir  =  " 1>>/dev/null 2>>/dev/null"
+                if iomode == MERGED  : redir  =  " 2>&1"
+                if iomode == SEPARATE: redir  =  " 2>%s" % _err
+                if iomode == STDOUT  : redir  =  " 2>/dev/null"
+                if iomode == STDERR  : redir  =  " 2>&1 1>/dev/null"
 
 
                 self.logger.debug    ('run_sync: %s%s'   % (command, redir))
@@ -679,7 +681,7 @@ class PTYShell (object) :
                 if  new_prompt :
                     prompt = new_prompt
 
-                # command has been started - now find prompt again.  
+                # command has been started - now find prompt again.
                 fret, match = self.pty_shell.find ([prompt], timeout=-1.0)
 
                 if  fret is None :
@@ -738,7 +740,7 @@ class PTYShell (object) :
         command, via the I/O channels.
 
         :type  command: string
-        :param command: shell command to run.  
+        :param command: shell command to run.
 
         For async execution, we don't care if the command is doing i/o
         redirection or not.
@@ -917,7 +919,7 @@ class PTYShell (object) :
     # --------------------------------------------------------------------------
     #
     def run_copy_to (self, src, tgt, cp_flags=None) :
-        """ 
+        """
         This initiates a slave copy connection.   Src is interpreted as local
         path, tgt as path on the remote host.
 
@@ -937,7 +939,7 @@ class PTYShell (object) :
             self.pty_shell.flush ()
 
             info = self.pty_info
-            repl = dict (list({'src'      : src, 
+            repl = dict (list({'src'      : src,
                           'tgt'      : tgt,
                           'cp_flags' : cp_flags
                           }.items ()) + list(info.items ()))
@@ -1052,7 +1054,7 @@ class PTYShell (object) :
     # --------------------------------------------------------------------------
     #
     def run_copy_from (self, src, tgt, cp_flags="") :
-        """ 
+        """
         This initiates a slave copy connection.   Src is interpreted as path on
         the remote host, tgt as local path.
 
@@ -1066,8 +1068,8 @@ class PTYShell (object) :
             self.pty_shell.flush ()
 
             info = self.pty_info
-            repl = dict (list({'src'      : src, 
-                          'tgt'      : tgt, 
+            repl = dict (list({'src'      : src,
+                          'tgt'      : tgt,
                           'cp_flags' : cp_flags}.items()) + list(info.items ()))
 
             # at this point, we do have a valid, living master

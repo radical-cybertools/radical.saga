@@ -39,8 +39,8 @@ class Base(object, metaclass=ru.Singleton):
 
 
         # we need to expand later once we got env from the remote resource
-        self._cfg     = ru.Config(module='radical.saga', name=self._name,
-                                  expand=expand_env)
+        self._cfg     = ru.Config(module='radical.saga', name='adaptor',
+                                  cfg=self._name, expand=expand_env)
 
         if 'enabled' not in self._cfg:
             self._cfg['enabled'] = True

@@ -82,7 +82,7 @@ class PTYProcess (object) :
 
     # ----------------------------------------------------------------
     #
-    def __init__ (self, command, cfg=None, logger=None) :
+    def __init__ (self, command, cfg='utils', logger=None) :
         """
         The class constructor, which runs (execvpe) command in a separately
         forked process.  The bew process will inherit the environment of the
@@ -97,10 +97,13 @@ class PTYProcess (object) :
         :param logger:  logger stream to send status messages to.
         """
 
-        if cfg:
-            self._cfg = cfg
-        else:
-            self._cfg = ru.Config('radical.saga', 'utils')['pty']
+        name = 'default'
+        if isinstance(cfg, str):
+            name = cfg
+            cfg  = None
+
+        self.cfg = ru.Config('radical.saga.utils', name=name, cfg=cfg)
+        self.cfg = self.cfg['pty']
 
         self.logger = logger
         if  not  self.logger : self.logger = ru.Logger('radical.saga.pty')

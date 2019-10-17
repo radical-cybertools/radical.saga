@@ -143,12 +143,19 @@ class PTYShellFactory (object, metaclass=ru.Singleton) :
 
     # --------------------------------------------------------------------------
     #
-    def __init__ (self) :
+    def __init__ (self, cfg=None):
 
         self.logger     = ru.Logger('radical.saga.pty')
-        self.registry   = {}
         self.rlock      = ru.RLock ('pty shell factory')
-        self.cfg        = ru.Config('radical.saga', 'utils')['pty']
+        self.registry   = dict()
+
+        name = 'default'
+        if isinstance(cfg, str):
+            name = cfg
+            cfg  = None
+
+        self.cfg = ru.Config('radical.saga.utils', name=name, cfg=cfg)
+        self.cfg = self.cfg['pty']
 
 
     # --------------------------------------------------------------------------
