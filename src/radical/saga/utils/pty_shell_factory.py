@@ -231,7 +231,7 @@ class PTYShellFactory (object, metaclass=ru.Singleton) :
             prompt     = info['prompt']
             logger     = info['logger']
             latency    = info['latency']
-            timeout    = info['ssh_timeout']
+            timeout    = float(info['ssh_timeout'])
 
             pty_shell.latency = latency
 
