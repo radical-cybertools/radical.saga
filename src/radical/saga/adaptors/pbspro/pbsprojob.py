@@ -244,7 +244,7 @@ def _script_generator(url, logger, jd, ppn, gres, version, is_cray=False,
 
 
     if jd.wall_time_limit:
-        hours = jd.wall_time_limit / 60
+        hours = int(jd.wall_time_limit / 60)
         minutes = jd.wall_time_limit % 60
         pbs_params += "#PBS -l walltime=%s:%s:00 \n" \
             % (str(hours), str(minutes))

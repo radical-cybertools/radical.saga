@@ -485,7 +485,7 @@ class LOADLJobService (cpi.job.Service):
         if jd.error is not None:
             loadl_params += "#@ error = %s\n" % jd.error
         if jd.wall_time_limit is not None:
-            hours = jd.wall_time_limit / 60
+            hours = int(jd.wall_time_limit / 60)
             minutes = jd.wall_time_limit % 60
             loadl_params += "#@ wall_clock_limit = %s:%s:00\n" \
                 % (str(hours), str(minutes))
