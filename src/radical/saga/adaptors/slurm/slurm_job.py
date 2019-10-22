@@ -252,6 +252,16 @@ class SLURMJobService(cpi_job.Service):
         _cpi_base = super(SLURMJobService, self)
         _cpi_base.__init__(api, adaptor)
 
+        # TODO make sure this formats properly and works right!
+        self.exit_code_re            = re.compile(r"\bExitCode  \b=(\d*)", re.VERBOSE)
+        self.scontrol_jobstate_re    = re.compile(r"\bJobState  \b=(\S*)", re.VERBOSE)
+        self.scontrol_job_name_re    = re.compile(r"\bJobName   \b=(\S*)", re.VERBOSE)
+        self.scontrol_create_time_re = re.compile(r"\bSubmitTime\b=(\S*)", re.VERBOSE)
+        self.scontrol_start_time_re  = re.compile(r"\bStartTime \b=(\S*)", re.VERBOSE)
+        self.scontrol_end_time_re    = re.compile(r"\bEndTime   \b=(\S*)", re.VERBOSE)
+        self.scontrol_comp_time_re   = re.compile(r"\bRunTime   \b=(\S*)", re.VERBOSE)
+        self.scontrol_exec_hosts_re  = re.compile(r"\bNodeList  \b=(\S*)", re.VERBOSE)
+
         # these are the commands that we need in order to interact with SLURM
         # the adaptor will try to find them when it first opens the shell
         # connection, and bails out in case they are not available.
