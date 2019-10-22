@@ -208,7 +208,7 @@ def _cobaltscript_generator(url, logger, jd, ppn, is_cray=False, queue=None,
             cobalt_params += '#COBALT --error %s\n' % jd.error
 
     if jd.wall_time_limit:
-        hours = jd.wall_time_limit / 60
+        hours = int(jd.wall_time_limit / 60)
         minutes = jd.wall_time_limit % 60
         cobalt_params += '#COBALT --time %s:%s:00\n' \
             % (str(hours).zfill(2), str(minutes).zfill(2))
