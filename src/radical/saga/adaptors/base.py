@@ -5,6 +5,7 @@ __license__   = "MIT"
 
 
 """ the adaptor base class. """
+import threading as mt
 
 import radical.utils         as ru
 import radical.utils.logger  as rul
@@ -34,13 +35,16 @@ class Base(object, metaclass=ru.Singleton):
         self._name    = adaptor_info['name']
         self._schemas = adaptor_info['schemas']
 
-        self._lock    = ru.RLock(self._name)
+        self._lock    = mt.RLock()
         self._logger  = ru.Logger('radical.saga.api')
 
+        self._cfg     = ru.Config(module='radical.saga',
+                                  category='adaptors.%s' % self._name.split('.')[-1],
+                                  expand=expand_env)
 
-        # we need to expand later once we got env from the remote resource
-        self._cfg     = ru.Config(module='radical.saga', name='adaptor',
-                                  cfg=self._name, expand=expand_env)
+        import pprint
+        pprint.pprint(self._cfg)
+        print('\n----------------------------')
 
         if 'enabled' not in self._cfg:
             self._cfg['enabled'] = True

@@ -9,6 +9,7 @@ import pwd
 import time
 import string
 import getpass
+import threading as mt
 
 import radical.utils           as ru
 
@@ -146,15 +147,16 @@ class PTYShellFactory (object, metaclass=ru.Singleton) :
     def __init__ (self, cfg=None):
 
         self.logger     = ru.Logger('radical.saga.pty')
-        self.rlock      = ru.RLock ('pty shell factory')
+        self.rlock      = mt.RLock()
         self.registry   = dict()
 
-        name = 'default'
+        name = None
         if isinstance(cfg, str):
             name = cfg
             cfg  = None
 
-        self.cfg = ru.Config('radical.saga.utils', name=name, cfg=cfg)
+        self.cfg = ru.Config('radical.saga', category='session', name=name,
+                             cfg=cfg)
         self.cfg = self.cfg['pty']
 
 

@@ -17,7 +17,7 @@ The redis key layout is like the following::
     ...
 
     # attribute storage for ns entries, aka adverts (incl. object storage)
-    /data:/etc/passwd        : { _obj : <serial>, 
+    /data:/etc/passwd        : { _obj : <serial>,
                                 key_1 : val_1, key_2 : val_2, ... }
     ...
 
@@ -41,7 +41,7 @@ anyway...
 
 All parts of the above structure are set/get in a single pipelined transactional
 'MULTI' block.  One could consider to move the ops into a lua script, if
-performance is insufficient.  
+performance is insufficient.
 
 TODO:
     - use locks to make thread safe(r)
@@ -53,16 +53,15 @@ import os
 import time
 import string
 import redis
+import threading as mt
 
 import radical.utils         as ru
-import radical.utils.logger  as rul
 import radical.utils.threads as rut
 
 from . import redis_cache
 
 import radical.saga.exceptions       as rse
 import radical.saga.advert.constants as c
-import radical.saga.utils.misc       as sumisc
 
 
 TYPE   = 'type'
@@ -97,7 +96,7 @@ def redis_ns_name (path) :
 
 # --------------------------------------------------------------------
 #
-class redis_ns_monitor (ru.Thread) :
+class redis_ns_monitor(mt.Thread) :
 
     # ----------------------------------------------------------------
     #
@@ -116,7 +115,7 @@ class redis_ns_monitor (ru.Thread) :
 
     # ----------------------------------------------------------------
     #
-    def work (self) :
+    def run (self) :
 
         try :
 
@@ -199,9 +198,9 @@ class redis_ns_server (redis.Redis) :
         if url.username : self.username = url.username
         if url.password : self.password = url.password
 
-        # create redis client 
+        # create redis client
         t1 = time.time ()
-        redis.Redis.__init__(self, 
+        redis.Redis.__init__(self,
                              host      = self.host,
                              port      = self.port,
                              db        = self.db,
@@ -209,14 +208,14 @@ class redis_ns_server (redis.Redis) :
                              errors    = self.errors)
         t2 = time.time ()
 
-        # add a logger 
+        # add a logger
         self.logger = ru.Logger('radical.saga')
 
         # create a cache dict and attach to redis client instance.  Cache
         # lifetime is set to 10 times the redis-connect latency.
         self.cache = redis_cache.Cache (logger=self.logger, ttl=((t2-t1)*10))
 
-        # create a second client to manage the (blocking) 
+        # create a second client to manage the (blocking)
         # pubsub communication for event notifications
         self.r2 = redis.Redis  (host      = self.host,
                                 port      = self.port,
@@ -286,7 +285,7 @@ class redis_ns_entry :
         e = redis_ns_entry (r, path)
 
         try :
-            e.fetch () 
+            e.fetch ()
 
         except Exception as e :
 
@@ -331,7 +330,7 @@ class redis_ns_entry :
         # try to open entry itself
         e = redis_ns_entry (r, path)
         try :
-            e.fetch () 
+            e.fetch ()
 
         except Exception :
 
@@ -457,7 +456,7 @@ class redis_ns_entry :
     def __str__ (self) :
 
         return "[%-4s] %-25s %s %s : %s" \
-             % (self.node[TYPE], self.path, self.node, self.kids, self.data) 
+             % (self.node[TYPE], self.path, self.node, self.kids, self.data)
 
 
     # ----------------------------------------------------------------

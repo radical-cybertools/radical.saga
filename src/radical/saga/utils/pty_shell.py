@@ -212,13 +212,13 @@ class PTYShell (object) :
         self.pty_id       = PTYShell._pty_id
         PTYShell._pty_id += 1
 
-        name = 'default'
+        name = None
         if isinstance(cfg, str):
             name = cfg
             cfg  = None
-
-        self.cfg = ru.Config('radical.saga.utils', name=name, cfg=cfg)
-        self.cfg = self.cfg['pty']
+        self.cfg = ru.Config('radical.saga', category='session', name=name,
+                             cfg=cfg)
+        self.cfg = self.cfg.pty
 
         # get prompt pattern from config, or use default
         self.prompt    = self.cfg.get('prompt_pattern', DEFAULT_PROMPT)

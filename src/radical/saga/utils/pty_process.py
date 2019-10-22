@@ -14,6 +14,7 @@ import shlex
 import select
 import signal
 import termios
+import threading as mt
 
 import radical.utils            as ru
 
@@ -97,17 +98,21 @@ class PTYProcess (object) :
         :param logger:  logger stream to send status messages to.
         """
 
-        name = 'default'
+        self.rlock  = mt.RLock()
+        self.logger = logger
+
+        if  not  self.logger : self.logger = ru.Logger('radical.saga.pty')
+        self.logger.debug ("PTYProcess init %s" % self)
+
+
+        name = None
         if isinstance(cfg, str):
             name = cfg
             cfg  = None
 
-        self.cfg = ru.Config('radical.saga.utils', name=name, cfg=cfg)
-        self.cfg = self.cfg['pty']
-
-        self.logger = logger
-        if  not  self.logger : self.logger = ru.Logger('radical.saga.pty')
-        self.logger.debug ("PTYProcess init %s" % self)
+        self.cfg = ru.Config('radical.saga', category='session', name=name,
+                             cfg=cfg)
+        self.cfg = self.cfg.pty
 
 
         if isinstance (command, str) :
@@ -119,7 +124,6 @@ class PTYProcess (object) :
         if len(command) < 1 :
             raise se.BadParameter ("PTYProcess expects non-empty command")
 
-        self.rlock   = ru.RLock ("pty process %s" % command)
 
         self.command = command  # list of strings too run()
 
