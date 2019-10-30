@@ -695,7 +695,7 @@ class SGEJobService (cpi.Service):
             sge_params += ["#$ -e %s" % jd.error]
 
         if jd.wall_time_limit is not None:
-            hours = jd.wall_time_limit / 60
+            hours = int(jd.wall_time_limit / 60)
             minutes = jd.wall_time_limit % 60
             sge_params += ["#$ -l h_rt=%s:%s:00" % (str(hours), str(minutes))]
 

@@ -252,6 +252,16 @@ class SLURMJobService(cpi_job.Service):
         _cpi_base = super(SLURMJobService, self)
         _cpi_base.__init__(api, adaptor)
 
+        # TODO make sure this formats properly and works right!
+        self.exit_code_re            = re.compile(r"\bExitCode  \b=(\d*)", re.VERBOSE)
+        self.scontrol_jobstate_re    = re.compile(r"\bJobState  \b=(\S*)", re.VERBOSE)
+        self.scontrol_job_name_re    = re.compile(r"\bJobName   \b=(\S*)", re.VERBOSE)
+        self.scontrol_create_time_re = re.compile(r"\bSubmitTime\b=(\S*)", re.VERBOSE)
+        self.scontrol_start_time_re  = re.compile(r"\bStartTime \b=(\S*)", re.VERBOSE)
+        self.scontrol_end_time_re    = re.compile(r"\bEndTime   \b=(\S*)", re.VERBOSE)
+        self.scontrol_comp_time_re   = re.compile(r"\bRunTime   \b=(\S*)", re.VERBOSE)
+        self.scontrol_exec_hosts_re  = re.compile(r"\bNodeList  \b=(\S*)", re.VERBOSE)
+
         # these are the commands that we need in order to interact with SLURM
         # the adaptor will try to find them when it first opens the shell
         # connection, and bails out in case they are not available.
@@ -502,11 +512,11 @@ class SLURMJobService(cpi_job.Service):
         self._logger.debug ("submit SLURM script to %s", self.rm)
         if 'bridges' in self.rm.host.lower():
 
-            if total_gpu_count:
+            if gpu_count:
                 # gres resouurces are specified *per node*
                 assert(self._ppn), 'need unique number of cores per node'
-                number_of_nodes = int(math.ceil(float(total_cpu_count) / self._ppn))
-                count = int(total_gpu_count / number_of_nodes)
+                number_of_nodes = int(math.ceil(float(cpu_count) / self._ppn))
+                count = int(gpu_count / number_of_nodes)
 
                 if count:
                     if cpu_arch: gpu_arch = cpu_arch.lower()
@@ -519,12 +529,12 @@ class SLURMJobService(cpi_job.Service):
 
         elif 'tiger' in self.rm.host.lower():
 
-            if total_gpu_count:
+            if gpu_count:
 
                 # gres resouurces are specified *per node*
                 assert(self._ppn), 'need unique number of cores per node'
-                number_of_nodes = int(math.ceil(float(total_cpu_count) / self._ppn))
-                count = int(total_gpu_count / number_of_nodes)
+                number_of_nodes = int(math.ceil(float(cpu_count) / self._ppn))
+                count = int(gpu_count / number_of_nodes)
 
                 if count:
                     script += "#SBATCH --gres=gpu:%s\n" % count
@@ -557,8 +567,9 @@ class SLURMJobService(cpi_job.Service):
         if job_contact: script += "#SBATCH --mail-user=%s\n"   % job_contact
         if account    : script += "#SBATCH --account %s\n"     % account
         if reservation: script += "#SBATCH --reservation %s\n" % reservation
-        if wall_time  : script += "#SBATCH --time %02d : %02d : 00\n" \
-                                              % (wall_time / 60, wall_time % 60)
+        if wall_time  : script += "#SBATCH --time %02d:%02d:00\n" \
+                                              % (int(wall_time / 60), wall_time % 60)
+
         if env:
             script += "\n## ENVIRONMENT\n"
             for key,val in env.items():
