@@ -469,9 +469,9 @@ class ShellJobService (cpi.Service) :
 
         # create and initialize connection for starting jobs
         self.shell   = pty_shell.PTYShell (self.rm, self.get_session(),
-                                           self._logger, opts=self.opts)
+                                           self._logger, cfg=self.opts)
         self.channel = pty_shell.PTYShell (self.rm, self.get_session(),
-                                           self._logger, opts=self.opts)
+                                           self._logger, cfg=self.opts)
         self.initialize ()
 
         # the monitoring thread - one per service instance.  We wait for
@@ -529,9 +529,9 @@ class ShellJobService (cpi.Service) :
         cfg = self._adaptor._cfg
 
         # expand those config entries we want to use (where needed)
-        self.notifications  = cfg['enable_notifications']
-        self.purge_on_start = cfg['purge_on_start']
-        self.base_workdir   = ru.expand_env(cfg['base_workdir'], env)
+        self.notifications  = cfg.enable_notifications
+        self.purge_on_start = cfg.purge_on_star
+        self.base_workdir   = ru.expand_env(cfg.base_workdir, env)
 
 
         # start the shell, find its prompt.  If that is up and running, we can

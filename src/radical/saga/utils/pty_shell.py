@@ -216,8 +216,7 @@ class PTYShell (object) :
         if isinstance(cfg, str):
             name = cfg
             cfg  = None
-        self.cfg = ru.Config('radical.saga', category='session', name=name,
-                             cfg=cfg)
+        self.cfg = ru.Config('radical.saga.session', name=name, cfg=cfg)
         self.cfg = self.cfg.pty
 
         # get prompt pattern from config, or use default

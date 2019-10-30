@@ -129,9 +129,9 @@ class Engine(object, metaclass=ru.Singleton):
         self._adaptor_registry = dict()
 
         # get angine, adaptor and pty configs
-        self._cfg      = ru.Config(module='radical.saga', category='engine')
-        self._pty_cfg  = ru.Config(module='radical.saga', category='pty')
-        self._registry = ru.Config(module='radical.saga', category='registry')
+        self._cfg      = ru.Config(module='radical.saga.engine')
+        self._pty_cfg  = ru.Config(module='radical.saga.pty')
+        self._registry = ru.Config(module='radical.saga.registry')
 
         # Initialize the logging, and log version (this is a singleton!)
         self._logger = ru.Logger('radical.saga')
@@ -251,8 +251,8 @@ class Engine(object, metaclass=ru.Singleton):
             adaptor_enabled = False
 
             try :
-                adaptor_config  = ru.Config('radical.saga',
-                        category='adaptors.%s' % adaptor_name.split('.')[-1])
+                adaptor_config  = ru.Config('radical.saga.adaptors',
+                                            name=adaptor_name.split('.')[-1])
                 adaptor_enabled = adaptor_config.get('enabled', True)
 
             except rse.SagaException:

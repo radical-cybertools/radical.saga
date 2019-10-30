@@ -190,7 +190,7 @@ class Session (base.SimpleBase) :
             # Howevwer, the pty layer is the main user of the lease manager,
             # and we thus keep the lease manager options in the pty subsection.
             # So here we are, in the session, evaluating the pty config options.
-            self._cfg = ru.Config(module='radical.saga', category='session')
+            self._cfg = ru.Config(module='radical.saga.session')
             self._lease_manager = ru.LeaseManager (
                     max_pool_size=self._cfg.pty.connection_pool_size,
                     max_pool_wait=self._cfg.pty.connection_pool_wait,
