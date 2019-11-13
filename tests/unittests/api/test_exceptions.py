@@ -12,7 +12,7 @@ import radical.utils as ru
 def test_SagaException():
     try:
         raise se.SagaException('SagaException')
-    except    se.SagaException, e:
+    except    se.SagaException as e:
         assert 'SagaException' in e.get_message(), str(e)
         assert 'SagaException' in str(e)         , str(e)
 
@@ -20,14 +20,14 @@ def test_SagaException():
         raise se.SagaException('SagaException')
     except    se.NotImplemented:
         assert False
-    except Exception, e:
+    except Exception as e:
         assert 'SagaException' in e.get_message(), str(e)
         assert 'SagaException' in str(e)         , str(e)
 
 def test_NotImplemented():
     try:
         raise se.NotImplemented('NotImplemented')
-    except    se.NotImplemented, e:
+    except    se.NotImplemented as e:
         assert 'NotImplemented' in e.get_message(), str(e)
         assert 'NotImplemented' in str(e)         , str(e)
 
@@ -35,14 +35,14 @@ def test_NotImplemented():
         raise se.NotImplemented('NotImplemented')
     except    se.Timeout:
         assert False
-    except Exception, e:
+    except Exception as e:
         assert 'NotImplemented' in e.get_message(), str(e)
         assert 'NotImplemented' in str(e)         , str(e)
 
 def test_IncorrectURL():
     try:
         raise se.IncorrectURL('IncorrectURL')
-    except    se.IncorrectURL, e:
+    except    se.IncorrectURL as e:
         assert 'IncorrectURL' in e.get_message(), str(e)
         assert 'IncorrectURL' in str(e)         , str(e)
 
@@ -50,9 +50,9 @@ def test_IncorrectURL():
         raise se.IncorrectURL('IncorrectURL')
     except    se.Timeout:
         assert False
-    except Exception, e:
-        print e
-        print str(e)
+    except Exception as e:
+        print(e)
+        print((str(e)))
         assert 'IncorrectURL' in e.get_message(), str(e)
         assert 'IncorrectURL' in str(e)         , str(e)
 

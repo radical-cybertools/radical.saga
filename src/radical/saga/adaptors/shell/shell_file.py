@@ -466,7 +466,7 @@ class ShellDirectory(cpi_fs.Directory):
             raise rse.NoSuccess("failed to list(): (%s)(%s)"
                            % (ret, out))
 
-        lines = filter(None, out.split("\n"))
+        lines = [_f for _f in out.split("\n") if _f]
         self._logger.debug(lines)
 
         self.entries = []

@@ -34,10 +34,10 @@ _ADAPTOR_CAPABILITIES  = {
 
 _ADAPTOR_DOC           = {
     'name'             : _ADAPTOR_NAME,
-    'cfg_options'      : _ADAPTOR_OPTIONS, 
+    'cfg_options'      : _ADAPTOR_OPTIONS,
     'capabilities'     : _ADAPTOR_CAPABILITIES,
-    'description'      : """ 
-    
+    'description'      : """
+
 This SSH :class:`radical.saga.Context` adaptor points to an ssh keypair and
 a user_id to be used for ssh based backend connections.  For example, an ssh
 context can be used to start jobs (:class:`radical.saga.job.Job`) via ssh, to
@@ -63,7 +63,7 @@ _ADAPTOR_INFO          = {
     'name'             : _ADAPTOR_NAME,
     'version'          : 'v0.1',
     'schemas'          : _ADAPTOR_SCHEMAS,
-    'cpis'             : [{ 
+    'cpis'             : [{
         'type'         : 'radical.saga.Context',
         'class'        : 'ContextSSH'
         }
@@ -72,9 +72,9 @@ _ADAPTOR_INFO          = {
 
 
 # ------------------------------------------------------------------------------
-# 
+#
 class Adaptor (base.Base):
-    """ 
+    """
     This is the actual adaptor class, which gets loaded by SAGA (i.e. by the
     SAGA engine), and which registers the CPI implementation classes which
     provide the adaptor's functionality.
@@ -102,7 +102,7 @@ class Adaptor (base.Base):
     def _get_default_contexts (self) :
 
         if not self._have_defaults :
- 
+
             import glob
             candidate_certs = glob.glob ("%s/.ssh/*" % os.environ['HOME'])
 
@@ -159,7 +159,7 @@ class Adaptor (base.Base):
                     # needs passphrase.  Great, actually, but won't work for
                     # default contexts as long as we can't prompt for pass
                     # phrases...
-                    self._logger.warn ("ignore  ssh key at %s (requires passphrase)" %  key)
+                    self._logger.warning ("ignore  ssh key at %s (requires passphrase)" %  key)
                     continue
 
                 c = api.Context ('ssh')
@@ -233,8 +233,8 @@ class ContextSSH (cpi.Context) :
         else:
             pub = None
 
-        # either user_key or user_cert should be specified (or both), 
-        # then we complement the other, and convert to/from private 
+        # either user_key or user_cert should be specified (or both),
+        # then we complement the other, and convert to/from private
         # from/to public keys
         if  pub  and not key :
             key  = pub

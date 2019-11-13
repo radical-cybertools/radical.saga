@@ -14,7 +14,7 @@ import time
 import threading
 import datetime
 
-from urlparse import parse_qs
+from urllib.parse import parse_qs
 
 import radical.utils  as ru
 
@@ -73,7 +73,8 @@ class _job_state_monitor(threading.Thread):
             try:
                 # do bulk updates here! we don't want to pull information
                 # job by job. that would be too inefficient!
-                for job in self.js.jobs:
+                jobs = self.js.jobs
+                for job in jobs:
 
                     # if the job hasn't been started, we can't update its
                     # state. we can tell if a job has been started if it
@@ -149,8 +150,8 @@ def _lsfscript_generator(url, logger, jd, ppn, lsf_version, queue):
     if jd.working_directory: lsf_bsubs += "#BSUB -cwd %s \n" \
                                                      %  jd.working_directory
     if jd.wall_time_limit  : lsf_bsubs += "#BSUB -W %s:%s \n" \
-                                                     % (jd.wall_time_limit / 60,
-                                                        jd.wall_time_limit % 60)
+                                                     % (int(jd.wall_time_limit / 60),
+                                                        int(jd.wall_time_limit % 60))
 
     # if working directory is set, we want stdout to end up in the
     # working directory as well, unless it containes a specific
@@ -171,7 +172,7 @@ def _lsfscript_generator(url, logger, jd, ppn, lsf_version, queue):
 
     env_string += "export RADICAL_SAGA_SMT=%d" % SMT
     if jd.environment:
-        for k,v in jd.environment.iteritems():
+        for k,v in jd.environment.items():
             env_string += " %s=%s" % (k,v)
 
 
@@ -418,7 +419,7 @@ class LSFJobService(cpi.Service):
         # this adaptor supports options that can be passed via the
         # 'query' component of the job service URL.
         if rm_url.query:
-            for key, val in parse_qs(rm_url.query).iteritems():
+            for key, val in parse_qs(rm_url.query).items():
                 if key == 'queue':
                     self.queue = val[0]
                 else:
@@ -452,11 +453,14 @@ class LSFJobService(cpi.Service):
     # --------------------------------------------------------------------------
     #
     def initialize(self):
+
         # check if all required lsf tools are available
         for cmd in self._commands:
+
             ret, out, _ = self.shell.run_sync("which %s " % cmd)
             if ret != 0:
                 raise rse.NoSuccess("Couldn't find LSF tools: %s" % out)
+
             else:
                 path = out.strip()  # strip removes newline
                 ret, out, _ = self.shell.run_sync("%s -V" % cmd)
@@ -558,7 +562,7 @@ class LSFJobService(cpi.Service):
         # parse the job id. bsub's output looks like this:
         # Job <901545> is submitted to queue <regular>
         lines = out.split("\n")
-        lines = filter(lambda lines: lines != '', lines)  # remove empty
+        lines = [lines for lines in lines if lines != '']  # remove empty
 
         self._logger.debug('bsub:\n %s' % '\n'.join(lines))
 

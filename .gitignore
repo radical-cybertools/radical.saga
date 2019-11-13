@@ -49,3 +49,6 @@ docs/source/adaptors/saga.adaptor*
 
 # PyCharm
 .idea
+
+# Backup files
+.bak

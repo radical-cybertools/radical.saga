@@ -58,7 +58,7 @@ import radical.utils         as ru
 import radical.utils.logger  as rul
 import radical.utils.threads as rut
 
-import redis_cache
+from . import redis_cache
 
 import radical.saga.exceptions       as rse
 import radical.saga.advert.constants as c
@@ -125,10 +125,10 @@ class redis_ns_monitor (ru.Thread) :
 
             while sub :
 
-                info = sub.next ()
+                info = next(sub)
                 data = info['data']
 
-                if not isinstance(data, basestring):
+                if not isinstance(data, str):
                     self.logger.warn ("ignoring event : %s"  %  data)
                     continue
 
@@ -265,15 +265,15 @@ class redis_ns_entry :
     #
     def _dump (self) :
 
-        print "self.r         : %s" % str(self.r        )
-        print "self.path      : %s" % str(self.path     )
-        print "self.node      : %s" % str(self.node     )
-        print "self.data      : %s" % str(self.data     )
-        print "self.kids      : %s" % str(self.kids     )
-        print "self.valid     : %s" % str(self.valid    )
-        print "self.logger    : %s" % str(self.logger   )
-        print "self.cache     : %s" % str(self.cache    )
-        print "self.callbacks : %s" % str(self.callbacks)
+        print("self.r         : %s" % str(self.r        ))
+        print("self.path      : %s" % str(self.path     ))
+        print("self.node      : %s" % str(self.node     ))
+        print("self.data      : %s" % str(self.data     ))
+        print("self.kids      : %s" % str(self.kids     ))
+        print("self.valid     : %s" % str(self.valid    ))
+        print("self.logger    : %s" % str(self.logger   ))
+        print("self.cache     : %s" % str(self.cache    ))
+        print("self.callbacks : %s" % str(self.callbacks))
 
 
     # ----------------------------------------------------------------

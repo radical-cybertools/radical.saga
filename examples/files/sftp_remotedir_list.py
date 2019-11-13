@@ -38,16 +38,16 @@ def main():
 
         for entry in remote_dir.list():
             if remote_dir.is_dir(entry):
-                print "d %12s %s" % (remote_dir.get_size(entry), entry)
+                print("d %12s %s" % (remote_dir.get_size(entry), entry))
             else:
-                print "- %12s %s" % (remote_dir.get_size(entry), entry)
+                print("- %12s %s" % (remote_dir.get_size(entry), entry))
         return 0
 
-    except rs.SagaException, ex:
+    except rs.SagaException as ex:
         # Catch all saga exceptions
-        print "An exception occured: (%s) %s " % (ex.type, (str(ex)))
+        print("An exception occured: (%s) %s " % (ex.type, (str(ex))))
         # Trace back the exception. That can be helpful for debugging.
-        print " \n*** Backtrace:\n %s" % ex.traceback
+        print(" \n*** Backtrace:\n %s" % ex.traceback)
         return -1
 
 if __name__ == "__main__":

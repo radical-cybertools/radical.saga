@@ -10,5 +10,5 @@ __license__   = "MIT"
 # from   exception   import *
 # from   misc        import *
 
-import pty_shell
+from . import pty_shell
 

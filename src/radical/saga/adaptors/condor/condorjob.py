@@ -12,7 +12,7 @@ import os
 import time
 import datetime
 
-from urlparse import parse_qs
+from urllib.parse import parse_qs
 from tempfile import NamedTemporaryFile
 
 import radical.utils as ru
@@ -69,7 +69,7 @@ def _condor_to_saga_jobstate(condorjs):
 # --------------------------------------------------------------------
 #
 def _condorscript_generator(url, logger, jds, option_dict=None):
-    """ 
+    """
     generates a Condor script from a set of SAGA job descriptions
     """
 
@@ -95,7 +95,7 @@ def _condorscript_generator(url, logger, jds, option_dict=None):
             condor_file += "\n+ProjectName = \"%s\"" % jd.project
 
         if option_dict:
-            for key,value in option_dict.iteritems():
+            for key,value in option_dict.items():
                 condor_file += "\n%s = %s" % (key, value)
 
 
@@ -109,7 +109,7 @@ def _condorscript_generator(url, logger, jds, option_dict=None):
         # http://research.cs.wisc.edu/htcondor/manual/current/condor_submit.html#SECTION0012514000000000000000
         if jd.environment:
             environment = ''
-            for key,val in jd.environment.iteritems():
+            for key,val in jd.environment.items():
                 environment += ' "%s=%s"'     % (key, val)
               # condor_file += "\n%-25s = %s" % (key, val)
             condor_file += "\nenvironment               = %s\n" % environment
@@ -132,11 +132,11 @@ def _condorscript_generator(url, logger, jds, option_dict=None):
             REQUIRED     = '~'
             KEY          = 'GLIDEIN_ResourceName'
 
-            # Whitelist sites, filter out "special" entries from the candidate 
+            # Whitelist sites, filter out "special" entries from the candidate
             # host lists
-            excl_sites = [host for host in jd.candidate_hosts 
+            excl_sites = [host for host in jd.candidate_hosts
                                if  host.startswith(EXCLUSION)]
-            req_sites  = [host for host in jd.candidate_hosts 
+            req_sites  = [host for host in jd.candidate_hosts
                                if  host.startswith(REQUIRED)]
             incl_sites = [host for host in jd.candidate_hosts
                                if not host.startswith((REQUIRED, EXCLUSION))]
@@ -147,7 +147,7 @@ def _condorscript_generator(url, logger, jds, option_dict=None):
 
             # Blacklist sites, strip out leading '!'
             if excl_sites:
-                requirements += ' && (' +  ' && '.join(['%s =!= "%s"' % (KEY, site[1:]) 
+                requirements += ' && (' +  ' && '.join(['%s =!= "%s"' % (KEY, site[1:])
                         for site in excl_sites]) + ')'
 
             # Get the '~special_requirements' and strip leading ~
@@ -165,7 +165,7 @@ def _condorscript_generator(url, logger, jds, option_dict=None):
             condor_file += "\nuniverse     = vanilla"
 
         # Condor doesn't expand environment variables in arguments.
-        # To support this functionality, we wrap by calling 
+        # To support this functionality, we wrap by calling
         #     /bin/env /bin/sh -c ""
         # where the arg string to the shell gets expanded
         condor_file += "\nexecutable   = /bin/env"
@@ -294,7 +294,7 @@ _ADAPTOR_DOC = {
     "name":          _ADAPTOR_NAME,
     "capabilities":  _ADAPTOR_CAPABILITIES,
     "description":  """
-The (HT)Condor(-G) adaptor allows to run and manage jobs on a 
+The (HT)Condor(-G) adaptor allows to run and manage jobs on a
 `Condor <http://research.cs.wisc.edu/htcondor/>`_ gateway.
 """,
     "example": "examples/jobs/condorjob.py",
@@ -391,7 +391,7 @@ class CondorJobService (cpi.job.Service):
     @SYNC_CALL
     def init_instance(self, adaptor_state, rm_url, session):
         """ service instance constructor
-        """        
+        """
         self.rm            = rm_url
         self.session       = session
         self.ppn           = 0
@@ -405,7 +405,7 @@ class CondorJobService (cpi.job.Service):
         # this adaptor supports options that can be passed via the
         # 'query' component of the job service URL.
         if rm_url.query is not None:
-            for key, val in parse_qs(rm_url.query).iteritems():
+            for key, val in parse_qs(rm_url.query).items():
                 self.query_options[key] = val[0]
 
         # we need to extract the scheme for PTYShell. That's basically the
@@ -450,7 +450,7 @@ class CondorJobService (cpi.job.Service):
     def initialize(self):
 
         # check if all required condor tools are available
-        commands = self._commands.keys()
+        commands = list(self._commands.keys())
         ret, out, _ = self.shell.run_sync("which %s " % ' '.join(commands))
 
         if ret != 0:
@@ -458,7 +458,7 @@ class CondorJobService (cpi.job.Service):
             log_error_and_raise(message, NoSuccess, self._logger)
 
         # split and remove empty lines
-        lines = filter(bool, out.split('\n'))
+        lines = list(filter(bool, out.split('\n')))
 
         if len(lines) != len(commands):
             message = "Error finding some Condor tools: %s" % out
@@ -502,7 +502,7 @@ class CondorJobService (cpi.job.Service):
     # TODO: make the decision to retry somewhat more clever, like only on
     #       timeouts etc.
     #
-    def _run_condor_q(self, retries=1, timeout=10, 
+    def _run_condor_q(self, retries=1, timeout=10,
                       pid=None, options=None, egrep=None):
         ret = None
         out = ""
@@ -512,7 +512,7 @@ class CondorJobService (cpi.job.Service):
         if pid:     cmd += ' -long %s'       % pid
         if options: cmd += ' %s'             % options
 
-        if egrep:   
+        if egrep:
             cmd += " | grep"
             for expr in egrep:
                 cmd += " -e '%s'" % expr
@@ -580,12 +580,12 @@ class CondorJobService (cpi.job.Service):
         # Our submitted Condor script wraps the executable into a /bin/sh
         # command, so Condor will not be able to infer the actual executable,
         # and thus will make no attempt at staging it to the target host --
-        # which is what Condor usually does.  
+        # which is what Condor usually does.
         #
         # To recover that behavior, we add the respective file transfer
         # directive for the second hop (first hop: laptop -> submission host,
         # second hop : submission host -> execution site).  However, we only add
-        # that for executables starting with './', as we can't stage to other 
+        # that for executables starting with './', as we can't stage to other
         # locations than the job's workdir anyway.
         #
         # If a SAGA application wants to stage the executable over the *first*
@@ -724,7 +724,7 @@ class CondorJobService (cpi.job.Service):
     #
     def _handle_file_transfers(self, td, mode):
         """
-        if mode == 'in' : perform sanity checks on all staging directives.  
+        if mode == 'in' : perform sanity checks on all staging directives.
 
         if mode == 'in' : stage files to   condor submission site
         if mode == 'out': stage files from condor submission site
@@ -742,8 +742,8 @@ class CondorJobService (cpi.job.Service):
         # staging, for those cases where we expect the files to already reside
         # on the submission site, eg. due to out-of-band staging etc.  In those
         # cases, we prefix the respective input staging source with 'site:'.
-        # That prefix is also evaluated for targets of output staging, where it 
-        # causes the files to transfered only over the second hop, but not 
+        # That prefix is also evaluated for targets of output staging, where it
+        # causes the files to transfered only over the second hop, but not
         # further back to the application host.
         #
         # The code below filters for those prefixes, and will enact
@@ -829,7 +829,7 @@ class CondorJobService (cpi.job.Service):
             if not hasattr(td, 'prepared'):
                 # we don't have that attribute, its likely a cloned job
                 # description or something.  Warn and bail out
-                self._logger.warn('unprepared for output staging')
+                self._logger.warning('unprepared for output staging')
                 return
 
             assert(td.prepared)
@@ -889,7 +889,7 @@ class CondorJobService (cpi.job.Service):
             # JobStatus = 5
             # ExitStatus = 0
             # CompletionDate = 0
-            results = filter(bool, out.split('\n'))
+            results = list(filter(bool, out.split('\n')))
             for result in results:
                 key, val = result.split('=', 1)
                 key = key.strip()
@@ -990,7 +990,7 @@ class CondorJobService (cpi.job.Service):
         if ret != 0:
             raise Exception("condor_q failed\n[%s]\n[%s]" % (out, err))
 
-        results = filter(bool, out.split('\n'))
+        results = list(filter(bool, out.split('\n')))
         ts      = time.time()
         for row in results:
 
@@ -1025,7 +1025,7 @@ class CondorJobService (cpi.job.Service):
                     break
 
             if not matched:
-                self._logger.warn('cannot match job info to any known job (%s)', row)
+                self._logger.warning('cannot match job info to any known job (%s)', row)
 
 
         # Now, see if any ids are missing, and search condor history for those:
@@ -1046,11 +1046,11 @@ class CondorJobService (cpi.job.Service):
                 # we consider this non-fatal, as that sometimes failes on the
                 # XSEDE OSG bridge without any further indication of errors
                 # raise Exception("Error running 'condor_history' (%s) (%s)" % (out, err))
-                self._logger.warn("condor_history failed: (%s) (%s)", out, err)
+                self._logger.warning("condor_history failed: (%s) (%s)", out, err)
                 out = ''
 
             else:
-                results = filter(bool, out.split('\n'))
+                results = list(filter(bool, out.split('\n')))
                 ts      = time.time()
                 for row in results:
 
@@ -1074,7 +1074,7 @@ class CondorJobService (cpi.job.Service):
                     except:
                         # no exit code looks wrong, we assume that condor
                         # failed, and thus also fail the job
-                        self._logger.warn("condor_history w/o exit code - assume error")
+                        self._logger.warning("condor_history w/o exit code - assume error")
                         exit_code = -1
 
                     matched = False
@@ -1108,7 +1108,7 @@ class CondorJobService (cpi.job.Service):
                             break
 
                     if not matched:
-                        self._logger.warn('cannot match job info to any known job (%s)', row)
+                        self._logger.warning('cannot match job info to any known job (%s)', row)
 
 
         # are still any jobs missing?
@@ -1118,11 +1118,11 @@ class CondorJobService (cpi.job.Service):
             # alas, condor_history seems not to work on the osg xsede bridge, so
             # we cannot consider this an error.  We will handle all remaining
             # jobs as disappeared, ie. as DONE.
-            self._logger.warn('could not find all jobs %s: %s', len(missing), missing)
+            self._logger.warning('could not find all jobs %s: %s', len(missing), missing)
 
             ts = time.time()
             for job_id in missing:
-                self._logger.warn('jobs %s disappeared', job_id)
+                self._logger.warning('jobs %s disappeared', job_id)
                 info = self.jobs[job_id]
                 info['state']     = DONE
                 info['gone']      = True
@@ -1418,7 +1418,7 @@ class CondorJobService (cpi.job.Service):
         # a guess.  Since we *do* see other error modes pop up from time to
         # time, we at this point ignore them all.
         if ret != 0 and len(out) > 0:
-            self._logger.warn("failed to list jobs via 'condor_q': [%s] [%s]",
+            self._logger.warning("failed to list jobs via 'condor_q': [%s] [%s]",
                               out, err)
 
         elif ret != 0 and len(out) == 0:
@@ -1493,7 +1493,7 @@ class CondorJobService (cpi.job.Service):
 
             clusters[project].append(job)
 
-        for project, _jobs in clusters.iteritems():
+        for project, _jobs in clusters.items():
             self._run_cluster(project, _jobs)
 
 
@@ -1542,7 +1542,7 @@ class CondorJobService (cpi.job.Service):
                 pids.append(pid)
 
         if len(pids) != len(jobs):
-            raise Exception("Number of pids (%d) != number of jobs (%d)" 
+            raise Exception("Number of pids (%d) != number of jobs (%d)"
                            % (len(pids), len(jobs)))
 
         # we don't want the 'query' part of the URL to be part of the ID,

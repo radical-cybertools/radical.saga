@@ -14,15 +14,15 @@ def main () :
             i = i+1
             j = js.run_job ("/bin/true")
 
-            print "%5d : %-30s : %s" % (i, j.id, j.state)
+            print("%5d : %-30s : %s" % (i, j.id, j.state))
 
             j.wait ()
     
         return 0
 
-    except saga.SagaException, ex:
-        print "An exception occured: (%s) %s " % (ex.type, (str(ex)))
-        print " \n*** Backtrace:\n %s" % ex.traceback
+    except saga.SagaException as ex:
+        print("An exception occured: (%s) %s " % (ex.type, (str(ex))))
+        print(" \n*** Backtrace:\n %s" % ex.traceback)
         return -1
 
 

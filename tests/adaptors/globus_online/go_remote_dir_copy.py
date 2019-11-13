@@ -43,7 +43,7 @@ def main():
         tmp_dir = tempfile.mkdtemp(prefix='saga-test-', suffix='-%s' % TEST_NAME,
                                    dir=os.path.expanduser('~/tmp'))
 
-        print 'tmpdir: %s' % tmp_dir
+        print('tmpdir: %s' % tmp_dir)
 
         ctx = saga.Context("x509")
         ctx.user_proxy = '/Users/mark/proj/myproxy/xsede.x509'
@@ -61,22 +61,22 @@ def main():
         target_url.host = TARGET
         target_url.path = os.path.join('~/saga-tests/', os.path.basename(tmp_dir))
 
-        print "Point to local Directory through GO ..."
+        print("Point to local Directory through GO ...")
         d = saga.filesystem.Directory(source_url)
-        print "And check ..."
+        print("And check ...")
         assert d.is_dir() == True
         assert d.is_file() == False
         assert d.is_link() == False
         d.close()
-        print "Point to remote Directory through GO ..."
+        print("Point to remote Directory through GO ...")
         d = saga.filesystem.Directory(target_url, flags=saga.filesystem.CREATE_PARENTS)
-        print "And check ..."
+        print("And check ...")
         assert d.is_dir() == True
         assert d.is_file() == False
         assert d.is_link() == False
         d.close()
 
-        print "Point to local file through GO, before creation ..."
+        print("Point to local file through GO, before creation ...")
         caught = False
         try:
             saga.filesystem.File(os.path.join(str(source_url), FILE_A_level_0))
@@ -84,16 +84,16 @@ def main():
             caught = True
         assert caught == True
 
-        print "Create actual file ..."
+        print("Create actual file ...")
         touch(tmp_dir, FILE_A_level_0)
-        print "Try again ..."
+        print("Try again ...")
         f = saga.filesystem.File(os.path.join(str(source_url), FILE_A_level_0))
         assert f.is_file() == True
         assert f.is_dir() == False
         assert f.is_link() == False
         f.close()
 
-        print "Copy local file to remote, using different filename ..."
+        print("Copy local file to remote, using different filename ...")
         d = saga.filesystem.Directory(target_url, flags=saga.filesystem.CREATE_PARENTS)
         d.copy(os.path.join(str(source_url), FILE_A_level_0), FILE_A_level_0+COPIED_SUFFIX)
         d.close()
@@ -103,7 +103,7 @@ def main():
         assert f.is_link() == False
         f.close()
 
-        print "Copy local file to remote, keeping filename in tact ..."
+        print("Copy local file to remote, keeping filename in tact ...")
         d = saga.filesystem.Directory(target_url, flags=saga.filesystem.CREATE_PARENTS)
         d.copy(os.path.join(str(source_url), FILE_A_level_0), FILE_A_level_0)
         d.close()
@@ -113,30 +113,30 @@ def main():
         assert f.is_link() == False
         f.close()
 
-        print 'Create file in level 1 ...'
+        print('Create file in level 1 ...')
         tree = LEVEL_1
         os.mkdir(os.path.join(tmp_dir, tree))
         touch(os.path.join(tmp_dir, tree), FILE_A_level_1)
-        print "Test local file ..."
+        print("Test local file ...")
         f = saga.filesystem.File(os.path.join(str(source_url), tree, FILE_A_level_1))
         assert f.is_file() == True
         assert f.is_dir() == False
         assert f.is_link() == False
         f.close()
 
-        print "Copy local file to remote, keeping filename in tact ..."
+        print("Copy local file to remote, keeping filename in tact ...")
         d = saga.filesystem.Directory(os.path.join(str(target_url), tree), flags=saga.filesystem.CREATE_PARENTS)
         d.copy(os.path.join(str(source_url), tree, FILE_A_level_1), FILE_A_level_1)
         d.close()
 
-        print "Test file after transfer ..."
+        print("Test file after transfer ...")
         f = saga.filesystem.File(os.path.join(str(target_url), tree, FILE_A_level_1))
         assert f.is_file() == True
         assert f.is_dir() == False
         assert f.is_link() == False
         f.close()
 
-        print "Copy non-existent local file to remote, keeping filename in tact ..."
+        print("Copy non-existent local file to remote, keeping filename in tact ...")
         d = saga.filesystem.Directory(str(target_url), flags=saga.filesystem.CREATE_PARENTS)
         try:
             d.copy(os.path.join(str(source_url), NON_EXISTING_FILE), NON_EXISTING_FILE)
@@ -144,7 +144,7 @@ def main():
             caught = True
         assert caught == True
 
-        print "Test file after (non-)transfer ..."
+        print("Test file after (non-)transfer ...")
         caught = False
         try:
             saga.filesystem.File(os.path.join(str(target_url), NON_EXISTING_FILE))
@@ -181,21 +181,21 @@ def main():
         #
         # dest_file.copy(os.path.join(source+'broken', rt_filename))
 
-        print "Before return 0"
+        print("Before return 0")
         return 0
 
     except saga.SagaException as ex:
         # Catch all saga exceptions
-        print "An exception occurred: (%s) %s " % (ex.type, (str(ex)))
+        print("An exception occurred: (%s) %s " % (ex.type, (str(ex))))
         # Trace back the exception. That can be helpful for debugging.
-        print " \n*** Backtrace:\n %s" % ex.traceback
+        print(" \n*** Backtrace:\n %s" % ex.traceback)
 
-        print "before return -1"
+        print("before return -1")
         return -1
 
     finally:
 
-        print "and finally ..."
+        print("and finally ...")
 
         if CLEANUP and tmp_dir:
             shutil.rmtree(tmp_dir)

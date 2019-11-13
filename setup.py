@@ -21,9 +21,22 @@ mod_root = 'src/radical/saga/'
 
 try:
     from setuptools import setup, Command, find_packages
-except ImportError as e:
-    print("%s needs setuptools to install" % name)
+except ImportError:
+    print(("%s needs setuptools to install" % name))
     sys.exit(1)
+
+
+# ------------------------------------------------------------------------------
+#
+def sh_callout(cmd):
+
+    p = sp.Popen(cmd, stdout=sp.PIPE, stderr=sp.PIPE, shell=True)
+
+    stdout, stderr = p.communicate()
+    ret            = p.returncode
+    return stdout, stderr, ret
+
+
 
 
 # ------------------------------------------------------------------------------
@@ -54,7 +67,7 @@ def get_version(mod_root):
 
         # get version from './VERSION'
         src_root = os.path.dirname(__file__)
-        if  not src_root:
+        if not src_root:
             src_root = '.'
 
         with open(src_root + '/VERSION', 'r') as f:
@@ -81,12 +94,11 @@ def get_version(mod_root):
         version_detail = re.sub('[/ ]+', '-', version_detail)
         version_detail = re.sub('[^a-zA-Z0-9_+@.-]+', '', version_detail)
 
-        if  p.returncode   !=  0  or \
-            version_detail == '@' or \
-            'git-error'      in version_detail or \
-            'not-a-git-repo' in version_detail or \
-            'not-found'      in version_detail or \
-            'fatal'          in version_detail    :
+        if p.returncode   !=  0  or version_detail == '@' or \
+           'git-error'      in version_detail or \
+           'not-a-git-repo' in version_detail or \
+           'not-found'      in version_detail or \
+           'fatal'          in version_detail    :
             version = version_base
         elif '@' not in version_base:
             version = '%s-%s' % (version_base, version_detail)
@@ -129,12 +141,6 @@ def get_version(mod_root):
 
 
 # ------------------------------------------------------------------------------
-# check python version. we need >= 2.7, <3.x
-if  sys.hexversion < 0x02070000 or sys.hexversion >= 0x03000000:
-    raise RuntimeError("%s requires Python 2.x (2.7 or higher)" % name)
-
-
-# ------------------------------------------------------------------------------
 # get version info -- this will create VERSION and srcroot/VERSION
 version, version_detail, sdist_name = get_version(mod_root)
 
@@ -164,11 +170,17 @@ def read(fname):
 #
 class RunTwine(Command):
     user_options = []
-    def initialize_options (self) : pass
-    def finalize_options   (self) : pass
-    def run (self) :
-        out,  err, ret = ru.sh_callout('python setup.py sdist upload -r pypi')
+    def initialize_options(self): pass
+    def finalize_options(self): pass
+    def run(self):
+        out,  err, ret = sh_callout('python setup.py sdist upload -r pypi')
         raise SystemExit(ret)
+
+
+# ------------------------------------------------------------------------------
+#
+if sys.hexversion <= 0x03050000:
+    raise RuntimeError("SETUP ERROR: %s requires Python 3.5 or higher" % name)
 
 
 # ------------------------------------------------------------------------------
@@ -182,7 +194,8 @@ df.append(('share/%s/examples' % name, glob.glob('examples/*.py')))
 setup_args = {
     'name'               : name,
     'version'            : version,
-    'description'        : 'A light-weight access layer for distributed computing infrastructure'
+    'description'        : 'A light-weight access layer for distributed '
+                           'computing infrastructure '
                            '(http://radical.rutgers.edu/)',
   # 'long_description'   : (read('README.md') + '\n\n' + read('CHANGES.md')),
     'author'             : 'RADICAL Group at Rutgers University',
@@ -192,14 +205,15 @@ setup_args = {
     'url'                : 'http://radical-cybertools.github.io/radical.saga/',
     'license'            : 'MIT',
     'keywords'           : 'radical job saga',
+    'python_requires'    : '>=3.5',
     'classifiers'        : [
         'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Developers',
         'Environment :: Console',
         'License :: OSI Approved :: MIT License',
         'Programming Language :: Python',
-        'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.5',
         'Topic :: Utilities',
         'Topic :: System :: Distributed Computing',
         'Topic :: Scientific/Engineering :: Interface Engine/Protocol Translator',
@@ -214,7 +228,7 @@ setup_args = {
     'package_data'       : {'': ['*.txt', '*.sh', '*.json', '*.gz',
                                  'VERSION', 'SDIST', sdist_name]},
   # 'setup_requires'     : ['pytest-runner'],
-    'install_requires'   : ['radical.utils>=0.60',
+    'install_requires'   : ['radical.utils',
                             'apache-libcloud',
                             'parse'
                            ],

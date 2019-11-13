@@ -26,8 +26,8 @@ for i in range (1000000) :
     assert (i == t.test)
     if not i % 25000 :
         mem = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
-        print "%5d  %d" % (i, mem)
+        print("%5d  %d" % (i, mem))
 
 mem = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
-print "%5d  %d" % (i, mem)
+print("%5d  %d" % (i, mem))
 

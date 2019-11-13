@@ -79,7 +79,7 @@ if __name__ == "__main__":
 
     args = sys.argv[1:]
     if len(args) < 6:
-        print "Usage: python %s imgX imgY xBeg xEnd yBeg yEnd filename" % __file__
+        print("Usage: python %s imgX imgY xBeg xEnd yBeg yEnd filename" % __file__)
         sys.exit(-1)
 
     imgX = int(sys.argv[1])

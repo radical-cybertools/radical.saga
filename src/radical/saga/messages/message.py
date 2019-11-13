@@ -66,7 +66,7 @@ class Message (sa.Attributes) :
     # attribute methods
     #
     @rus.takes   ('Message', 
-                  basestring)
+                  str)
     @rus.returns (rus.anything)
     def _attribute_getter (self, key) :
 
@@ -76,7 +76,7 @@ class Message (sa.Attributes) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Message', 
-                  basestring,
+                  str,
                   rus.anything)
     @rus.returns (rus.nothing)
     def _attribute_setter (self, key, val) :
@@ -96,7 +96,7 @@ class Message (sa.Attributes) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Message', 
-                  basestring, 
+                  str, 
                   int, 
                   callable)
     @rus.returns (rus.anything)

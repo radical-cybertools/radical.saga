@@ -8,7 +8,7 @@ __license__   = "MIT"
 """
 
 import os
-import urllib
+import urllib.request, urllib.parse, urllib.error
 
 import radical.utils as ru
 
@@ -216,8 +216,8 @@ class HTTPFile (cpi_fs.File):
                         raise BadParameter("Local file '%s' exists." % target)
 
         try:
-            urllib.urlretrieve(str(src), target)
-        except Exception, e:
+            urllib.request.urlretrieve(str(src), target)
+        except Exception as e:
             raise BadParameter("Couldn't copy %s to %s: %s" %
                                     (str(src), target, str(e)))
 

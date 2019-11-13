@@ -19,7 +19,7 @@ class MyContextB (rs.Context) :
         rs.Context.__init__ (self, ctype)
 
 
-cs = rs.Context ('ssh') ; print "saga: %s" % cs
-ca = MyContextA ('ssh') ; print "mc a: %s" % ca
-cb = MyContextB ('ssh') ; print "mc b: %s" % cb
+cs = rs.Context ('ssh') ; print("saga: %s" % cs)
+ca = MyContextA ('ssh') ; print("mc a: %s" % ca)
+cb = MyContextB ('ssh') ; print("mc b: %s" % cb)
 

@@ -35,31 +35,31 @@ def main():
         catjob = js.create_job(jd)
 
         # check our job's id and state
-        print "Job ID    : %s" % (catjob.id)
-        print "Job State : %s" % (catjob.state)
+        print("Job ID    : %s" % (catjob.id))
+        print("Job State : %s" % (catjob.state))
 
-        print "\n...starting job...\n"
+        print("\n...starting job...\n")
         catjob.run()
 
-        print "Job ID    : %s" % (catjob.id)
-        print "Job State : %s" % (catjob.state)
+        print("Job ID    : %s" % (catjob.id))
+        print("Job State : %s" % (catjob.state))
 
-        print "\nListing active jobs: "
+        print("\nListing active jobs: ")
         for job in js.list():
-            print " * %s" % job
+            print(" * %s" % job)
 
         # wait for our job to complete
-        print "\n...waiting for job...\n"
+        print("\n...waiting for job...\n")
         catjob.wait()
 
-        print "Job State : %s" % (catjob.state)
-        print "Exitcode  : %s" % (catjob.exit_code)
+        print("Job State : %s" % (catjob.state))
+        print("Exitcode  : %s" % (catjob.exit_code))
 
-    except saga.SagaException, ex:
-        print "An exception occured: %s " % ((str(ex)))
+    except saga.SagaException as ex:
+        print("An exception occured: %s " % ((str(ex))))
         # get the whole traceback in case of an exception -
         # this can be helpful for debugging the problem
-        print " *** %s" % ex.traceback
+        print(" *** %s" % ex.traceback)
         sys.exit(-1)
 
 if __name__ == "__main__":

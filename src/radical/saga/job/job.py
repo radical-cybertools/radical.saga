@@ -15,7 +15,7 @@ from ..adaptors  import base    as sab
 
 from .. import attributes       as sa
 from .. import exceptions       as se
-from .. import async            as sasync
+from .. import sasync
 from .. import task             as st
 from .. import base             as sb
 
@@ -55,23 +55,24 @@ class Job (sb.Base, st.Task, sasync.Async) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Job',
-                  rus.optional (basestring),
+                  rus.optional (str),
                   rus.optional (sab.Base),
                   rus.optional (dict),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns (rus.nothing)
-    def __init__ (self, _method_type='run', _adaptor=None, _adaptor_state={}, _ttype=None) : 
+    def __init__ (self, _method_type='run', _adaptor=None, _adaptor_state={}, _ttype=None) :
         '''
-        _adaptor`` references the adaptor class instance which created this task
-        instance.
+        _adaptor`` references the adaptor class instance which created this
+        task instance.
 
         The ``_method_type`` parameter is flattened into the job constructor to
         satisfy the bulk optimization properties of the saga.Task class, whose
-        interface is implemented by saga.job.Job.
-        ``_method_type`` specifies the SAGA API method which task is
-        representing.  For jobs, that is the 'run' method.
+        interface is implemented by saga.job.Job. ``_method_type`` specifies
+        the SAGA API method which task is representing.  For jobs, that is the
+        'run' method.
 
-        We don't have a create classmethod -- jobs are never constructed by the user
+        We don't have a create classmethod -- jobs are never constructed by the
+        user
         '''
 
         if not _adaptor :
@@ -99,7 +100,7 @@ class Job (sb.Base, st.Task, sasync.Async) :
         self._attributes_extensible    (False)
         self._attributes_camelcasing   (True)
 
-        # register properties with the attribute interface 
+        # register properties with the attribute interface
         self._attributes_register   (STATE,            UNKNOWN, sa.ENUM,   sa.SCALAR, sa.READONLY)
         self._attributes_register   (EXIT_CODE,        None,    sa.INT,    sa.SCALAR, sa.READONLY)
         self._attributes_register   (CREATED,          None,    sa.INT,    sa.SCALAR, sa.READONLY)
@@ -129,7 +130,7 @@ class Job (sb.Base, st.Task, sasync.Async) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Job')
-    @rus.returns (basestring)
+    @rus.returns (str)
     def __str__  (self) :
         """
         __str__()
@@ -147,12 +148,12 @@ class Job (sb.Base, st.Task, sasync.Async) :
     #
     @rus.takes   ('Job',
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
-    @rus.returns ((rus.nothing, basestring, st.Task))
+    @rus.returns ((rus.nothing, str, st.Task))
     def get_id   (self, ttype=None) :
         """
         get_id()
 
-        Return the job ID. 
+        Return the job ID.
         """
         id = self._adaptor.get_id (ttype=ttype)
         return id
@@ -162,12 +163,12 @@ class Job (sb.Base, st.Task, sasync.Async) :
     #
     @rus.takes   ('Job',
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
-    @rus.returns ((rus.nothing, basestring, st.Task))
+    @rus.returns ((rus.nothing, str, st.Task))
     def get_name (self, ttype=None) :
         """
         get_name()
 
-        Return the job name. 
+        Return the job name.
         """
         name = self._adaptor.get_name(ttype=ttype)
         return name
@@ -176,7 +177,7 @@ class Job (sb.Base, st.Task, sasync.Async) :
     #
     @rus.takes          ('Job',
                          rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
-    @rus.returns        ((basestring, st.Task))
+    @rus.returns        ((str, st.Task))
     def get_description (self, ttype=None) :
         """
         get_description()
@@ -216,7 +217,7 @@ class Job (sb.Base, st.Task, sasync.Async) :
     #
     @rus.takes    ('Job',
                    rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
-    @rus.returns  ((file, st.Task))
+    @rus.returns  ((str, st.Task))
     def get_stdin (self, ttype=None) :
         """
         get_stdin()
@@ -224,7 +225,7 @@ class Job (sb.Base, st.Task, sasync.Async) :
         ttype:     saga.task.type enum
         ret:       string / saga.Task
 
-        Return the job's STDIN as string. 
+        Return the job's STDIN as string.
         """
 
         # FIXME: we have no means to set a stdin stream
@@ -235,7 +236,7 @@ class Job (sb.Base, st.Task, sasync.Async) :
     #
     @rus.takes     ('Job',
                     rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
-    @rus.returns   ((file, st.Task))
+    @rus.returns   ((str, st.Task))
     def get_stdout (self, ttype=None) :
         """
         get_stdout()
@@ -243,7 +244,7 @@ class Job (sb.Base, st.Task, sasync.Async) :
         ttype:     saga.task.type enum
         ret:       string / saga.Task
 
-        Return the job's STDOUT as string. 
+        Return the job's STDOUT as string.
         """
         return self._adaptor.get_stdout (ttype=ttype)
 
@@ -272,7 +273,7 @@ class Job (sb.Base, st.Task, sasync.Async) :
     #
     @rus.takes     ('Job',
                     rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
-    @rus.returns   ((file, st.Task))
+    @rus.returns   ((str, st.Task))
     def get_stderr (self, ttype=None) :
         """
         get_stderr()
@@ -400,7 +401,7 @@ class Job (sb.Base, st.Task, sasync.Async) :
     @rus.returns ((rus.nothing, st.Task))
     def migrate  (self, jd, ttype=None) :
         """
-        jd:        saga.job.Description  
+        jd:        saga.job.Description
         ttype:     saga.task.type enum
         ret:       None / saga.Task
         """
@@ -446,7 +447,7 @@ class Job (sb.Base, st.Task, sasync.Async) :
         """
         run()
 
-        Run (start) the job. 
+        Run (start) the job.
 
         Request that the job is being executed by the backend.  If the backend
         is accepting this run request, the job will move to the 'Pending' or
@@ -461,19 +462,19 @@ class Job (sb.Base, st.Task, sasync.Async) :
             jd.executable = '/bin/date'
             j  = js.create_job(jd)
 
-            if j.get_state() == saga.job.NEW : 
-                print "new"
-            else : 
-                print "oops!"
+            if j.get_state() == saga.job.NEW :
+                print("new")
+            else :
+                print("oops!")
 
             j.run()
 
             if   j.get_state() == saga.job.PENDING :
-                print "pending"
+                print("pending")
             elif j.get_state() == saga.job.RUNNING :
-                print "running"
+                print("running")
             else :
-                print "oops!"
+                print("oops!")
           """
 
         return self._adaptor.run (ttype=ttype)
@@ -502,25 +503,25 @@ class Job (sb.Base, st.Task, sasync.Async) :
           j  = js.create_job(jd)
 
           if   j.get_state() == saga.job.NEW :
-              print "new"
+              print("new")
           else :
-              print "oops!"
+              print("oops!")
 
           j.run()
 
           if   j.get_state() == saga.job.PENDING :
-              print "pending"
+              print("pending")
           elif j.get_state() == saga.job.RUNNING :
-              print "running"
+              print("running")
           else :
-              print "oops!"
+              print("oops!")
 
           j.cancel()
 
           if   j.get_state() == saga.job.CANCELED :
-              print "canceled"
+              print("canceled")
           else :
-              print "oops!"
+              print("oops!")
         """
         return self._adaptor.cancel (timeout, ttype=ttype)
 
@@ -560,27 +561,27 @@ class Job (sb.Base, st.Task, sasync.Async) :
           j  = js.create_job(jd)
 
           if   j.get_state() == saga.job.NEW :
-              print "new"
+              print("new")
           else :
-              print "oops!"
+              print("oops!")
 
           j.run()
 
           if   j.get_state() == saga.job.PENDING :
-              print "pending"
+              print("pending")
           elif j.get_state() == saga.job.RUNNING :
-              print "running"
+              print("running")
           else :
-              print "oops!"
+              print("oops!")
 
           j.wait(-1.0)
 
           if   j.get_state() == saga.job.DONE :
-              print "done"
+              print("done")
           elif j.get_state() == saga.job.FAILED :
-              print "failed"
+              print("failed")
           else :
-              print "oops!"
+              print("oops!")
         """
 
         if  None == timeout :
@@ -607,19 +608,19 @@ class Job (sb.Base, st.Task, sasync.Async) :
           jd.executable = '/bin/date'
           j  = js.create_job(jd)
 
-          if   j.get_state() == saga.job.NEW : 
-              print "new"
-          else : 
-              print "oops!"
+          if   j.get_state() == saga.job.NEW :
+              print("new")
+          else :
+              print("oops!")
 
           j.run()
 
-          if   j.get_state() == saga.job.PENDING : 
-              print "pending"
-          elif j.get_state() == saga.job.RUNNING : 
-              print "running"
+          if   j.get_state() == saga.job.PENDING :
+              print("pending")
+          elif j.get_state() == saga.job.RUNNING :
+              print("running")
           else :
-              print "oops!"
+              print("oops!")
         """
         return self._adaptor.get_state (ttype=ttype)
 
@@ -655,7 +656,7 @@ class Job (sb.Base, st.Task, sasync.Async) :
     def get_exception (self, ttype=None) :
         """ :todo: describe me
 
-            :note: if job failed, that will get an exception describing 
+            :note: if job failed, that will get an exception describing
                    why, if that exists.  Otherwise, the call returns None.
         """
 
@@ -672,18 +673,18 @@ class Job (sb.Base, st.Task, sasync.Async) :
     def re_raise   (self) :
         """ :todo: describe me
 
-            :note: if job failed, that will re-raise an exception describing 
+            :note: if job failed, that will re-raise an exception describing
                    why, if that exists.  Otherwise, the call does nothing.
         """
 
         if  self.state == FAILED :
             raise se.NoSuccess ("job stderr: %s" % self.get_stderr_string ())
         else :
-            return 
+            return
 
 
     # ----------------------------------------------------------------
-    # 
+    #
     # attribute getters
     #
     @rus.takes         ('Job',
@@ -724,7 +725,7 @@ class Job (sb.Base, st.Task, sasync.Async) :
     #
     @rus.takes       ('Job',
                       rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
-    @rus.returns     ((rus.nothing, rus.list_of (basestring), st.Task))
+    @rus.returns     ((rus.nothing, rus.list_of (str), st.Task))
     def _get_execution_hosts (self, ttype=None) :
         return self._adaptor.get_execution_hosts (ttype=ttype)
 
@@ -764,9 +765,9 @@ class Job (sb.Base, st.Task, sasync.Async) :
 
       if j.get_state() == saga.job.FAILED :
         if j.exitcode == "42" :
-            print "Ah, galaxy bypass error!"
+            print("Ah, galaxy bypass error!")
         else :
-            print "oops!"
+            print("oops!")
 
     """)
 
@@ -798,9 +799,9 @@ class Job (sb.Base, st.Task, sasync.Async) :
       j  = js.create_job(jd)
 
       if j.serviceurl == "fork://localhost" :
-          print "yes!"
+          print("yes!")
       else :
-          print "oops!"
+          print("oops!")
 
     """)
 
@@ -814,12 +815,12 @@ class Self (Job) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Self',
-                  rus.optional (basestring),
+                  rus.optional (str),
                   rus.optional (sab.Base),
                   rus.optional (dict),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns (rus.nothing)
-    def __init__ (self, _method_type='run', _adaptor=None, _adaptor_state={}, _ttype=None) : 
+    def __init__ (self, _method_type='run', _adaptor=None, _adaptor_state={}, _ttype=None) :
 
 
         self._base = super  (Job, self)

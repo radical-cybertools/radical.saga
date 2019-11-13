@@ -62,7 +62,7 @@ class _job_state_monitor(threading.Thread):
                 # job by job. that would be too inefficient!
                 jobs = self.js.jobs
 
-                for job_id in jobs.keys() :
+                for job_id in list(jobs.keys()) :
 
                     job_info = jobs[job_id]
 
@@ -208,7 +208,7 @@ def _cobaltscript_generator(url, logger, jd, ppn, is_cray=False, queue=None,
             cobalt_params += '#COBALT --error %s\n' % jd.error
 
     if jd.wall_time_limit:
-        hours = jd.wall_time_limit / 60
+        hours = int(jd.wall_time_limit / 60)
         minutes = jd.wall_time_limit % 60
         cobalt_params += '#COBALT --time %s:%s:00\n' \
             % (str(hours).zfill(2), str(minutes).zfill(2))
@@ -294,7 +294,7 @@ def _cobaltscript_generator(url, logger, jd, ppn, is_cray=False, queue=None,
         cobalt_params += '#COBALT --env %s\n' % \
                 ':'.join (["%s=%s" % (k,v.replace(':', '\\:')
                                          .replace('=', '\\='))  # escape chars
-                           for k,v in jd.environment.iteritems()])
+                           for k,v in jd.environment.items()])
 
     # Why do I need this?
     # Andre on Dev 16 2016: 
@@ -559,7 +559,7 @@ class CobaltJobService (cpi_job.Service):
         # this adaptor supports options that can be passed via the
         # 'query' component of the job service URL.
         if rm_url.query:
-            for key, val in parse_qs(rm_url.query).iteritems():
+            for key, val in parse_qs(rm_url.query).items():
                 if key == 'queue':
                     self.queue = val[0]
                 # Disableing 'ppn' since Blue Gene/Q only supports 16 PPN
@@ -618,7 +618,7 @@ class CobaltJobService (cpi_job.Service):
                 self._logger.info("Purged %s temporary files" % out)
 
         # Check if all required cobalt tools are available
-        for cmd in self._commands.keys():
+        for cmd in list(self._commands.keys()):
             ret, out, _ = self.shell.run_sync("which %s " % cmd)
             if ret != 0:
                 message = "Error finding Cobalt tools: %s" % out
@@ -674,7 +674,7 @@ class CobaltJobService (cpi_job.Service):
                                    run_job=self._commands['runjob']['path']
                                   )
             self._logger.info("Generated Cobalt script: %s" % str(script))
-        except Exception, ex:
+        except Exception as ex:
             log_error_and_raise(str(ex), rse.BadParameter, self._logger)
 
         # try to create the working directory (if defined)
@@ -740,7 +740,7 @@ class CobaltJobService (cpi_job.Service):
             # sometimes there are a couple of lines of warnings before.
             # if that's the case, we log those as 'warnings'
             lines = out.split('\n')
-            lines = filter(lambda lines: lines != '', lines)  # remove empty
+            lines = [lines for lines in lines if lines != '']  # remove empty
 
             if len(lines) > 1:
                 self._logger.warning('qsub: %s' % ''.join(lines[:-2]))
@@ -764,7 +764,7 @@ class CobaltJobService (cpi_job.Service):
                                  }
 
             self._logger.info("assign job id  %s / %s / %s to watch list (%s)" 
-                % (None, job_id, job_obj, self.jobs.keys()))
+                % (None, job_id, job_obj, list(self.jobs.keys())))
 
             # set status to 'pending' and manually trigger callback
             job_obj._attributes_i_set('state', state, job_obj._UP, True)

@@ -59,41 +59,41 @@ def main():
         sleepjob = js.create_job(jd)
 
         # check our job's id and state
-        print "Job ID    : %s" % (sleepjob.id)
-        print "Job State : %s" % (sleepjob.state)
+        print("Job ID    : %s" % (sleepjob.id))
+        print("Job State : %s" % (sleepjob.state))
 
-        print "\n...starting job...\n"
+        print("\n...starting job...\n")
         sleepjob.run()
 
-        print "Job ID    : %s" % (sleepjob.id)
-        print "Job State : %s" % (sleepjob.state)
+        print("Job ID    : %s" % (sleepjob.id))
+        print("Job State : %s" % (sleepjob.state))
 
-        print "\nListing active jobs: "
+        print("\nListing active jobs: ")
         for job in js.list():
-            print " * %s" % job
+            print(" * %s" % job)
 
         # disconnect / reconnect
         sleepjob_clone = js.get_job(sleepjob.id)
 
         # wait for our job to complete
-        print "\n...waiting for job...\n"
+        print("\n...waiting for job...\n")
         sleepjob_clone.wait()
 
-        print "Job State   : %s" % (sleepjob_clone.state)
-        print "Exitcode    : %s" % (sleepjob_clone.exit_code)
-        print "Exec. hosts : %s" % (sleepjob_clone.execution_hosts)
-        print "Create time : %s" % (sleepjob_clone.created)
-        print "Start time  : %s" % (sleepjob_clone.started)
-        print "End time    : %s" % (sleepjob_clone.finished)
+        print("Job State   : %s" % (sleepjob_clone.state))
+        print("Exitcode    : %s" % (sleepjob_clone.exit_code))
+        print("Exec. hosts : %s" % (sleepjob_clone.execution_hosts))
+        print("Create time : %s" % (sleepjob_clone.created))
+        print("Start time  : %s" % (sleepjob_clone.started))
+        print("End time    : %s" % (sleepjob_clone.finished))
 
         js.close()
         return 0
 
-    except rs.SagaException, ex:
-        print "An exception occured: %s " % ((str(ex)))
+    except rs.SagaException as ex:
+        print("An exception occured: %s " % ((str(ex))))
         # get the whole traceback in case of an exception -
         # this can be helpful for debugging the problem
-        print " *** %s" % ex.traceback
+        print(" *** %s" % ex.traceback)
         return -1
 
 if __name__ == "__main__":

@@ -4,7 +4,7 @@ sudo:
   - disabled
 
 python:
-  - "2.7"
+  - "3.5"
 
 os:
   - linux
@@ -48,6 +48,7 @@ before_install:
 
 # command to install dependencies
 install:
+  - pip install git+https://github.com/radical-cybertools/radical.utils.git@python3/devel
   - pip install .
   - pip install coverage
   - pip install flake8

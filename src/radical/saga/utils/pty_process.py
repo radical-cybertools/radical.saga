@@ -53,14 +53,14 @@ class PTYProcess (object) :
 
             if n == 0 :
                 # found password prompt - tell the secret
-                pty.write ("secret\\n")
+                pty.write(b"secret\\n")
                 n, _ = pty.find (['password\s*:\s*$',
                                   'want to continue connecting.*\(yes/no\)\s*$',
                                   '[\$#>]\s*$'])
             elif n == 1 :
                 # found request to accept host key - sure we do... (who checks
                 # those keys anyways...?).  Then search again.
-                pty.write ("yes\\n")
+                pty.write(b"yes\\n")
                 n, _ = pty.find (['password\s*:\s*$',
                                   'want to continue connecting.*\(yes/no\)\s*$',
                                   '[\$#>]\s*$'])
@@ -73,10 +73,10 @@ class PTYProcess (object) :
             # go full Dornroeschen (Sleeping Beauty)...
             pty.alive (recover=True) or break      # check / restart process
             pty.find  (['[\$#>]\s*$'])             # find shell prompt
-            pty.write ("/bin/sleep "100 years"\\n") # sleep!  SLEEEP!
+            pty.write(b"/bin/sleep "100 years"\\n") # sleep!  SLEEEP!
 
         # something bad happened
-        print pty.autopsy ()
+        print(pty.autopsy ())
 
     """
 
@@ -107,7 +107,7 @@ class PTYProcess (object) :
         self.logger.debug ("PTYProcess init %s" % self)
 
 
-        if isinstance (command, basestring) :
+        if isinstance (command, str) :
             command = shlex.split (command)
 
         if not isinstance (command, list) :
@@ -354,7 +354,7 @@ class PTYProcess (object) :
 
             if not self.child:
                 # this was quick ;-)
-              # print "child is gone"
+              # print("child is gone")
                 return output
 
             # we need to lock, as the SIGCHLD will only arrive once
@@ -362,7 +362,7 @@ class PTYProcess (object) :
                 # hey, kiddo, whats up?
                 try :
                     wpid, wstat = os.waitpid (self.child, 0)
-                  # print "wait: %s -- %s" % (wpid, wstat)
+                  # print("wait: %s -- %s" % (wpid, wstat))
 
                 except OSError as e :
 
@@ -372,11 +372,11 @@ class PTYProcess (object) :
                         self.exit_code   = None
                         self.exit_signal = None
                         self.finalize ()
-                      # print "no such child"
+                      # print("no such child")
                         return output
 
                     # no idea what happened -- it is likely bad
-                  # print "waitpid failed"
+                  # print("waitpid failed")
                     raise se.NoSuccess ("waitpid failed on wait")
 
 
@@ -433,12 +433,12 @@ class PTYProcess (object) :
                 wstat = None
 
                 while True :
-                  # print 'waitpid %s' % self.child
+                  # print('waitpid %s' % self.child)
 
                     # hey, kiddo, whats up?
                     try :
                         wpid, wstat = os.waitpid (self.child, os.WNOHANG)
-                      # print 'waitpid %s : %s - %s' % (self.child, wpid, wstat)
+                      # print('waitpid %s: %s - %s' % (self.child, wpid, wstat))
 
                     except OSError as e :
 
@@ -446,12 +446,12 @@ class PTYProcess (object) :
                             # child disappeared, go to zombie cleanup routine
                             break
 
-                        raise ("waitpid failed on wait (%s)" % e)
+                        raise "waitpid failed on wait (%s)"
 
                     # did we get a note about child termination?
                     if 0 == wpid :
-                      # print 'waitpid %s : %s - %s -- none' \
-                      #       % (self.child, wpid, wstat)
+                      # print('waitpid %s : %s - %s -- none' \
+                      #       % (self.child, wpid, wstat))
                         # nope, all is well - carry on
                         return True
 
@@ -460,8 +460,8 @@ class PTYProcess (object) :
                     # Well, maybe the child fooled us and is just playing dead?
                     if os.WIFSTOPPED   (wstat) or \
                        os.WIFCONTINUED (wstat)    :
-                      # print 'waitpid %s : %s - %s -- stop/cont' \
-                      #         % (self.child, wpid, wstat)
+                      # print('waitpid %s : %s - %s -- stop/cont' \
+                      #         % (self.child, wpid, wstat))
                         # we don't care if someone stopped/resumed the child --
                         # that is up to higher powers.  For our purposes, the
                         # child is alive.  Ha!
@@ -471,14 +471,14 @@ class PTYProcess (object) :
 
                 # so its dead -- make sure it stays dead, to avoid zombie
                 # apocalypse...
-              # print "he's dead, honeybunny, jim is dead..."
+              # print("he's dead, honeybunny, jim is dead...")
                 self.child = None
                 self.finalize (wstat=wstat)
 
 
             # check if we can attempt a post-mortem revival though
             if  not recover :
-              # print 'not alive, not recover'
+              # print('not alive, not recover')
                 # nope, we are on holy ground - revival not allowed.
                 return False
 
@@ -487,7 +487,7 @@ class PTYProcess (object) :
             # always allow to reincarnate, etc.)
             if self.recover_attempts >= self.recover_max :
                 # nope, its gone for good - just report the sad news
-              # print 'not alive, no recover anymore'
+              # print('not alive, no recover anymore')
                 return False
 
             # MEDIIIIC!!!!
@@ -498,7 +498,7 @@ class PTYProcess (object) :
             # check again.  Yes, this is recursive -- but note that
             # recover_attempts get incremented on every iteration, and this will
             # eventually lead to call termination (tm).
-          # print 'alive, or not alive?  Check again!'
+          # print('alive, or not alive?  Check again!')
             return self.alive (recover=True)
 
 
@@ -562,7 +562,7 @@ class PTYProcess (object) :
             try:
                 # start the timeout timer right now.  Note that even if timeout
                 # is short, and child.poll is slow, we will nevertheless attempt
-                # at least one read...  
+                # at least one read...
                 start = time.time ()
                 ret   = ""
 
@@ -608,11 +608,12 @@ class PTYProcess (object) :
                             found_eof = True
                             raise se.NoSuccess("unexpected EOF: %s" % self.tail)
 
-                        self.cache += buf.replace ('\r', '')
-                        log         = buf.replace ('\r', '')
+                        tmp = buf.decode('utf-8')
+                        self.cache += tmp.replace ('\r', '')
+                        log         = tmp.replace ('\r', '')
                         log         = log.replace ('\n', '\\n')
-                      # print "buf: --%s--" % buf
-                      # print "log: --%s--" % log
+                      # print("buf: --%s--" % buf)
+                      # print("log: --%s--" % log)
                         if  len(log) > _DEBUG_MAX :
                             self.logger.debug("read : [%5d] [%5d] (%s ... %s)"
                                            % (f, len(log), log[:30], log[-30:]))
@@ -620,7 +621,7 @@ class PTYProcess (object) :
                             self.logger.debug ("read : [%5d] [%5d] (%s)"
                                             % (f, len(log), log))
                           # for c in log :
-                          #     print '%s' % c
+                          #     print('%s' % c)
 
 
                     # lets see if we still got any data in the cache we
@@ -713,6 +714,11 @@ class PTYProcess (object) :
         kept in the returned data.
         """
 
+        if timeout is None:
+            timeout = 0
+
+        timeout = int(timeout)
+
         def escape (txt) :
             pat = re.compile(r'\x1b[^m]*m')
             return pat.sub ('', txt)
@@ -743,23 +749,23 @@ class PTYProcess (object) :
                     if  not data :
                         data += self.read (timeout=_POLLDELAY)
 
-                    if  _debug : print ">>%s<<" % data
+                    if  _debug : print((">>%s<<" % data))
 
                     escaped = escape (data)
-                    if _debug : print 'data    ==%s==' % data
-                    if _debug : print 'escaped ==%s==' % escaped
+                    if _debug : print(('data    ==%s==' % data))
+                    if _debug : print(('escaped ==%s==' % escaped))
 
                     # check current data for any matching pattern
                     for n in range (0, len(patts)) :
 
                         escaped = data
                       # escaped = escape (data)
-                      # print '-- 1 --%s--' % data
-                      # print '-- 2 --%s--' % escaped
+                      # print('-- 1 --%s--' % data)
+                      # print('-- 2 --%s--' % escaped)
 
                         match = patts[n].search (escaped)
-                        if _debug : print "==%s==" % patterns[n]
-                        if _debug : print match
+                        if _debug : print(("==%s==" % patterns[n]))
+                        if _debug : print(match)
 
                         if match :
                             # a pattern matched the current data: return a tuple
@@ -771,10 +777,10 @@ class PTYProcess (object) :
                             if _debug:
                                 m = match
                                 e = escaped
-                                print "~~match!~~ %s" % e[m.start():m.end()]
-                                print "~~match!~~ %s" % (len(e))
-                                print "~~match!~~ %s" % (str(m.span()))
-                                print "~~match!~~ %s" % (ret)
+                                print(("~~match!~~ %s" % e[m.start():m.end()]))
+                                print(("~~match!~~ %s" % (len(e))))
+                                print(("~~match!~~ %s" % (str(m.span()))))
+                                print(("~~match!~~ %s" % (ret)))
 
                             return (n, ret.replace('\r', ''))
 
@@ -833,7 +839,7 @@ class PTYProcess (object) :
                     for f in wlist :
 
                         # write will report the number of written bytes
-                        size = os.write (f, data)
+                        size = os.write(f, str.encode(data))
 
                         # otherwise, truncate by written data, and try again
                         data = data[size:]

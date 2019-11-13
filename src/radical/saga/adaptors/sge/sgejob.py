@@ -14,7 +14,7 @@ import os
 import time
 
 from cgi      import parse_qs
-from StringIO import StringIO
+from io import StringIO
 from datetime import datetime
 
 import radical.utils as ru
@@ -56,7 +56,7 @@ class SgeKeyValueParser(object):
         """
 
         # check whether it is an string or a file-like object
-        if isinstance(stream, basestring):
+        if isinstance(stream, str):
             self.stream = StringIO(stream)
         else:
             self.stream = stream
@@ -64,7 +64,7 @@ class SgeKeyValueParser(object):
         self.filter_keys = set(filter_keys) if filter_keys is not None else None
         self.key_suffix = key_suffix
 
-    def next(self):
+    def __next__(self):
         """
         Return the next key-value pair.
         :return: (key, value)
@@ -293,7 +293,7 @@ class SGEJobService (cpi.Service):
         # this adaptor supports options that can be passed via the
         # 'query' component of the job service URL.
         if rm_url.query is not None:
-            for key, val in parse_qs(rm_url.query).iteritems():
+            for key, val in parse_qs(rm_url.query).items():
                 if key == 'queue':
                     self.queue = val[0]
                 elif key == 'memreqs':
@@ -338,7 +338,7 @@ class SGEJobService (cpi.Service):
     #
     def initialize(self):
         # check if all required sge tools are available
-        for cmd in self._commands.keys():
+        for cmd in list(self._commands.keys()):
             ret, out, _ = self.shell.run_sync("which %s " % cmd)
             if ret != 0:
                 message = "Error finding SGE tools: %s" % out
@@ -682,7 +682,7 @@ class SGEJobService (cpi.Service):
 
         if jd.environment is not None and len(jd.environment) > 0:
             env_list = ",".join(["%s=%s" % (key, value) for key, value
-                                                     in jd.environment.items()])
+                                                     in list(jd.environment.items())])
             sge_params += ["#$ -v %s" % env_list]
 
         if jd.working_directory is not None:
@@ -695,7 +695,7 @@ class SGEJobService (cpi.Service):
             sge_params += ["#$ -e %s" % jd.error]
 
         if jd.wall_time_limit is not None:
-            hours = jd.wall_time_limit / 60
+            hours = int(jd.wall_time_limit / 60)
             minutes = jd.wall_time_limit % 60
             sge_params += ["#$ -l h_rt=%s:%s:00" % (str(hours), str(minutes))]
 
@@ -851,7 +851,7 @@ as a separator.
             script = self.__generate_qsub_script(jd)
             self._logger.info("Generated SGE script: %s" % script)
 
-        except Exception, ex:
+        except Exception as ex:
             log_error_and_raise(str(ex), rse.BadParameter, self._logger)
 
         # try to create the working/output/error directories (if defined)

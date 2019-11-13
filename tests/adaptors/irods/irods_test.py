@@ -36,82 +36,82 @@ def main():
 
         # grab our home directory (tested on Linux)
         home_dir = os.path.expanduser("~"+"/")
-        print "Creating temporary file of size %dM : %s" % \
-            (FILE_SIZE, home_dir+TEMP_FILENAME)
+        print("Creating temporary file of size %dM : %s" % \
+            (FILE_SIZE, home_dir+TEMP_FILENAME))
 
         # create a file for us to use with iRODS
         with open(home_dir+TEMP_FILENAME, "wb") as f:
             f.write ("x" * (FILE_SIZE * pow(2,20)) )
 
-        print "Creating iRODS directory object"
+        print("Creating iRODS directory object")
         mydir = saga.replica.LogicalDirectory("irods://localhost/" + IRODS_DIRECTORY) 
 
         import subprocess
         subprocess.call(["irm", IRODS_DIRECTORY+TEMP_FILENAME])
 
-        print "Uploading file to iRODS"
+        print("Uploading file to iRODS")
         myfile = saga.replica.LogicalFile('irods://'+IRODS_DIRECTORY+TEMP_FILENAME)
         myfile.upload(home_dir + TEMP_FILENAME, \
                      "irods:///this/path/is/ignored/?resource="+IRODS_RESOURCE)
 
-        print "Deleting file locally : %s" % (home_dir + TEMP_FILENAME)
+        print("Deleting file locally : %s" % (home_dir + TEMP_FILENAME))
         os.remove(home_dir + TEMP_FILENAME)
 
-        print "Printing iRODS directory listing for %s " % ("irods://" + IRODS_DIRECTORY)
+        print("Printing iRODS directory listing for %s " % ("irods://" + IRODS_DIRECTORY))
         for entry in mydir.list():
-            print entry
+            print(entry)
 
-        print "Creating iRODS file object"
+        print("Creating iRODS file object")
         myfile = saga.replica.LogicalFile('irods://' + IRODS_DIRECTORY+TEMP_FILENAME)
         
-        print "Size of test file %s on iRODS in bytes:" % (IRODS_DIRECTORY + TEMP_FILENAME)
-        print myfile.get_size()
+        print("Size of test file %s on iRODS in bytes:" % (IRODS_DIRECTORY + TEMP_FILENAME))
+        print(myfile.get_size())
 
-        print "Creating",NUM_REPLICAS,"replicas for",IRODS_DIRECTORY+TEMP_FILENAME
+        print("Creating",NUM_REPLICAS,"replicas for",IRODS_DIRECTORY+TEMP_FILENAME)
         for i in range(NUM_REPLICAS):
             myfile.replicate("irods:///this/path/is/ignored/?resource="+IRODS_RESOURCE)
 
-        print "Locations the file is stored at on iRODS:"
+        print("Locations the file is stored at on iRODS:")
         for entry in myfile.list_locations():
-            print entry
+            print(entry)
 
-        print "Downloading logical file %s to current/default directory" % \
-            (IRODS_DIRECTORY + TEMP_FILENAME) 
+        print("Downloading logical file %s to current/default directory" % \
+            (IRODS_DIRECTORY + TEMP_FILENAME)) 
         
         myfile.download(TEMP_FILENAME)
         import time
 
-        print "Downloading logical file %s to /tmp/" % \
-            (IRODS_DIRECTORY + TEMP_FILENAME) 
+        print("Downloading logical file %s to /tmp/" % \
+            (IRODS_DIRECTORY + TEMP_FILENAME)) 
         myfile.download("/tmp/")
 
         #exit(0)
 
-        print "Deleting downloaded file locally : %s" % (os.getcwd() + TEMP_FILENAME)
+        print("Deleting downloaded file locally : %s" % (os.getcwd() + TEMP_FILENAME))
         #os.remove(os.getcwd() +"/" + TEMP_FILENAME)
 
-        print "Deleting downloaded file locally : %s" % ("/tmp" + TEMP_FILENAME)
+        print("Deleting downloaded file locally : %s" % ("/tmp" + TEMP_FILENAME))
         #os.remove("/tmp/" + TEMP_FILENAME)
 
-        print "Making test dir %s on iRODS" % (IRODS_DIRECTORY+TEMP_DIR)
+        print("Making test dir %s on iRODS" % (IRODS_DIRECTORY+TEMP_DIR))
         mydir.make_dir("irods://"+IRODS_DIRECTORY+TEMP_DIR)
         
         #commented because iRODS install on gw68 doesn't support move
         #print "Moving file to %s test dir on iRODS" % (IRODS_DIRECTORY+TEMP_DIR)
         #myfile.move("irods://"+IRODS_DIRECTORY+TEMP_DIR)
 
-        print "Deleting test dir %s from iRODS" % (IRODS_DIRECTORY+TEMP_DIR)
+        print("Deleting test dir %s from iRODS" % (IRODS_DIRECTORY+TEMP_DIR))
         mydir.remove("irods://"+IRODS_DIRECTORY+TEMP_DIR)
 
-        print "Deleting file %s from iRODS" % (IRODS_DIRECTORY+TEMP_FILENAME)
+        print("Deleting file %s from iRODS" % (IRODS_DIRECTORY+TEMP_FILENAME))
         myfile.remove()
 
-        print "iRODS test script finished execution"
+        print("iRODS test script finished execution")
 
-    except saga.SagaException, ex:
-        print "An error occured while executing the test script! %s" % (str(ex))
+    except saga.SagaException as ex:
+        print("An error occured while executing the test script! %s" % (str(ex)))
         import traceback
-        print traceback.format_exc()
+        print(traceback.format_exc())
 
 
 if __name__ == "__main__":

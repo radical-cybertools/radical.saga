@@ -32,13 +32,13 @@ def main():
       # mydir  = rs.filesystem.Directory('srm://tbn18.nikhef.nl/dpm/nikhef.nl/home/vlemed/mark/radical.saga')
       # nodir  = rs.filesystem.File('srm://tbn18.nikhef.nl/dpm/nikhef.nl/home/vlemed/mark/radical.saga-non-exists/input.txt-non-exist')
 
-        print myfile.get_size_self()
+        print(myfile.get_size_self())
       # print myfile_non_exist.get_size_self()
       # print mydir.get_size()
       # print mydir_non_exist.get_size()
 
-    except rs.SagaException, ex:
-        print "An error occured during file operation: %s" % (str(ex))
+    except rs.SagaException as ex:
+        print("An error occured during file operation: %s" % (str(ex)))
         sys.exit(-1)
 
 

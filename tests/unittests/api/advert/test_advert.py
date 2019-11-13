@@ -3,7 +3,6 @@
 import radical.utils as ru
 import radical.saga  as rs
 
-
 check = False
 
 
@@ -22,9 +21,9 @@ def config():
 def cb (obj, key, val) :
 
     global check
-    if key == 'foo' and val == 'baz' :
+    if key == 'foo' and val == 'baz':
         check = True
-    else :
+    else:
         check = False
 
     return True
@@ -32,15 +31,12 @@ def cb (obj, key, val) :
 
 # ------------------------------------------------------------------------------
 #
-def test_advert_callback () :
+def test_advert_callback():
 
-    try :
+    try:
         global check
 
         tc  = config()
-        import pprint
-        print type(tc)
-        pprint.pprint(tc)
         d_1 = rs.advert.Directory (tc.advert_url + '/tmp/test1/test1/',
                                    rs.advert.CREATE | rs.advert.CREATE_PARENTS)
 
@@ -51,11 +47,10 @@ def test_advert_callback () :
         assert check  # check if callback got invoked
         check = False
 
-
     except rs.NotImplemented as ni:
         assert bool(tc.notimpl_warn_only), "%s " % ni
         if tc.notimpl_warn_only:
-            print "%s " % ni
+            print("%s " % ni)
 
     except rs.SagaException as se:
         assert False, "Unexpected exception: %s" % se
