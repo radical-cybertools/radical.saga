@@ -6,9 +6,10 @@ __license__   = "MIT"
 
 """ Provides the SAGA runtime. """
 
-import radical.utils      as ru
+import radical.utils as ru
 
-from .. import exceptions as rse
+from ..        import exceptions as rse
+from ..version import *
 
 
 # ------------------------------------------------------------------------------
@@ -120,7 +121,6 @@ class Engine(object, metaclass=ru.Singleton):
                   return
     """
 
-
     # --------------------------------------------------------------------------
     #
     def __init__(self):
@@ -135,6 +135,7 @@ class Engine(object, metaclass=ru.Singleton):
 
         # Initialize the logging, and log version (this is a singleton!)
         self._logger = ru.Logger('radical.saga')
+        self._logger.info('radical.saga         version: %s' % version_detail)
 
         # load adaptors
         self._load_adaptors()

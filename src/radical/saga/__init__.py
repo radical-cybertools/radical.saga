@@ -4,10 +4,6 @@ __copyright__ = "Copyright 2013, RADICAL"
 __license__   = "MIT"
 
 
-import os
-import radical.utils as ru
-
-
 # ------------------------------------------------------------------------------
 #
 from . import utils
@@ -15,6 +11,7 @@ from . import utils
 
 # ------------------------------------------------------------------------------
 #
+from   .version    import *
 from   .constants  import *
 
 from   .task       import Task, Container
@@ -42,21 +39,6 @@ from   .           import replica
 from   .           import advert
 from   .           import resource
 # import radical.saga.messages
-
-
-# ------------------------------------------------------------------------------
-#
-pwd     = os.path.dirname (__file__)
-version_short, version_detail, version_base, version_branch, \
-               sdist_name, sdist_path = ru.get_version ([pwd])
-version = version_short
-
-
-# FIXME: the logger init will require a 'classical' ini based config, which is
-# different from the json based config we use now.   May need updating once the
-# radical configuration system has changed to json
-_logger = ru.Logger('radical.saga')
-_logger.info ('radical.saga         version: %s' % version_detail)
 
 
 # ------------------------------------------------------------------------------
