@@ -235,7 +235,7 @@ class Engine(object, metaclass=ru.Singleton):
 
             # disable adaptors in 'alpha' or 'beta' versions -- unless
             # the 'load_beta_adaptors' config option is set to True
-            if not self._cfg.load_beta_adaptors.:
+            if not self._cfg.load_beta_adaptors:
 
                 if 'alpha' in adaptor_version.lower() or \
                    'beta'  in adaptor_version.lower()    :
