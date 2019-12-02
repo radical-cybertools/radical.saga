@@ -263,8 +263,7 @@ class PTYShell (object) :
     #
     def __del__ (self) :
 
-        self.logger.debug ("PTYShell del  %s" % self)
-        self.finalize (kill_pty=True)
+        self.finalize(kill_pty=True)
 
 
     # ----------------------------------------------------------------

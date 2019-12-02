@@ -153,7 +153,6 @@ class PTYProcess (object) :
         them (see cat /proc/sys/kernel/pty/max)
         """
 
-        self.logger.debug ("PTYProcess del  %s" % self)
         with self.rlock :
 
             try :
