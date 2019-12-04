@@ -30,7 +30,7 @@ def test_configurable():
     """ Test the object's Configurable interface
     """
     # make sure singleton works
-    assert(not Engine()._cfg['load_beta_adaptors'])
+    assert(not Engine()._cfg.load_beta_adaptors)
 
 
 def test_emtpy_registry():
@@ -41,7 +41,7 @@ def test_emtpy_registry():
 
 
 def test_broken_registry():
-    """ Test that an attemt to load from a broken registry 
+    """ Test that an attemt to load from a broken registry
         is handled properly
     """
     try:
@@ -80,7 +80,7 @@ def test_load_adaptor():
 
 
 def test_load_adaptor_twice():
-    """ Test that an attempt to load the same adaptor twice 
+    """ Test that an attempt to load the same adaptor twice
     doesn't cause trouble """
     # store old sys.path
     old_sys_path = sys.path
