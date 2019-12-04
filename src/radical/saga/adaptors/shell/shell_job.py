@@ -287,7 +287,7 @@ _ADAPTOR_DOC           = {
             in future versions of the adaptor.  Non-concurrent (i.e. serialized)
             use should work as expected though.
 
-        '''
+        ''',
     "example"         : "examples/jobs/localjob.py",
     "schemas"         : {"fork"  :"use /bin/sh to run jobs",
                          "local" :"alias for fork://",
