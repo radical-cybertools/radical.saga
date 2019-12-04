@@ -49,11 +49,12 @@ TODO:
 
 '''
 
+import redis
+
 import re
 import os
 import time
 import string
-import redis
 import threading as mt
 
 import radical.utils         as ru

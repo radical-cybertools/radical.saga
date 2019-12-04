@@ -173,9 +173,9 @@ class Engine(object, metaclass=ru.Singleton):
             try :
                 adaptor_module = ru.import_module(module_name)
 
-            except Exception:
-                self._logger.warning("skip adaptor %s: import failed",
-                                  module_name, exc_info=True)
+            except Exception as e:
+                self._logger.warning("skip adaptor %s: import failed (%s)",
+                                  module_name, e)
                 continue
 
             # we expect the module to have an 'Adaptor' class

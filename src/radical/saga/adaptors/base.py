@@ -41,7 +41,7 @@ class Base(object, metaclass=ru.Singleton):
         self._logger  = ru.Logger('radical.saga.api')
 
         self._cfg     = ru.Config(module='radical.saga.adaptors',
-                                  category=self._name.split('.')[-1],
+                                  name=self._name,
                                   expand=expand_env)
 
         if 'enabled' not in self._cfg:
