@@ -104,7 +104,6 @@ class Adaptor(a_base.Base):
 
         a_base.Base.__init__(self, _ADAPTOR_INFO)
 
-        # FIXME: RADICAL
         self.notify       = self._cfg['enable_notifications']
         self.f_mode       = self._cfg['failure_mode']
         self.prompt       = self._cfg['prompt_pattern']

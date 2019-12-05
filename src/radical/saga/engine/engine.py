@@ -253,7 +253,7 @@ class Engine(object, metaclass=ru.Singleton):
 
             try :
                 adaptor_config  = ru.Config('radical.saga.adaptors',
-                                            name=adaptor_name.split('.')[-1])
+                                            name=adaptor_name)
                 adaptor_enabled = adaptor_config.get('enabled', True)
 
             except rse.SagaException:
