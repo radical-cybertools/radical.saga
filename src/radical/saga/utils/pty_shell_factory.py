@@ -156,7 +156,7 @@ class PTYShellFactory (object, metaclass=ru.Singleton) :
             cfg  = None
 
         self.cfg = ru.Config('radical.saga.session', name=name, cfg=cfg)
-        self.cfg = self.cfg['pty']
+        self.cfg = self.cfg.pty
 
 
     # --------------------------------------------------------------------------
@@ -721,4 +721,3 @@ class PTYShellFactory (object, metaclass=ru.Singleton) :
 
 
 # ------------------------------------------------------------------------------
-
