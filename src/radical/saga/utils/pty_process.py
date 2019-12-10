@@ -14,6 +14,7 @@ import shlex
 import select
 import signal
 import termios
+import threading as mt
 
 import radical.utils            as ru
 
@@ -82,7 +83,7 @@ class PTYProcess (object) :
 
     # ----------------------------------------------------------------
     #
-    def __init__ (self, command, cfg=None, logger=None) :
+    def __init__ (self, command, cfg='utils', logger=None) :
         """
         The class constructor, which runs (execvpe) command in a separately
         forked process.  The bew process will inherit the environment of the
@@ -97,14 +98,20 @@ class PTYProcess (object) :
         :param logger:  logger stream to send status messages to.
         """
 
-        if cfg:
-            self._cfg = cfg
-        else:
-            self._cfg = ru.Config('radical.saga', 'utils')['pty']
-
+        self.rlock  = mt.RLock()
         self.logger = logger
+
         if  not  self.logger : self.logger = ru.Logger('radical.saga.pty')
         self.logger.debug ("PTYProcess init %s" % self)
+
+
+        name = None
+        if isinstance(cfg, str):
+            name = cfg
+            cfg  = None
+
+        self.cfg = ru.Config('radical.saga.session', name=name, cfg=cfg)
+        self.cfg = self.cfg.pty
 
 
         if isinstance (command, str) :
@@ -116,7 +123,6 @@ class PTYProcess (object) :
         if len(command) < 1 :
             raise se.BadParameter ("PTYProcess expects non-empty command")
 
-        self.rlock   = ru.RLock ("pty process %s" % command)
 
         self.command = command  # list of strings too run()
 
@@ -147,7 +153,6 @@ class PTYProcess (object) :
         them (see cat /proc/sys/kernel/pty/max)
         """
 
-        self.logger.debug ("PTYProcess del  %s" % self)
         with self.rlock :
 
             try :
