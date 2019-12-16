@@ -28,17 +28,17 @@ def main():
         for t in range(0, 32):
             f = saga.filesystem.File("sftp://login1.stampede.tacc.utexas.edu//etc/passwd")
             f.copy("file://localhost//tmp/passwd-%s" % t)
-            print "Copied file %s" % t
+            print("Copied file %s" % t)
 
             f.close()
 
         return 0
 
-    except saga.SagaException, ex:
+    except saga.SagaException as ex:
         # Catch all saga exceptions
-        print "An exception occured: (%s) %s " % (ex.type, (str(ex)))
+        print("An exception occured: (%s) %s " % (ex.type, (str(ex))))
         # Trace back the exception. That can be helpful for debugging.
-        print " \n*** Backtrace:\n %s" % ex.traceback
+        print(" \n*** Backtrace:\n %s" % ex.traceback)
         return -1
 
 

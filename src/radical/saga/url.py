@@ -44,7 +44,7 @@ class Url (ru.Url) :
     """
 
     @rus.takes   ('Url', 
-                  rus.optional (basestring, 'Url'))
+                  rus.optional (str, 'Url'))
     @rus.returns (rus.nothing)
     def __init__ (self, url_in=''):
         """ 

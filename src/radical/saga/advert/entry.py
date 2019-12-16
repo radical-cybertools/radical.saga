@@ -24,7 +24,7 @@ class Entry (nsentry.Entry, sa.Attributes) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Entry', 
-                  rus.optional ((ru.Url, basestring)), 
+                  rus.optional ((ru.Url, str)), 
                   rus.optional (int, rus.nothing),
                   rus.optional (ss.Session), 
                   rus.optional (sab.Base),
@@ -73,7 +73,7 @@ class Entry (nsentry.Entry, sa.Attributes) :
     #
     @classmethod
     @rus.takes   ('Entry', 
-                  rus.optional ((ru.Url, basestring)), 
+                  rus.optional ((ru.Url, str)), 
                   rus.optional (int, rus.nothing), 
                   rus.optional (ss.Session), 
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
@@ -101,7 +101,7 @@ class Entry (nsentry.Entry, sa.Attributes) :
     # the attribute interface
     #
     @rus.takes   ('Entry', 
-                  basestring,
+                  str,
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((rus.anything, st.Task))
     def _attribute_getter (self, key, ttype=None) :
@@ -112,7 +112,7 @@ class Entry (nsentry.Entry, sa.Attributes) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Entry', 
-                  basestring,
+                  str,
                   rus.anything,
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((rus.nothing, st.Task))
@@ -134,7 +134,7 @@ class Entry (nsentry.Entry, sa.Attributes) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Entry', 
-                  basestring, 
+                  str, 
                   int, 
                   callable, 
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))

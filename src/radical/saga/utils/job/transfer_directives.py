@@ -149,10 +149,10 @@ def _test_():
 
     tdp = TransferDirectives(["ab","a>c", "c>>d","f<a","g<<h"])
 
-    print tdp.in_append
-    print tdp.in_overwrite
-    print tdp.out_append
-    print tdp.out_overwrite
+    print(tdp.in_append)
+    print(tdp.in_overwrite)
+    print(tdp.out_append)
+    print(tdp.out_overwrite)
 
 
 # ------------------------------------------------------------------------------

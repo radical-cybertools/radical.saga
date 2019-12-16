@@ -1,5 +1,5 @@
 #!/usr/bin/env python
 
 import radical.saga
-print radical.saga.version_detail
+print(radical.saga.version_detail)
 

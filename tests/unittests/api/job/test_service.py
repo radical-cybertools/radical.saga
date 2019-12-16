@@ -56,7 +56,7 @@ def test_close():
     except rs.NotImplemented as ni:
         assert cfg.notimpl_warn_only, "%s " % ni
         if cfg.notimpl_warn_only:
-            print "%s " % ni
+            print("%s " % ni)
     except rs.SagaException:
         assert True
 
@@ -77,7 +77,7 @@ def test_open_close():
     except rs.NotImplemented as ni:
         assert cfg.notimpl_warn_only, "%s " % ni
         if cfg.notimpl_warn_only:
-            print "%s " % ni
+            print("%s " % ni)
     except rs.SagaException as se:
         assert False, "Unexpected exception: %s" % se
     finally:
@@ -93,13 +93,15 @@ def test_get_url():
     try:
         cfg = config()
         js = rs.job.Service(cfg.job_service_url, cfg.session)
-        assert(str(js.get_url()) == str(cfg.job_service_url)), 'expected %s [%s]' % (str(js.get_url()) == str(cfg.job_service_url))
-        assert(str(js.url)       == str(cfg.job_service_url)), 'expected %s [%s]' % (str(js.get_url()) == str(cfg.job_service_url))
+        assert(str(js.get_url()) == str(cfg.job_service_url)), \
+                'expected %s [%s]' % (js.get_url(), cfg.job_service_url)
+        assert(str(js.url)       == str(cfg.job_service_url)), \
+                'expected %s [%s]' % (js.get_url(), cfg.job_service_url)
 
     except rs.NotImplemented as ni:
         assert cfg.notimpl_warn_only, "%s " % ni
         if cfg.notimpl_warn_only:
-            print "%s " % ni
+            print("%s " % ni)
     except rs.SagaException as se:
         assert False, "Unexpected exception: %s" % se
     finally:
@@ -135,7 +137,7 @@ def test_list_jobs():
     except rs.NotImplemented as ni:
         assert cfg.notimpl_warn_only, "%s " % ni
         if cfg.notimpl_warn_only:
-            print "%s " % ni
+            print("%s " % ni)
     except rs.SagaException as se:
         assert False, "Unexpected exception: %s" % se
     finally:
@@ -159,7 +161,7 @@ def test_run_job():
     except rs.NotImplemented as ni:
         assert cfg.notimpl_warn_only, "%s " % ni
         if cfg.notimpl_warn_only:
-            print "%s " % ni
+            print("%s " % ni)
     except rs.SagaException as se:
         assert False, "Unexpected exception: %s" % se
     finally:
@@ -194,7 +196,7 @@ def test_get_job():
     except rs.NotImplemented as ni:
         assert cfg.notimpl_warn_only, "%s " % ni
         if cfg.notimpl_warn_only:
-            print "%s " % ni
+            print("%s " % ni)
     except rs.SagaException as se:
         assert False, "Unexpected exception: %s" % se
     finally:
@@ -246,7 +248,7 @@ def test_multiple_services():
     except rs.NotImplemented as ni:
         assert cfg.notimpl_warn_only, "%s " % ni
         if cfg.notimpl_warn_only:
-            print "%s " % ni
+            print("%s " % ni)
 
     except rs.SagaException as se:
         assert False, "Unexpected exception: %s" % se
@@ -282,7 +284,8 @@ def test_jobid_viability ():
 
         # kill the children (i.e. the only child) of the pid, which is the
         # actual job
-        os.system ('ps -ef | cut -c 8-21 | grep " %s " | cut -c 1-8 | grep -v " %s " | xargs -r kill' % (pid, pid))
+        os.system (('ps -ef | cut -c 8-21 | grep " %s " | cut -c 1-8 '
+                    '| grep -v " %s " | xargs -r kill') % (pid, pid))
 
         assert (j.state == rs.job.FAILED), 'job.state: %s' % j.state
 

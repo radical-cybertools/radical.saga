@@ -85,7 +85,7 @@ class Description (sa.Attributes) :
         env = self.get_attribute (ENVIRONMENT)
         if  self._env_is_list :
             self._env_is_list = False
-            return ["%s=%s" % (key, val) for (key, val) in env.items ()]
+            return ["%s=%s" % (key, val) for (key, val) in list(env.items ())]
         return env
 
 

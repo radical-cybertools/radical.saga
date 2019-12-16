@@ -6,7 +6,7 @@ __license__   = "MIT"
 
 """ (GSI)SSH based Globus Online Adaptor """
 
-import os 
+import os
 import threading
 
 
@@ -52,11 +52,11 @@ _ADAPTOR_CAPABILITIES  = {
 _ADAPTOR_DOC           = {
     "name"             : _ADAPTOR_NAME,
     "capabilities"     : _ADAPTOR_CAPABILITIES,
-    "description"      : """ 
+    "description"      : """
         The globusonline file adaptor. This adaptor uses the GO file transfer
         service (https://www.globus.org/).
         """,
-    "details"          : """ 
+    "details"          : """
         """,
     "schemas"          : {"go": "use globus online for gridftp file transfer"}
 }
@@ -69,19 +69,19 @@ _ADAPTOR_INFO          = {
     "version"          : "v0.2",
     "schemas"          : _ADAPTOR_SCHEMAS,
     "cpis"             : [
-                             { 
+                             {
                                  "type"  : "radical.saga.namespace.Directory",
                                  "class" : "GODirectory"
-                             }, 
-                             { 
+                             },
+                             {
                                  "type"  : "radical.saga.namespace.Entry",
                                  "class" : "GOFile"
                              },
-                             { 
+                             {
                                  "type"  : "radical.saga.filesystem.Directory",
                                  "class" : "GODirectory"
-                             }, 
-                             { 
+                             },
+                             {
                                  "type"  : "radical.saga.filesystem.File",
                                  "class" : "GOFile"
                              }
@@ -92,7 +92,7 @@ _ADAPTOR_INFO          = {
 ################################################################################
 # The adaptor class
 class Adaptor(a_base.Base):
-    """ 
+    """
     This is the actual adaptor class, which gets loaded by SAGA (i.e. by the
     SAGA engine), and which registers the CPI implementation classes which
     provide the adaptor's functionality.
@@ -104,7 +104,6 @@ class Adaptor(a_base.Base):
 
         a_base.Base.__init__(self, _ADAPTOR_INFO)
 
-        # FIXME: RADICAL
         self.notify       = self._cfg['enable_notifications']
         self.f_mode       = self._cfg['failure_mode']
         self.prompt       = self._cfg['prompt_pattern']
@@ -400,7 +399,7 @@ class Adaptor(a_base.Base):
                                      "credential_subject,"  # Credential Subject
                                      "myproxy_server"       # MyProxy Server
                                      % endpoint_selection
-                                    )                      
+                                    )
 
                 for line in out.split('\n'):
                     elems = line.split(':', 1)
@@ -467,7 +466,7 @@ class Adaptor(a_base.Base):
 
             else:
                 # on success, we always remove the first line, as that is not
-                # part of the output, really (this shell does not support 
+                # part of the output, really (this shell does not support
                 # 'stty -echo'...
                 out = '\n'.join(lines[1:])
 
@@ -518,7 +517,7 @@ class Adaptor(a_base.Base):
             cur_path = '.'
 
         error = {}
-        path_elems = filter(None, path_ps.split('/'))
+        path_elems = [_f for _f in path_ps.split('/') if _f]
 
         for path_elem in path_elems :
 
@@ -832,7 +831,7 @@ class GODirectory(cpi.Directory):
         npat_ps  = self.get_path_spec(url=npat)
         # TODO: catch errors?
         out, err = self._adaptor.run_go_cmd(self.shell, "ls '%s'" % (npat_ps))
-        lines = filter(None, out.split("\n"))
+        lines = [_f for _f in out.split("\n") if _f]
         self._logger.debug(lines)
 
         self.entries = []
@@ -899,7 +898,7 @@ class GODirectory(cpi.Directory):
                                         % (src_ps, tgt_ps))
                 return
             except:
-                self._logger.warn("rename op failed -- retry as copy/remove")
+                self._logger.warning("rename op failed -- retry as copy/remove")
 
         # either the op spans endpoints, or the 'rename' op failed
         self.copy(src_in, tgt_in, flags)
@@ -1232,7 +1231,7 @@ class GOFile(cpi.File):
                                         % (src_ps, tgt_ps))
                 return
             except:
-                self._logger.warn("Rename op failed -- retry as copy/remove")
+                self._logger.warning("Rename op failed -- retry as copy/remove")
 
         # either the op spans endpoints, or the 'rename' op failed
         self.copy_self(tgt_in, flags)

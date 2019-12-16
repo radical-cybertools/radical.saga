@@ -6,14 +6,18 @@ __license__   = "MIT"
 
 """ Provides the SAGA runtime. """
 
-import radical.utils      as ru
+import radical.utils as ru
 
-from .. import exceptions as rse
+from ..        import exceptions as rse
+from ..version import *
 
 
+# ------------------------------------------------------------------------------
+#
 # we set the default of the pty share mode to 'no' on CentOS, as that seems to
 # consistently come with old ssh versions which can't handle sharing for sftp
 # channels.
+#
 _share_mode_default = 'auto'
 try:
     import subprocess as sp
@@ -27,97 +31,95 @@ try:
        'cent os' in _os_flavor :
         _share_mode_default = 'no'
 
-except Exception as e:
+except Exception:
     # we ignore this then -- we are relatively sure that the above should work
     # on CentOS...
     pass
 
 
-################################################################################
+# ------------------------------------------------------------------------------
 #
-class Engine(object):
-    """ Represents the SAGA engine runtime system.
-
-        The Engine is a singleton class that takes care of adaptor
-        loading and management, and which binds adaptor instances to
-        API object instances.   The Engine singleton is implicitly
-        instantiated as soon as SAGA is imported into Python.  It
-        will, on creation, load all available adaptors.  Adaptors
-        modules MUST provide an 'Adaptor' class, which will register
-        the adaptor in the engine with information like these
-        (simplified)::
-
-          _ADAPTOR_INFO = {
-            'name'    : _adaptor_name,
-            'version' : 'v1.3'
-            'schemas' : ['fork', 'local']
-            'cpis'    : [{
-              'type'    : 'radical.saga.job.Job',
-              'class'   : 'LocalJob',
-              },
-              {
-              'type'    : 'radical.saga.job.Service',
-              'class'   : 'LocalJobService',
-              }
-            ]
-          }
-
-        where 'class' points to the actual adaptor classes, and
-        'schemas' lists the URL schemas for which those adaptor
-        classes should be considered.  Note that schemas are case
-        insensitive.  More details on the adaptor registration process
-        and on adaptor meta data can be found in the adaptors writer
-        guide.
-
-        :todo: add link to adaptor writers documentation.
-
-        While loading adaptors, the Engine builds up an internal
-        registry of adaptor classes, hierarchically sorted like this
-        (simplified)::
-
-          _adaptor_registry =
-          {
-              'job' :
-              {
-                  'gram' : [<gram job  adaptor, gram job adaptor class>]
-                  'ssh'  : [<ssh  job  adaptor, ssh  job adaptor class>]
-                  'http' : [<aws  job  adaptor, aws  job adaptor class>,
-                            <occi job  adaptor, occi job adaptor class>]
-                  ...
-              },
-              'file' :
-              {
-                  'ftp'  : <ftp file adaptor, ftp file adaptor class>
-                  'scp'  : <scp file adaptor, scp file adaptor class>
-                  ...
-              },
-              ...
-          }
-
-        to enable simple lookup operations when binding an API object
-        to an adaptor class instance.  For example, a
-        'saga.job.Service('http://remote.host.net/')' constructor
-        would use (simplified)::
-
-          def __init__ (self, url="", session=None) :
-
-              for (adaptor, adaptor_class) in \
-                      self._engine._adaptor_registry{'job'}{url.scheme}
-
-                  try :
-                      self._adaptor = adaptor_class(self, url, session}
-
-                  except saga.Exception e :
-                      # adaptor bailed out
-                      continue
-
-                  else :
-                      # successfully bound to adaptor
-                      return
+class Engine(object, metaclass=ru.Singleton):
     """
+    Represents the SAGA engine runtime system.
 
-    __metaclass__ = ru.Singleton
+    The Engine is a singleton class that takes care of adaptor
+    loading and management, and which binds adaptor instances to
+    API object instances.   The Engine singleton is implicitly
+    instantiated as soon as SAGA is imported into Python.  It
+    will, on creation, load all available adaptors.  Adaptors
+    modules MUST provide an 'Adaptor' class, which will register
+    the adaptor in the engine with information like these
+    (simplified)::
 
+      _ADAPTOR_INFO = {
+        'name'    : _adaptor_name,
+        'version' : 'v1.3'
+        'schemas' : ['fork', 'local']
+        'cpis'    : [{
+          'type'    : 'radical.saga.job.Job',
+          'class'   : 'LocalJob',
+          },
+          {
+          'type'    : 'radical.saga.job.Service',
+          'class'   : 'LocalJobService',
+          }
+        ]
+      }
+
+    where 'class' points to the actual adaptor classes, and
+    'schemas' lists the URL schemas for which those adaptor
+    classes should be considered.  Note that schemas are case
+    insensitive.  More details on the adaptor registration process
+    and on adaptor meta data can be found in the adaptors writer
+    guide.
+
+    :todo: add link to adaptor writers documentation.
+
+    While loading adaptors, the Engine builds up an internal
+    registry of adaptor classes, hierarchically sorted like this
+    (simplified)::
+
+      _adaptor_registry =
+      {
+          'job' :
+          {
+              'gram' : [<gram job  adaptor, gram job adaptor class>]
+              'ssh'  : [<ssh  job  adaptor, ssh  job adaptor class>]
+              'http' : [<aws  job  adaptor, aws  job adaptor class>,
+                        <occi job  adaptor, occi job adaptor class>]
+              ...
+          },
+          'file' :
+          {
+              'ftp'  : <ftp file adaptor, ftp file adaptor class>
+              'scp'  : <scp file adaptor, scp file adaptor class>
+              ...
+          },
+          ...
+      }
+
+    to enable simple lookup operations when binding an API object
+    to an adaptor class instance.  For example, a
+    'saga.job.Service('http://remote.host.net/')' constructor
+    would use (simplified)::
+
+      def __init__ (self, url="", session=None) :
+
+          for (adaptor, adaptor_class) in \
+                  self._engine._adaptor_registry{'job'}{url.scheme}
+
+              try :
+                  self._adaptor = adaptor_class(self, url, session}
+
+              except saga.Exception e :
+                  # adaptor bailed out
+                  continue
+
+              else :
+                  # successfully bound to adaptor
+                  return
+    """
 
     # --------------------------------------------------------------------------
     #
@@ -127,12 +129,13 @@ class Engine(object):
         self._adaptor_registry = dict()
 
         # get angine, adaptor and pty configs
-        self._cfg      = ru.Config(module='radical.saga', name='engine')
-        self._pty_cfg  = ru.Config(module='radical.saga', name='pty')
-        self._registry = ru.Config(module='radical.saga', name='registry')
+        self._cfg      = ru.Config('radical.saga.engine')
+        self._pty_cfg  = ru.Config('radical.saga.pty')
+        self._registry = ru.Config('radical.saga.registry')
 
         # Initialize the logging, and log version (this is a singleton!)
         self._logger = ru.Logger('radical.saga')
+        self._logger.info('radical.saga         version: %s' % version_detail)
 
         # load adaptors
         self._load_adaptors()
@@ -170,9 +173,9 @@ class Engine(object):
             try :
                 adaptor_module = ru.import_module(module_name)
 
-            except Exception:
-                self._logger.warn("skip adaptor %s: import failed",
-                                  module_name, exc_info=True)
+            except Exception as e:
+                self._logger.warning("skip adaptor %s: import failed (%s)",
+                                  module_name, e)
                 continue
 
             # we expect the module to have an 'Adaptor' class
@@ -186,12 +189,12 @@ class Engine(object):
                 adaptor_info     = adaptor_instance.register ()
 
             except rse.SagaException:
-                self._logger.warn("skip adaptor %s: failed to load",
+                self._logger.warning("skip adaptor %s: failed to load",
                                   module_name, exc_info=True)
                 continue
 
             except Exception:
-                self._logger.warn("skip adaptor %s: init failed",
+                self._logger.warning("skip adaptor %s: init failed",
                                   module_name, exc_info=True)
                 continue
 
@@ -204,14 +207,14 @@ class Engine(object):
                 adaptor_instance.sanity_check ()
 
             except Exception:
-                self._logger.warn("skip adaptor %s: test failed",
+                self._logger.warning("skip adaptor %s: test failed",
                                   module_name, exc_info=True)
                 continue
 
 
             # check if we have a valid adaptor_info
             if adaptor_info is None :
-                self._logger.warn("skip adaptor %s: invalid adaptor data",
+                self._logger.warning("skip adaptor %s: invalid adaptor data",
                                   module_name)
                 continue
 
@@ -220,7 +223,7 @@ class Engine(object):
                 'cpis'    not in adaptor_info or \
                 'version' not in adaptor_info or \
                 'schemas' not in adaptor_info    :
-                self._logger.warn("skip adaptor %s: incomplete data",
+                self._logger.warning("skip adaptor %s: incomplete data",
                                   module_name)
                 continue
 
@@ -232,12 +235,12 @@ class Engine(object):
 
             # disable adaptors in 'alpha' or 'beta' versions -- unless
             # the 'load_beta_adaptors' config option is set to True
-            if not self._cfg['load_beta_adaptors']:
+            if not self._cfg.load_beta_adaptors:
 
                 if 'alpha' in adaptor_version.lower() or \
                    'beta'  in adaptor_version.lower()    :
 
-                    self._logger.warn("skip beta adaptor %s (version %s)",
+                    self._logger.warning("skip beta adaptor %s (version %s)",
                                       module_name, adaptor_version)
                     continue
 
@@ -249,29 +252,30 @@ class Engine(object):
             adaptor_enabled = False
 
             try :
-                adaptor_config  = ru.Config('radical.saga', name=adaptor_name)
+                adaptor_config  = ru.Config('radical.saga.adaptors',
+                                            name=adaptor_name)
                 adaptor_enabled = adaptor_config.get('enabled', True)
 
             except rse.SagaException:
-                self._logger.warn("skip adaptor %s: init failed",
+                self._logger.warning("skip adaptor %s: init failed",
                                   module_name, exc_info=True)
                 continue
 
             except Exception as e:
-                self._logger.warn("skip adaptor %s: init error",
+                self._logger.warning("skip adaptor %s: init error",
                                   module_name, exc_info=True)
                 continue
 
 
             # only load adaptor if it is not disabled via config files
             if not adaptor_enabled:
-                self._logger.warn("skip adaptor %s: disabled", module_name)
+                self._logger.warning("skip adaptor %s: disabled", module_name)
                 continue
 
 
             # check if the adaptor has anything to register
             if 0 == len (adaptor_info['cpis']) :
-                self._logger.warn("skip adaptor %s: adaptor has no cpis",
+                self._logger.warning("skip adaptor %s: adaptor has no cpis",
                                   module_name)
                 continue
 
@@ -283,7 +287,7 @@ class Engine(object):
                 # check cpi information details for completeness
                 if  'type'  not in cpi_info or \
                     'class' not in cpi_info    :
-                    self._logger.warn("skip %s cpi: incomplete info detail",
+                    self._logger.warning("skip %s cpi: incomplete info detail",
                                       module_name)
                     continue
 
@@ -299,7 +303,7 @@ class Engine(object):
                 except Exception:
                     # this exception likely means that the adaptor does not call
                     # the radical.saga.adaptors.Base initializer (correctly)
-                    self._logger.warn("skip adaptor %s: invalid %s",
+                    self._logger.warning("skip adaptor %s: invalid %s",
                                       module_name, cpi_info['class'],
                                       exc_info=True)
                     continue
@@ -333,13 +337,13 @@ class Engine(object):
 
                 if  len(cpi_type_nselems) < 3 or \
                     len(cpi_type_nselems) > 4    :
-                    self._logger.warn("skip adaptor %s invalid cpi %s",
+                    self._logger.warning("skip adaptor %s invalid cpi %s",
                                       module_name, cpi_type)
                     continue
 
                 if  cpi_type_nselems[0] != 'radical' and \
                     cpi_type_nselems[1] != 'saga'    :
-                    self._logger.warn("skip adaptor %s: invalid cpi ns %s",
+                    self._logger.warning("skip adaptor %s: invalid cpi ns %s",
                                       module_name, cpi_type, exc_info=True)
                     continue
 
@@ -369,7 +373,7 @@ class Engine(object):
              #      cpi_type_modname = cpi_type_modname_2
              #
              #  if  not cpi_type_modname :
-             #      self._logger.warn("skip adaptor %s: unknown cpi %s",
+             #      self._logger.warning("skip adaptor %s: unknown cpi %s",
              #                        module_name, cpi_type, exc_info=True)
              #      sys.exit()
              #      continue
@@ -385,7 +389,7 @@ class Engine(object):
              #              cpi_ok = True
              #
              #  if not cpi_ok :
-             #      self._logger.warn("skip adaptor %s: no cpi %s (%s)",
+             #      self._logger.warning("skip adaptor %s: no cpi %s (%s)",
              #                        module_name, cpi_class, cpi_type,
              #                       exc_info=True)
              #      continue
@@ -417,7 +421,7 @@ class Engine(object):
 
                     # make sure this tuple was not registered, yet
                     if info in self._adaptor_registry[cpi_type][adaptor_schema]:
-                        self._logger.warn("skip adaptor %s: exists %s: %s",
+                        self._logger.warning("skip adaptor %s: exists %s: %s",
                                           module_name, cpi_class,
                                           adaptor_instance, exc_info=True)
                         continue
@@ -466,8 +470,8 @@ class Engine(object):
             interact with other adaptors.
         '''
 
-        for ctype in self._adaptor_registry.keys () :
-            for schema in self._adaptor_registry[ctype].keys () :
+        for ctype in list(self._adaptor_registry.keys ()) :
+            for schema in list(self._adaptor_registry[ctype].keys ()) :
                 for info in self._adaptor_registry[ctype][schema] :
                     if info['adaptor_name'] == adaptor_name:
                         return info['adaptor_instance']
@@ -564,7 +568,7 @@ class Engine(object):
 
         import pprint
 
-        print 'adaptors'
+        print('adaptors')
         pprint.pprint (self._adaptor_registry)
 
 

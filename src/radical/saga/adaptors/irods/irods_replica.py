@@ -188,7 +188,7 @@ class Adaptor (rs.adaptors.base.Base):
             if rc != 0:
                 raise Exception("sanity check error")
 
-        except Exception, ex:
+        except Exception as ex:
             raise rs.NoSuccess ("Could not run iRODS/ils.  Check iRODS"
                                   "environment and certificates (%s)" % ex)
         finally :
@@ -280,7 +280,7 @@ class Adaptor (rs.adaptors.base.Base):
                     final_list.append(item)
             return final_list
 
-        except Exception, e:
+        except Exception as e:
             raise rs.NoSuccess ("Couldn't get directory listing: %s %s " % e)
 
         return result
@@ -372,7 +372,7 @@ class Adaptor (rs.adaptors.base.Base):
 
             return result
 
-        except Exception, e:
+        except Exception as e:
             raise rs.NoSuccess ("Couldn't get resource listing: %s " % (str(e)))
 
 
@@ -488,7 +488,7 @@ class IRODSDirectory (rs.adaptors.cpi.replica.LogicalDirectory) :
                 raise rs.NoSuccess("Could not create dir %s, [%s]: %s"
                                   % (complete_path, str(ret), out))
 
-        except Exception, ex:
+        except Exception as ex:
             # did the directory already exist?
             if "CATALOG_ALREADY_HAS_ITEM_BY_THAT_NAME" in str(ex):
                 raise rs.AlreadyExists ("Directory already exists.")
@@ -516,7 +516,7 @@ class IRODSDirectory (rs.adaptors.cpi.replica.LogicalDirectory) :
                 raise rs.NoSuccess("Could not remove directory %s [%s]: %s"
                                   % (complete_path, str(ret), out))
 
-        except Exception, ex:
+        except Exception as ex:
 
             # was there no directory to delete?
             if "does not exist" in str(ex):
@@ -561,7 +561,7 @@ class IRODSDirectory (rs.adaptors.cpi.replica.LogicalDirectory) :
                     # result.append("file " + item)
                     result.append(item)
 
-        except Exception, ex:
+        except Exception as ex:
             raise rs.NoSuccess ("Couldn't list directory: %s " % (str(ex)))
 
         return result
@@ -689,7 +689,7 @@ class IRODSFile (rs.adaptors.cpi.replica.LogicalFile) :
         if tgt[0] != '/' :
             tgt = "%s/%s"   % (os.path.dirname (src), tgt)
 
-        print " copy %s %s" % (self._url, tgt)
+        print(" copy %s %s" % (self._url, tgt))
         shutil.copy2 (src, tgt)
 
 
@@ -761,7 +761,7 @@ class IRODSFile (rs.adaptors.cpi.replica.LogicalFile) :
                                 "resource/resource group %s, errorcode %s: %s"
                                % (complete_path, resource, str(ret), out))
 
-        except Exception, ex:
+        except Exception as ex:
             raise rs.NoSuccess._log(self._logger, "replicate failed: %s" % ex)
 
 
@@ -790,7 +790,7 @@ class IRODSFile (rs.adaptors.cpi.replica.LogicalFile) :
                                    "%s, errorcode %s: %s" 
                                   % (source_path, dest_path, str(ret), out))
 
-        except Exception, ex:
+        except Exception as ex:
             raise rs.NoSuccess ("Couldn't move file: %s" % ex)
 
 
@@ -820,7 +820,7 @@ class IRODSFile (rs.adaptors.cpi.replica.LogicalFile) :
                 raise rs.NoSuccess("Could not remove file %s [%s]: %s"
                                   % (complete_path, str(ret), out))
 
-        except Exception, ex:
+        except Exception as ex:
             # couldn't delete for unspecificed reason
             raise rs.NoSuccess("delete %s failed: %s" % (complete_path, ex))
 
@@ -901,7 +901,7 @@ class IRODSFile (rs.adaptors.cpi.replica.LogicalFile) :
                 raise rs.NoSuccess("Could not upload file %s, errorcode %s: %s"
                                   % (complete_path, str(ret), out))
 
-        except Exception, ex:
+        except Exception as ex:
             # couldn't upload for unspecificed reason
             raise rs.NoSuccess._log (self._logger, "upload failed: %s" % ex)
 
@@ -951,7 +951,7 @@ class IRODSFile (rs.adaptors.cpi.replica.LogicalFile) :
                 raise rs.NoSuccess("download failed: %s [%s]: %s"
                                   % (logical_path, str(ret), out))
 
-        except Exception, ex:
+        except Exception as ex:
             # couldn't download for unspecificed reason
             raise rs.NoSuccess ("Couldn't download file. %s" % ex)
 

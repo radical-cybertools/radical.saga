@@ -33,7 +33,7 @@ def assert_exception (cfg, e) :
     ni = cfg.get ('not_implemented', 'warn')
 
     if  'NotImplemented' in str(e) and ni == 'warn' :
-        print "WARNING: %s"
+        print("WARNING: %s")
         return
 
     else :

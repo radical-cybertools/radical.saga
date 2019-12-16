@@ -63,13 +63,13 @@ class TransferDirectives(object):
 
     def _dicts_to_string_list(self):
         slist = list()
-        for (local, remote) in self._in_overwrite.iteritems():
+        for (local, remote) in self._in_overwrite.items():
             slist.append('%s > %s' % (local, remote))
-        for (local, remote) in self._in_append.iteritems():
+        for (local, remote) in self._in_append.items():
             slist.append('%s >> %s' % (local, remote))
-        for (remote, local) in self._out_overwrite.iteritems():
+        for (remote, local) in self._out_overwrite.items():
             slist.append('%s < %s' % (local, remote))
-        for (remote, local) in self._out_append.iteritems():
+        for (remote, local) in self._out_append.items():
             slist.append('%s << %s' % (local, remote))
         return slist
 

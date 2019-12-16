@@ -8,7 +8,7 @@ __license__   = "MIT"
 
 from .. import decorators as cpi_dec
 from .. import base       as cpi_base
-from .. import async      as cpi_async
+from .. import sasync     as cpi_async
 
 SYNC  = cpi_dec.CPI_SYNC_CALL
 ASYNC = cpi_dec.CPI_ASYNC_CALL
@@ -73,7 +73,7 @@ class Manager (cpi_base.CPIBase, cpi_async.Async) :
 
     @SYNC
     def destroy                    (self, id,        ttype)    : pass
-    @ASYNC                                           
+    @ASYNC
     def destroy_async              (self, id,        ttype)    : pass
 
 

@@ -65,7 +65,7 @@ class _job_state_monitor(threading.Thread):
                 # job by job. that would be too inefficient!
                 jobs = self.js.jobs
 
-                for job_id in jobs.keys() :
+                for job_id in list(jobs.keys()) :
 
                     job_info = jobs[job_id]
 
@@ -198,7 +198,7 @@ def _script_generator(url, logger, jd, ppn, gres, version, is_cray=False,
     if jd.environment:
         pbs_params += "#PBS -v %s\n" % \
                 ','.join (["%s=%s" % (k,v) 
-                           for k,v in jd.environment.iteritems()])
+                           for k,v in jd.environment.items()])
 
     # apparently this doesn't work with older PBS installations
     #    if jd.working_directory:
@@ -244,7 +244,7 @@ def _script_generator(url, logger, jd, ppn, gres, version, is_cray=False,
 
 
     if jd.wall_time_limit:
-        hours = jd.wall_time_limit / 60
+        hours = int(jd.wall_time_limit / 60)
         minutes = jd.wall_time_limit % 60
         pbs_params += "#PBS -l walltime=%s:%s:00 \n" \
             % (str(hours), str(minutes))
@@ -554,7 +554,7 @@ class PBSProJobService (cpi.Service):
         # this adaptor supports options that can be passed via the
         # 'query' component of the job service URL.
         if rm_url.query:
-            for key, val in parse_qs(rm_url.query).iteritems():
+            for key, val in parse_qs(rm_url.query).items():
                 if   key == 'queue'   : self.queue   =     val[0]
                 elif key == 'craytype': self.is_cray =     val[0]
                 elif key == 'ppn'     : self.ppn     = int(val[0])
@@ -589,7 +589,7 @@ class PBSProJobService (cpi.Service):
     #
     def initialize(self):
         # check if all required pbs tools are available
-        for cmd in self._commands.keys():
+        for cmd in list(self._commands.keys()):
 
             ret, out, _ = self.shell.run_sync("which %s " % cmd)
             if ret:
@@ -702,7 +702,7 @@ class PBSProJobService (cpi.Service):
                                       )
 
             self._logger.info("Generated PBS script: %s" % script)
-        except Exception, ex:
+        except Exception as ex:
             log_error_and_raise(str(ex), rse.BadParameter, self._logger)
 
         # try to create the working directory (if defined)
@@ -738,7 +738,7 @@ class PBSProJobService (cpi.Service):
         # sometimes there are a couple of lines of warnings before.
         # if that's the case, we log those as 'warnings'
         lines = out.split('\n')
-        lines = filter(None, lines)  # remove empty lines
+        lines = [_f for _f in lines if _f]  # remove empty lines
 
         if not lines:
             self._logger.error('qsub: no output (%s)' % cmdline)
@@ -767,7 +767,7 @@ class PBSProJobService (cpi.Service):
                              }
 
         self._logger.info ("assign job id  %s / %s / %s to watch list (%s)"
-                        % (job_name, job_id, job_obj, self.jobs.keys()))
+                        % (job_name, job_id, job_obj, list(self.jobs.keys())))
 
         # set status to 'pending' and manually trigger callback
         job_obj._attributes_i_set('state', state, job_obj._UP, True)
@@ -1058,7 +1058,7 @@ class PBSProJobService (cpi.Service):
         # this dict is passed on to the job adaptor class -- use it to pass any
         # state information you need there.
         jd = api.Description()
-        for k,v in job_info.get("description",{}).iteritems():
+        for k,v in job_info.get("description",{}).items():
             jd[k] = v
         jd.name = job_info.get('name')
         adaptor_state = {"job_service":     self,

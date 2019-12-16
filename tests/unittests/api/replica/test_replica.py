@@ -22,6 +22,7 @@ IRODS_RESOURCE = "osgGridFtpGroup"
 #
 try:
     r = rs.logicalfile.LogicalDirectory('irods://localhost/')
+
 except:
     pytest.skip("skip replica test (no irods)", allow_module_level=True)
 
@@ -56,8 +57,8 @@ def test_replica_directory_listing(config):
 #
 def test_upload_and_download(config):
 
-    cfg = config()
-
+    cfg         = config()
+    tmp_dir     = '/tmp/'
     replica_url = cfg.replica_url
 
     with open(TEMP_FILENAME, "wb") as f:
@@ -66,23 +67,20 @@ def test_upload_and_download(config):
     # clear old file
     out, err, ret = ru.sh_callout(["irm", TEMP_FILENAME])
 
-    d = rs.replica.LogicalDirectory(replica_url)
+    _ = rs.replica.LogicalDirectory(replica_url)
     f = rs.replica.LogicalFile(replica_url + TEMP_FILENAME)
-    f.upload(home_dir + TEMP_FILENAME, \
-                      "irods:///this/path/is/ignored/?resource="+IRODS_RESOURCE)
+    f.upload(tmp_dir + TEMP_FILENAME,
+             "irods:///path/is/ignored/?resource=" + IRODS_RESOURCE)
 
-    #myfile.upload(home_dir + TEMP_FILENAME, \
-    #                  "irods:///this/path/is/ignored")
+    # myfile.upload(tmp_dir + TEMP_FILENAME, \
+    #                   "irods:///this/path/is/ignored")
 
-    print "Deleting file locally : %s" % (home_dir + TEMP_FILENAME)
-    os.remove(home_dir + TEMP_FILENAME)
+    os.remove(tmp_dir + TEMP_FILENAME)
 
-    print "Downloading logical file %s to current/default directory" % \
-        (replica_url + TEMP_FILENAME)
+    myfile = rs.replica.LogicalFile(replica_url + TEMP_FILENAME)
     myfile.download(TEMP_FILENAME)
 
-    print "Deleting downloaded file locally : %s" % (home_dir + TEMP_FILENAME)
-    os.remove(home_dir + TEMP_FILENAME)
+    os.remove(tmp_dir + TEMP_FILENAME)
 
 
 # ------------------------------------------------------------------------------
@@ -91,74 +89,53 @@ def test_replica_get_size(config):
     """ Test logical file get_size()
     """
     try:
-        cfg = config()
-        the_url = cfg.job_service_url # from test config file
-        the_session = cfg.session # from test config file
+        cfg         = config()
         replica_url = cfg.replica_url
-        replica_directory = rs.replica.LogicalDirectory(replica_url)
-
-        home_dir = os.path.expanduser("~"+"/")
-        print "Creating temporary file of size %dM : %s" % \
-            (FILE_SIZE, home_dir+TEMP_FILENAME)
+        tmp_dir     = '/tmp/'
 
         # create a file for us to use
-        with open(home_dir+TEMP_FILENAME, "wb") as f:
+        with open(tmp_dir + TEMP_FILENAME, "wb") as f:
             f.write("x" * (FILE_SIZE * pow(2,20)) )
 
-        print "Creating logical directory object"
-        mydir = rs.replica.LogicalDirectory(replica_url)
+        _      = rs.replica.LogicalDirectory(replica_url)
+        myfile = rs.replica.LogicalFile(replica_url + TEMP_FILENAME)
+        myfile.upload(tmp_dir + TEMP_FILENAME,
+                      "irods:///path/is/ignored/?resource=" + IRODS_RESOURCE,
+                      rs.replica.OVERWRITE)
 
-        print "Uploading file to check size"
-        myfile = rs.replica.LogicalFile(replica_url+TEMP_FILENAME)
-        myfile.upload(home_dir + TEMP_FILENAME, \
-                          "irods:///this/path/is/ignored/?resource="+IRODS_RESOURCE,
-                          rs.replica.OVERWRITE)
-
-        print "Checking size"
-        myfile = rs.replica.LogicalFile(replica_url+TEMP_FILENAME)
-        print myfile.get_size()
+        myfile = rs.replica.LogicalFile(replica_url + TEMP_FILENAME)
 
         assert True
 
     except rs.SagaException as ex:
-#        print ex.traceback
         assert False, "unexpected exception %s\n%s" % (ex.traceback, ex)
+
 
 # ------------------------------------------------------------------------------
 #
 def test_replica_remove(config):
-    """ Test logical file remove, which should remove the file from the remote resource
+    """
+    Test logical file remove: remove the file from the remote resource
     """
     try:
-        cfg = config()
-        the_url = cfg.job_service_url # from test config file
-        the_session = cfg.session # from test config file
+        cfg         = config()
         replica_url = cfg.replica_url
-        replica_directory = rs.replica.LogicalDirectory(replica_url)
-
-        home_dir = os.path.expanduser("~"+"/")
-        print "Creating temporary file of size %dM : %s" % \
-            (FILE_SIZE, home_dir+TEMP_FILENAME)
+        tmp_dir     = '/tmp/'
 
         # create a file for us to use
-        with open(home_dir+TEMP_FILENAME, "wb") as f:
+        with open(tmp_dir + TEMP_FILENAME, "wb") as f:
             f.write("x" * (FILE_SIZE * pow(2,20)) )
 
-        print "Creating logical directory object"
-        mydir = rs.replica.LogicalDirectory(replica_url)
+        _      = rs.replica.LogicalDirectory(replica_url)
+        myfile = rs.replica.LogicalFile(replica_url + TEMP_FILENAME)
+        myfile.upload(tmp_dir + TEMP_FILENAME,
+                      "irods:///path/is/ignored/?resource=" + IRODS_RESOURCE,
+                      rs.replica.OVERWRITE)
 
-        print "Uploading temporary"
-        myfile = rs.replica.LogicalFile(replica_url+TEMP_FILENAME)
-        myfile.upload(home_dir + TEMP_FILENAME, \
-                          "irods:///this/path/is/ignored/?resource="+IRODS_RESOURCE,
-                          rs.replica.OVERWRITE)
-
-        print "Removing temporary file."
         myfile.remove()
         assert True
 
     except rs.SagaException as ex:
-#        print ex.traceback
         assert False, "unexpected exception %s\n%s" % (ex.traceback, ex)
 
 
@@ -169,25 +146,21 @@ def test_replica_make_dir(config):
     """
     try:
         cfg = config()
-        the_url = cfg.job_service_url # from test config file
-        the_session = cfg.session # from test config file
         replica_url = cfg.replica_url
         replica_directory = rs.replica.LogicalDirectory(replica_url)
 
-        print "Making test dir %s on " % (replica_url+TEMP_DIRECTORY)
-        replica_directory.make_dir(replica_url+TEMP_DIRECTORY)
+        replica_directory.make_dir(replica_url + TEMP_DIRECTORY)
 
-        #commented because iRODS install on gw68 doesn't support move
-        #print "Moving file to %s test dir on iRODS" % (REPLICA_DIRECTORY+TEMP_DIR)
-        #myfile.move("irods://"+REPLICA_DIRECTORY+TEMP_DIR)
+        # commented because iRODS install on gw68 doesn't support move
+        # myfile.move("irods://"+REPLICA_DIRECTORY+TEMP_DIR)
 
-        print "Deleting test dir %s from " % (replica_url+TEMP_DIRECTORY)
-        replica_directory.remove(replica_url+TEMP_DIRECTORY)
+        replica_directory.remove(replica_url + TEMP_DIRECTORY)
 
         assert True
 
     except rs.SagaException as ex:
         assert False, "unexpected exception %s" % ex
+
 
 # ------------------------------------------------------------------------------
 #
@@ -195,12 +168,14 @@ def test_replica_replicate(config):
     """ Test logical file replicate()
     """
     try:
-        cfg = config()
-        the_url = cfg.job_service_url # from test config file
-        the_session = cfg.session # from test config file
+        cfg         = config()
         replica_url = cfg.replica_url
-        replica_directory = rs.replica.LogicalDirectory(replica_url)
+        _           = rs.replica.LogicalDirectory(replica_url)
         assert True
 
     except rs.SagaException as ex:
         assert False, "unexpected exception %s" % ex
+
+
+# ------------------------------------------------------------------------------
+

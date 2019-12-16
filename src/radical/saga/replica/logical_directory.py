@@ -23,16 +23,16 @@ class LogicalDirectory (nsdir.Directory, sa.Attributes) :
 
     # --------------------------------------------------------------------------
     #
-    @rus.takes   ('LogicalDirectory', 
-                  rus.optional ((ru.Url, basestring)), 
-                  rus.optional (int, rus.nothing), 
+    @rus.takes   ('LogicalDirectory',
+                  rus.optional ((ru.Url, str)),
+                  rus.optional (int, rus.nothing),
                   rus.optional (ss.Session),
-                  rus.optional (sab.Base), 
-                  rus.optional (dict), 
+                  rus.optional (sab.Base),
+                  rus.optional (dict),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns (rus.nothing)
-    def __init__ (self, url=None, flags=c.READ, session=None, 
-                  _adaptor=None, _adaptor_state={}, _ttype=None) : 
+    def __init__ (self, url=None, flags=c.READ, session=None,
+                  _adaptor=None, _adaptor_state={}, _ttype=None) :
         '''
         __init__(url, flags=READ, session=None)
 
@@ -49,16 +49,16 @@ class LogicalDirectory (nsdir.Directory, sa.Attributes) :
         url = ru.Url (url)
 
         self._nsdirec = super  (LogicalDirectory, self)
-        self._nsdirec.__init__ (url, flags, session, 
+        self._nsdirec.__init__ (url, flags, session,
                                 _adaptor, _adaptor_state, _ttype=_ttype)
 
 
     # --------------------------------------------------------------------------
     #
     @classmethod
-    @rus.takes   ('LogicalDirectory', 
-                  rus.one_of (ru.Url, basestring), 
-                  rus.optional (int, rus.nothing), 
+    @rus.takes   ('LogicalDirectory',
+                  rus.one_of (ru.Url, str),
+                  rus.optional (int, rus.nothing),
                   rus.optional (ss.Session),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns (st.Task)
@@ -76,8 +76,8 @@ class LogicalDirectory (nsdir.Directory, sa.Attributes) :
         return _nsdirec.create (url, flags, session, ttype=ttype)
 
 
-    @rus.takes   ('LogicalDirectory', 
-                  rus.one_of (ru.Url, basestring), 
+    @rus.takes   ('LogicalDirectory',
+                  rus.one_of (ru.Url, str),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((bool, st.Task))
     def is_file (self, tgt=None, ttype=None) :
@@ -92,8 +92,8 @@ class LogicalDirectory (nsdir.Directory, sa.Attributes) :
         else  : return self._nsdirec.is_entry_self(     ttype=ttype)
 
 
-    @rus.takes   ('LogicalDirectory', 
-                  rus.one_of (ru.Url, basestring), 
+    @rus.takes   ('LogicalDirectory',
+                  rus.one_of (ru.Url, str),
                   rus.optional (int, rus.nothing),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns (('LogicalFile', st.Task))
@@ -113,8 +113,8 @@ class LogicalDirectory (nsdir.Directory, sa.Attributes) :
 
     # ----------------------------------------------------------------
     #
-    @rus.takes   ('LogicalDirectory', 
-                  rus.one_of (ru.Url, basestring), 
+    @rus.takes   ('LogicalDirectory',
+                  rus.one_of (ru.Url, str),
                   rus.optional (int, rus.nothing),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns (('LogicalDirectory', st.Task))
@@ -149,8 +149,8 @@ class LogicalDirectory (nsdir.Directory, sa.Attributes) :
     #
     # --------------------------------------------------------------------------
     #
-    @rus.takes   ('LogicalDirectory', 
-                  rus.one_of (ru.Url, basestring),
+    @rus.takes   ('LogicalDirectory',
+                  rus.one_of (ru.Url, str),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((int, st.Task))
     def get_size (self, tgt, ttype=None) :
@@ -170,7 +170,7 @@ class LogicalDirectory (nsdir.Directory, sa.Attributes) :
                lf = saga.replica.LogicalFile("irods://localhost/tmp/data/")
 
                # print a logical file's size
-               print lf.get_size ('data.dat')
+               print(lf.get_size ('data.dat'))
 
         '''
         tgt_url = ru.Url (tgt)
@@ -179,9 +179,9 @@ class LogicalDirectory (nsdir.Directory, sa.Attributes) :
 
     # ----------------------------------------------------------------
     #
-    @rus.takes   ('LogicalDirectory', 
-                  rus.optional (basestring),
-                  rus.optional (basestring),
+    @rus.takes   ('LogicalDirectory',
+                  rus.optional (str),
+                  rus.optional (str),
                   rus.optional (int, rus.nothing),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((rus.list_of (ru.Url), st.Task))
@@ -190,7 +190,7 @@ class LogicalDirectory (nsdir.Directory, sa.Attributes) :
         '''
         find(name_pattern, attr_pattern=None, flags=RECURSIVE)
 
-        name_pattern:   string 
+        name_pattern:   string
         attr_pattern:   string
         flags:          flags enum
         ttype:          saga.task.type enum
@@ -199,10 +199,10 @@ class LogicalDirectory (nsdir.Directory, sa.Attributes) :
         '''
         if not flags: flags = 0
 
-        if attr_pattern: 
+        if attr_pattern:
             return self._adaptor.find_replicas(name_pattern, attr_pattern,
                                                flags, ttype=ttype)
-        else: 
+        else:
             return self._nsdirec.find(name_pattern, flags, ttype=ttype)
 
 

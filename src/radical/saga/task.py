@@ -29,7 +29,7 @@ class Task (sbase.SimpleBase, satt.Attributes) :
     #
     @rus.takes   ('Task', 
                   'CPIBase', 
-                  basestring,
+                  str,
                   dict, 
                   rus.one_of (c.SYNC, c.ASYNC, c.TASK))
     @rus.returns (rus.nothing)
@@ -237,7 +237,7 @@ class Task (sbase.SimpleBase, satt.Attributes) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Task', 
-                  basestring, 
+                  str, 
                   rus.anything)
     @rus.returns (rus.nothing)
     def _set_metric (self, metric, value) :

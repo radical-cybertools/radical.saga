@@ -52,30 +52,30 @@ def start():
         job = js.create_job(jd)
 
         # Check our job's id and state
-        print "Job ID    : %s" % (job.id)
-        print "Job State : %s" % (job.state)
+        print("Job ID    : %s" % (job.id))
+        print("Job State : %s" % (job.state))
 
         # Now we can start our job.
-        print "starting job"
+        print("starting job")
         job.run()
 
-        print "Job State   : %s" % job.state
-        print "Exitcode    : %s" % job.exit_code
-        print "Exec. hosts : %s" % job.execution_hosts
-        print "Create time : %s" % job.created
-        print "Start time  : %s" % job.started
-        print "End time    : %s" % job.finished
+        print("Job State   : %s" % job.state)
+        print("Exitcode    : %s" % job.exit_code)
+        print("Exec. hosts : %s" % job.execution_hosts)
+        print("Create time : %s" % job.created)
+        print("Start time  : %s" % job.started)
+        print("End time    : %s" % job.finished)
 
         js.close()
 
     except rs.SagaException as e:
 
         # Catch all saga exceptions
-        print "An exception occured: (%s) %s " % (e.type, (str(e)))
+        print("An exception occured: (%s) %s " % (e.type, (str(e))))
 
         # Get the whole traceback in case of an exception -
         # this can be helpful for debugging the problem
-        print " \n*** Backtrace:\n %s" % e.traceback
+        print(" \n*** Backtrace:\n %s" % e.traceback)
         return -1
 
 # ------------------------------------------------------------------------------
@@ -88,33 +88,33 @@ def check(jobid):
 
         # List all jobs that are known by the adaptor.
         # This should show our job as well.
-        print "Listing active jobs: "
+        print("Listing active jobs: ")
         for jid in js.list():
             if jid == jobid:
-                print ' * %s' % jid
+                print(' * %s' % jid)
             else:
-                print ' - %s' % jid
+                print(' - %s' % jid)
 
         # reconnect to the given job
         job = js.get_job(jobid)
 
-        print "Job State   : %s" % job.state
-        print "Exitcode    : %s" % job.exit_code
-        print "Exec. hosts : %s" % job.execution_hosts
-        print "Create time : %s" % job.created
-        print "Start time  : %s" % job.started
-        print "End time    : %s" % job.finished
+        print("Job State   : %s" % job.state)
+        print("Exitcode    : %s" % job.exit_code)
+        print("Exec. hosts : %s" % job.execution_hosts)
+        print("Create time : %s" % job.created)
+        print("Start time  : %s" % job.started)
+        print("End time    : %s" % job.finished)
 
         js.close()
 
     except rs.SagaException as e:
 
         # Catch all saga exceptions
-        print "An exception occured: (%s) %s " % (e.type, (str(e)))
+        print("An exception occured: (%s) %s " % (e.type, (str(e))))
 
         # Get the whole traceback in case of an exception -
         # this can be helpful for debugging the problem
-        print " \n*** Backtrace:\n %s" % e.traceback
+        print(" \n*** Backtrace:\n %s" % e.traceback)
         return -1
 
 # ------------------------------------------------------------------------------
@@ -126,22 +126,22 @@ def stop(jobid):
         # Create a job service object to the same cluster and reconnect to job
         js  = rs.job.Service(js_url)
         job = js.get_job(jobid)
-        print "Job ID    : %s" % (job.id)
-        print "Job State : %s" % (job.state)
+        print("Job ID    : %s" % (job.id))
+        print("Job State : %s" % (job.state))
 
-        print "cacnel job"
+        print("cacnel job")
         job.cancel()
 
         # wait for our job to complete
-        print "wait for job"
+        print("wait for job")
         job.wait()
 
-        print "Job State   : %s" % job.state
-        print "Exitcode    : %s" % job.exit_code
-        print "Exec. hosts : %s" % job.execution_hosts
-        print "Create time : %s" % job.created
-        print "Start time  : %s" % job.started
-        print "End time    : %s" % job.finished
+        print("Job State   : %s" % job.state)
+        print("Exitcode    : %s" % job.exit_code)
+        print("Exec. hosts : %s" % job.execution_hosts)
+        print("Create time : %s" % job.created)
+        print("Start time  : %s" % job.started)
+        print("End time    : %s" % job.finished)
 
         js.close()
         return 0
@@ -149,11 +149,11 @@ def stop(jobid):
     except rs.SagaException as e:
 
         # Catch all saga exceptions
-        print "An exception occured: (%s) %s " % (e.type, (str(e)))
+        print("An exception occured: (%s) %s " % (e.type, (str(e))))
 
         # Get the whole traceback in case of an exception -
         # this can be helpful for debugging the problem
-        print " \n*** Backtrace:\n %s" % e.traceback
+        print(" \n*** Backtrace:\n %s" % e.traceback)
         return -1
 
 # ------------------------------------------------------------------------------
@@ -161,7 +161,7 @@ def stop(jobid):
 if __name__ == "__main__":
 
     if len(sys.argv) < 2:
-        print "\n\tusage: %s [start | check | stop] <jobid>\n" % sys.argv[0]
+        print("\n\tusage: %s [start | check | stop] <jobid>\n" % sys.argv[0])
         sys.exit(-1)
 
     if   sys.argv[1] == 'start': sys.exit(start())

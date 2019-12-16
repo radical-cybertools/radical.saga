@@ -22,7 +22,7 @@ import radical.saga as rs
 # registered with a rs.Job object and get 'fired' asynchronously on
 # certain conditions.
 def job_state_change_cb(src_obj, fire_on, value):
-    print "Callback    : job state changed to '%s'\n" % value
+    print("Callback    : job state changed to '%s'\n" % value)
     return True
 
 
@@ -73,41 +73,41 @@ def main():
         touchjob.add_callback(rs.STATE, job_state_change_cb)
 
         # Check our job's id and state
-        print "Job ID      : %s" % (touchjob.id)
-        print "Job State   : %s" % (touchjob.state)
+        print("Job ID      : %s" % (touchjob.id))
+        print("Job State   : %s" % (touchjob.state))
 
         # Now we can start our job.
-        print "\n...starting job...\n"
+        print("\n...starting job...\n")
         touchjob.run()
 
-        print "Job ID      : %s" % (touchjob.id)
+        print("Job ID      : %s" % (touchjob.id))
 
         # List all jobs that are known by the adaptor.
         # This should show our job as well.
-        print "\nListing active jobs: "
+        print("\nListing active jobs: ")
         for job in js.list():
-            print " * %s" % job
+            print(" * %s" % job)
 
         # wait for our job to complete
-        print "\n...waiting for job...\n"
+        print("\n...waiting for job...\n")
         touchjob.wait()
 
-        print "Job State   : %s" % (touchjob.state)
-        print "Exitcode    : %s" % (touchjob.exit_code)
-        print "Exec. hosts : %s" % (touchjob.execution_hosts)
-        print "Create time : %s" % (touchjob.created)
-        print "Start time  : %s" % (touchjob.started)
-        print "End time    : %s" % (touchjob.finished)
+        print("Job State   : %s" % (touchjob.state))
+        print("Exitcode    : %s" % (touchjob.exit_code))
+        print("Exec. hosts : %s" % (touchjob.execution_hosts))
+        print("Create time : %s" % (touchjob.created))
+        print("Start time  : %s" % (touchjob.started))
+        print("End time    : %s" % (touchjob.finished))
 
         js.close()
         return 0
 
-    except rs.SagaException, ex:
+    except rs.SagaException as ex:
         # Catch all saga exceptions
-        print "An exception occured: (%s) %s " % (ex.type, (str(ex)))
+        print("An exception occured: (%s) %s " % (ex.type, (str(ex))))
         # Get the whole traceback in case of an exception -
         # this can be helpful for debugging the problem
-        print " \n*** Backtrace:\n %s" % ex.traceback
+        print(" \n*** Backtrace:\n %s" % ex.traceback)
         return -1
 
 if __name__ == "__main__":

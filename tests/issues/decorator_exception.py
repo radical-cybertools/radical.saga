@@ -10,7 +10,7 @@ class AttribTest (saga.Attributes) :
         self._attributes_extensible (False)
 
     @rus.takes   ('AttribTest', int)
-    @rus.returns (basestring)
+    @rus.returns (str)
     def test (self, my_int) :
         self.test_attrib()
         return 1

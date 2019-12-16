@@ -10,7 +10,7 @@ import radical.utils.signatures    as rus
 from ..constants import SYNC, ASYNC, TASK
 from ..adaptors  import base       as sab
 
-from .. import async               as async
+from .. import sasync
 from .. import task                as st
 from .. import base                as sb
 from .. import session             as ss
@@ -24,7 +24,7 @@ from .  import constants           as c
 
 # ------------------------------------------------------------------------------
 #
-class Resource (sb.Base, sa.Attributes, async.Async) :
+class Resource (sb.Base, sa.Attributes, sasync.Async) :
     """
     A :class:`Resource` class instance represents a specific slice of resource
     which is, if in `RUNNING` state, under the applications control and ready to
@@ -72,21 +72,21 @@ class Resource (sb.Base, sa.Attributes, async.Async) :
     the agreed time duration has passed -- this is represented by the `EXPIRED`
     state.
     """
-    # FIXME: 
+    # FIXME:
     #   - we don't use PENDING like this, yet
     #   - include state diagram (also for jobs btw)
 
     # --------------------------------------------------------------------------
     #
-    @rus.takes   ('Resource', 
-                  rus.optional (basestring), 
+    @rus.takes   ('Resource',
+                  rus.optional (str),
                   rus.optional (ss.Session),
-                  rus.optional (sab.Base), 
-                  rus.optional (dict), 
+                  rus.optional (sab.Base),
+                  rus.optional (dict),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns (rus.nothing)
     def __init__ (self, id=None, session=None,
-                  _adaptor=None, _adaptor_state={}, _ttype=None) : 
+                  _adaptor=None, _adaptor_state={}, _ttype=None) :
         """
         __init__(id=None, session=None)
 
@@ -182,13 +182,13 @@ class Resource (sb.Base, sa.Attributes, async.Async) :
     # --------------------------------------------------------------------------
     #
     @classmethod
-    @rus.takes   ('resource', 
-                  rus.optional (basestring), 
+    @rus.takes   ('resource',
+                  rus.optional (str),
                   rus.optional (ss.Session),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns (st.Task)
     def create   (cls, id=None, session=None, ttype=sc.SYNC) :
-        """ 
+        """
         This is the asynchronous class constructor, returning
         a :class:`saga:Task` instance.  For details on the accepted parameters,
         please see the description of :func:`__init__`.
@@ -199,7 +199,7 @@ class Resource (sb.Base, sa.Attributes, async.Async) :
 
     # --------------------------------------------------------------------------
     #
-    @rus.takes   ('Resource', 
+    @rus.takes   ('Resource',
                   descr.Description,
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((rus.nothing, st.Task))
@@ -226,8 +226,8 @@ class Resource (sb.Base, sa.Attributes, async.Async) :
 
     # --------------------------------------------------------------------------
     #
-    @rus.takes   ('Resource', 
-                  basestring,
+    @rus.takes   ('Resource',
+                  str,
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((rus.nothing, st.Task))
     def destroy  (self, ttype=None) :
@@ -243,7 +243,7 @@ class Resource (sb.Base, sa.Attributes, async.Async) :
 
     # --------------------------------------------------------------------------
     #
-    @rus.takes   ('Resource', 
+    @rus.takes   ('Resource',
                   rus.optional (rus.one_of (c.UNKNOWN, c.NEW,      c.PENDING,
                                             c.ACTIVE,  c.DONE,     c.FAILED,
                                             c.EXPIRED, c.CANCELED, c.FINAL)),
@@ -271,7 +271,7 @@ class Resource (sb.Base, sa.Attributes, async.Async) :
         A negative `timeout` value represents an indefinit timeout.
         """
 
-        # FIXME: 
+        # FIXME:
         #   - right now, we can not put a resource in a `TaskContainer`, because
         #     it is not a `Task`.  We need to either reconsider the class
         #     hierarchy, and then inherit a `ResourceContainer` from
@@ -284,8 +284,8 @@ class Resource (sb.Base, sa.Attributes, async.Async) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Resource', rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
-    @rus.returns ((rus.nothing, basestring, st.Task))
-    def get_id   (self, ttype=None) : 
+    @rus.returns ((rus.nothing, str, st.Task))
+    def get_id   (self, ttype=None) :
         """
         get_id()
 
@@ -297,10 +297,10 @@ class Resource (sb.Base, sa.Attributes, async.Async) :
     # --------------------------------------------------------------------------
     #
     @rus.takes    ('Resource', rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
-    @rus.returns  ((rus.one_of (c.COMPUTE, 
-                                c.STORAGE, 
+    @rus.returns  ((rus.one_of (c.COMPUTE,
+                                c.STORAGE,
                                 c.NETWORK), st.Task))
-    def get_rtype (self, ttype=None) : 
+    def get_rtype (self, ttype=None) :
         """
         get_rtype()
 
@@ -321,7 +321,7 @@ class Resource (sb.Base, sa.Attributes, async.Async) :
                                 c.DONE    ,
                                 c.FAILED  ,
                                 c.FINAL   ), st.Task))
-    def get_state (self, ttype=None) : 
+    def get_state (self, ttype=None) :
         """
         get_state()
 
@@ -333,8 +333,8 @@ class Resource (sb.Base, sa.Attributes, async.Async) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Resource', rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
-    @rus.returns ((rus.nothing, basestring, st.Task))
-    def get_state_detail (self, ttype=None) : 
+    @rus.returns ((rus.nothing, str, st.Task))
+    def get_state_detail (self, ttype=None) :
         """
         get_state_detail()
 
@@ -346,8 +346,8 @@ class Resource (sb.Base, sa.Attributes, async.Async) :
     # --------------------------------------------------------------------------
     #
     @rus.takes     ('Resource', rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
-    @rus.returns   ((rus.nothing, basestring, st.Task))
-    def get_access (self, ttype=None) : 
+    @rus.returns   ((rus.nothing, str, st.Task))
+    def get_access (self, ttype=None) :
         """
         get_access()
 
@@ -359,7 +359,7 @@ class Resource (sb.Base, sa.Attributes, async.Async) :
     # --------------------------------------------------------------------------
     #
     @rus.takes      ('Resource', rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
-    @rus.returns    ((basestring, st.Task))
+    @rus.returns    ((str, st.Task))
     def get_manager (self, ttype=None) :
         """
         get_manager()
@@ -373,7 +373,7 @@ class Resource (sb.Base, sa.Attributes, async.Async) :
     #
     @rus.takes   ('Resource', rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((rus.nothing, descr.Description, st.Task))
-    def get_description  (self, ttype=None) : 
+    def get_description  (self, ttype=None) :
         """
         get_description()
 
@@ -396,15 +396,15 @@ class Compute (Resource) :
     # FIXME: should 'ACCESS' be a list of URLs?  A VM could have an ssh *and*
     #        a gram endpoint...
 
-    # @rus.takes   ('ComputeResource', 
-    #               rus.optional (basestring), 
+    # @rus.takes   ('ComputeResource',
+    #               rus.optional (basestring),
     #               rus.optional (ss.Session),
-    #               rus.optional (sab.Base), 
-    #               rus.optional (dict), 
+    #               rus.optional (sab.Base),
+    #               rus.optional (dict),
     #               rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     # @rus.returns (rus.nothing)
     def __init__ (self, id=None, session=None,
-                  _adaptor=None, _adaptor_state={}, _ttype=None) : 
+                  _adaptor=None, _adaptor_state={}, _ttype=None) :
 
         self._resrc = super  (Compute, self)
         self._resrc.__init__ (id, session, _adaptor, _adaptor_state, _ttype)
@@ -427,15 +427,15 @@ class Storage (Resource) :
 
     # --------------------------------------------------------------------------
     #
-    @rus.takes   ('StorageResource', 
-                  rus.optional (basestring), 
+    @rus.takes   ('StorageResource',
+                  rus.optional (str),
                   rus.optional (ss.Session),
-                  rus.optional (sab.Base), 
-                  rus.optional (dict), 
+                  rus.optional (sab.Base),
+                  rus.optional (dict),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns (rus.nothing)
     def __init__ (self, id=None, session=None,
-                  _adaptor=None, _adaptor_state={}, _ttype=None) : 
+                  _adaptor=None, _adaptor_state={}, _ttype=None) :
 
         self._resrc = super  (Storage, self)
         self._resrc.__init__ (id, session, _adaptor, _adaptor_state, _ttype)
@@ -454,15 +454,15 @@ class Network (Resource) :
 
     # --------------------------------------------------------------------------
     #
-    @rus.takes   ('NetworkResource', 
-                  rus.optional (basestring), 
+    @rus.takes   ('NetworkResource',
+                  rus.optional (str),
                   rus.optional (ss.Session),
-                  rus.optional (sab.Base), 
-                  rus.optional (dict), 
+                  rus.optional (sab.Base),
+                  rus.optional (dict),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns (rus.nothing)
     def __init__ (self, id=None, session=None,
-                  _adaptor=None, _adaptor_state={}, _ttype=None) : 
+                  _adaptor=None, _adaptor_state={}, _ttype=None) :
 
         self._resrc = super  (Network, self)
         self._resrc.__init__ (id, session, _adaptor, _adaptor_state, _ttype)
@@ -470,7 +470,7 @@ class Network (Resource) :
         if  self.rtype != c.NETWORK :
             raise se.BadParameter ("Cannot init Network resource type %s"
                                 % self.rtype)
-# 
+#
 # ------------------------------------------------------------------------------
 
 

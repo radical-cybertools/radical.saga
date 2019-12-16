@@ -31,11 +31,6 @@ ASYNC_CALL = cpi_decs.ASYNC_CALL
 
 # ------------------------------------------------------------------------------
 #
-
-
-# ------------------------------------------------------------------------------
-# some private defs
-#
 _PTY_TIMEOUT = 2.0
 
 # ------------------------------------------------------------------------------
@@ -101,8 +96,6 @@ _ADAPTOR_CAPABILITIES  = {
         # 127.
 
         # **Example:**
-
-        # ::
 
         #   js = rs.job.Service("slurm+ssh://stampede")
         #   jd.executable  = '/bin/exit'
@@ -211,7 +204,7 @@ _ADAPTOR_INFO          = {
 #
 # The adaptor class
 #
-class Adaptor (a_base.Base):
+class Adaptor(a_base.Base):
     '''
     This is the actual adaptor class, which gets loaded by SAGA (i.e. by the
     SAGA engine), and which registers the CPI implementation classes which
@@ -225,14 +218,15 @@ class Adaptor (a_base.Base):
 
         a_base.Base.__init__(self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
 
-        self.id_re = re.compile('^\[(.*)\]-\[(.*?)\]$')
-        self.epoch = datetime.datetime(1970,1,1)
+        self.id_re = re.compile(r'^\[(.*)\]-\[(.*?)\]$')
+        self.epoch = datetime.datetime(1970, 1, 1)
 
 
     # --------------------------------------------------------------------------
     #
     def sanity_check(self):
         pass
+
 
     # --------------------------------------------------------------------------
     #
@@ -244,7 +238,7 @@ class Adaptor (a_base.Base):
         if not match or len(match.groups()) != 2:
             raise rse.BadParameter("Cannot parse job id '%s'" % id)
 
-        return (match.group(1), match.group(2))
+        return(match.group(1), match.group(2))
 
 
 # ------------------------------------------------------------------------------
@@ -274,6 +268,7 @@ class SLURMJobService(cpi.Service):
         self.scontrol_end_time_re    = re.compile(r"\bEndTime   \b=(\S*)", re.VERBOSE)
         self.scontrol_comp_time_re   = re.compile(r"\bRunTime   \b=(\S*)", re.VERBOSE)
         self.scontrol_exec_hosts_re  = re.compile(r"\bNodeList  \b=(\S*)", re.VERBOSE)
+
 
 
     # --------------------------------------------------------------------------
@@ -340,6 +335,8 @@ class SLURMJobService(cpi.Service):
             self._commands[cmd] = out.strip()
 
         _, out, _ = self._shell.run_sync('scontrol --version')
+
+
         self._version = out.split()[1].strip()
         self._logger.info('SLURM version: %s' % self._version)
 
@@ -357,7 +354,6 @@ class SLURMJobService(cpi.Service):
         else                 : self._ppn = None
 
         self._logger.info(" === ppn: %s", self._ppn)
-
 
 
         return self.get_api()
@@ -380,20 +376,20 @@ class SLURMJobService(cpi.Service):
         cwd                 = jd.as_dict().get(c.WORKING_DIRECTORY)
         job_name            = jd.as_dict().get(c.NAME)
         spmd_variation      = jd.as_dict().get(c.SPMD_VARIATION)
-        total_cpu_count     = jd.as_dict().get(c.TOTAL_CPU_COUNT)
-        total_gpu_count     = jd.as_dict().get(c.TOTAL_GPU_COUNT)
-        number_of_processes = jd.as_dict().get(c.NUMBER_OF_PROCESSES)
+        cpu_count           = jd.as_dict().get(c.TOTAL_CPU_COUNT)
+        gpu_count           = jd.as_dict().get(c.TOTAL_GPU_COUNT)
+        n_procs             = jd.as_dict().get(c.NUMBER_OF_PROCESSES)
         processes_per_host  = jd.as_dict().get(c.PROCESSES_PER_HOST)
         output              = jd.as_dict().get(c.OUTPUT, "radical.saga.stdout")
         error               = jd.as_dict().get(c.ERROR,  "radical.saga.stderr")
       # file_transfer       = jd.as_dict().get(c.FILE_TRANSFER)
-        wall_time_limit     = jd.as_dict().get(c.WALL_TIME_LIMIT)
+        wall_time           = jd.as_dict().get(c.WALL_TIME_LIMIT)
         queue               = jd.as_dict().get(c.QUEUE)
         project             = jd.as_dict().get(c.PROJECT)
         job_memory          = jd.as_dict().get(c.TOTAL_PHYSICAL_MEMORY)
         cpu_arch            = jd.as_dict().get(c.CPU_ARCHITECTURE)
         job_contact         = jd.as_dict().get(c.JOB_CONTACT)
-        candidate_hosts     = jd.as_dict().get(c.CANDIDATE_HOSTS)
+        c_hosts             = jd.as_dict().get(c.CANDIDATE_HOSTS)
 
         # check to see what's available in our job description
         # to override defaults
@@ -402,15 +398,16 @@ class SLURMJobService(cpi.Service):
         # NOTE: this assumes a shared filesystem between login node and
         #       comnpute nodes.
         if cwd:
+
             self._logger.info("Creating working directory %s" % cwd)
             ret, out, _ = self._shell.run_sync("mkdir -p %s"   % cwd)
+
             if ret:
-                # something went wrong
-                raise rse.NoSuccess("Couldn't create working dir: %s" % out)
+                raise rse.NoSuccess("Couldn't create workdir: %s" % out)
 
 
-        if isinstance(candidate_hosts, list):
-            candidate_hosts = ','.join(candidate_hosts)
+        if isinstance(c_hosts, list):
+            c_hosts = ','.join(c_hosts)
 
         if isinstance(job_contact, list):
             job_contact = job_contact[0]
@@ -420,21 +417,21 @@ class SLURMJobService(cpi.Service):
         else:
             account, reservation = project, None
 
-        slurm_script = "#!/bin/sh\n\n"
+        script = "#!/bin/sh\n\n"
 
-        # make sure we have something for total_cpu_count
-        if not total_cpu_count:
-            total_cpu_count = 1
+        # make sure we have something for cpu_count
+        if not cpu_count:
+            cpu_count = 1
 
-        # make sure we have something for number_of_processes
-        if not number_of_processes:
-            number_of_processes = total_cpu_count
+        # make sure we have something for n_procs
+        if not n_procs:
+            n_procs = cpu_count
 
         if spmd_variation:
             if spmd_variation.lower() not in 'mpi':
                 raise rse.BadParameter("Slurm cannot handle spmd variation '%s'"
                                         % spmd_variation)
-            mpi_cmd = 'mpirun -n %d ' % number_of_processes
+            mpi_cmd = 'mpirun -n %d ' % n_procs
 
         else:
             # we start N independent processes
@@ -444,116 +441,116 @@ class SLURMJobService(cpi.Service):
                 'frontera'  in self.rm.host.lower():
 
                 assert(self._ppn), 'need unique number of cores per node'
-                number_of_nodes = int(math.ceil(float(total_cpu_count) / self._ppn))
-                slurm_script += "#SBATCH -N %d\n" % (number_of_nodes)
+                n_nodes = int(math.ceil(float(cpu_count) / self._ppn))
+                script += "#SBATCH -N %d\n" % n_nodes
 
             elif self._version in ['17.11.5', '18.08.0', '18.08.3']:
 
                 assert(self._ppn), 'need unique number of cores per node'
-                number_of_nodes = int(math.ceil(float(total_cpu_count) / self._ppn))
-                slurm_script += "#SBATCH -N %d\n" % (number_of_nodes)
-                slurm_script += "#SBATCH --ntasks=%s\n" % (number_of_processes)
+                n_nodes = int(math.ceil(float(cpu_count) / self._ppn))
+                script += "#SBATCH -N %d\n" % n_nodes
+                script += "#SBATCH --ntasks=%s\n" % n_procs
 
             else:
-                slurm_script += "#SBATCH --ntasks=%s\n" % (number_of_processes)
+                script += "#SBATCH --ntasks=%s\n" % n_procs
 
             if not processes_per_host:
-                slurm_script += "#SBATCH --cpus-per-task=%s\n" \
-                              % (int(total_cpu_count / number_of_processes))
+                script += "#SBATCH --cpus-per-task=%s\n" \
+                        % (int(cpu_count / n_procs))
 
             else:
-                slurm_script += "#SBATCH --ntasks-per-node=%s\n" % processes_per_host
+                script += "#SBATCH --ntasks-per-node=%s\n" % processes_per_host
 
         # target host specifica
         # FIXME: these should be moved into resource config files
         self._logger.debug ("submit SLURM script to %s", self.rm)
         if 'bridges' in self.rm.host.lower():
 
-            if total_gpu_count:
-
+            if gpu_count:
                 # gres resouurces are specified *per node*
                 assert(self._ppn), 'need unique number of cores per node'
-                number_of_nodes = int(math.ceil(float(total_cpu_count) / self._ppn))
-                count = int(total_gpu_count / number_of_nodes)
+                number_of_nodes = int(math.ceil(float(cpu_count) / self._ppn))
+                count = int(gpu_count / number_of_nodes)
 
                 if count:
                     if cpu_arch: gpu_arch = cpu_arch.lower()
                     else       : gpu_arch = 'p100'
-                    slurm_script += "#SBATCH --gres=gpu:%s:%s\n" % (gpu_arch, count)
+                    script += "#SBATCH --gres=gpu:%s:%s\n" % (gpu_arch, count)
 
             # use '-C EGRESS' to enable outbound network
-            slurm_script += "#SBATCH -C EGRESS\n"
+            script += "#SBATCH -C EGRESS\n"
 
 
         elif 'tiger' in self.rm.host.lower():
 
-            if total_gpu_count:
+            if gpu_count:
 
                 # gres resouurces are specified *per node*
                 assert(self._ppn), 'need unique number of cores per node'
-                number_of_nodes = int(math.ceil(float(total_cpu_count) / self._ppn))
-                count = int(total_gpu_count / number_of_nodes)
+                number_of_nodes = int(math.ceil(float(cpu_count) / self._ppn))
+                count = int(gpu_count / number_of_nodes)
 
                 if count:
-                    slurm_script += "#SBATCH --gres=gpu:%s\n" % count
+                    script += "#SBATCH --gres=gpu:%s\n" % count
 
 
         elif 'cori' in self.rm.host.lower():
 
             # Set to "haswell" for Haswell nodes, to "knl,quad,cache" (or other
             # modes) for KNL, etc.
-            if cpu_arch       : slurm_script += "#SBATCH -C %s\n"     % cpu_arch
-            if total_gpu_count: slurm_script += "#SBATCH --gpus=%s\n" % total_gpu_count
+            if cpu_arch : script += "#SBATCH -C %s\n"     % cpu_arch
+            if gpu_count: script += "#SBATCH --gpus=%s\n" % gpu_count
 
         else:
 
-            if total_gpu_count: slurm_script += "#SBATCH --gpus=%s\n" % total_gpu_count
+            if gpu_count: script += "#SBATCH --gpus=%s\n" % gpu_count
 
 
         if cwd:
-            if 'frontera' in self.rm.host.lower():
-                slurm_script += "#SBATCH --chdir %s\n"   % cwd
+            if 'frontera' in self.rm.host.lower() or \
+               'tiger'    in self.rm.host.lower():
+                script += "#SBATCH --chdir %s\n"   % cwd
             else:
-                slurm_script += "#SBATCH --workdir %s\n" % cwd
+                script += "#SBATCH --workdir %s\n" % cwd
 
-        if output:          slurm_script += "#SBATCH --output %s\n"      % output
-        if error:           slurm_script += "#SBATCH --error %s\n"       % error
-        if queue:           slurm_script += "#SBATCH --partition %s\n"   % queue
-        if job_name:        slurm_script += '#SBATCH -J "%s"\n'          % job_name
-        if job_memory:      slurm_script += "#SBATCH --mem=%s\n"         % job_memory
-        if candidate_hosts: slurm_script += "#SBATCH --nodelist=%s\n"    % candidate_hosts
-        if job_contact:     slurm_script += "#SBATCH --mail-user=%s\n"   % job_contact
-        if account:         slurm_script += "#SBATCH --account %s\n"     % account
-        if reservation:     slurm_script += "#SBATCH --reservation %s\n" % reservation
-        if wall_time_limit: slurm_script += "#SBATCH --time %02d:%02d:00\n" \
-                                          % (wall_time_limit / 60,wall_time_limit % 60)
+        if output     : script += "#SBATCH --output %s\n"      % output
+        if error      : script += "#SBATCH --error %s\n"       % error
+        if queue      : script += "#SBATCH --partition %s\n"   % queue
+        if job_name   : script += '#SBATCH -J "%s"\n'          % job_name
+        if job_memory : script += "#SBATCH --mem=%s\n"         % job_memory
+        if c_hosts    : script += "#SBATCH --nodelist=%s\n"    % c_hosts
+        if job_contact: script += "#SBATCH --mail-user=%s\n"   % job_contact
+        if account    : script += "#SBATCH --account %s\n"     % account
+        if reservation: script += "#SBATCH --reservation %s\n" % reservation
+        if wall_time  : script += "#SBATCH --time %02d:%02d:00\n" \
+                                              % (int(wall_time / 60), wall_time % 60)
 
         if env:
-            slurm_script += "\n## ENVIRONMENT\n"
-            for key,val in env.iteritems():
-                slurm_script += 'export "%s"="%s"\n'  % (key, val)
+            script += "\n## ENVIRONMENT\n"
+            for key,val in env.items():
+                script += 'export "%s"="%s"\n'  %  (key, val)
 
         if pre:
-            slurm_script += "\n## PRE_EXEC\n" + "\n".join(pre)
-            slurm_script += '\n'
+            script += "\n## PRE_EXEC\n" + "\n".join(pre)
+            script += '\n'
 
         # create our commandline
-        slurm_script += "\n## EXEC\n"
-        slurm_script += '%s%s %s' % (mpi_cmd, exe, ' '.join(args))
-        slurm_script += '\n'
+        script += "\n## EXEC\n"
+        script += '%s%s %s' % (mpi_cmd, exe, ' '.join(args))
+        script += '\n'
 
         if post:
-            slurm_script += "\n## POST_EXEC\n" + '\n'.join(post)
-            slurm_script += '\n'
+            script += "\n## POST_EXEC\n" + '\n'.join(post)
+            script += '\n'
 
         # write script into a tmp file for staging
-        self._logger.info("SLURM script generated:\n%s" % slurm_script)
+        self._logger.info("SLURM script generated:\n%s" % script)
 
         tgt = os.path.basename(tempfile.mktemp(suffix='.slurm', prefix='tmp_'))
-        self._shell.write_to_remote(src=slurm_script, tgt=tgt)
+        self.shell.write_to_remote(src=script, tgt=tgt)
 
         # submit the job
-        ret, out, _ = self._shell.run_sync("sbatch '%s'; rm -f '%s'" % (tgt, tgt))
+        ret, out, _ = self.shell.run_sync("sbatch '%s'; rm -f '%s'" % (tgt,tgt))
 
         self._logger.debug("submit SLURM script (%s) (%s)" % (tgt, ret))
 
@@ -562,8 +559,7 @@ class SLURMJobService(cpi.Service):
         self.job_id = None
         for line in out.split("\n"):
             if "Submitted batch job" in line:
-                self.job_id = "[%s]-[%s]" % \
-                    (self.rm, int(line.split()[-1:][0]))
+                self.job_id = "[%s]-[%s]" % (self.rm, int(line.split()[-1:][0]))
                 break
 
         # if we have no job ID, there's a failure...
@@ -614,7 +610,7 @@ class SLURMJobService(cpi.Service):
     #                        suspended.
     #    TO  TIMEOUT         Job terminated upon reaching its time limit.
     #
-    def _slurm_to_saga_jobstate(self, slurmjs):
+    def _slurm_to_saga_state(self, slurmjs):
         '''
         translates a slurm one-letter state to saga
         '''
@@ -674,7 +670,7 @@ class SLURMJobService(cpi.Service):
 
         if job._state in [c.DONE, c.FAILED, c.CANCELED, c.NEW, c.SUSPENDED]:
             raise rse.IncorrectState._log(self._logger,
-                    "Could not suspend job %s in state %s" % (job._id, job._state))
+                    "Could not suspend job %s [%s]" % (job._id, job._state))
 
 
         rm,  pid    = self._adaptor.parse_id(job._id)
@@ -686,12 +682,13 @@ class SLURMJobService(cpi.Service):
         # check to see if the error was a permission error
         elif "Access/permission denied" in out:
             raise rse.PermissionDenied._log(self._logger,
-                                      "Could not suspend job %s because: %s" % (pid, out))
+                    "Could not suspend job %s because: %s" % (pid, out))
 
         # it's some other error
         else:
             raise rse.NoSuccess._log(self._logger,
-                                      "Could not suspend job %s because: %s" % (pid, out))
+                    "Could not suspend job %s because: %s" % (pid, out))
+
 
     # --------------------------------------------------------------------------
     #
@@ -703,7 +700,7 @@ class SLURMJobService(cpi.Service):
 
         if job._state in [c.DONE, c.FAILED, c.CANCELED, c.NEW, c.RUNNING]:
             raise rse.IncorrectState._log(self._logger,
-                    "Could not resume job %s in state %s" % (job._id, job._state))
+                    "Could not resume job %s [%s]" % (job._id, job._state))
 
 
         rm,  pid    = self._adaptor.parse_id(job._id)
@@ -715,12 +712,12 @@ class SLURMJobService(cpi.Service):
         # check to see if the error was a permission error
         elif "Access/permission denied" in out:
             raise rse.PermissionDenied._log(self._logger,
-                                      "Could not suspend job %s because: %s" % (pid, out))
+                    "Could not suspend job %s because: %s" % (pid, out))
 
         # it's some other error
         else:
             raise rse.NoSuccess._log(self._logger,
-                                      "Could not resume job %s because: %s" % (pid, out))
+                    "Could not resume job %s because: %s" % (pid, out))
 
 
     # --------------------------------------------------------------------------
@@ -733,13 +730,13 @@ class SLURMJobService(cpi.Service):
 
         # this dict is passed on to the job adaptor class -- use it to pass any
         # state information you need there.
-        adaptor_state = {"job_service"     : self,
-                         "job_description" : jd,
-                         "job_schema"      : self.rm.schema,
-                         "reconnect"       : False}
+        adaptor_state = {"job_service"    : self,
+                         "job_description": jd,
+                         "job_schema"     : self.rm.schema,
+                         "reconnect"      : False}
 
-        return api.Job(_adaptor=self._adaptor,
-                           _adaptor_state=adaptor_state)
+        return api.Job(_adaptor=self._adaptor, _adaptor_state=adaptor_state)
+
 
     # --------------------------------------------------------------------------
     #
@@ -924,7 +921,6 @@ class SLURMJob(cpi.Job):
 
         # update current info with scontrol
         ret, out, _ = self.js.shell.run_sync('scontrol show job %s' % pid)
-      # self._logger.debug("Updating job status using the following information:\n%s" % out)
 
         # out is comprised of a set of space-limited words like this:
         #
@@ -972,7 +968,7 @@ class SLURMJob(cpi.Job):
             data[key] = val
 
         if data.get('JobState'):
-            curr_info['state'] = self.js._slurm_to_saga_jobstate(data['JobState'])
+            curr_info['state'] = self.js._slurm_to_saga_state(data['JobState'])
         else:
             curr_info['state'] = self._job_get_state(self._id)
 
@@ -1037,16 +1033,15 @@ class SLURMJob(cpi.Job):
                     # no jobstate found in slurm
                     return c.UNKNOWN
 
-            return self.js._slurm_to_saga_jobstate(slurm_state)
+            return self.js._slurm_to_saga_state(slurm_state)
 
-        except Exception, ex:
+        except Exception as ex:
             self._logger.exception('failed to get job state')
             raise rse.NoSuccess("Error getting the job state for "
                             "job %s:\n%s" % (pid,ex))
 
-        raise rse.NoSuccess._log(self._logger,
-                                 "Internal SLURM adaptor error"
-                                 " in _job_get_state")
+        raise rse.NoSuccess._log(self._logger, "Internal SLURM adaptor error "
+                                               "in _job_get_state")
 
 
     # --------------------------------------------------------------------------
@@ -1058,6 +1053,7 @@ class SLURMJob(cpi.Job):
 
         ret, sacct_out, _ = self.js.shell.run_sync(
             "sacct --format=JobID,State --parsable2 --noheader --jobs=%s" % pid)
+
         # output will look like:
         # 500723|COMPLETED
         # 500723.batch|COMPLETED
@@ -1067,12 +1063,14 @@ class SLURMJob(cpi.Job):
 
         try:
             for line in sacct_out.strip().split('\n'):
-                (slurm_id, slurm_state) = line.split('|', 1)
+
+                slurm_id, slurm_state = line.split('|', 1)
+
                 if slurm_id == pid and slurm_state:
                     return slurm_state.split()[0].strip()
 
         except Exception:
-            self._logger.warn('cannot parse sacct output:\n%s' % sacct_out)
+            self._logger.warning('cannot parse sacct output:\n%s' % sacct_out)
 
         return None
 
@@ -1111,9 +1109,7 @@ class SLURMJob(cpi.Job):
     #
     @SYNC_CALL
     def get_state(self):
-        '''
-        implements cpi.job.Job.get_state()
-        '''
+
         self._state = self._job_get_state(self._id)
         return self._state
 
@@ -1122,6 +1118,7 @@ class SLURMJob(cpi.Job):
     #
     @SYNC_CALL
     def get_description(self):
+
         return self.jd
 
 
@@ -1129,20 +1126,22 @@ class SLURMJob(cpi.Job):
     #
     @SYNC_CALL
     def get_service_url(self):
-        return self.js.rm
 
+        return self.js.rm
 
 
     # --------------------------------------------------------------------------
     #
     @SYNC_CALL
     def wait(self, timeout):
+
         time_start = time.time()
         rm, pid    = self._adaptor.parse_id(self._id)
 
         while True:
+
             state = self._job_get_state(self._id)
-            self._logger.debug("wait() state for job id %s:%s" % (self._id, state))
+            self._logger.debug("wait() for job id %s:%s" % (self._id, state))
 
             if state == c.UNKNOWN:
                 raise rse.IncorrectState("cannot get job state")

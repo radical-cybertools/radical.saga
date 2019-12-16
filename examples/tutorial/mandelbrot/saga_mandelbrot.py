@@ -93,28 +93,28 @@ if __name__ == "__main__":
                 job = jobservice.create_job(jd)
                 job.run()
                 jobs.append(job)
-                print ' * Submitted %s. Output will be written to: %s' % (job.id, outputfile)
+                print(' * Submitted %s. Output will be written to: %s' % (job.id, outputfile))
 
         # wait for all jobs to finish
         while len(jobs) > 0:
             for job in jobs:
                 jobstate = job.get_state()
-                print ' * Job %s status: %s' % (job.id, jobstate)
+                print(' * Job %s status: %s' % (job.id, jobstate))
                 if jobstate in [rs.job.DONE, rs.job.FAILED]:
                     jobs.remove(job)
-            print ""
+            print("")
             time.sleep(5)
 
         # copy image tiles back to our 'local' directory
         for image in workdir.list('*.gif'):
-            print ' * Copying %s/%s/%s back to %s' % (REMOTE_FILE_ENDPOINT,
+            print(' * Copying %s/%s/%s back to %s' % (REMOTE_FILE_ENDPOINT,
                                                       workdir.get_url(),
-                                                      image, os.getcwd())
+                                                      image, os.getcwd()))
             workdir.copy(image, 'file://localhost/%s/' % os.getcwd())
 
         # stitch together the final image
         fullimage = Image.new('RGB', (imgx, imgy), (255, 255, 255))
-        print ' * Stitching together the whole fractal: mandelbrot_full.gif'
+        print(' * Stitching together the whole fractal: mandelbrot_full.gif')
         for x in range(0, tilesx):
             for y in range(0, tilesy):
                 partimage = Image.open('tile_x%s_y%s.gif' % (x, y))
@@ -124,11 +124,11 @@ if __name__ == "__main__":
         fullimage.save("mandelbrot_full.gif", "GIF")
         sys.exit(0)
 
-    except rs.SagaException, ex:
+    except rs.SagaException as ex:
         # Catch all saga exceptions
-        print "An exception occured: (%s) %s " % (ex.type, (str(ex)))
+        print("An exception occured: (%s) %s " % (ex.type, (str(ex))))
         # Trace back the exception. That can be helpful for debugging.
-        print " \n*** Backtrace:\n %s" % ex.traceback
+        print(" \n*** Backtrace:\n %s" % ex.traceback)
         sys.exit(-1)
 
     except KeyboardInterrupt:

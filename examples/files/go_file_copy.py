@@ -46,21 +46,21 @@ def main():
         # list 'm*' in local /tmp/ directory
         dest_dir = rs.filesystem.Directory(destination)
         for entry in dest_dir.list(pattern='%s*' % filename[0]):
-            print entry
+            print(entry)
 
         dest_file = rs.filesystem.File(os.path.join(destination, filename))
         assert dest_file.is_file() == True
         assert dest_file.is_link() == False
         assert dest_file.is_dir() == False
-        print 'Size: %d' % dest_file.get_size()
+        print('Size: %d' % dest_file.get_size())
 
         return 0
 
     except rs.SagaException as ex:
         # Catch all saga exceptions
-        print "An exception occured: (%s) %s " % (ex.type, (str(ex)))
+        print("An exception occured: (%s) %s " % (ex.type, (str(ex))))
         # Trace back the exception. That can be helpful for debugging.
-        print " \n*** Backtrace:\n %s" % ex.traceback
+        print(" \n*** Backtrace:\n %s" % ex.traceback)
         return -1
 
 if __name__ == "__main__":

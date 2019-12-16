@@ -5,10 +5,10 @@ __copyright__ = "Copyright 2013, The SAGA Project"
 __license__   = "MIT"
 
 
-import radical.saga as saga
-import radical.saga.utils.pty_shell   as sups
-
 import radical.utils as ru
+
+import radical.saga                 as saga
+import radical.saga.utils.pty_shell as sups
 
 
 # ------------------------------------------------------------------------------
@@ -91,7 +91,7 @@ def test_ptyshell_prompt () :
     assert (out == txt)  , "%s == %s" % (repr(out), repr(txt))
 
     shell.run_sync ('export PS1="HALLO-(\\$?)-PROMPT>"',
-                     new_prompt='HALLO-\((\d)\)-PROMPT>')
+                     new_prompt=r'HALLO-\((\d)\)-PROMPT>')
 
     txt = "______1______2_____3_____"
     ret, out, _ = shell.run_sync ("printf \"%s\"" % txt)

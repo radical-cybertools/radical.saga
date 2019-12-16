@@ -31,7 +31,7 @@ _ADAPTOR_CAPABILITIES  = {
 
 _ADAPTOR_DOC           = {
     'name'             : _ADAPTOR_NAME,
-    'cfg_options'      : _ADAPTOR_OPTIONS, 
+    'cfg_options'      : _ADAPTOR_OPTIONS,
     'capabilities'     : _ADAPTOR_CAPABILITIES,
     'description'      : """This adaptor points to a X509 proxy, or certificate,
                             be used for backend connections.  Note that this
@@ -43,7 +43,7 @@ _ADAPTOR_INFO          = {
     'name'             : _ADAPTOR_NAME,
     'version'          : 'v0.1',
     'schemas'          : _ADAPTOR_SCHEMAS,
-    'cpis'             : [{ 
+    'cpis'             : [{
         'type'         : 'radical.saga.Context',
         'class'        : 'ContextX509'
         }
@@ -55,7 +55,7 @@ _ADAPTOR_INFO          = {
 # The adaptor class
 
 class Adaptor (base.Base):
-    """ 
+    """
     This is the actual adaptor class, which gets loaded by SAGA (i.e. by the
     SAGA engine), and which registers the CPI implementation classes which
     provide the adaptor's functionality.
@@ -87,7 +87,7 @@ class Adaptor (base.Base):
                     fh = open (p)
 
                 except Exception as e:
-                    self._logger.warn ("invalid X509 context at %s"  %  p)
+                    self._logger.warning ("invalid X509 context at %s"  %  p)
                     pass
 
                 else :
@@ -103,7 +103,7 @@ class Adaptor (base.Base):
 
             else:
                 if 'X509_USER_PROXY' in os.environ:
-                    self._logger.warn ("no X509 context at %s"  %  p)
+                    self._logger.warning ("no X509 context at %s"  %  p)
 
         # have defaults, and can return them...
         return self._default_contexts

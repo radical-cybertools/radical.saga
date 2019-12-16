@@ -10,11 +10,11 @@ __license__   = "MIT"
 """
 
 import re
-import os 
+import os
 import time
 
 from cgi      import parse_qs
-from StringIO import StringIO
+from io import StringIO
 from datetime import datetime
 
 import radical.utils as ru
@@ -56,7 +56,7 @@ class SgeKeyValueParser(object):
         """
 
         # check whether it is an string or a file-like object
-        if isinstance(stream, basestring):
+        if isinstance(stream, str):
             self.stream = StringIO(stream)
         else:
             self.stream = stream
@@ -64,7 +64,7 @@ class SgeKeyValueParser(object):
         self.filter_keys = set(filter_keys) if filter_keys is not None else None
         self.key_suffix = key_suffix
 
-    def next(self):
+    def __next__(self):
         """
         Return the next key-value pair.
         :return: (key, value)
@@ -293,7 +293,7 @@ class SGEJobService (cpi.Service):
         # this adaptor supports options that can be passed via the
         # 'query' component of the job service URL.
         if rm_url.query is not None:
-            for key, val in parse_qs(rm_url.query).iteritems():
+            for key, val in parse_qs(rm_url.query).items():
                 if key == 'queue':
                     self.queue = val[0]
                 elif key == 'memreqs':
@@ -338,7 +338,7 @@ class SGEJobService (cpi.Service):
     #
     def initialize(self):
         # check if all required sge tools are available
-        for cmd in self._commands.keys():
+        for cmd in list(self._commands.keys()):
             ret, out, _ = self.shell.run_sync("which %s " % cmd)
             if ret != 0:
                 message = "Error finding SGE tools: %s" % out
@@ -382,13 +382,13 @@ class SGEJobService (cpi.Service):
             self._logger.debug("Available processing elements: %s" %
                 (self.pe_list))
 
-        # find out mandatory and optional memory attributes 
+        # find out mandatory and optional memory attributes
         ret, out, _ = self.shell.run_sync('%s -sc'
                                          % (self._commands['qconf']['path']))
         if ret != 0:
             message = "Error running 'qconf': %s" % out
             log_error_and_raise(message, rse.NoSuccess, self._logger)
-        else: 
+        else:
             mandatory_attrs = []
             optional_attrs = []
             for line in out.split('\n'):
@@ -421,7 +421,7 @@ class SGEJobService (cpi.Service):
                           "in your SGE environment and thus must be " \
                           "specifiedin the job service URL: %s" \
                           % ' '.join(missing_flags)
-                log_error_and_raise(message, rse.BadParameter, self._logger) 
+                log_error_and_raise(message, rse.BadParameter, self._logger)
 
         # if memory attributes were specified in the job.Service URL, check that
         # they correspond to existing optional or mandatory memory attributes
@@ -597,7 +597,7 @@ class SGEJobService (cpi.Service):
             # failed       0
             # exit_status  0
 
-            if qres.get("failed") == "0": state = c.DONE 
+            if qres.get("failed") == "0": state = c.DONE
             else                        : state = c.FAILED
             job_info = {'state'       : state,
                         'name'        : qres.get("jobname"),
@@ -682,7 +682,7 @@ class SGEJobService (cpi.Service):
 
         if jd.environment is not None and len(jd.environment) > 0:
             env_list = ",".join(["%s=%s" % (key, value) for key, value
-                                                     in jd.environment.items()])
+                                                     in list(jd.environment.items())])
             sge_params += ["#$ -v %s" % env_list]
 
         if jd.working_directory is not None:
@@ -695,7 +695,7 @@ class SGEJobService (cpi.Service):
             sge_params += ["#$ -e %s" % jd.error]
 
         if jd.wall_time_limit is not None:
-            hours = jd.wall_time_limit / 60
+            hours = int(jd.wall_time_limit / 60)
             minutes = jd.wall_time_limit % 60
             sge_params += ["#$ -l h_rt=%s:%s:00" % (str(hours), str(minutes))]
 
@@ -780,7 +780,7 @@ as a separator.
             'function aborted() {',
             '  echo Aborted with signal $1.',
             '  echo "signal: $1" >>%s' % job_info_path,
-            '  echo "end_time: $(LC_ALL=en_US.utf8 date \'+%%s\')" >>%s' 
+            '  echo "end_time: $(LC_ALL=en_US.utf8 date \'+%%s\')" >>%s'
                     % job_info_path,
             '  exit -1',
             '}',
@@ -839,7 +839,7 @@ as a separator.
                                  % (self.queue, jd.queue, self.queue))
 
         # In SGE environments with mandatory memory attributes,
-        # 'total_physical_memory' must be specified        
+        # 'total_physical_memory' must be specified
         if self.mandatory_memreqs and jd.total_physical_memory is None:
             log_error_and_raise("Your SGE environments has mandatory memory "
                                 "attributes, so 'total_physical_memory' "
@@ -851,7 +851,7 @@ as a separator.
             script = self.__generate_qsub_script(jd)
             self._logger.info("Generated SGE script: %s" % script)
 
-        except Exception, ex:
+        except Exception as ex:
             log_error_and_raise(str(ex), rse.BadParameter, self._logger)
 
         # try to create the working/output/error directories (if defined)
@@ -868,7 +868,7 @@ as a separator.
 
         # submit the SGE script
         # Now we want to execute the script. This process consists of two steps:
-        # (1) we create a temporary file with 'mktemp' and write the contents of 
+        # (1) we create a temporary file with 'mktemp' and write the contents of
         #     the generated PBS script into it
         # (2) we call 'qsub <tmpfile>' to submit the script to the queueing
         #     system
@@ -931,14 +931,14 @@ as a separator.
 
         job_info = None
 
-        if ret == 0 and len(out) > 0: 
+        if ret == 0 and len(out) > 0:
 
             # job is still in the queue
             # output is something like
             # r 06/24/2013 17:24:50
 
             m = _QSTAT_JOB_STATE_RE.match(out)
-            if not m:  
+            if not m:
                 # something wrong with the result of qstat
                 message = "Unexpected qstat results:\n%s" % out.rstrip()
                 log_error_and_raise(message, rse.NoSuccess, self._logger)
@@ -962,7 +962,7 @@ as a separator.
 
             # if it is an Eqw job it is better to retrieve the information
             # from qacct
-            if self.accounting and state == "Eqw": 
+            if self.accounting and state == "Eqw":
                 job_info = self.__job_info_from_accounting(pid)
                 # TODO remove the job from the queue ?
 

@@ -44,23 +44,23 @@ class Directory (nsdir.Directory) :
 
     # --------------------------------------------------------------------------
     #
-    @rus.takes   ('Directory', 
-                  rus.optional ((ru.Url, basestring)), 
-                  rus.optional (int, rus.nothing), 
+    @rus.takes   ('Directory',
+                  rus.optional ((ru.Url, str)),
+                  rus.optional (int, rus.nothing),
                   rus.optional (ss.Session),
-                  rus.optional (sab.Base), 
-                  rus.optional (dict), 
+                  rus.optional (sab.Base),
+                  rus.optional (dict),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns (rus.nothing)
-    def __init__ (self, url=None, flags=READ, session=None, 
-                  _adaptor=None, _adaptor_state={}, _ttype=None) : 
+    def __init__ (self, url=None, flags=READ, session=None,
+                  _adaptor=None, _adaptor_state={}, _ttype=None) :
         """
         __init__(url, flags=READ, session)
 
         Construct a new directory object
 
         :param url:     Url of the (remote) directory
-        :type  url:     :class:`saga.Url` 
+        :type  url:     :class:`saga.Url`
 
         :param flags:   :ref:`filesystemflags`
         :param session: :class:`saga.Session`
@@ -91,16 +91,16 @@ class Directory (nsdir.Directory) :
             url.host = 'localhost'
 
         self._nsdirec = super  (Directory, self)
-        self._nsdirec.__init__ (url, flags, session, 
+        self._nsdirec.__init__ (url, flags, session,
                                 _adaptor, _adaptor_state, _ttype=_ttype)
 
 
     # --------------------------------------------------------------------------
     #
     @classmethod
-    @rus.takes   ('Directory', 
-                  rus.optional ((ru.Url, basestring)), 
-                  rus.optional (int, rus.nothing), 
+    @rus.takes   ('Directory',
+                  rus.optional ((ru.Url, str)),
+                  rus.optional (int, rus.nothing),
                   rus.optional (ss.Session),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns (st.Task)
@@ -121,8 +121,8 @@ class Directory (nsdir.Directory) :
     #
     # filesystem directory methods
     #
-    @rus.takes   ('Directory', 
-                  (ru.Url, basestring),
+    @rus.takes   ('Directory',
+                  (ru.Url, str),
                   rus.optional (int, rus.nothing),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns (('File', st.Task))
@@ -144,8 +144,8 @@ class Directory (nsdir.Directory) :
 
     # --------------------------------------------------------------------------
     #
-    @rus.takes   ('Directory', 
-                  (ru.Url, basestring),
+    @rus.takes   ('Directory',
+                  (ru.Url, str),
                   rus.optional (int, rus.nothing),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns (('Directory', st.Task))
@@ -153,12 +153,12 @@ class Directory (nsdir.Directory) :
         """
         open_dir(path, flags=READ)
 
-        Open a directory in the directory instance namespace. Returns 
+        Open a directory in the directory instance namespace. Returns
         a new directory object.
 
         :param path:     The name/path of the directory to open
         :type path:      str()
-        :param flags:    :ref:`filesystemflags`        
+        :param flags:    :ref:`filesystemflags`
 
         Example::
 
@@ -173,15 +173,15 @@ class Directory (nsdir.Directory) :
 
     # --------------------------------------------------------------------------
     #
-    @rus.takes   ('Directory', 
-                  rus.optional ((ru.Url, basestring)),
+    @rus.takes   ('Directory',
+                  rus.optional ((ru.Url, str)),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((int, st.Task))
     def get_size (self, path=None, ttype=None) :
         """
         get_size(path=None)
 
-        Return the size of the directory itself or the entry pointed to by `path`. 
+        Return the size of the directory itself or the entry pointed to by `path`.
 
         :param path:     (Optional) name/path of an entry
         :type path:      str()
@@ -193,7 +193,7 @@ class Directory (nsdir.Directory) :
             # inspect a file for its size
             dir  = saga.filesystem.Directory("sftp://localhost/tmp/")
             size = dir.get_size ('data/data.bin')
-            print size
+            print(size)
         """
         if path   :  return self._adaptor.get_size      (path, ttype=ttype)
         else      :  return self._adaptor.get_size_self (      ttype=ttype)
@@ -201,7 +201,7 @@ class Directory (nsdir.Directory) :
 
     # --------------------------------------------------------------------------
     #
-    @rus.takes   ('Directory', 
+    @rus.takes   ('Directory',
                   rus.optional (bool))
     @rus.returns (st.Task)
     def close     (self, kill=True, ttype=None) :
@@ -214,8 +214,8 @@ class Directory (nsdir.Directory) :
 
     # --------------------------------------------------------------------------
     #
-    @rus.takes   ('Directory', 
-                  rus.optional ((ru.Url, basestring)),
+    @rus.takes   ('Directory',
+                  rus.optional ((ru.Url, str)),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((bool, st.Task))
     def is_file (self, path=None, ttype=None) :
@@ -224,7 +224,7 @@ class Directory (nsdir.Directory) :
 
         Returns `True` if entry points to a file, `False` otherwise. If `path`
         is not none, the entry pointed to by `path` is inspected instead of the
-        directory object itself. 
+        directory object itself.
 
         :param path:     (Optional) name/path of an entry
         :type path:      str()

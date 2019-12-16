@@ -24,11 +24,11 @@ def main():
         js = rs.job.Service ('ssh://login1.stampede.tacc.utexas.edu', session=s)
         js.run_job ("/bin/true")
 
-    except rs.SagaException, ex:
+    except rs.SagaException as ex:
         # Catch all saga exceptions
-        print "An exception occured: (%s) %s " % (ex.type, (str(ex)))
+        print("An exception occured: (%s) %s " % (ex.type, (str(ex))))
         # Trace back the exception. That can be helpful for debugging.
-        print " \n*** Backtrace:\n %s" % ex.traceback
+        print(" \n*** Backtrace:\n %s" % ex.traceback)
         return -1
 
 if __name__ == "__main__":

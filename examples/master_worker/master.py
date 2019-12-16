@@ -40,8 +40,8 @@ def initiate_workers(machine_parameters, number_of_workers, number_of_machines):
             job.run()
             jobs.append(job)
 
-    except rs.SagaException, ex:
-        print "An error occured during job execution: %s" % (str(ex))
+    except rs.SagaException as ex:
+        print("An error occured during job execution: %s" % (str(ex)))
         sys.exit(-1)
 
 
@@ -98,7 +98,7 @@ def process_dependencies(dependencies, machine_parameters):
                 f = rs.filesystem.File("file://localhost" + os.getcwd() + "/" +
                                                          files, session=session)
                 f.copy("sftp://" + service + machine_parameters[i][2] + files)
-                print "Successful copy"
+                print("Successful copy")
 
         i += 1
 
@@ -146,7 +146,7 @@ def main(number_of_tasks, number_of_workers, number_of_machines):
     while (len(jobs) > 0):
         for job in jobs:
             jobstate = job.get_state()
-            print ' * Job %s status: %s' % (job.id, jobstate)
+            print(' * Job %s status: %s' % (job.id, jobstate))
             if str(jobstate) is "Done":
                 jobs.remove(job)
 

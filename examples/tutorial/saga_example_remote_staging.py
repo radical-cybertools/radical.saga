@@ -45,39 +45,39 @@ def main():
         myjob = js.create_job(jd)
 
         # Check our job's id and state
-        print "Job ID    : %s" % (myjob.id)
-        print "Job State : %s" % (myjob.state)
+        print("Job ID    : %s" % (myjob.id))
+        print("Job State : %s" % (myjob.state))
 
-        print "\n...starting job...\n"
+        print("\n...starting job...\n")
 
         # Now we can start our job.
         myjob.run()
 
-        print "Job ID    : %s" % (myjob.id)
-        print "Job State : %s" % (myjob.state)
+        print("Job ID    : %s" % (myjob.id))
+        print("Job State : %s" % (myjob.state))
 
-        print "\n...waiting for job...\n"
+        print("\n...waiting for job...\n")
         # wait for the job to either finish or fail
         myjob.wait()
 
-        print "Job State : %s" % (myjob.state)
-        print "Exitcode  : %s" % (myjob.exit_code)
+        print("Job State : %s" % (myjob.state))
+        print("Exitcode  : %s" % (myjob.exit_code))
 
         outfilesource = 'sftp://%s/tmp/mysagajob-%s.stdout' % (REMOTE_HOST, getpass.getuser())
         outfiletarget = "file://%s/" % os.getcwd()
         out = rs.filesystem.File(outfilesource, session=session)
         out.copy(outfiletarget)
 
-        print "Staged out %s to %s (size: %s bytes)" % (outfilesource, outfiletarget, out.get_size())
+        print("Staged out %s to %s (size: %s bytes)" % (outfilesource, outfiletarget, out.get_size()))
 
 
         return 0
 
-    except rs.SagaException, ex:
+    except rs.SagaException as ex:
         # Catch all saga exceptions
-        print "An exception occured: (%s) %s " % (ex.type, (str(ex)))
+        print("An exception occured: (%s) %s " % (ex.type, (str(ex))))
         # Trace back the exception. That can be helpful for debugging.
-        print " \n*** Backtrace:\n %s" % ex.traceback
+        print(" \n*** Backtrace:\n %s" % ex.traceback)
         return -1
 
 

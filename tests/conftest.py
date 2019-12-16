@@ -94,7 +94,7 @@ def config():
 
             if 'NotImplemented' in str(e):
                 if   ni == 'ignore': pass
-                elif ni == 'warn'  : print 'WARNING: %s'
+                elif ni == 'warn'  : print('WARNING: %s' % e)
                 else:
                     assert(False), 'unexpected exception: %s' % e
 

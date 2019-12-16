@@ -205,12 +205,6 @@ class TestJob(unittest.TestCase):
             # assert success
             assert(j.state == rs.job.DONE), "%s != %s" % (j.state, rs.job.DONE)
 
-            print t_min
-            print j.created
-            print j.started
-            print j.finished
-            print t_max
-
             # expect job time information is be reported in seconds since epoch
             assert(int(t_min) <= int(j.created ) <= int(t_max))
             assert(int(t_min) <= int(j.started ) <= int(t_max))
@@ -333,7 +327,7 @@ if True:
             jd = rs.job.Description()
 
             jd.executable = '/bin/sleep'
-            jd.arguments  = ['15']
+            jd.arguments  = ['30']
 
             # add options from the test .cfg file if set
             sutc.configure_jd(self.cfg, jd)
@@ -422,7 +416,7 @@ if True:
         except rs.NotImplemented as ni:
             assert cfg.notimpl_warn_only, "%s " % ni
             if cfg.notimpl_warn_only:
-                print "%s " % ni
+                print("%s " % ni)
 
         except rs.SagaException as se:
             assert False, "Unexpected exception: %s" % se
@@ -492,20 +486,20 @@ if True:
 if __name__ == '__main__':
 
     tj = TestJob()
-  # tj.test_job_service_get_url()
-  # tj.test_job_service_invalid_url()
-  # tj.test_job_service_create()
-  # tj.test_job_service_get_session()
-  # tj.test_job_run()
+    tj.test_job_service_get_url()
+    tj.test_job_service_invalid_url()
+    tj.test_job_service_create()
+    tj.test_job_service_get_session()
+    tj.test_job_run()
     tj.test_job_wait()
-  # tj.test_job_multiline_run()
-  # tj.test_job_suspend_resume()
-  # tj.test_job_cancel()
-  # tj.test_job_run_many()
-  # tj.test_get_exit_code()
-  # tj.test_get_stdio()
-  # tj.test_get_service_url()
-  # tj.test_get_id()
+    tj.test_job_multiline_run()
+    tj.test_job_suspend_resume()
+    tj.test_job_cancel()
+    tj.test_job_run_many()
+    tj.test_get_exit_code()
+    tj.test_get_stdio()
+    tj.test_get_service_url()
+    tj.test_get_id()
 
 
 # ------------------------------------------------------------------------------

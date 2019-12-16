@@ -13,7 +13,7 @@ from ..adaptors  import base    as sab
 from .. import session          as ss
 from .. import task             as st
 from .. import base             as sb
-from .. import async            as sasync
+from .. import sasync
 
 
 # ------------------------------------------------------------------------------
@@ -38,19 +38,19 @@ class Entry (sb.Base, sasync.Async) :
 
     # --------------------------------------------------------------------------
     #
-    @rus.takes   ('Entry', 
-                  rus.optional ((ru.Url, basestring)), 
-                  rus.optional (int, rus.nothing), 
+    @rus.takes   ('Entry',
+                  rus.optional ((ru.Url, str)),
+                  rus.optional (int, rus.nothing),
                   rus.optional (ss.Session),
-                  rus.optional (sab.Base), 
-                  rus.optional (dict), 
+                  rus.optional (sab.Base),
+                  rus.optional (dict),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns (rus.nothing)
-    def __init__ (self, url=None, flags=None, session=None, 
-                  _adaptor=None, _adaptor_state={}, _ttype=None) : 
+    def __init__ (self, url=None, flags=None, session=None,
+                  _adaptor=None, _adaptor_state={}, _ttype=None) :
         '''
         :param url: Url of the (remote) entry
-        :type  url: :class:`saga.Url` 
+        :type  url: :class:`saga.Url`
 
         flags:     flags enum
         session:   saga.Session
@@ -68,7 +68,7 @@ class Entry (sb.Base, sasync.Async) :
             entry = saga.namespace.Entry("sftp://localhost/tmp/data/data.bin")
 
             # print the entry's url
-            print entry.get_url ()
+            print(entry.get_url ())
         '''
 
         self._session      = session
@@ -83,16 +83,16 @@ class Entry (sb.Base, sasync.Async) :
         scheme  = url.scheme.lower ()
 
         self._base = super  (Entry, self)
-        self._base.__init__ (scheme, _adaptor, _adaptor_state, 
+        self._base.__init__ (scheme, _adaptor, _adaptor_state,
                              url, flags, session, ttype=_ttype)
 
 
     # --------------------------------------------------------------------------
     #
     @classmethod
-    @rus.takes   ('Entry', 
-                  rus.optional ((ru.Url, basestring)), 
-                  rus.optional (int, rus.nothing), 
+    @rus.takes   ('Entry',
+                  rus.optional ((ru.Url, str)),
+                  rus.optional (int, rus.nothing),
                   rus.optional (ss.Session),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns (st.Task)
@@ -133,7 +133,7 @@ class Entry (sb.Base, sasync.Async) :
 
             # print URL of an entry
             entry = saga.namespace.Entry("sftp://localhost/etc/passwd")
-            print entry.get_url()
+            print(entry.get_url())
         '''
         return self._adaptor.get_url (ttype=ttype)
 
@@ -142,7 +142,7 @@ class Entry (sb.Base, sasync.Async) :
     #
     @rus.takes   ('Entry',
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
-    @rus.returns ((basestring, st.Task))
+    @rus.returns ((str, st.Task))
     def get_cwd  (self, ttype=None) :
         '''
         ttype:         saga.task.type enum
@@ -155,7 +155,7 @@ class Entry (sb.Base, sasync.Async) :
     #
     @rus.takes   ('Entry',
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
-    @rus.returns ((basestring, st.Task))
+    @rus.returns ((str, st.Task))
     def get_name (self, ttype=None) :
         '''
         ttype:         saga.task.type enum
@@ -234,7 +234,7 @@ class Entry (sb.Base, sasync.Async) :
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Entry',
-                  (ru.Url, basestring),
+                  (ru.Url, str),
                   rus.optional (int, rus.nothing),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((rus.nothing, st.Task))
@@ -261,13 +261,13 @@ class Entry (sb.Base, sasync.Async) :
 
         # parameter checks
         if  not flags : flags = 0
-        return self._adaptor.copy_self (tgt, flags, ttype=ttype) 
+        return self._adaptor.copy_self (tgt, flags, ttype=ttype)
 
 
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Entry',
-                  (ru.Url, basestring),
+                  (ru.Url, str),
                   rus.optional (int, rus.nothing),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((rus.nothing, st.Task))
@@ -280,13 +280,13 @@ class Entry (sb.Base, sasync.Async) :
         '''
 
         if  not flags : flags = 0
-        return self._adaptor.link_self (tgt, flags, ttype=ttype) 
+        return self._adaptor.link_self (tgt, flags, ttype=ttype)
 
 
     # --------------------------------------------------------------------------
     #
     @rus.takes   ('Entry',
-                  (ru.Url, basestring),
+                  (ru.Url, str),
                   rus.optional (int, rus.nothing),
                   rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns ((rus.nothing, st.Task))
@@ -309,7 +309,7 @@ class Entry (sb.Base, sasync.Async) :
             entry.move ("sftp://localhost/tmp/data/data.bak")
         '''
         if  not flags : flags = 0
-        return self._adaptor.move_self (tgt, flags, ttype=ttype) 
+        return self._adaptor.move_self (tgt, flags, ttype=ttype)
 
 
 
@@ -336,7 +336,7 @@ class Entry (sb.Base, sasync.Async) :
             entry.remove ()
         '''
         if  not flags : flags = 0
-        return self._adaptor.remove_self (flags, ttype=ttype) 
+        return self._adaptor.remove_self (flags, ttype=ttype)
 
 
     # --------------------------------------------------------------------------

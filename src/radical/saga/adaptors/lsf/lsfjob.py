@@ -16,6 +16,7 @@ import datetime
 import tempfile
 
 import radical.utils as ru
+from urllib.parse import parse_qs
 
 from ...job           import constants   as c
 from ...utils         import pty_shell   as rsups
@@ -70,6 +71,7 @@ class _job_state_monitor(threading.Thread):
                 # job by job. that would be too inefficient!
                 for job in self.js._jobs:
                     job_info = self.js._jobs[job]
+
                     # if the job hasn't been started, we can't update its
                     # state. we can tell if a job has been started if it
                     # has a job id
@@ -137,8 +139,8 @@ def _lsfscript_generator(url, logger, jd, ppn, lsf_version):
     if jd.working_directory: lsf_bsubs += '#BSUB -cwd %s \n' \
                                                      %  jd.working_directory
     if jd.wall_time_limit  : lsf_bsubs += '#BSUB -W %s:%s \n' \
-                                                     % (jd.wall_time_limit / 60,
-                                                        jd.wall_time_limit % 60)
+                                          % (int(jd.wall_time_limit / 60),
+                                             int(jd.wall_time_limit % 60))
 
     # if working directory is set, we want stdout to end up in the
     # working directory as well, unless it containes a specific
@@ -159,7 +161,7 @@ def _lsfscript_generator(url, logger, jd, ppn, lsf_version):
 
     env_string += 'export RADICAL_SAGA_SMT=%d' % SMT
     if jd.environment:
-        for k,v in jd.environment.iteritems():
+        for k,v in jd.environment.items():
             env_string += ' %s=%s' % (k,v)
 
 
@@ -446,6 +448,18 @@ class LSFJobService(cpi.Service):
         self._monitor = _job_state_monitor(job_service=self)
         self._monitor.start()
 
+        rm_scheme = rm_url.scheme
+        pty_url   = ru.Url(rm_url)
+
+        # this adaptor supports options that can be passed via the
+        # 'query' component of the job service URL.
+        if rm_url.query:
+            for key, val in parse_qs(rm_url.query).items():
+                if key == 'queue':
+                    self.queue = val[0]
+                else:
+                    raise rse.BadParameter('unsupported url query %s' % key)
+
         # we need to extrac the scheme for PTYShell. That's basically the
         # job.Serivce Url withou the lsf+ part. We use the PTYShell to execute
         # lsf commands either locally or via gsissh or ssh.
@@ -473,6 +487,31 @@ class LSFJobService(cpi.Service):
                 raise rse.NoSuccess('Could not find LSF tools: %s' % out)
 
             self._commands[cmd] = out.strip()
+
+        self.initialize()
+        return self.get_api()
+
+
+    # --------------------------------------------------------------------------
+    #
+    def initialize(self):
+
+        # check if all required lsf tools are available
+        for cmd in self._commands:
+
+            ret, out, _ = self.shell.run_sync("which %s " % cmd)
+            if ret != 0:
+                raise rse.NoSuccess("Couldn't find LSF tools: %s" % out)
+
+            else:
+                path = out.strip()  # strip removes newline
+                ret, out, _ = self.shell.run_sync("%s -V" % cmd)
+                if ret != 0:
+                    raise rse.NoSuccess("Couldn't find LSF tools: %s" % out)
+                else:
+                    # version is reported as: "version: x.y.z"
+                    version = out.split("\n")[0]
+>>>>>>> devel
 
         _, out, _ = self._shell.run_sync('bsub -V 2>&1 | cut -f 1')
         self._version = out.split()[1].strip()
@@ -560,7 +599,8 @@ class LSFJobService(cpi.Service):
         # parse the job id. bsub's output looks like this:
         # Job <901545> is submitted to queue <regular>
         lines = out.split('\n')
-        lines = filter(lambda lines: lines != '', lines)  # remove empty
+        lines = out.split("\n")
+        lines = [line.strip() for line in lines if line.strip()]
 
         self._logger.debug('bsub:\n %s' % '\n'.join(lines))
 
