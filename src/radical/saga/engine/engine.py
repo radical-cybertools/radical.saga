@@ -6,9 +6,10 @@ __license__   = "MIT"
 
 """ Provides the SAGA runtime. """
 
-import radical.utils      as ru
+import radical.utils as ru
 
-from .. import exceptions as rse
+from ..        import exceptions as rse
+from ..version import *
 
 
 # ------------------------------------------------------------------------------
@@ -120,7 +121,6 @@ class Engine(object, metaclass=ru.Singleton):
                   return
     """
 
-
     # --------------------------------------------------------------------------
     #
     def __init__(self):
@@ -129,12 +129,13 @@ class Engine(object, metaclass=ru.Singleton):
         self._adaptor_registry = dict()
 
         # get angine, adaptor and pty configs
-        self._cfg      = ru.Config(module='radical.saga', name='engine')
-        self._pty_cfg  = ru.Config(module='radical.saga', name='pty')
-        self._registry = ru.Config(module='radical.saga', name='registry')
+        self._cfg      = ru.Config('radical.saga.engine')
+        self._pty_cfg  = ru.Config('radical.saga.pty')
+        self._registry = ru.Config('radical.saga.registry')
 
         # Initialize the logging, and log version (this is a singleton!)
         self._logger = ru.Logger('radical.saga')
+        self._logger.info('radical.saga         version: %s' % version_detail)
 
         # load adaptors
         self._load_adaptors()
@@ -172,9 +173,9 @@ class Engine(object, metaclass=ru.Singleton):
             try :
                 adaptor_module = ru.import_module(module_name)
 
-            except Exception:
-                self._logger.warning("skip adaptor %s: import failed",
-                                  module_name, exc_info=True)
+            except Exception as e:
+                self._logger.warning("skip adaptor %s: import failed (%s)",
+                                  module_name, e)
                 continue
 
             # we expect the module to have an 'Adaptor' class
@@ -251,7 +252,8 @@ class Engine(object, metaclass=ru.Singleton):
             adaptor_enabled = False
 
             try :
-                adaptor_config  = ru.Config('radical.saga', name=adaptor_name)
+                adaptor_config  = ru.Config('radical.saga.adaptors',
+                                            name=adaptor_name)
                 adaptor_enabled = adaptor_config.get('enabled', True)
 
             except rse.SagaException:

@@ -84,7 +84,7 @@ class Adaptor(rsab.Base):
     def __init__(self) :
 
         rsab.Base.__init__(self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
-        self.pty_url = self._cfg['pty_url']
+        self.pty_url = self._cfg.get('pty_url', 'fork://localhost/')
 
 
     def sanity_check(self):
@@ -646,7 +646,7 @@ class SRMFile(cpi.File):
     def _init_check(self):
 
         url   = self._url
-        flags = self._flags 
+        flags = self._flags
 
         if url.username :
             raise rse.BadParameter ("Cannot handle url %s (has username)"  %  url)

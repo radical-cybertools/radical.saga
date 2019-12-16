@@ -554,7 +554,6 @@ class SLURMJobService(cpi_job.Service):
 
 
         if cwd:
-            if 'frontera' in self.rm.host.lower():
             if 'frontera' in self.rm.host.lower() or \
                'tiger'    in self.rm.host.lower() or \
                'rhea'     in self.rm.host.lower():
@@ -572,7 +571,7 @@ class SLURMJobService(cpi_job.Service):
         if account    : script += "#SBATCH --account %s\n"     % account
         if reservation: script += "#SBATCH --reservation %s\n" % reservation
         if wall_time  : script += "#SBATCH --time %02d:%02d:00\n" \
-                                              % (int(wall_time / 60), wall_time % 60)
+                                         % (int(wall_time / 60), wall_time % 60)
 
         if env:
             script += "\n## ENVIRONMENT\n"

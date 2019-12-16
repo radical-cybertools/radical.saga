@@ -6,6 +6,12 @@
     https://github.com/radical-cybertools/radical.saga/issues?q=is%3Aissue+is%3Aopen+
 
 
+Version 0.72.1  Hotfix Release                                        2019-09-17
+--------------------------------------------------------------------------------
+
+  - tiger's Slurm needs `--chdir` now (thanks Lucas!)
+
+
 Version 0.72.0  Release                                               2019-09-11
 --------------------------------------------------------------------------------
 
