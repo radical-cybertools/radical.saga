@@ -438,7 +438,8 @@ class SLURMJobService(cpi.Service):
             mpi_cmd = ''
 
             if  'stampede2' in self.rm.host.lower() or \
-                'frontera'  in self.rm.host.lower():
+                'frontera'  in self.rm.host.lower() or \
+                'rhea'      in self.rm.host.lower():
 
                 assert(self._ppn), 'need unique number of cores per node'
                 n_nodes = int(math.ceil(float(cpu_count) / self._ppn))
@@ -508,7 +509,8 @@ class SLURMJobService(cpi.Service):
 
         if cwd:
             if 'frontera' in self.rm.host.lower() or \
-               'tiger'    in self.rm.host.lower():
+               'tiger'    in self.rm.host.lower() or \
+               'rhea'     in self.rm.host.lower():
                 script += "#SBATCH --chdir %s\n"   % cwd
             else:
                 script += "#SBATCH --workdir %s\n" % cwd
@@ -523,7 +525,7 @@ class SLURMJobService(cpi.Service):
         if account    : script += "#SBATCH --account %s\n"     % account
         if reservation: script += "#SBATCH --reservation %s\n" % reservation
         if wall_time  : script += "#SBATCH --time %02d:%02d:00\n" \
-                                              % (int(wall_time / 60), wall_time % 60)
+                                         % (int(wall_time / 60), wall_time % 60)
 
         if env:
             script += "\n## ENVIRONMENT\n"
@@ -550,7 +552,7 @@ class SLURMJobService(cpi.Service):
         self.shell.write_to_remote(src=script, tgt=tgt)
 
         # submit the job
-        ret, out, _ = self.shell.run_sync("sbatch '%s'; rm -f '%s'" % (tgt,tgt))
+        ret, out, _ = self.shell.run_sync("sbatch '%s'; echo rm -f '%s'" % (tgt,tgt))
 
         self._logger.debug("submit SLURM script (%s) (%s)" % (tgt, ret))
 
