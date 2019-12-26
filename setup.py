@@ -16,14 +16,13 @@ import shutil
 
 import subprocess as sp
 
+
+from setuptools import setup, Command, find_packages
+
+
+# ------------------------------------------------------------------------------
 name     = 'radical.saga'
 mod_root = 'src/radical/saga/'
-
-try:
-    from setuptools import setup, Command, find_packages
-except ImportError:
-    print(("%s needs setuptools to install" % name))
-    sys.exit(1)
 
 
 # ------------------------------------------------------------------------------
@@ -35,8 +34,6 @@ def sh_callout(cmd):
     stdout, stderr = p.communicate()
     ret            = p.returncode
     return stdout, stderr, ret
-
-
 
 
 # ------------------------------------------------------------------------------
@@ -53,12 +50,11 @@ def sh_callout(cmd):
 #   - The VERSION file is used to provide the runtime version information.
 #
 def get_version(mod_root):
-    """
-    mod_root
-        a VERSION file containes the version strings is created in mod_root,
-        during installation.  That file is used at runtime to get the version
-        information.
-        """
+    '''
+    a VERSION file containes the version strings is created in mod_root,
+    during installation.  That file is used at runtime to get the version
+    information.
+    '''
 
     try:
 
@@ -80,25 +76,26 @@ def get_version(mod_root):
         # and the pip version used uses an install tmp dir in the ve space
         # instead of /tmp (which seems to happen with some pip/setuptools
         # versions).
-        p = sp.Popen(
+        out, err, ret = sh_callout(
             'cd %s ; '
             'test -z `git rev-parse --show-prefix` || exit -1; '
             'tag=`git describe --tags --always` 2>/dev/null ; '
-            'branch=`git branch | grep -e "^*" | cut -f 2- -d " "` 2>/dev/null;'
-            'echo $tag@$branch' % src_root,
-            stdout=sp.PIPE, stderr=sp.STDOUT, shell=True)
-        version_detail = str(p.communicate()[0].strip())
+            'branch=`git branch | grep -e "^*" | cut -f 2- -d " "` 2>/dev/null ; '
+            'echo $tag@$branch' % src_root)
+        version_detail = out.strip()
+        version_detail = version_detail.decode()
         version_detail = version_detail.replace('detached from ', 'detached-')
 
         # remove all non-alphanumeric (and then some) chars
         version_detail = re.sub('[/ ]+', '-', version_detail)
         version_detail = re.sub('[^a-zA-Z0-9_+@.-]+', '', version_detail)
 
-        if p.returncode   !=  0  or version_detail == '@' or \
-           'git-error'      in version_detail or \
-           'not-a-git-repo' in version_detail or \
-           'not-found'      in version_detail or \
-           'fatal'          in version_detail    :
+        if  ret            !=  0  or \
+            version_detail == '@' or \
+            'git-error'      in version_detail or \
+            'not-a-git-repo' in version_detail or \
+            'not-found'      in version_detail or \
+            'fatal'          in version_detail :
             version = version_base
         elif '@' not in version_base:
             version = '%s-%s' % (version_base, version_detail)
@@ -107,10 +104,10 @@ def get_version(mod_root):
 
         # make sure the version files exist for the runtime version inspection
         path = '%s/%s' % (src_root, mod_root)
-        with open(path + "/VERSION", "w") as f:
-            f.write(version + "\n")
+        with open(path + '/VERSION', 'w') as f:
+            f.write(version + '\n')
 
-        sdist_name = "%s-%s.tar.gz" % (name, version)
+        sdist_name = '%s-%s.tar.gz' % (name, version)
         sdist_name = sdist_name.replace('/', '-')
         sdist_name = sdist_name.replace('@', '-')
         sdist_name = sdist_name.replace('#', '-')
@@ -129,15 +126,21 @@ def get_version(mod_root):
             os.system  ("python setup.py sdist")             # build sdist
             shutil.copy('dist/%s' % sdist_name,
                         '%s/%s'   % (mod_root, sdist_name))  # copy into tree
-            shutil.move("VERSION.bak", "VERSION")            # restore version
+            shutil.move('VERSION.bak', 'VERSION')            # restore version
 
-        with open(path + "/SDIST", "w") as f:
-            f.write(sdist_name + "\n")
+        with open(path + '/SDIST', 'w') as f:
+            f.write(sdist_name + '\n')
 
         return version_base, version_detail, sdist_name
 
     except Exception as e:
         raise RuntimeError('Could not extract/set version: %s' % e)
+
+
+# ------------------------------------------------------------------------------
+# check python version. we need >= 2.7, <3.x
+if  sys.hexversion <= 0x03050000:
+    raise RuntimeError('%s requires Python 3.5 or higher' % name)
 
 
 # ------------------------------------------------------------------------------
@@ -160,9 +163,9 @@ class our_test(Command):
 # ------------------------------------------------------------------------------
 #
 def read(fname):
-    try :
+    try:
         return open(fname).read()
-    except Exception :
+    except Exception:
         return ''
 
 
@@ -171,7 +174,7 @@ def read(fname):
 class RunTwine(Command):
     user_options = []
     def initialize_options(self): pass
-    def finalize_options(self): pass
+    def finalize_options(self):   pass
     def run(self):
         out,  err, ret = sh_callout('python setup.py sdist upload -r pypi')
         raise SystemExit(ret)
