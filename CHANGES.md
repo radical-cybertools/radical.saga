@@ -6,6 +6,20 @@
     https://github.com/radical-cybertools/radical.saga/issues?q=is%3Aissue+is%3Aopen+
 
 
+Version 1.0.0  Release                                                2019-12-24
+--------------------------------------------------------------------------------
+
+  - transition to Python3
+  - fix issue #744
+  - config fixes
+  - desable logger during gc
+  - fix attribute callback
+  - fix generated slurm script (walltime format)
+  - fix slurm for rhea
+  - rename async as it is a reserved word in p3
+  - testing, flaking, linting and travis fixes
+
+
 Version 0.72.1  Hotfix Release                                        2019-09-17
 --------------------------------------------------------------------------------
 
