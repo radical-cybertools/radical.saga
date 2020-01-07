@@ -604,30 +604,30 @@ class SLURMJobService(cpi_job.Service):
 
         # find out what our job ID is
         # TODO: Could make this more efficient
-        self.job_id = None
+        job_id = None
         for line in out.split("\n"):
             if "Submitted batch job" in line:
-                self.job_id = "[%s]-[%s]" % (self.rm, int(line.split()[-1:][0]))
+                job_id = "[%s]-[%s]" % (self.rm, int(line.split()[-1:][0]))
                 break
 
         # if we have no job ID, there's a failure...
-        if not self.job_id:
+        if not job_id:
             raise rse.NoSuccess._log(self._logger,
                              "Couldn't get job id from submitted job!"
                               " sbatch output:\n%s" % out)
 
-        self._logger.debug("started job %s" % self.job_id)
+        self._logger.debug("started job %s" % job_id)
         self._logger.debug("Batch system output:\n%s" % out)
 
         # create local jobs dictionary entry
-        self.jobs[self.job_id] = {'state'      : c.PENDING,
-                                  'create_time': None,
-                                  'start_time' : None,
-                                  'end_time'   : None,
-                                  'comp_time'  : None,
-                                  'exec_hosts' : None,
-                                  'gone'       : False}
-        return self.job_id
+        self.jobs[job_id] = {'state'      : c.PENDING,
+                             'create_time': None,
+                             'start_time' : None,
+                             'end_time'   : None,
+                             'comp_time'  : None,
+                             'exec_hosts' : None,
+                             'gone'       : False}
+        return job_id
 
 
     # --------------------------------------------------------------------------
