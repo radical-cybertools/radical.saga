@@ -626,7 +626,12 @@ class SLURMJobService(cpi_job.Service):
                              'end_time'   : None,
                              'comp_time'  : None,
                              'exec_hosts' : None,
-                             'gone'       : False}
+                             'gone'       : False,
+                             'output'     : output,
+                             'error'      : error,
+                             'stdout'     : None,
+                             'stderr'     : None,
+                             }
         return job_id
 
 
@@ -954,6 +959,10 @@ class SLURMJob(cpi_job.Job):
             curr_info['comp_time'  ] = prev_info.get('comp_time'  )
             curr_info['exec_hosts' ] = prev_info.get('exec_hosts' )
             curr_info['gone'       ] = prev_info.get('gone'       )
+            curr_info['output'     ] = prev_info.get('output'     )
+            curr_info['error'      ] = prev_info.get('error'      )
+            curr_info['stdout'     ] = prev_info.get('stdout'     )
+            curr_info['stderr'     ] = prev_info.get('stderr'     )
         else:
             curr_info['job_id'     ] = None
             curr_info['job_name'   ] = None
@@ -964,6 +973,10 @@ class SLURMJob(cpi_job.Job):
             curr_info['comp_time'  ] = None
             curr_info['exec_hosts' ] = None
             curr_info['gone'       ] = None
+            curr_info['output'     ] = None
+            curr_info['error'      ] = None
+            curr_info['stdout'     ] = None
+            curr_info['stderr'     ] = None
 
         rm, pid = self._adaptor.parse_id(self._id)
 
@@ -1013,6 +1026,7 @@ class SLURMJob(cpi_job.Job):
             key, val = parts
             if val in ['', '(null)']:
                 val = None
+            self._logger.info('=== %s := %s', key, val)
             data[key] = val
 
         if data.get('JobState'):
@@ -1042,7 +1056,30 @@ class SLURMJob(cpi_job.Job):
             if not curr_info['start_time' ]: curr_info['start_time' ] = now
 
         if curr_info['state'] in c.FINAL:
+
+            self._logger.info('=== %s', data.get('StdErr'))
+
             if not curr_info['end_time' ]: curr_info['end_time' ] = now
+
+            if curr_info['stdout'] is None:
+
+                if curr_info['output'] is None:
+                    curr_info['output'] = data.get('StdOut')
+
+                ret, out, err = self.js.shell.run_sync(
+                                                 'cat %s' % curr_info['output'])
+                if ret: curr_info['stdout'] = None
+                else  : curr_info['stdout'] = out
+
+            if curr_info['stderr'] is None:
+
+                if curr_info['error'] is None:
+                    curr_info['error'] = data.get('StdErr')
+
+                ret, out, err = self.js.shell.run_sync(
+                                                  'cat %s' % curr_info['error'])
+                if ret: curr_info['stderr'] = None
+                else  : curr_info['stderr'] = out
 
         return curr_info
 
@@ -1135,6 +1172,30 @@ class SLURMJob(cpi_job.Job):
     # --------------------------------------------------------------------------
     #
     @SYNC_CALL
+    def get_stdout(self):
+
+        out = self._job_get_info()['stdout']
+        if out is None:
+            out = ''
+          # raise rse.NoSuccess("Couldn't fetch stdout (js reconnected?)")
+        return out
+
+
+    # --------------------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def get_stderr(self):
+
+        err = self._job_get_info()['stderr']
+        if err is None:
+            err = ''
+          # raise rse.NoSuccess("Couldn't fetch stderr (js reconnected?)")
+        return err
+
+
+    # --------------------------------------------------------------------------
+    #
+    @SYNC_CALL
     def get_description(self):
 
         return self.jd
@@ -1165,6 +1226,7 @@ class SLURMJob(cpi_job.Job):
                 raise rse.IncorrectState("cannot get job state")
 
             if state in c.FINAL:
+                self._job_get_info()
                 return True
 
             # check if we hit timeout
