@@ -21,9 +21,12 @@ from ...job           import constants   as c
 from ...utils         import pty_shell   as rsups
 from ...              import job         as api_job
 from ...              import exceptions  as rse
+from ...              import filesystem  as sfs
 from ..               import base        as a_base
 from ..cpi            import job         as cpi_job
 from ..cpi            import decorators  as cpi_decs
+
+from ...utils.job     import TransferDirectives
 
 SYNC_CALL  = cpi_decs.SYNC_CALL
 ASYNC_CALL = cpi_decs.ASYNC_CALL
@@ -391,7 +394,7 @@ class SLURMJobService(cpi_job.Service):
         if len(ppn_vals) >= 1: self._ppn = int(ppn_vals[0])
         else                 : self._ppn = None
 
-        self._logger.info(" === ppn: %s", self._ppn)
+        self._logger.info("ppn: %s", self._ppn)
 
 
     # --------------------------------------------------------------------------
@@ -403,6 +406,51 @@ class SLURMJobService(cpi_job.Service):
 
         del(self.shell)
         self.shell = None
+
+
+    # --------------------------------------------------------------------------
+    #
+    def _handle_file_transfers(self, ft, mode):
+        """
+        if mode == 'in' : perform sanity checks on all staging directives.
+
+        if mode == 'in' : stage files to   condor submission site
+        if mode == 'out': stage files from condor submission site
+        """
+
+        td = TransferDirectives(ft)
+
+        assert(mode in ['in', 'out'])
+
+        if mode == 'in':
+
+            if td.in_append:
+                raise Exception('File append (>>) not supported')
+
+            if td.out_append:
+                raise Exception('File append (<<) not supported')
+
+            if td.in_overwrite:
+
+                for (local, remote) in td.in_overwrite:
+
+                    source = local
+                    target = remote
+
+                    self._logger.info("Transferring in %s to %s", source, target)
+                    self.shell.stage_to_remote(source, target)
+
+        elif mode == 'out':
+
+            if td.out_overwrite:
+
+                for (local, remote) in td.out_overwrite:
+
+                    source = remote
+                    target = local
+
+                    self._logger.info("Transferring out %s to %s", source, target)
+                    self.shell.stage_from_remote(source, target)
 
 
     # --------------------------------------------------------------------------
@@ -428,7 +476,7 @@ class SLURMJobService(cpi_job.Service):
         processes_per_host  = jd.as_dict().get(c.PROCESSES_PER_HOST)
         output              = jd.as_dict().get(c.OUTPUT, "radical.saga.stdout")
         error               = jd.as_dict().get(c.ERROR,  "radical.saga.stderr")
-      # file_transfer       = jd.as_dict().get(c.FILE_TRANSFER)
+        file_transfer       = jd.as_dict().get(c.FILE_TRANSFER)
         wall_time           = jd.as_dict().get(c.WALL_TIME_LIMIT)
         queue               = jd.as_dict().get(c.QUEUE)
         project             = jd.as_dict().get(c.PROJECT)
@@ -451,6 +499,7 @@ class SLURMJobService(cpi_job.Service):
             if ret:
                 raise rse.NoSuccess("Couldn't create workdir: %s" % out)
 
+        self._handle_file_transfers(file_transfer, mode='in')
 
         if isinstance(c_hosts, list):
             c_hosts = ','.join(c_hosts)
@@ -631,6 +680,7 @@ class SLURMJobService(cpi_job.Service):
                              'error'      : error,
                              'stdout'     : None,
                              'stderr'     : None,
+                             'ft'         : file_transfer,
                              }
         return job_id
 
@@ -963,6 +1013,7 @@ class SLURMJob(cpi_job.Job):
             curr_info['error'      ] = prev_info.get('error'      )
             curr_info['stdout'     ] = prev_info.get('stdout'     )
             curr_info['stderr'     ] = prev_info.get('stderr'     )
+            curr_info['ft'         ] = prev_info.get('ft'         )
         else:
             curr_info['job_id'     ] = None
             curr_info['job_name'   ] = None
@@ -977,6 +1028,7 @@ class SLURMJob(cpi_job.Job):
             curr_info['error'      ] = None
             curr_info['stdout'     ] = None
             curr_info['stderr'     ] = None
+            curr_info['ft'         ] = None
 
         rm, pid = self._adaptor.parse_id(self._id)
 
@@ -1014,7 +1066,7 @@ class SLURMJob(cpi_job.Job):
 
         elems = out.split()
         data  = dict()
-        for elem in elems:
+        for elem in sorted(elems):
 
             parts = elem.split('=', 1)
 
@@ -1057,8 +1109,6 @@ class SLURMJob(cpi_job.Job):
 
         if curr_info['state'] in c.FINAL:
 
-            self._logger.info('=== %s', data.get('StdErr'))
-
             if not curr_info['end_time' ]: curr_info['end_time' ] = now
 
             if curr_info['stdout'] is None:
@@ -1080,6 +1130,10 @@ class SLURMJob(cpi_job.Job):
                                                   'cat %s' % curr_info['error'])
                 if ret: curr_info['stderr'] = None
                 else  : curr_info['stderr'] = out
+
+            self.js._handle_file_transfers(curr_info['ft'], mode='out')
+
+            curr_info['gone'] = True
 
         return curr_info
 
