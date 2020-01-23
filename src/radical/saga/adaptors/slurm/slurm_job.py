@@ -989,7 +989,9 @@ class SLURMJob(cpi_job.Job):
 
         # if the 'gone' flag is set, there's no need to query the job
         # state again. it's gone forever
+        self._logger.debug("=== prev: %s", prev_info)
         if prev_info:
+            self._logger.debug("=== gone: %s", prev_info.get('gone'))
             if prev_info.get('gone', False):
                 self._logger.debug("Job is gone.")
                 return prev_info
@@ -1134,6 +1136,8 @@ class SLURMJob(cpi_job.Job):
             self.js._handle_file_transfers(curr_info['ft'], mode='out')
 
             curr_info['gone'] = True
+
+        self.js.jobs[self._id] = curr_info
 
         return curr_info
 
