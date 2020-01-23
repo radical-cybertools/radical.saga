@@ -989,9 +989,7 @@ class SLURMJob(cpi_job.Job):
 
         # if the 'gone' flag is set, there's no need to query the job
         # state again. it's gone forever
-        self._logger.debug("=== prev: %s", prev_info)
         if prev_info:
-            self._logger.debug("=== gone: %s", prev_info.get('gone'))
             if prev_info.get('gone', False):
                 self._logger.debug("Job is gone.")
                 return prev_info
@@ -1080,7 +1078,7 @@ class SLURMJob(cpi_job.Job):
             key, val = parts
             if val in ['', '(null)']:
                 val = None
-            self._logger.info('=== %s := %s', key, val)
+            self._logger.info('%-20s := %s', key, val)
             data[key] = val
 
         if data.get('JobState'):
