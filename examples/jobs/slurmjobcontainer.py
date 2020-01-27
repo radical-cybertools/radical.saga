@@ -9,17 +9,16 @@ __license__   = 'MIT'
 This examples shows how to run groups of jobs using the 'local' file adaptor.
 This example uses job containers for simplified and optimized bulk job handling.
 
-Job container can be used to easily model dependencies between groups of
-different jobs, e.g., in workflow scenarios. In this example, we execute
-'num_job_groups' containers of jobs_per_group' number of parallel jobs
-sequentially::
+Job container can be used to model dependencies between groups of different
+jobs, e.g., in workflow scenarios. In this example, we execute 'num_job_groups'
+containers of jobs_per_group' number of parallel jobs sequentially::
 
     C1[j1,j2,j3,j4,...] -> C2[j1,j2,j3,j4,...] -> C3[j1,j2,j3,j4,...] -> ...
 
 Depending on the adaptor implementation, using job containers can be quite
 advantageous in terms of call latency. Some adaptors implement special bulk
 operations for container management, which makes them generally much faster than
-iterating over and operating on individual jobs.  
+iterating over and operating on individual jobs.
 '''
 
 import sys
