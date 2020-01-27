@@ -55,10 +55,10 @@ class TestFile(unittest.TestCase):
         try:
             tc = config()
             invalid_url = deepcopy(rs.Url(tc.filesystem_url))
-            invalid_url.host = "does.not.exist"
+            invalid_url.host = "does/not/exist"
             _ = rs.filesystem.File(invalid_url)
             assert False, "Expected BadParameter exception but got none."
-        except rs.BadParameter:
+        except rs.DoesNotExist:
             assert True
         except rs.SagaException as ex:
             assert False, "Expected BadParameter exception, but got %s" % ex
