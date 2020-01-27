@@ -46,7 +46,7 @@ class TransferDirectives(object):
         self._out_append    = list()
 
         if not directives:
-            directives = {}
+            directives = []
 
         for d in directives:
 

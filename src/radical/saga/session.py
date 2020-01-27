@@ -275,12 +275,12 @@ class DefaultSession(Session, metaclass=ru.Singleton):
 
         _engine = engine.Engine()
 
-        if not 'saga.Context' in _engine._adaptor_registry :
+        if 'radical.saga.Context' not in _engine._adaptor_registry :
             self._logger.warning ("no context adaptors found")
             return
 
-        for schema   in _engine._adaptor_registry['saga.Context'] :
-            for info in _engine._adaptor_registry['saga.Context'][schema] :
+        for schema   in _engine._adaptor_registry['radical.saga.Context'] :
+            for info in _engine._adaptor_registry['radical.saga.Context'][schema] :
 
                 default_ctxs = []
 

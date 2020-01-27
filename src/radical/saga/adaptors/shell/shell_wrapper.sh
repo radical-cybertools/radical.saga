@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# be friendly to bash users (and yes, the leading space is on purpose)
+# be friendly to bash users
 HISTIGNORE='*'
 export HISTIGNORE
 
@@ -8,8 +8,8 @@ export HISTIGNORE
 # other shell extensions.  It expects /bin/sh to be a POSIX compliant shell
 # thought.
 #
-# The invokation passes one (optional) parameter, the base workdir.  That
-# directory will be used to keep job state data. It' default value is set to
+# The invocation passes one (optional) parameter, the base workdir.  That
+# directory will be used to keep job state data. Its default value is set to
 # $HOME/.radical/saga/adaptors/shell_job/
 
 
@@ -25,12 +25,13 @@ export HISTIGNORE
 #   }
 #
 # on tracing:
-# http://www.unix.com/shell-programming-and-scripting/165648-set-x-within-script-capture-file.html
+# http://www.unix.com/shell-programming-and-scripting/ \
+#                     165648-set-x-within-script-capture-file.html
 
 
 # --------------------------------------------------------------------
 #
-# Fucking /bin/kill by Ubuntu sometimes understands --, sometimes does not :-P
+# Fucking /bin/kill on Ubuntu sometimes understands --, sometimes does not :-P
 # We need to check the version, and assume that prior to 3.3.0 it is not
 # understood
 KILL_DASHES="--"
@@ -47,7 +48,7 @@ fi
 # --------------------------------------------------------------------
 #
 # POSIX echo does not understand '\n'.  For multiline strings we thus use printf
-# -- but printf will interprete every single '%' in the string, which we don't
+# -- but printf will interpret every single '%' in the string, which we don't
 # want.  We thus escape it to '%%'
 qprintf(){
   \printf "%b\n" "$*"
@@ -203,7 +204,7 @@ decode () {
 
 # --------------------------------------------------------------------
 #
-# it is suprisingly difficult to get seconds since epoch in POSIX --
+# it is surprisingly difficult to get seconds since epoch in POSIX --
 # 'date +%%s' is a GNU extension...  Anyway, awk to the rescue!
 #
 timestamp () {
@@ -863,7 +864,7 @@ cmd_quit () {
   \stty echonl  >/dev/null 2>&1
 
   \printf "cmd_quit called ($EXIT_VAL)"
-  
+
   # avoid running circles
   \trap - EXIT
 

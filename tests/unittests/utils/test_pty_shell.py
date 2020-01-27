@@ -126,10 +126,10 @@ def test_ptyshell_file_stage () :
 if __name__ == '__main__':
 
     test_ptyshell_ok()
-    test_ptyshell_nok()
-    test_ptyshell_async()
-    test_ptyshell_prompt()
-    test_ptyshell_file_stage()
+  # test_ptyshell_nok()
+  # test_ptyshell_async()
+  # test_ptyshell_prompt()
+  # test_ptyshell_file_stage()
 
 
 # ------------------------------------------------------------------------------
