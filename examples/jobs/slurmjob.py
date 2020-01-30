@@ -17,7 +17,7 @@ import sys
 import radical.saga as rs
 
 
-js_url = "slurm+gsissh://stampede2.tacc.xsede.org:2222/"
+js_url = "slurm://localhost/"
 
 
 # ------------------------------------------------------------------------------
@@ -40,8 +40,8 @@ def start():
         jd.arguments         = ['$FILENAME']
 
         jd.name              = "examplejob"
-        jd.queue             = "normal"
-        jd.project           = "TG-MCB090174" 
+      # jd.queue             = "normal"
+      # jd.project           = "TG-MCB090174" 
 
         jd.working_directory = ".saga/test"
         jd.output            = "examplejob.out"
@@ -52,13 +52,13 @@ def start():
         job = js.create_job(jd)
 
         # Check our job's id and state
-        print("Job ID    : %s" % (job.id))
-        print("Job State : %s" % (job.state))
+        print("Job State   : %s" % (job.state))
 
         # Now we can start our job.
         print("starting job")
         job.run()
 
+        print("Job ID      : %s" % (job.id))
         print("Job State   : %s" % job.state)
         print("Exitcode    : %s" % job.exit_code)
         print("Exec. hosts : %s" % job.execution_hosts)

@@ -98,8 +98,9 @@ class TestJob(unittest.TestCase):
         tmp_js = None
 
         try:
-            invalid_url      = rs.Url(self.cfg['job_service_url'])
-            invalid_url.host = "does.not.exist"
+            invalid_url        = rs.Url(self.cfg['job_service_url'])
+            invalid_url.schema = "ssh"
+            invalid_url.host   = "does.not.exist"
 
             tmp_js = rs.job.Service(invalid_url, self.session)
             assert False, "Expected BadParameter exception but got none."
