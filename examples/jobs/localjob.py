@@ -5,10 +5,12 @@ __copyright__ = "Copyright 2012-2013, The SAGA Project"
 __license__   = "MIT"
 
 
-""" This examples shows how to run a job on the local machine
-    using the 'local' job adaptor.
+"""
+This examples shows how to run a job on the local machine
+using the 'local' job adaptor.
 """
 
+import os
 import sys
 import radical.saga as saga
 
@@ -30,7 +32,7 @@ def main():
             jd.executable        = '/usr/bin/touch'
             jd.arguments         = ['$FILENAME']
 
-            jd.working_directory = "/tmp/A/B/C"
+            jd.working_directory = "/tmp/%d/A/B/C" % os.getuid()
             jd.output            = "examplejob.out"
             jd.error             = "examplejob.err"
 

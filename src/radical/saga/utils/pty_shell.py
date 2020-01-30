@@ -938,8 +938,8 @@ class PTYShell (object) :
 
             info = self.pty_info
             repl = dict (list({'src'      : src,
-                          'tgt'      : tgt,
-                          'cp_flags' : cp_flags
+                               'tgt'      : tgt,
+                               'cp_flags' : cp_flags
                           }.items ()) + list(info.items ()))
 
             # at this point, we do have a valid, living master

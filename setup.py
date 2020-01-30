@@ -17,7 +17,7 @@ import shutil
 import subprocess as sp
 
 
-from setuptools import setup, Command, find_packages
+from setuptools import setup, Command, find_namespace_packages
 
 
 # ------------------------------------------------------------------------------
@@ -196,6 +196,7 @@ df.append(('share/%s/examples' % name, glob.glob('examples/*.py')))
 #
 setup_args = {
     'name'               : name,
+    'namespace_packages' : ['radical'],
     'version'            : version,
     'description'        : 'A light-weight access layer for distributed '
                            'computing infrastructure '
@@ -224,8 +225,7 @@ setup_args = {
         'Operating System :: POSIX',
         'Operating System :: Unix'
     ],
-    'namespace_packages' : ['radical'],
-    'packages'           : find_packages('src'),
+    'packages'           : find_namespace_packages('src', include=['radical.*']),
     'package_dir'        : {'': 'src'},
     'scripts'            : ['bin/radical-saga-version'],
     'package_data'       : {'': ['*.txt', '*.sh', '*.json', '*.gz',
