@@ -4,14 +4,8 @@ __copyright__ = "Copyright 2020, The SAGA Project"
 __license__   = "MIT"
 
 
-<<<<<<< HEAD
-''' noop based job adaptor implementation '''
-
-import re
-=======
 ''' no operation (noop) based job adaptor implementation '''
 
->>>>>>> devel
 import time
 import threading
 
@@ -190,11 +184,7 @@ _ADAPTOR_INFO = {
 # The adaptor class
 class Adaptor(base.Base):
     '''
-<<<<<<< HEAD
-    This is the actual adaptor class, which gets loaded by SAGA (i.e. by the
-=======
     This is the actual adaptor class, which gets loaded by SAGA (i.e., by the
->>>>>>> devel
     SAGA engine), and which registers the CPI implementation classes which
     provide the adaptor's functionality.
     '''
@@ -356,12 +346,7 @@ class NoopJobService(cpi.Service):
     def container_run(self, jobs):
         '''
         From all the job descriptions in the container, build a bulk, and submit
-<<<<<<< HEAD
-        as async.  The read whaterver the wrapper returns, and sort through the
-        messages, assigning job IDs etc.
-=======
         as async.
->>>>>>> devel
         '''
 
         self._logger.debug("container run: %s"  %  str(jobs))
@@ -575,15 +560,9 @@ class NoopJob(cpi.Job):
         other interactions.  In particular, it would practically kill it if the
         Wait waits forever...
 
-<<<<<<< HEAD
-        So we implement the wait via a state pull.  The *real* solution is, of
-        course, to implement state notifications, and wait for such
-        a notification to arrive within timeout seconds...
-=======
         So we implement the wait via a state pull.  The *real* solution is to
         implement state notifications, and wait for such a notification to
         arrive within timeout seconds...
->>>>>>> devel
         '''
 
         time_start = time.time()
