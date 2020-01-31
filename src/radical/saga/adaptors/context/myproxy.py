@@ -42,7 +42,7 @@ _ADAPTOR_INFO          = {
     'name'             : _ADAPTOR_NAME,
     'version'          : 'v0.1',
     'schemas'          : _ADAPTOR_SCHEMAS,
-    'cpis'             : [{ 
+    'cpis'             : [{
         'type'         : 'radical.saga.Context',
         'class'        : 'ContextMyProxy'
         }
@@ -54,7 +54,7 @@ _ADAPTOR_INFO          = {
 # The adaptor class
 
 class Adaptor (base.Base):
-    """ 
+    """
     This is the actual adaptor class, which gets loaded by SAGA (i.e. by the
     SAGA engine), and which registers the CPI implementation classes which
     provide the adaptor's functionality.
@@ -128,10 +128,10 @@ class ContextMyProxy (cpi.Context) :
             if server    : cmd += " --pshost %s"          %  server
             if port      : cmd += " --psport %s"          %  port
 
-        if  api.user_id : 
+        if  api.user_id :
             cmd += " --username %s"        %  api.user_id
 
-        if  api.life_time and api.life_time > 0 : 
+        if  api.life_time and api.life_time > 0 :
             cmd += " --proxy_lifetime %s"  %  api.life_time
 
         # store the proxy in a private location
@@ -142,7 +142,7 @@ class ContextMyProxy (cpi.Context) :
             try :
                 os.makedirs (proxy_store)
             except OSError as e :
-                raise NoSuccess ("could not create myproxy store: %s"  %  str(e))
+                raise NoSuccess ("could not create myproxy store") from e
 
         cmd += " --out %s"  %  proxy_location
 

@@ -235,7 +235,8 @@ class PTYShell (object) :
             if e.errno == errno.EEXIST and os.path.isdir (self.base):
                 pass
             else:
-                raise rse.NoSuccess ("could not create staging dir: %s" % e)
+                raise rse.NoSuccess ("could not create staging dir: %s" % e) \
+                      from e
 
 
         self.factory    = supsf.PTYShellFactory   ()
@@ -313,7 +314,8 @@ class PTYShell (object) :
                     self.logger.debug ("got new shell prompt")
 
                 except Exception as e :
-                    raise rse.NoSuccess ("Shell on target host failed: %s" % e)
+                    raise rse.NoSuccess ("Shell on target host failed: %s" % e)\
+                          from e
 
             # got a command shell, finally!
             self.pty_shell.flush ()
@@ -350,7 +352,7 @@ class PTYShell (object) :
                 return self.pty_shell.alive (recover)
 
             except Exception as e :
-                raise ptye.translate_exception (e)
+                raise ptye.translate_exception (e) from e
 
 
     # ----------------------------------------------------------------
@@ -383,7 +385,7 @@ class PTYShell (object) :
                 return (ret, txt)
 
             except Exception as e :
-                raise ptye.translate_exception (e)
+                raise ptye.translate_exception (e) from e
 
 
     # ----------------------------------------------------------------
@@ -399,7 +401,7 @@ class PTYShell (object) :
                 return self.pty_shell.find (patterns, timeout=timeout)
 
             except Exception as e :
-                raise ptye.translate_exception (e)
+                raise ptye.translate_exception (e) from e
 
 
     # ----------------------------------------------------------------
@@ -502,7 +504,8 @@ class PTYShell (object) :
 
                 except Exception as e :
                     self.prompt = old_prompt
-                    raise ptye.translate_exception (e, "Could not set shell prompt")
+                    raise ptye.translate_exception (e, "Could not set shell prompt")\
+                          from e
 
 
             # got a valid prompt -- but we have to sync the output again in
@@ -586,7 +589,8 @@ class PTYShell (object) :
 
             except Exception as e :
 
-                raise ptye.translate_exception (e, "Could not eval prompt")
+                raise ptye.translate_exception (e, "Could not eval prompt") \
+                      from e
 
 
 
@@ -725,7 +729,7 @@ class PTYShell (object) :
                 return (ret, stdout, stderr)
 
             except Exception as e :
-                raise ptye.translate_exception (e)
+                raise ptye.translate_exception (e) from e
 
 
     # ----------------------------------------------------------------
@@ -761,7 +765,7 @@ class PTYShell (object) :
                 self.send ("%s\n" % command)
 
             except Exception as e :
-                raise ptye.translate_exception (e)
+                raise ptye.translate_exception (e) from e
 
 
     # ----------------------------------------------------------------
@@ -781,7 +785,7 @@ class PTYShell (object) :
                 self.pty_shell.write ("%s" % data)
 
             except Exception as e :
-                raise ptye.translate_exception (e)
+                raise ptye.translate_exception (e) from e
 
     # ----------------------------------------------------------------
     #
@@ -822,7 +826,7 @@ class PTYShell (object) :
             return ret
 
         except Exception as e :
-            raise ptye.translate_exception (e)
+            raise ptye.translate_exception (e) from e
 
 
     # ----------------------------------------------------------------
@@ -858,7 +862,7 @@ class PTYShell (object) :
             return out
 
         except Exception as e :
-            raise ptye.translate_exception (e)
+            raise ptye.translate_exception (e) from e
 
 
     # ----------------------------------------------------------------
@@ -885,7 +889,7 @@ class PTYShell (object) :
             return self.run_copy_to (src, tgt, cp_flags)
 
         except Exception as e :
-            raise ptye.translate_exception (e)
+            raise ptye.translate_exception (e) from e
 
 
     # ----------------------------------------------------------------
@@ -912,7 +916,7 @@ class PTYShell (object) :
             return self.run_copy_from (src, tgt, cp_flags)
 
         except Exception as e :
-            raise ptye.translate_exception (e)
+            raise ptye.translate_exception (e) from e
 
     # --------------------------------------------------------------------------
     #

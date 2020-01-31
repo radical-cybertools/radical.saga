@@ -33,11 +33,11 @@ _ADAPTOR_CAPABILITIES  = {}
 
 _ADAPTOR_DOC           = {
     'name'             : _ADAPTOR_NAME,
-    'cfg_options'      : _ADAPTOR_OPTIONS, 
+    'cfg_options'      : _ADAPTOR_OPTIONS,
     'capabilities'     : _ADAPTOR_CAPABILITIES,
     'description'      : 'The redis advert adaptor.',
     'details'          : """This adaptor interacts with a redis server to
-                            implement the advert API semantics.""", 
+                            implement the advert API semantics.""",
     'schemas'          : {'redis'  : 'redis nosql backend.'}
 }
 
@@ -49,7 +49,7 @@ _ADAPTOR_INFO          = {
                              {
                                  'type'  : 'radical.saga.advert.Directory',
                                  'class' : 'RedisDirectory'
-                             }, 
+                             },
                              {
                                  'type'  : 'radical.saga.advert.Entry',
                                  'class' : 'RedisEntry'
@@ -62,7 +62,7 @@ _ADAPTOR_INFO          = {
 # The adaptor class
 
 class Adaptor (a_base.Base):
-    """ 
+    """
     This is the actual adaptor class, which gets loaded by SAGA (i.e. by the
     SAGA engine), and which registers the CPI implementation classes which
     provide the adaptor's functionality.
@@ -130,7 +130,7 @@ class BulkDirectory (cpi.Directory) :
 
     # --------------------------------------------------------------------------
     #
-    def __init__ (self) : 
+    def __init__ (self) :
         pass
 
 
@@ -207,7 +207,7 @@ class RedisDirectory (cpi.Directory) :
 
         self._set_session (session)
 
-        c = {'url'     : self._url, 
+        c = {'url'     : self._url,
              'flags'   : self._flags }
 
         return Task (self, 'init_instance', c, ttype)
@@ -232,7 +232,7 @@ class RedisDirectory (cpi.Directory) :
 
         except Exception as e :
             self._logger.error ("get_key failed: %s" % e)
-            raise e
+            raise
 
 
     # --------------------------------------------------------------------------
@@ -245,7 +245,7 @@ class RedisDirectory (cpi.Directory) :
 
         except Exception as e :
             self._logger.error ("set_key failed: %s" % e)
-            raise e
+            raise
 
 
     # --------------------------------------------------------------------------
@@ -361,7 +361,7 @@ class RedisDirectory (cpi.Directory) :
     @SYNC_CALL
     def open (self, url, flags) :
 
-        if not url.scheme and not url.host : 
+        if not url.scheme and not url.host :
             url = Url (str(self._url) + '/' + str(url))
 
         return api.Entry (url, flags, self._session, _adaptor=self._adaptor)
@@ -372,7 +372,7 @@ class RedisDirectory (cpi.Directory) :
     @SYNC_CALL
     def open_dir (self, url, flags) :
 
-        if not url.scheme and not url.host : 
+        if not url.scheme and not url.host :
             url = Url (str(self._url) + '/' + str(url))
 
         return api.Directory (url, flags, self._session, _adaptor=self._adaptor)
@@ -383,42 +383,42 @@ class RedisDirectory (cpi.Directory) :
   # @SYNC_CALL
   # def copy (self, source, target, flags) :
   #     return
-  # 
+  #
   #     src_url = Url (source)
   #     src     = src_url.path
   #     tgt_url = Url (target)
   #     tgt     = tgt_url.path
-  # 
-  # 
+  #
+  #
   #     if src_url.schema :
   #         if not src_url.schema.lower () in _ADAPTOR_SCHEMAS :
-  #             raise rse.BadParameter ("Cannot handle url %s (not redis)" 
+  #             raise rse.BadParameter ("Cannot handle url %s (not redis)"
   #                                    % source)
-  # 
+  #
   #     if tgt_url.schema :
   #         if not tgt_url.schema.lower () in _ADAPTOR_SCHEMAS :
-  #             raise rse.BadParameter ("Cannot handle url %s (not redis)" 
+  #             raise rse.BadParameter ("Cannot handle url %s (not redis)"
   #                                    % target)
-  # 
-  # 
+  #
+  #
   #     # make paths absolute
-  #     if src[0] != '/'  :  src = "%s/%s"   % (os.path.dirname (src), src) 
+  #     if src[0] != '/'  :  src = "%s/%s"   % (os.path.dirname (src), src)
   #     if tgt[0] != '/'  :  tgt = "%s/%s"   % (os.path.dirname (src), tgt)
-  # 
+  #
   #     shutil.copy2 (src, tgt)
-  # 
-  # 
+  #
+  #
   # @ASYNC_CALL
   # def copy_async (self, src, tgt, flags, ttype) :
-  # 
+  #
   #     c = { 'src'     : src,
   #           'tgt'     : tgt,
   #           'flags'   : flags }
-  # 
+  #
   #     return apip_task.Task (self, 'copy', c, ttype)
-  # 
-  # 
-  # 
+  #
+  #
+  #
   # def task_wait (self, task, timout) :
   #     # FIXME: our task_run moves all tasks into DONE state... :-/
   #     pass
@@ -516,23 +516,23 @@ class RedisEntry (cpi.Entry) :
   # # FIXME: all below
   # @SYNC_CALL
   # def copy_self (self, target, flags) :
-  # 
+  #
   #     tgt_url = Url (target)
   #     tgt     = tgt_url.path
   #     src     = self._url.path
-  # 
+  #
   #     if tgt_url.schema :
   #         if not tgt_url.schema.lower () in _ADAPTOR_SCHEMAS :
   #             raise rse.BadParameter ("Cannot handle url %s (not redis)"
   #                                    %  target)
-  # 
+  #
   #     if not rsumisc.url_is_redis (tgt_url) :
-  #         raise rse.BadParameter ("Cannot handle url %s (not redis)"    
+  #         raise rse.BadParameter ("Cannot handle url %s (not redis)"
   #                                %  target)
-  # 
+  #
   #     # make path absolute
   #     if tgt[0] != '/'  :  tgt = "%s/%s"   % (os.path.dirname (src), tgt)
-  # 
+  #
   #     shutil.copy2 (src, tgt)
 
 
