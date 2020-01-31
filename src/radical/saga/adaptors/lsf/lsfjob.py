@@ -109,7 +109,7 @@ class _job_state_monitor(threading.Thread):
                 time.sleep(MONITOR_UPDATE_INTERVAL)
 
             except Exception as e:
-                self.logger.exception("job monitoring thread failed") from e
+                self.logger.exception("job monitoring thread failed")
 
 
 # ------------------------------------------------------------------------------
