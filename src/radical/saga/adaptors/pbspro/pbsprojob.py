@@ -148,8 +148,9 @@ def _to_saga_jobstate(job_state, retcode, logger=None):
     elif job_state == 'X': ret = api.CANCELED
     else                 : ret = api.UNKNOWN
 
-    logger.debug('check state: %s', job_state)
-    logger.debug('use   state: %s', ret)
+    if logger:
+        logger.debug('check state: %s', job_state)
+        logger.debug('use   state: %s', ret)
 
     return ret
 
