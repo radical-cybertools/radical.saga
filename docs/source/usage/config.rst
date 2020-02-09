@@ -32,13 +32,13 @@ for the existence of a configuration file in `$HOME/.saga.conf`.  If that
 configuration file is found, it is parsed by SAGA's configuration system.
 SAGA configuration files use a structure that looks like this::
 
-    [saga.engine]
+    [radical.saga.engine]
         option = value
 
-    [saga.logger]
+    [radical.saga.logger]
         option = value
 
-    [saga.adaptor.name]
+    [radical.saga.adaptor.name]
         option = value
 
 
@@ -55,12 +55,12 @@ SAGA's configuration. The :func:`getConfig` function is used to get the
 :class:`GlobalConfig` object which represents the current configuration
 of SAGA::
 
-   from saga.utils.config import getConfig
+   from radical.saga.utils.config import getConfig
 
    sagaconf = getConfig()
    print sagaconf.get_category('saga.utils.logger')
 
-.. automodule:: saga.utils.config
+.. automodule:: radical.saga.utils.config
    :members:
 
 

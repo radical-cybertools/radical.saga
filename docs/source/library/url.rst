@@ -5,5 +5,5 @@ URLs
 Url -- :class:`saga.Url`
 ------------------------
 
-.. autoclass:: saga.Url
+.. autoclass:: radical.saga.Url
    :members:
