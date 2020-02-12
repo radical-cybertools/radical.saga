@@ -10,7 +10,7 @@ changes of those information.
 
 The basic usage of the advert module is as follows::
 
-  class my_cb (saga.Callback) :
+  class my_cb (radical.saga.Callback) :
   
     def cb (self, obj, key, val) :
       print " ----------- callback triggered for %s - %s - %s" % (obj, key, val)
@@ -47,13 +47,13 @@ The rest of this section is structured as follows:
 
 .. #############################################################################
 
-.. autoclass:: saga.advert.Entry
+.. autoclass:: radical.saga.advert.Entry
    :members:
    :inherited-members:
    :undoc-members:
    :show-inheritance:
 
-.. autoclass:: saga.advert.Directory
+.. autoclass:: radical.saga.advert.Directory
    :members:
    :inherited-members:
    :undoc-members:

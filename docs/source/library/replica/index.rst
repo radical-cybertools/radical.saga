@@ -8,10 +8,10 @@ The replica management module provides an interface to
 
 The basic usage of the replica module is as follows::
 
-    myfile = saga.replica.LogicalFile("irods://localhost/"+TEMP_FILENAME)
+    myfile = radical.saga.replica.LogicalFile("irods://localhost/"+TEMP_FILENAME)
     myfile.add_location("irods:////data/cache/AGLT2_CE_2_FTPplaceholder/whatever?resource=AGLT2_CE_2_FTP")
 
-    mydir = saga.replica.LogicalDirectory("irods://localhost/" + IRODS_DIRECTORY) 
+    mydir = radical.saga.replica.LogicalDirectory("irods://localhost/" + IRODS_DIRECTORY) 
     mydir.make_dir("anotherdir")
 
 Like all SAGA modules, the replica module relies on  middleware adaptors 
@@ -48,10 +48,10 @@ The following constants are defined as valid flags for logical file and director
 .. #############################################################################
 .. _replica_file:
 
-Logical File -- :class:`saga.replica.LogicalFile`
+Logical File -- :class:`radical.saga.replica.LogicalFile`
 ----------------------------------------------------
 
-.. autoclass:: saga.replica.LogicalFile
+.. autoclass:: radical.saga.replica.LogicalFile
    :members:
    :undoc-members:
    :special-members: __init__
@@ -61,10 +61,10 @@ Logical File -- :class:`saga.replica.LogicalFile`
 .. #############################################################################
 .. _replica_directory:
 
-Logical Directory -- :class:`saga.replica.LogicalDirectory`
+Logical Directory -- :class:`radical.saga.replica.LogicalDirectory`
 ---------------------------------------------------------
 
-.. autoclass:: saga.replica.LogicalDirectory
+.. autoclass:: radical.saga.replica.LogicalDirectory
    :members:
    :undoc-members:
    :special-members: __init__

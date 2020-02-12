@@ -19,10 +19,10 @@ SAGA job API and finally shut down the VM.
 
 .. _resource_manager:
 
-Resource Manager -- :class:`saga.resource.Manager`
+Resource Manager -- :class:`radical.saga.resource.Manager`
 --------------------------------------------------
 
-.. autoclass:: saga.resource.Manager
+.. autoclass:: radical.saga.resource.Manager
    :members:
    :undoc-members:
    :show-inheritance:
@@ -32,10 +32,10 @@ Resource Manager -- :class:`saga.resource.Manager`
 
 .. _resource_description:
 
-Resource Description -- :class:`saga.resource.Description`
+Resource Description -- :class:`radical.saga.resource.Description`
 ----------------------------------------------------------
 
-.. autoclass:: saga.resource.Description
+.. autoclass:: radical.saga.resource.Description
    :members:
    :undoc-members:
    :special-members: __init__
@@ -44,32 +44,32 @@ Resource Description -- :class:`saga.resource.Description`
 
 .. _resource_resource:
 
-Resource -- :class:`saga.resource.Resource`
+Resource -- :class:`radical.saga.resource.Resource`
 -------------------------------------------
 
-.. autoclass:: saga.resource.Resource
+.. autoclass:: radical.saga.resource.Resource
    :members:
    :undoc-members:
    :exclude-members: create, __module__
 
 
-Compute  Resource -- :class:`saga.resource.Compute`
+Compute  Resource -- :class:`radical.saga.resource.Compute`
 ---------------------------------------------------
 
-.. autoclass:: saga.resource.Compute
+.. autoclass:: radical.saga.resource.Compute
    :members:
    :show-inheritance:
 
-Storage  Resource -- :class:`saga.resource.Storage`
+Storage  Resource -- :class:`radical.saga.resource.Storage`
 ---------------------------------------------------
 
-.. autoclass:: saga.resource.Storage
+.. autoclass:: radical.saga.resource.Storage
    :members:
    :show-inheritance:
 
-Storage  Resource -- :class:`saga.resource.Network`
+Storage  Resource -- :class:`radical.saga.resource.Network`
 ---------------------------------------------------
 
-.. autoclass:: saga.resource.Network
+.. autoclass:: radical.saga.resource.Network
    :members:
    :show-inheritance:
