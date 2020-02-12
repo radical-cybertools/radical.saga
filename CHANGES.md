@@ -1,10 +1,16 @@
 
 
-  - For a list of bug fixes, see
-    https://github.com/radical-cybertools/radical.saga/issues?q=is%3Aissue+is%3Aclosed+sort%3Aupdated-desc
-  - For a list of open issues and known problems, see
-    https://github.com/radical-cybertools/radical.saga/issues?q=is%3Aissue+is%3Aopen+
+For a list of open issues and known problems, see:
+https://github.com/radical-cybertools/radical.saga/issues
 
+
+Version 1.1 Release                                                   2020-02-11
+--------------------------------------------------------------------------------
+
+  - python 3 and later have implicit namespaces
+  - add noop job adaptor for tests
+  - slurm data staging
+    
 
 Version 1.0.0  Release                                                2019-12-24
 --------------------------------------------------------------------------------
