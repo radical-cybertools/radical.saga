@@ -12,6 +12,12 @@ Version 1.1 Release                                                   2020-02-11
   - slurm data staging
     
 
+Version 1.0.1  Release                                                2020-01-23
+--------------------------------------------------------------------------------
+
+  - small fixes and cleanup for slurm and docs (tutorial prep)
+
+
 Version 1.0.0  Release                                                2019-12-24
 --------------------------------------------------------------------------------
 
