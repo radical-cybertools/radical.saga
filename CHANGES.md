@@ -4,6 +4,12 @@ For a list of open issues and known problems, see:
 https://github.com/radical-cybertools/radical.saga/issues
 
 
+Version 1.1.2 Hotfix Release                                          2020-02-22
+--------------------------------------------------------------------------------
+
+  - fix MANIFEST.in
+
+
 Version 1.1.1 Hotfix Release                                          2020-02-21
 --------------------------------------------------------------------------------
 
