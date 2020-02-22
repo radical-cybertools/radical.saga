@@ -4,6 +4,12 @@ For a list of open issues and known problems, see:
 https://github.com/radical-cybertools/radical.saga/issues
 
 
+Version 1.1.1 Hotfix Release                                          2020-02-21
+--------------------------------------------------------------------------------
+
+  - ensure '-n' beingused for Stamepede2
+
+      
 Version 1.1 Release                                                   2020-02-11
 --------------------------------------------------------------------------------
 
