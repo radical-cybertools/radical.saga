@@ -398,6 +398,9 @@ class SLURMJobService(cpi_job.Service):
             # FIXME: this only works on the KNL nodes
             self._ppn = 68
 
+        elif 'frontera' in self.rm.host.lower():
+            self._ppn = 56
+
         self._logger.info("ppn: %s", self._ppn)
 
 
