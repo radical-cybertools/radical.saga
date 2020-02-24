@@ -4,7 +4,7 @@ Exception Handling
 .. todo:: Intro to SAGA exception handling.
 
 Exceptions -- :mod:`radical.saga.exceptions`
-------------------------------------
+--------------------------------------------
 
 .. automodule:: radical.saga.exceptions
    :show-inheritance:

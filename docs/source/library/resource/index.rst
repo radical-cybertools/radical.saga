@@ -54,21 +54,21 @@ Resource -- :class:`radical.saga.resource.Resource`
 
 
 Compute  Resource -- :class:`radical.saga.resource.Compute`
----------------------------------------------------
+-----------------------------------------------------------
 
 .. autoclass:: radical.saga.resource.Compute
    :members:
    :show-inheritance:
 
 Storage  Resource -- :class:`radical.saga.resource.Storage`
----------------------------------------------------
+-----------------------------------------------------------
 
 .. autoclass:: radical.saga.resource.Storage
    :members:
    :show-inheritance:
 
 Storage  Resource -- :class:`radical.saga.resource.Network`
----------------------------------------------------
+------------------------------------------------------------
 
 .. autoclass:: radical.saga.resource.Network
    :members:

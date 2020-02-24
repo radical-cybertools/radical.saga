@@ -40,7 +40,7 @@ Flags
 
 The following constants are defined as valid flags for file and directory methods:
 
-.. currentmodule:: saga.filesystem
+.. currentmodule:: radical.saga.filesystem
 .. data:: OVERWRITE
 .. data:: RECURSIVE
 .. data:: CREATE
@@ -53,7 +53,7 @@ The following constants are defined as valid flags for file and directory method
 .. _file:
 
 File -- :class:`radical.saga.filesystem.File`
-----------------------------------------
+---------------------------------------------
 
 .. autoclass:: radical.saga.filesystem.File
    :members:
@@ -67,7 +67,7 @@ File -- :class:`radical.saga.filesystem.File`
 .. _dir:
 
 Directory -- :class:`radical.saga.filesystem.Directory`
------------------------------------------------
+-------------------------------------------------------
 
 .. autoclass:: radical.saga.filesystem.Directory
    :members:

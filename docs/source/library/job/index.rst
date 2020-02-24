@@ -55,7 +55,7 @@ The rest of this section is structured as follows:
 .. _job_service:
 
 Job Service -- :class:`radical.saga.job.Service`
-----------------------------------------
+------------------------------------------------
 
 .. autoclass:: radical.saga.job.Service
    :members:
@@ -64,7 +64,7 @@ Job Service -- :class:`radical.saga.job.Service`
    :exclude-members: create, __module__
 
 Job Description -- :class:`radical.saga.job.Description`
-------------------------------------------------
+--------------------------------------------------------
 
 **Warning:** There is no guarantee that all middleware adaptors implement all job
 description attributes. In case a specific attribute is not supported, the
@@ -304,7 +304,7 @@ SAGA defines the following constants as valid job description attributes:
 .. _job_job:
 
 Jobs -- :class:`radical.saga.job.Job`
------------------------------
+-------------------------------------
 
 .. autoclass:: radical.saga.job.Job
    :members:
@@ -406,7 +406,7 @@ RADICAL SAGA defines the following constants as job metrics:
 .. _job_container:
 
 Job Containers -- :class:`radical.saga.job.Container`
----------------------------------------------
+-----------------------------------------------------
 
 .. seealso:: More examples on how to use job containers can be found in 
              the :ref:`code_examples_job` section of the 

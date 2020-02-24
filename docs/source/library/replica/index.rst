@@ -49,7 +49,7 @@ The following constants are defined as valid flags for logical file and director
 .. _replica_file:
 
 Logical File -- :class:`radical.saga.replica.LogicalFile`
-----------------------------------------------------
+---------------------------------------------------------
 
 .. autoclass:: radical.saga.replica.LogicalFile
    :members:
@@ -62,7 +62,7 @@ Logical File -- :class:`radical.saga.replica.LogicalFile`
 .. _replica_directory:
 
 Logical Directory -- :class:`radical.saga.replica.LogicalDirectory`
----------------------------------------------------------
+-------------------------------------------------------------------
 
 .. autoclass:: radical.saga.replica.LogicalDirectory
    :members:

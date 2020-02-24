@@ -48,7 +48,7 @@ Configuration API
 -----------------
 
 Module radical.saga.utils.config
-*************************
+*********************************
 
 The config module provides classes and functions to introspect and modify
 SAGA's configuration. The :func:`getConfig` function is used to get the
