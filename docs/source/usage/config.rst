@@ -47,7 +47,7 @@ SAGA configuration files use a structure that looks like this::
 Configuration API
 -----------------
 
-Module saga.utils.config
+Module radical.saga.utils.config
 *************************
 
 The config module provides classes and functions to introspect and modify

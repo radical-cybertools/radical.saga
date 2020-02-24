@@ -63,7 +63,7 @@ Job Service -- :class:`radical.saga.job.Service`
    :special-members: __init__
    :exclude-members: create, __module__
 
-Job Description -- :class:`saga.job.Description`
+Job Description -- :class:`radical.saga.job.Description`
 ------------------------------------------------
 
 **Warning:** There is no guarantee that all middleware adaptors implement all job
@@ -293,7 +293,7 @@ SAGA defines the following constants as valid job description attributes:
 .. autodata:: CANDIDATE_HOSTS
 .. data:: candidate_hosts 
 
-   (Property) Same as attribute :data:`~radical.aga.job.CANDIDATE_HOSTS`.
+   (Property) Same as attribute :data:`~radical.saga.job.CANDIDATE_HOSTS`.
 
 .. autodata:: JOB_CONTACT
 .. data:: job_contact 
@@ -385,8 +385,8 @@ Callback functions are attached to a job object via the
 
   def main () :
     # register the callback function with the 'State' metric
-    job.add_callback (sradical.aga.job.STATE, state_cb)
-    job.add_callback (saga.job.STATE, state_cb)
+    job.add_callback (radical.saga.job.STATE, state_cb)
+    job.add_callback (radical.saga.job.STATE, state_cb)
 
 
 **Warning:** There is no guarantee that all middleware adaptors implement these

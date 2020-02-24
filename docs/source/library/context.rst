@@ -3,10 +3,10 @@
 Security Contexts 
 *****************
 
-Context Class -- :mod:`saga.context`
-------------------------------------
+Context Class -- :mod:`radical.saga.context`
+--------------------------------------------
 
-.. automodule:: saga.context
+.. automodule:: radical.saga.context
    :show-inheritance:
    :members: Context
 
@@ -23,13 +23,13 @@ The following context attributes are supported:
 .. data::  Contex("UserPass")
 
     The type for this context has to be set to "UserPass" in the constructor, 
-    i.e., ``saga.Context("ssh")``.
+    i.e., ``radical.saga.Context("ssh")``.
 
-.. data::  saga.context.user_id
+.. data::  radical.saga.context.user_id
 
     The username on the target resource. 
 
-.. data::  saga.context.user_pass
+.. data::  radical.saga.context.user_pass
 
     The pass-phrase to use.
 
@@ -38,15 +38,15 @@ The following context attributes are supported:
 
 **Example**::
 
-    ctx = saga.Context("UserPass")
+    ctx = radical.saga.Context("UserPass")
 
     ctx.user_id   = "johndoe"
     ctx.user_pass = os.environ['MY_USER_PASS']
 
-    session = saga.Session()
+    session = radical.saga.Session()
     session.add_context(ctx)
 
-    js = saga.job.Service("ssh://machine_y.futuregrid.org",
+    js = radical.saga.job.Service("ssh://machine_y.futuregrid.org",
                           session=session)
 
 SSH Context
@@ -60,18 +60,18 @@ The following context attributes are supported:
 .. data::  Contex("SSH")
 
     The type for this context has to be set to "SSH" in the constructor, 
-    i.e., ``saga.Context("SSH")``.
+    i.e., ``radical.saga.Context("SSH")``.
 
-.. data::  saga.context.user_id
+.. data::  radical.saga.context.user_id
 
     The username on the target resource. 
 
-.. data::  saga.context.user_key
+.. data::  radical.saga.context.user_key
 
     The public ssh key file to use for the connection. This attribute is useful
     if an SSH key-pair other than the default one (in $HOME/.ssh/) is required to establish a connection.
 
-.. data::  saga.context.user_pass
+.. data::  radical.saga.context.user_pass
 
     The pass-phrase to use to decrypt a password-protected key.
 
@@ -80,16 +80,16 @@ The following context attributes are supported:
 
 **Example**::
 
-    ctx = saga.Context("SSH")
+    ctx = radical.saga.Context("SSH")
 
     ctx.user_id   = "johndoe"
     ctx.user_key  = "/home/johndoe/.ssh/key_for_machine_x"
     ctx.user_pass = "XXXX"  # password to decrypt 'user_key' (if required)
 
-    session = saga.Session()
+    session = radical.saga.Session()
     session.add_context(ctx)
 
-    js = saga.job.Service("ssh://machine_x.futuregrid.org",
+    js = radical.saga.job.Service("ssh://machine_x.futuregrid.org",
                           session=session)
 
 
@@ -104,9 +104,9 @@ The following context attributes are supported:
 .. data::  Contex("X509")
 
     The type for this context has to be set to "X509" in the constructor, 
-    i.e., ``saga.Context("X509")``.
+    i.e., ``radical.saga.Context("X509")``.
 
-.. data::  saga.context.user_proxy
+.. data::  radical.saga.context.user_proxy
 
     The X509 user proxy file to use for the connection. This attribute is useful
     if a proxy file other than the default one (in /tmp/x509_u<uid>) is required to establish a connection.
@@ -114,14 +114,14 @@ The following context attributes are supported:
 
 **Example**::
 
-    ctx = saga.Context("X509")
+    ctx = radical.saga.Context("X509")
 
     ctx.user_proxy = "/tmp/x509_u123_for_machine_y"
 
-    session = saga.Session()
+    session = radical.saga.Session()
     session.add_context(ctx)
 
-    js = saga.job.Service("gsissh://machine_y.futuregrid.org",
+    js = radical.saga.job.Service("gsissh://machine_y.futuregrid.org",
                           session=session)
 
 
@@ -135,24 +135,24 @@ The following context attributes are supported:
 .. data::  Contex("MyProxy")
 
     The type for this context has to be set to "MyProxy" in the constructor, 
-    i.e., ``saga.Context("MyProxy")``.
+    i.e., ``radical.saga.Context("MyProxy")``.
 
-.. data::  saga.context.server
+.. data::  radical.saga.context.server
 
     The hostname of the myproxy server. 
     This is equivalent to ``myproxy-logon --pshost``.
 
-.. data::  saga.context.user_id
+.. data::  radical.saga.context.user_id
 
     The username for the delegated proxy. 
     This is equivalent to ``myproxy-logon --username``.
 
-.. data::  saga.context.life_time
+.. data::  radical.saga.context.life_time
 
     The lifetime of the delegated proxy.
     This is equivalent to ``myproxy-logon --proxy_lifetime`` (default is 12h).
 
-.. data::  saga.context.user_pass
+.. data::  radical.saga.context.user_pass
 
     The password for the delegated proxy.
 
@@ -161,16 +161,16 @@ The following context attributes are supported:
 
 **Example**::
 
-    c = saga.Context("MyProxy")
+    c = radical.saga.Context("MyProxy")
 
     c.server    = "myproxy.teragrid.org"
     c.user_id   = "johndoe"
     c.user_pass = os.environ['MY_USER_PASS']
 
-    session = saga.Session()
+    session = radical.saga.Session()
     session.add_context(ctx)
 
-    js = saga.job.Service("pbs+gsissh://gsissh.kraken.nics.xsede.org",
+    js = radical.saga.job.Service("pbs+gsissh://gsissh.kraken.nics.xsede.org",
                            session=session)
 
 
@@ -187,27 +187,27 @@ The following context attributes are supported:
 .. data::  Contex("MyProxy")
 
     The type for this context has to be set to "EC2" in the constructor, 
-    i.e., ``saga.Context("EC2")``.
+    i.e., ``radical.saga.Context("EC2")``.
 
 
-.. data::  saga.context.user_id
+.. data::  radical.saga.context.user_id
 
     The Amazon EC2 ID. See the Amazon Web-Services website for more details.
 
-.. data::  saga.context.user_key
+.. data::  radical.saga.context.user_key
 
     The Amazon EC2 key. See the Amazon Web-Services website for more details.
 
 
 **Example**::
 
-    ec2_ctx = saga.Context('EC2')
+    ec2_ctx = radical.saga.Context('EC2')
     ec2_ctx.user_id = 'XXXXXXXXXXYYYYYYYYZ'
     ec2_ctx.user_key = 'WwwwwwXxxxxxxxxxYyyyyyyyyZzzzzzz'
 
     # The SSH key-pair we want to use the access the EC2 VM. If the keypair is
     # not yet registered on EC2 saga will register it automatically.
-    ec2keypair_ctx = saga.Context('EC2_KEYPAIR')
+    ec2keypair_ctx = radical.saga.Context('EC2_KEYPAIR')
     ec2keypair_ctx.token = 'KeyName'
     ec2keypair_ctx.user_key = '$HOME/.ssh/ec2_key'
     ec2keypair_ctx.user_id = 'root'  # the user id on the target VM
@@ -216,11 +216,11 @@ The following context attributes are supported:
     # adaptor. While this is somewhat redundant, it is still necessary because
     # of current limitations imposed by 'liblcoud', the library which implements
     # the radical.saga EC2 adaptor. 
-    ssh_ctx = saga.Context('SSH')
+    ssh_ctx = radical.saga.Context('SSH')
     ssh_ctx.user_id = 'root'
     ssh_ctx.user_key = '$HOME/.ssh/ec2_key'
 
-    session = saga.Session(False)  # FALSE: don't use other (default) contexts
+    session = radical.saga.Session(False)  # FALSE: don't use other (default) contexts
     session.contexts.append(ec2_ctx)
     session.contexts.append(ec2keypair_ctx)
     session.contexts.append(ssh_ctx)
@@ -238,22 +238,22 @@ The following context attributes are supported:
 .. data::  Contex("EC2_KEYPAIR")
 
     The type for this context has to be set to "EC2_KEYPAIR" in the constructor, 
-    i.e., ``saga.Context("EC2_KEYPAIR")``.
+    i.e., ``radical.saga.Context("EC2_KEYPAIR")``.
 
-.. data::  saga.context.user_id
+.. data::  radical.saga.context.user_id
 
     The username on the target resource. 
 
-.. data::  saga.context.user_key
+.. data::  radical.saga.context.user_key
 
     The public ssh key file to use for the connection. This attribute is useful
     if an SSH key-pair other than the default one (in $HOME/.ssh/) is required to establish a connection.
 
-.. data::  saga.context.user_pass
+.. data::  radical.saga.context.user_pass
 
     The pass-phrase to use to decrypt a password-protected key.
 
-.. data:: saga.context.token
+.. data:: radical.saga.context.token
 
     The Amazon EC2 identifier for this key-pair. 
 

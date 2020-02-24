@@ -4,15 +4,15 @@ Attributes and Callbacks
 .. todo:: Intro to SAGA attribute interface.
 
 
-Callbacks -- :class:`saga.Callback`
------------------------------------
+Callbacks -- :class:`radical.saga.Callback`
+-------------------------------------------
 
-.. autoclass:: saga.attributes.Callback
+.. autoclass:: radical.saga.attributes.Callback
    :members:
 
 
-Attribute -- :class:`saga.Attributes`
--------------------------------------
+Attribute -- :class:`radical.saga.Attributes`
+---------------------------------------------
 
-.. autoclass:: saga.attributes.Attributes
+.. autoclass:: radical.saga.attributes.Attributes
    :members:

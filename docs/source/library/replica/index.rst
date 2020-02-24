@@ -36,7 +36,7 @@ Flags
 
 The following constants are defined as valid flags for logical file and directory methods:
 
-.. currentmodule:: saga.filesystem
+.. currentmodule:: radical.saga.filesystem
 .. data:: OVERWRITE
 .. data:: RECURSIVE
 .. data:: CREATE
