@@ -15,7 +15,7 @@ behave similar to the common unix command line tools (cp, ls, rm etc).
 **Example**::
 
     # get a directory handle
-    dir = saga.filesystem.Directory("sftp://localhost/tmp/")
+    dir = radical.saga.filesystem.Directory("sftp://localhost/tmp/")
   
     # create a subdir
     dir.make_dir ("data/")
@@ -40,7 +40,7 @@ Flags
 
 The following constants are defined as valid flags for file and directory methods:
 
-.. currentmodule:: saga.filesystem
+.. currentmodule:: radical.saga.filesystem
 .. data:: OVERWRITE
 .. data:: RECURSIVE
 .. data:: CREATE
@@ -52,10 +52,10 @@ The following constants are defined as valid flags for file and directory method
 .. #############################################################################
 .. _file:
 
-File -- :class:`saga.filesystem.File`
-----------------------------------------
+File -- :class:`radical.saga.filesystem.File`
+---------------------------------------------
 
-.. autoclass:: saga.filesystem.File
+.. autoclass:: radical.saga.filesystem.File
    :members:
    :undoc-members:
    :show-inheritance:
@@ -66,10 +66,10 @@ File -- :class:`saga.filesystem.File`
 .. #############################################################################
 .. _dir:
 
-Directory -- :class:`saga.filesystem.Directory`
------------------------------------------------
+Directory -- :class:`radical.saga.filesystem.Directory`
+-------------------------------------------------------
 
-.. autoclass:: saga.filesystem.Directory
+.. autoclass:: radical.saga.filesystem.Directory
    :members:
    :undoc-members:
    :show-inheritance:

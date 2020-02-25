@@ -3,10 +3,10 @@ Exception Handling
 
 .. todo:: Intro to SAGA exception handling.
 
-Exceptions -- :mod:`saga.exceptions`
-------------------------------------
+Exceptions -- :mod:`radical.saga.exceptions`
+--------------------------------------------
 
-.. automodule:: saga.exceptions
+.. automodule:: radical.saga.exceptions
    :show-inheritance:
    :members: SagaException, NotImplemented, IncorrectURL, BadParameter,
              AlreadyExists, DoesNotExist, IncorrectState, PermissionDenied,

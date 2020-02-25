@@ -3,10 +3,10 @@ Sessions
 
 .. todo:: Intro to SAGA Session
 
-Session -- :mod:`saga.session`
-------------------------------
+Session -- :mod:`radical.saga.session`
+--------------------------------------
 
-.. automodule:: saga.session
+.. automodule:: radical.saga.session
    :show-inheritance:
    :members: Session
 
