@@ -4,6 +4,13 @@ For a list of open issues and known problems, see:
 https://github.com/radical-cybertools/radical.saga/issues
 
 
+Version 1.2.0 Release                                                 2020-03-07
+--------------------------------------------------------------------------------
+
+  - fix ppn for frontera
+  - documentation fixing (issue #765)
+
+
 Version 1.1.2 Hotfix Release                                          2020-02-22
 --------------------------------------------------------------------------------
 
