@@ -1,5 +1,5 @@
 
-.. _chapter_adaptor_writing
+.. _chapter_adaptor_writing:
 
 *****************************
 Writing RADICAL-SAGA Adaptors
@@ -613,8 +613,8 @@ PTYProcess) :class:`radical.saga.utils.pty_shell.PTYShell` are designed to simpl
 those interactions, and at the same time be more performant than, for example,
 pexpect.
 
-.. autoclass:: rs.utils.pty_shell.PTYShell
+.. autoclass:: radical.saga.utils.pty_shell.PTYShell
 
-.. autoclass:: rs.utils.pty_process.PTYProcess
+.. autoclass:: radical.saga.utils.pty_process.PTYProcess
 
 

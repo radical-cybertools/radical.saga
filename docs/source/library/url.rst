@@ -2,8 +2,8 @@ URLs
 ****
 
 
-Url -- :class:`saga.Url`
-------------------------
+Url -- :class:`radical.saga.Url`
+--------------------------------
 
-.. autoclass:: saga.Url
+.. autoclass:: radical.saga.Url
    :members:

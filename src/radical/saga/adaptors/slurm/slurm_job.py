@@ -356,6 +356,13 @@ class SLURMJobService(cpi.Service):
         if len(ppn_vals) >= 1: self._ppn = int(ppn_vals[0])
         else                 : self._ppn = None
 
+        if 'stampede2' in self.rm.host.lower():
+            # FIXME: this only works on the KNL nodes
+            self._ppn = 68
+
+        elif 'frontera' in self.rm.host.lower():
+            self._ppn = 56
+
         self._logger.info("ppn: %s", self._ppn)
 
 
@@ -486,9 +493,15 @@ class SLURMJobService(cpi.Service):
             # we start N independent processes
             mpi_cmd = ''
 
-            if  'stampede2' in self.rm.host.lower() or \
-                'frontera'  in self.rm.host.lower() or \
-                'rhea'      in self.rm.host.lower():
+            if  'stampede2' in self.rm.host.lower():
+
+                assert(self._ppn), 'need unique number of cores per node'
+                n_nodes = int(math.ceil(float(cpu_count) / self._ppn))
+                script += "#SBATCH -N %d\n" % n_nodes
+                script += "#SBATCH -n %s\n" % n_procs
+
+            elif 'frontera'  in self.rm.host.lower() or \
+                 'rhea'      in self.rm.host.lower():
 
                 assert(self._ppn), 'need unique number of cores per node'
                 n_nodes = int(math.ceil(float(cpu_count) / self._ppn))
