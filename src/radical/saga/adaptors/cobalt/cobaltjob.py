@@ -164,6 +164,8 @@ def _cobaltscript_generator(url, logger, jd, ppn, is_cray=False, queue=None,
         cobalt_params += '#COBALT --jobname %s\n' % jd.name
 
     if jd.working_directory:
+        if not os.path.isabs(jd.working_directory):
+            jd.working_directory = '$HOME/%s' % jd.working_directory
         cobalt_params += '#COBALT --cwd %s\n' % jd.working_directory
 
     # a workaround is to do an explicit 'cd'
@@ -311,8 +313,8 @@ def _cobaltscript_generator(url, logger, jd, ppn, is_cray=False, queue=None,
     # Set the MPI rank per node (mode).
     #   mode --> c1, c2, c4, c8, c16, c32, c64
     #   Mode is represented by the runjob's '--ranks-per-node' flag
-    exec_n_args = ("%s --ranks-per-node %d --np %d --block $COBALT_PARTNAME"
-                   "--verbose=INFO : %s\n") \
+    exec_n_args = ("%s --ranks-per-node %d --np %d --block $COBALT_PARTNAME "
+                   "--verbose=INFO %s\n") \
                 % (run_job, processes_per_host, number_of_processes,
                    exec_n_args)
     exec_n_args = exec_n_args.replace('$', '\\$')
