@@ -8,7 +8,7 @@ __license__   = "MIT"
 """
 
 import re
-import os 
+import os
 import time
 import datetime
 import threading
@@ -67,18 +67,18 @@ class _job_state_monitor(threading.Thread):
                     job_info = jobs[job_id]
 
                     # we only need to monitor jobs that are not in a
-                    # terminal state, so we can skip the ones that are 
+                    # terminal state, so we can skip the ones that are
                     # either done, failed or canceled
                     if  job_info['state'] \
                         not in [api.DONE, api.FAILED, api.CANCELED]:
 
-                        # Store the current state since the current state 
+                        # Store the current state since the current state
                         # variable is updated when _job_get_info is called
                         pre_update_state = job_info['state']
 
                         new_job_info = self.js._job_get_info(job_id, reconnect=False)
                         self.logger.info ("Job monitoring thread updating Job "
-                                          "%s (old state: %s, new state: %s)" % 
+                                          "%s (old state: %s, new state: %s)" %
                                           (job_id, pre_update_state, new_job_info['state']))
 
                         # fire job state callback if 'state' has changed
@@ -140,7 +140,7 @@ def _cobalt_to_saga_jobstate(cobaltjs):
 # ------------------------------------------------------------------------------
 #
 def _cobaltscript_generator(url, logger, jd, ppn, is_cray=False, queue=None,
-                            run_job='/usr/bin/runjob'):
+        run_job=None):
     """
     Generates Cobalt-style 'qsub' command arguments from a SAGA job description
     """
@@ -183,7 +183,7 @@ def _cobaltscript_generator(url, logger, jd, ppn, is_cray=False, queue=None,
             if os.path.isabs(jd.output):
                 cobalt_params += '#COBALT --output %s\n' % jd.output
             else:
-                # user provided a relative path for STDOUT. in this case 
+                # user provided a relative path for STDOUT. in this case
                 # we prepend the workind directory path before passing
                 # it on to Cobalt
                 cobalt_params += '#COBALT --output %s/%s\n' \
@@ -192,14 +192,14 @@ def _cobaltscript_generator(url, logger, jd, ppn, is_cray=False, queue=None,
             cobalt_params += '#COBALT --output %s\n' % jd.output
 
     if jd.error:
-        # if working directory is set, we want stderr to end up in 
+        # if working directory is set, we want stderr to end up in
         # the working directory as well, unless it contains a specific
-        # path name. 
+        # path name.
         if jd.working_directory:
             if os.path.isabs(jd.error):
                 cobalt_params += '#COBALT --error %s\n' % jd.error
             else:
-                # user provided a realtive path for STDERR. in this case 
+                # user provided a realtive path for STDERR. in this case
                 # we prepend the workind directory path before passing
                 # it on to Cobalt
                 cobalt_params += '#COBALT --error %s/%s\n' \
@@ -261,7 +261,7 @@ def _cobaltscript_generator(url, logger, jd, ppn, is_cray=False, queue=None,
     # At the Blue Gene/Q, 1 Node == 16 Cores
     # and can handle UP TO 4 tasks per CPU/Core == 64 tasks
     #
-    # References: 
+    # References:
     #   http://www.alcf.anl.gov/user-guides/cobalt-job-control
     #   https://www.alcf.anl.gov/user-guides/blue-geneq-versus-blue-genep
     if processes_per_host not in blue_gene_q_modes:
@@ -297,13 +297,13 @@ def _cobaltscript_generator(url, logger, jd, ppn, is_cray=False, queue=None,
                            for k,v in jd.environment.items()])
 
     # Why do I need this?
-    # Andre on Dev 16 2016: 
-    # You don't, but it can be useful for some applications, 
+    # Andre on Dev 16 2016:
+    # You don't, but it can be useful for some applications,
     # so this is supposed to be available in the job environment for inspection.
     # This makes sense to be exported as an environment Variable
     cobalt_params += '#COBALT --env SAGA_PPN=%d\n' % ppn
 
-    # may not need to escape all double quotes and dollarsigns, 
+    # may not need to escape all double quotes and dollarsigns,
     # since we don't do 'echo |' further down (like torque/pbspro)
     # only escape '$' in args and exe. not in the params
     # exec_n_args = exec_n_args.replace('$', '\\$')
@@ -444,8 +444,8 @@ _ADAPTOR_INFO = {
 # The adaptor class
 #
 class Adaptor (a_base.Base):
-    """ this is the actual adaptor class, which gets loaded by SAGA (i.e. by 
-        the SAGA engine), and which registers the CPI implementation classes 
+    """ this is the actual adaptor class, which gets loaded by SAGA (i.e. by
+        the SAGA engine), and which registers the CPI implementation classes
         which provide the adaptor's functionality.
     """
 
@@ -542,7 +542,7 @@ class CobaltJobService (cpi_job.Service):
         """
         self.rm      = rm_url
         self.session = session
-        self.ppn     = 16       # DEFAULT MIRA -- BLUE GENE / Q IS 16 
+        self.ppn     = 16       # DEFAULT MIRA -- BLUE GENE / Q IS 16
         self.is_cray = ""
         self.queue   = None
         self.shell   = None
@@ -584,7 +584,7 @@ class CobaltJobService (cpi_job.Service):
                           'qstat':    None,
                           'qsub':     None,
                           'qdel':     None,
-                          'runjob':   None  # For running scripts
+                        # 'runjob':   None  # For running scripts
                           }
 
         self.shell = rsups.PTYShell(pty_url, self.session)
@@ -610,7 +610,7 @@ class CobaltJobService (cpi_job.Service):
         # Purge temporary files
         if self._adaptor.purge_on_start:
             cmd = "find %s -type f -mtime +%d -print -delete | wc -l" % (
-                self._adaptor.base_workdir, 
+                self._adaptor.base_workdir,
                 self._adaptor.purge_older_than
             )
             ret, out, _ = self.shell.run_sync(cmd)
@@ -666,12 +666,13 @@ class CobaltJobService (cpi_job.Service):
 
         try:
             # create a Cobalt job script from SAGA job description
-            script = _cobaltscript_generator(url=self.rm, 
-                                   logger=self._logger, 
-                                   jd=jd, 
-                                   ppn=self.ppn, 
-                                   queue=self.queue, 
-                                   run_job=self._commands['runjob']['path']
+            script = _cobaltscript_generator(url=self.rm,
+                                   logger=self._logger,
+                                   jd=jd,
+                                   ppn=self.ppn,
+                                   queue=self.queue,
+                                   is_cray=False,
+                                   run_job=self._commands['qsub']['path']
                                   )
             self._logger.info("Generated Cobalt script: %s" % str(script))
         except Exception as ex:
@@ -684,7 +685,7 @@ class CobaltJobService (cpi_job.Service):
             self._logger.info("Create workdir %s" % jd.working_directory)
             ret, out, _ = self.shell.run_sync("mkdir -p %s"
                                                        % (jd.working_directory))
-            job_current_workdir = jd.working_directory  # Keep track of the cwd, 
+            job_current_workdir = jd.working_directory  # Keep track of the cwd,
             if ret != 0:
                 # something went wrong
                 message = "Couldn't create working directory - %s" % (out)
@@ -693,9 +694,9 @@ class CobaltJobService (cpi_job.Service):
 
         # Now we want to execute the script. This process consists of two steps:
         # (1) we create a temporary file with 'mktemp'
-        #     in the 'self._adaptor.base_workdir' 
+        #     in the 'self._adaptor.base_workdir'
         #
-        # (2) write the contents of 
+        # (2) write the contents of
         #     the generated Cobalt script into it, remove the first empty line
         #     and make sure it is executable
         #
@@ -763,7 +764,7 @@ class CobaltJobService (cpi_job.Service):
                                  'gone'        : False
                                  }
 
-            self._logger.info("assign job id  %s / %s / %s to watch list (%s)" 
+            self._logger.info("assign job id  %s / %s / %s to watch list (%s)"
                 % (None, job_id, job_obj, list(self.jobs.keys())))
 
             # set status to 'pending' and manually trigger callback
@@ -847,12 +848,12 @@ class CobaltJobService (cpi_job.Service):
 
             if out.strip() == '':
                 # Cobalt's 'qstat' command return's nothing
-                # When a job is finished but it exists with code '1' 
+                # When a job is finished but it exists with code '1'
                 # Let's see the job's final state in the job's 'cobaltlog' file
                 # which can be found at
-                #        'self._adaptor._job_current_workdir_cwd/pid.cobaltlog' 
+                #        'self._adaptor._job_current_workdir_cwd/pid.cobaltlog'
                 # If file is found: get the final status of the job
-                # If file not found: let's assume it FAILED. 
+                # If file not found: let's assume it FAILED.
 
                 # Run a 'cat' command to the final info about our job
                 # Sample OUTPUT:
@@ -899,7 +900,7 @@ class CobaltJobService (cpi_job.Service):
 
                     # Current format: Mon Jan 23 02:44:05 2017 +0000 (UTC)
                     # ASSUMPTION: Date is in UTC (as seen on the servers)
-                    # Will be parsed as UTC and output format: 
+                    # Will be parsed as UTC and output format:
                     # DDD mmm dd HH:MM:SS YYYY +0000 (UTC)
                     # Wed Dec 21 15:51:34 2016 +0000 (UTC)
                     end_time = datetime.datetime.strptime(timestamp,
@@ -1156,18 +1157,18 @@ class CobaltJobService (cpi_job.Service):
             pass
         else:
             for line in out.split("\n"):
-                # output looks like this: 
+                # output looks like this:
                 # (not inlcuding the first line - that is for reference only)
                 #
                 # JobID  JobName  User     Walltime  RunTime   Nodes  State      S  Location                Queue
-                # 32     hello    vagrant  00:50:00  00:00:00  2      starting   R  CENTOS-04400-37731-512  default  
-                # 33     hello    vagrant  00:50:00  00:00:11  2      running    R  CENTOS-04440-37771-512  default  
-                # 35     hello    vagrant  00:50:00  N/A       4      queued     Q  None                    default  
-                # 36     hello    vagrant  00:50:00  N/A       2      queued     Q  None                    default  
-                # 37     hello    vagrant  00:50:00  00:00:22  2      running    R  CENTOS-04040-37371-512  default  
-                # 38     hello    vagrant  00:50:00  N/A       2      queued     Q  None                    default  
-                # 40     hello    vagrant  00:50:00  N/A       2      user_hold  H  None                    default 
-                # 41     hello    vagrant  00:50:00  N/A       1      queued     Q  None                    default  
+                # 32     hello    vagrant  00:50:00  00:00:00  2      starting   R  CENTOS-04400-37731-512  default
+                # 33     hello    vagrant  00:50:00  00:00:11  2      running    R  CENTOS-04440-37771-512  default
+                # 35     hello    vagrant  00:50:00  N/A       4      queued     Q  None                    default
+                # 36     hello    vagrant  00:50:00  N/A       2      queued     Q  None                    default
+                # 37     hello    vagrant  00:50:00  00:00:22  2      running    R  CENTOS-04040-37371-512  default
+                # 38     hello    vagrant  00:50:00  N/A       2      queued     Q  None                    default
+                # 40     hello    vagrant  00:50:00  N/A       2      user_hold  H  None                    default
+                # 41     hello    vagrant  00:50:00  N/A       1      queued     Q  None                    default
                 if len(line.split()) > 1:
                     job_id = "[%s]-[%s]" % (self.rm, line.split()[0].strip())
                     ids.append(str(job_id))
@@ -1314,7 +1315,7 @@ class CobaltJob (cpi_job.Job):
     #
     @SYNC_CALL
     def get_name (self):
-        """ Implements cpi_job.Job.get_name() """        
+        """ Implements cpi_job.Job.get_name() """
         return self._name
 
 
