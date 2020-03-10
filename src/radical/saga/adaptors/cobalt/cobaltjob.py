@@ -250,36 +250,36 @@ def _cobaltscript_generator(url, logger, jd, ppn, is_cray=False, queue=None,
         logger.debug("number_of_processes not specified. default: 1 per node")
         number_of_processes = number_of_nodes
 
-    # Get number of processes per host/node
-    # Defaults to processes_per_host = 1
-    if jd.attribute_exists("processes_per_host"):
-        processes_per_host = jd.processes_per_host
-    else:
-        logger.debug("processes_per_host not specified -- default to 1")
-        processes_per_host = 1
-
-    # Need to make sure that the 'processes_per_host' is a valid one
-    # Blue Gene/Q valid modes ==> [1, 2, 4, 8, 16, 32, 64]
-    # At the Blue Gene/Q, 1 Node == 16 Cores
-    # and can handle UP TO 4 tasks per CPU/Core == 64 tasks
-    #
-    # References:
-    #   http://www.alcf.anl.gov/user-guides/cobalt-job-control
-    #   https://www.alcf.anl.gov/user-guides/blue-geneq-versus-blue-genep
-    if processes_per_host not in blue_gene_q_modes:
-        log_error_and_raise("#processes per host %d incompatible with #nodes %d"
-                           % (processes_per_host, blue_gene_q_modes),
-                              rse.BadParameter, logger)
-
-    # Make sure we aren't doing funky math
-    # References:
-    #   http://www.alcf.anl.gov/user-guides/machine-partitions
-    #   the --proccount flag value must be <= nodecount * mode
-    if  number_of_processes > (number_of_nodes * processes_per_host):
-        log_error_and_raise (("number_of_processes (%d) must be <= to"
-            "(number_of_nodes * processes_per_host) (%d * %d = %d)")
-            % (number_of_processes, number_of_nodes, processes_per_host,
-                (number_of_nodes * processes_per_host)), rse.NoSuccess, logger)
+  # # Get number of processes per host/node
+  # # Defaults to processes_per_host = 1
+  # if jd.attribute_exists("processes_per_host"):
+  #     processes_per_host = jd.processes_per_host
+  # else:
+  #     logger.debug("processes_per_host not specified -- default to 1")
+  #     processes_per_host = 1
+  #
+  # # Need to make sure that the 'processes_per_host' is a valid one
+  # # Blue Gene/Q valid modes ==> [1, 2, 4, 8, 16, 32, 64]
+  # # At the Blue Gene/Q, 1 Node == 16 Cores
+  # # and can handle UP TO 4 tasks per CPU/Core == 64 tasks
+  # #
+  # # References:
+  # #   http://www.alcf.anl.gov/user-guides/cobalt-job-control
+  # #   https://www.alcf.anl.gov/user-guides/blue-geneq-versus-blue-genep
+  # if processes_per_host not in blue_gene_q_modes:
+  #     log_error_and_raise("#processes per host %d incompatible with #nodes %d"
+  #                        % (processes_per_host, blue_gene_q_modes),
+  #                           rse.BadParameter, logger)
+  #
+  # # Make sure we aren't doing funky math
+  # # References:
+  # #   http://www.alcf.anl.gov/user-guides/machine-partitions
+  # #   the --proccount flag value must be <= nodecount * mode
+  # if  number_of_processes > (number_of_nodes * processes_per_host):
+  #     log_error_and_raise (("number_of_processes (%d) must be <= to"
+  #         "(number_of_nodes * processes_per_host) (%d * %d = %d)")
+  #         % (number_of_processes, number_of_nodes, processes_per_host,
+  #             (number_of_nodes * processes_per_host)), rse.NoSuccess, logger)
 
     # Other funky math checks should go here ~
 
@@ -313,10 +313,8 @@ def _cobaltscript_generator(url, logger, jd, ppn, is_cray=False, queue=None,
     # Set the MPI rank per node (mode).
     #   mode --> c1, c2, c4, c8, c16, c32, c64
     #   Mode is represented by the runjob's '--ranks-per-node' flag
-    exec_n_args = ("%s --ranks-per-node %d --np %d --block $COBALT_PARTNAME "
-                   "--verbose=INFO %s\n") \
-                % (run_job, processes_per_host, number_of_processes,
-                   exec_n_args)
+    exec_n_args = ("%s --np %d --block $COBALT_PARTNAME --verbose=INFO %s\n") \
+                % (run_job, number_of_processes, exec_n_args)
     exec_n_args = exec_n_args.replace('$', '\\$')
 
     # Need a new line before the shebang because linux is a bit of a pain when
