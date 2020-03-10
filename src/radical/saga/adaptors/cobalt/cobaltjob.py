@@ -383,7 +383,7 @@ _ADAPTOR_CAPABILITIES = {
                           api.WALL_TIME_LIMIT,
                           api.WORKING_DIRECTORY,
                           api.SPMD_VARIATION,  # TODO: 'hot'-fix for BigJob
-                        # api.PROCESSES_PER_HOST,
+                          api.PROCESSES_PER_HOST,
                           api.TOTAL_CPU_COUNT,
                           api.NUMBER_OF_PROCESSES,
                           api.JOB_CONTACT],
