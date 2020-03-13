@@ -401,6 +401,9 @@ class SLURMJobService(cpi_job.Service):
         elif 'frontera' in self.rm.host.lower():
             self._ppn = 56
 
+        elif 'comet' in self.rm.host.lower():
+            self._ppn = 24
+
         self._logger.info("ppn: %s", self._ppn)
 
 
