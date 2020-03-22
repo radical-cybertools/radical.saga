@@ -250,7 +250,6 @@ def _cobaltscript_generator(url, logger, jd, ppn, is_cray=False, queue=None,
         logger.debug("number_of_processes not specified. default: 1 per node")
         number_of_processes = number_of_nodes
 
-<<<<<<< Updated upstream
   # # Get number of processes per host/node
   # # Defaults to processes_per_host = 1
   # if jd.attribute_exists("processes_per_host"):
@@ -281,38 +280,6 @@ def _cobaltscript_generator(url, logger, jd, ppn, is_cray=False, queue=None,
   #         "(number_of_nodes * processes_per_host) (%d * %d = %d)")
   #         % (number_of_processes, number_of_nodes, processes_per_host,
   #             (number_of_nodes * processes_per_host)), rse.NoSuccess, logger)
-=======
-    # Get number of processes per host/node
-    # Defaults to processes_per_host = 1
-    if jd.attribute_exists("processes_per_host"):
-        processes_per_host = jd.processes_per_host
-    else:
-        logger.debug("processes_per_host not specified -- default to 1")
-        processes_per_host = 1
-
-    # Need to make sure that the 'processes_per_host' is a valid one
-    # Blue Gene/Q valid modes ==> [1, 2, 4, 8, 16, 32, 64]
-    # At the Blue Gene/Q, 1 Node == 16 Cores
-    # and can handle UP TO 4 tasks per CPU/Core == 64 tasks
-    #
-    # References:
-    #   http://www.alcf.anl.gov/user-guides/cobalt-job-control
-    #   https://www.alcf.anl.gov/user-guides/blue-geneq-versus-blue-genep
-    if processes_per_host not in blue_gene_q_modes:
-        log_error_and_raise("#processes per host %d incompatible with #nodes %d"
-                           % (processes_per_host, blue_gene_q_modes),
-                              rse.BadParameter, logger)
-
-    # Make sure we aren't doing funky math
-    # References:
-    #   http://www.alcf.anl.gov/user-guides/machine-partitions
-    #   the --proccount flag value must be <= nodecount * mode
-    if  number_of_processes > (number_of_nodes * processes_per_host):
-        log_error_and_raise (("number_of_processes (%d) must be <= to"
-            "(number_of_nodes * processes_per_host) (%d * %d = %d)")
-            % (number_of_processes, number_of_nodes, processes_per_host,
-                (number_of_nodes * processes_per_host)), rse.NoSuccess, logger)
->>>>>>> Stashed changes
 
     # Other funky math checks should go here ~
 
@@ -702,12 +669,8 @@ class CobaltJobService (cpi_job.Service):
                                    jd=jd,
                                    ppn=self.ppn,
                                    queue=self.queue,
-<<<<<<< Updated upstream
                                    is_cray=False,
                                    run_job=self._commands['qsub']['path']
-=======
-                                   run_job=self._commands['runjob']['path']
->>>>>>> Stashed changes
                                   )
             self._logger.info("Generated Cobalt script: %s" % str(script))
         except Exception as ex:
