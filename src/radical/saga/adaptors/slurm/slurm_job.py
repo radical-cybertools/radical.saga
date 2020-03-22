@@ -493,7 +493,8 @@ class SLURMJobService(cpi.Service):
             # we start N independent processes
             mpi_cmd = ''
 
-            if  'stampede2' in self.rm.host.lower():
+            if  'stampede2' in self.rm.host.lower() or \
+                'longhorn'  in self.rm.host.lower():
 
                 assert(self._ppn), 'need unique number of cores per node'
                 n_nodes = int(math.ceil(float(cpu_count) / self._ppn))
@@ -571,6 +572,7 @@ class SLURMJobService(cpi.Service):
 
         if cwd:
             if 'frontera' in self.rm.host.lower() or \
+               'longhorn' in self.rm.host.lower() or \
                'tiger'    in self.rm.host.lower() or \
                'rhea'     in self.rm.host.lower():
                 script += "#SBATCH --chdir %s\n"   % cwd
