@@ -61,7 +61,7 @@ class _job_state_monitor(threading.Thread):
     #
     def stop(self):
 
-        self.logger.info('=== stop  thread for %s', self.js.get_url())
+        self.logger.info('stop  thread for %s', self.js.get_url())
         self._term.set()
 
 
@@ -69,11 +69,9 @@ class _job_state_monitor(threading.Thread):
     #
     def run(self):
 
-        self.logger.info('=== start thread for %s', self.js.get_url())
+        self.logger.info('start thread for %s', self.js.get_url())
         while not self._term.isSet():
         
-            self.logger.info('=== run   thread for %s', self.js.get_url())
-
             try:
                 # do bulk updates here! we don't want to pull information
                 # job by job. that would be too inefficient!
@@ -116,7 +114,7 @@ class _job_state_monitor(threading.Thread):
                 self.logger.exception("job monitoring thread failed")
                 break
 
-        self.logger.info('=== close thread for %s', self.js.get_url())
+        self.logger.info('close thread for %s', self.js.get_url())
 
 
 # ------------------------------------------------------------------------------
@@ -386,11 +384,11 @@ class LSFJobService(cpi.Service):
     def close(self):
 
         if  self.mt:
-            self._logger.info("=== stop   monitoring thread: %s", self.rm)
+            self._logger.info("stop   monitoring thread: %s", self.rm)
             self.mt.stop()
             self.mt.join(10)  # don't block forever on join()
 
-        self._logger.info("=== stopped monitoring thread: %s", self.rm)
+        self._logger.info("stopped monitoring thread: %s", self.rm)
 
         self.finalize(True)
 
