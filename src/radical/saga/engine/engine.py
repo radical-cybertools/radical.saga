@@ -174,7 +174,7 @@ class Engine(object, metaclass=ru.Singleton):
                 adaptor_module = ru.import_module(module_name)
 
             except Exception as e:
-                self._logger.warning("skip adaptor %s: import failed (%s)",
+                self._logger.exception("skip adaptor %s: import failed (%s)",
                                   module_name, e)
                 continue
 
@@ -189,12 +189,12 @@ class Engine(object, metaclass=ru.Singleton):
                 adaptor_info     = adaptor_instance.register ()
 
             except rse.SagaException:
-                self._logger.warning("skip adaptor %s: failed to load",
+                self._logger.exception("skip adaptor %s: failed to load",
                                   module_name, exc_info=True)
                 continue
 
             except Exception:
-                self._logger.warning("skip adaptor %s: init failed",
+                self._logger.exception("skip adaptor %s: init failed",
                                   module_name, exc_info=True)
                 continue
 
@@ -207,7 +207,7 @@ class Engine(object, metaclass=ru.Singleton):
                 adaptor_instance.sanity_check ()
 
             except Exception:
-                self._logger.warning("skip adaptor %s: test failed",
+                self._logger.exception("skip adaptor %s: test failed",
                                   module_name, exc_info=True)
                 continue
 
@@ -257,12 +257,12 @@ class Engine(object, metaclass=ru.Singleton):
                 adaptor_enabled = adaptor_config.get('enabled', True)
 
             except rse.SagaException:
-                self._logger.warning("skip adaptor %s: init failed",
+                self._logger.exception("skip adaptor %s: init failed",
                                   module_name, exc_info=True)
                 continue
 
             except Exception as e:
-                self._logger.warning("skip adaptor %s: init error",
+                self._logger.exception("skip adaptor %s: init error",
                                   module_name, exc_info=True)
                 continue
 
@@ -303,7 +303,7 @@ class Engine(object, metaclass=ru.Singleton):
                 except Exception:
                     # this exception likely means that the adaptor does not call
                     # the radical.saga.adaptors.Base initializer (correctly)
-                    self._logger.warning("skip adaptor %s: invalid %s",
+                    self._logger.exception("skip adaptor %s: invalid %s",
                                       module_name, cpi_info['class'],
                                       exc_info=True)
                     continue

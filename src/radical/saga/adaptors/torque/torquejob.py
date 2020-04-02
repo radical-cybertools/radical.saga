@@ -42,14 +42,14 @@ class _job_state_monitor(threading.Thread):
 
         self.logger = job_service._logger
         self.js = job_service
-        self._stop = threading.Event()
+        self._term = threading.Event()
 
         super(_job_state_monitor, self).__init__()
         self.setDaemon(True)
 
 
     def stop(self):
-        self._stop.set()
+        self._term.set()
 
 
     def run(self):
@@ -58,7 +58,7 @@ class _job_state_monitor(threading.Thread):
         # a row...
         error_type_count = dict()
 
-        while not self._stop.is_set ():
+        while not self._term.is_set ():
 
             try:
                 # FIXME: do bulk updates here! we don't want to pull information
