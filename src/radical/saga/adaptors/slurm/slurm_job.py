@@ -398,6 +398,9 @@ class SLURMJobService(cpi_job.Service):
             # FIXME: this only works on the KNL nodes
             self._ppn = 68
 
+        elif 'traverse' in self.rm.host.lower():
+            self._ppn = 32
+
         elif 'frontera' in self.rm.host.lower():
             self._ppn = 56
 
@@ -620,6 +623,7 @@ class SLURMJobService(cpi_job.Service):
             if 'frontera' in self.rm.host.lower() or \
                'longhorn' in self.rm.host.lower() or \
                'tiger'    in self.rm.host.lower() or \
+               'traverse' in self.rm.host.lower() or \
                'rhea'     in self.rm.host.lower():
                 script += "#SBATCH --chdir %s\n"   % cwd
             else:
