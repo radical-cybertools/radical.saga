@@ -153,7 +153,7 @@ def _mkdir_p(path):
             pass
 
     except Exception as e:
-        raise rse.NoSuccess("mkdir failed for '%s': %s" % (path, e))
+        raise rse.NoSuccess("mkdir failed for '%s': %s" % (path, e)) from e
 
 
 ###############################################################################
@@ -795,7 +795,8 @@ class ShellDirectory(cpi_fs.Directory):
         try:
             return int(out) * 1024  # see '-k' option to 'du'
         except Exception as e:
-            raise rse.NoSuccess("could not get file size: %s (%s)" % (out, e))
+            raise rse.NoSuccess("could not get file size: %s (%s)" % (out, e)) \
+                  from e
 
 
     # --------------------------------------------------------------------------
@@ -1401,7 +1402,8 @@ class ShellFile(cpi_fs.File):
         try:
             size = int(out) * size_mult
         except Exception as e:
-            raise rse.NoSuccess("could not get file size: %s (%s)" % (out, e))
+            raise rse.NoSuccess("could not get file size: %s (%s)" % (out, e)) \
+                  from e
 
         return size
 

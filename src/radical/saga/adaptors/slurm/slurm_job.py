@@ -1195,10 +1195,10 @@ class SLURMJob(cpi_job.Job):
 
             return self.js._slurm_to_saga_state(slurm_state)
 
-        except Exception as ex:
+        except Exception as e:
             self._logger.exception('failed to get job state')
             raise rse.NoSuccess("Error getting the job state for "
-                            "job %s:\n%s" % (pid,ex))
+                                "job %s:\n%s" % (pid, e)) from e
 
         raise rse.NoSuccess._log(self._logger, "Internal SLURM adaptor error"
                                  " in _job_get_state")

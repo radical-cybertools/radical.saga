@@ -18,7 +18,7 @@ from ...           import exceptions as rse
 
 
 # ------------------------------------------------------------------------------
-# decorator, which switches method to 
+# decorator, which switches method to
 # _async version if ttype is set and !None
 def SYNC_CALL (sync_function) :
 
@@ -39,10 +39,10 @@ def SYNC_CALL (sync_function) :
                 async_function_name = "%s_async"  %  sync_function.__name__
                 async_function      = getattr (self, async_function_name)
 
-            except AttributeError :
+            except AttributeError as e:
                 msg = " %s: async %s() not implemented" \
                     % (self.__class__.__name__, sync_function.__name__)
-                raise rse.NotImplemented (msg)
+                raise rse.NotImplemented (msg) from e
 
             else :
                 # 'self' not needed, getattr() returns member function
@@ -50,7 +50,7 @@ def SYNC_CALL (sync_function) :
 
         # no ttype, or ttype==None -- make sure it's gone, and call default sync
         # function
-        if 'ttype' in kwargs : 
+        if 'ttype' in kwargs :
             del kwargs['ttype']
 
         # only some functions will provide metrics, and thus need the _from_task
@@ -78,9 +78,9 @@ def CPI_SYNC_CALL (cpi_sync_function) :
 
     def wrap_function (self, *args, **kwargs) :
         raise rse.NotImplemented ("%s.%s is not implemented for %s.%s (%s)"
-                %  (self.get_api ().__class__.__name__, 
+                %  (self.get_api ().__class__.__name__,
                     inspect.stack ()[1][3],
-                    self._adaptor._name, 
+                    self._adaptor._name,
                     self.__class__.__name__,
                     inspect.getmembers (cpi_sync_function)[15][1]))
 
@@ -107,7 +107,7 @@ def CPI_ASYNC_CALL (cpi_async_function) :
         if ttype not in (T_SYNC, T_ASYNC, T_TASK) :
             # cannot handle that ttype value, do not call async methods
             msg = " %s: async %s() called with invalid tasktype (%s)" \
-                % (self.__class__.__name__, cpi_async_function.__name__, 
+                % (self.__class__.__name__, cpi_async_function.__name__,
                    str(ttype))
             raise rse.BadParameter (msg)
 
@@ -121,15 +121,15 @@ def CPI_ASYNC_CALL (cpi_async_function) :
                                              cpi_async_function.__name__)
             cpi_sync_function      = getattr (self, cpi_sync_function_name)
 
-        except AttributeError :
+        except AttributeError as e:
             msg = " %s: sync %s() not implemented" \
                 % (self.__class__.__name__, cpi_sync_function.__name__)
-            raise rse.NotImplemented (msg)
+            raise rse.NotImplemented (msg) from e
 
 
         # got the sync call, wrap it in a task
         c = {'_call'   : cpi_sync_function,
-             '_args'   : args, 
+             '_args'   : args,
              '_kwargs' : kwargs }   # no ttype!
 
         return T_Task(self, cpi_sync_function_name, c, ttype)

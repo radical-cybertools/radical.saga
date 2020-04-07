@@ -304,7 +304,8 @@ class redis_ns_entry:
                 e.mkdir(flags)
 
             else:
-                raise rse.BadParameter("Cannot open %s (does not exist)" % path)
+                raise rse.BadParameter("Cannot open %s (does not exist)" % path)\
+                      from e
 
 
         if not e.is_dir():
@@ -332,8 +333,8 @@ class redis_ns_entry:
 
 
         except Exception as e:
-
-            raise rse.BadParameter("Cannot open parent %s (%s)" % (parent, e))
+            raise rse.BadParameter("Cannot open parent %s (%s)" % (parent, e)) \
+                  from e
 
 
         # try to open entry itself
@@ -348,7 +349,8 @@ class redis_ns_entry:
                 e.create(flags)
 
             else:
-                raise rse.BadParameter("Cannot open %s (no such entry)" % path)
+                raise rse.BadParameter("Cannot open %s (no such entry)" % path) \
+                  from e
 
 
         return e
@@ -394,7 +396,7 @@ class redis_ns_entry:
 
                 except Exception as e:
                     raise rse.BadParameter("parent does not exist on %s: %s" %
-                                           (path, e))
+                                           (path, e)) from e
 
                 if not pe.is_dir():
                     raise rse.BadParameter("parent is no directory for %s: %s" %
@@ -548,7 +550,8 @@ class redis_ns_entry:
 
         except Exception as e:
             self.valid = False
-            raise rse.IncorrectState("backend entry gone or corrupted: %s" % e)
+            raise rse.IncorrectState("backend entry gone or corrupted: %s" % e) \
+                  from e
 
 
     # --------------------------------------------------------------------------
