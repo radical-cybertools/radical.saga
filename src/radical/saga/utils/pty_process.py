@@ -142,7 +142,8 @@ class PTYProcess (object) :
             self.initialize ()
 
         except Exception as e :
-            raise ptye.translate_exception (e, "pty or process creation failed")
+            raise ptye.translate_exception(e, "pty or process creation failed")\
+                  from e
 
 
     # --------------------------------------------------------------------
@@ -226,7 +227,7 @@ class PTYProcess (object) :
                 self.child, self.child_fd = pty.fork ()
             except Exception as e:
                 raise se.NoSuccess ("Could not run (%s): %s"
-                                 % (' '.join (self.command), e))
+                                 % (' '.join (self.command), e)) from e
 
             if  not self.child :
                 # this is the child
@@ -382,7 +383,7 @@ class PTYProcess (object) :
 
                     # no idea what happened -- it is likely bad
                   # print("waitpid failed")
-                    raise se.NoSuccess ("waitpid failed on wait")
+                    raise se.NoSuccess ("waitpid failed on wait") from e
 
 
                 # did we get a note about child termination?
@@ -451,7 +452,7 @@ class PTYProcess (object) :
                             # child disappeared, go to zombie cleanup routine
                             break
 
-                        raise "waitpid failed on wait (%s)"
+                        raise RuntimeError("waitpid failed on wait (%s)") from e
 
                     # did we get a note about child termination?
                     if 0 == wpid :
@@ -685,7 +686,7 @@ class PTYProcess (object) :
                     raise e
 
                 raise se.NoSuccess ("read from process failed '%s' : (%s)"
-                                 % (e, self.tail))
+                                 % (e, self.tail)) from e
 
 
     # ----------------------------------------------------------------
@@ -804,7 +805,7 @@ class PTYProcess (object) :
                     data += self.read (timeout=_POLLDELAY)
 
             except se.NoSuccess as e :
-                raise ptye.translate_exception (e, "(%s)" % data)
+                raise ptye.translate_exception (e, "(%s)" % data) from e
 
 
     # ----------------------------------------------------------------
@@ -854,7 +855,8 @@ class PTYProcess (object) :
 
 
             except Exception as e:
-                raise ptye.translate_exception(e, "write failed (%s)" % e)
+                raise ptye.translate_exception(e, "write failed (%s)" % e) \
+                      from e
 
 
 # ------------------------------------------------------------------------------

@@ -274,7 +274,8 @@ class ContextSSH (cpi.Context) :
         try :
             fh_key = open (key)
         except Exception as e:
-            raise PermissionDenied ("ssh key '%s' not readable: %s" % (key, e))
+            raise PermissionDenied ("ssh key '%s' not readable: %s" % (key, e)) \
+                  from e
         else :
             fh_key.close ()
 
@@ -282,7 +283,8 @@ class ContextSSH (cpi.Context) :
         try :
             fh_pub = open (pub)
         except Exception as e:
-            raise PermissionDenied ("ssh public key '%s' not readable: %s" % (pub, e))
+            raise PermissionDenied ("ssh public key '%s' not readable: %s" % (pub, e)) \
+                  from e
         else :
             fh_pub.close ()
 
