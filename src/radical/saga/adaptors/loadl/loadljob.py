@@ -34,13 +34,6 @@ ASYNC_CALL = cpi.decorators.ASYNC_CALL
 
 # --------------------------------------------------------------------
 #
-def log_error_and_raise(message, exception, logger):
-    logger.error(message)
-    raise exception(message)
-
-
-# --------------------------------------------------------------------
-#
 def _ll_to_saga_jobstate(lljs):
     """ translates a loadleveler one-letter state to saga
         pbs_loadl_comparison.xlsx
@@ -337,15 +330,12 @@ class LOADLJobService (cpi.job.Service):
             self._logger.info(ret)
             self._logger.info(out)
             if ret != 0:
-                message = "Error finding LoadLeveler tools: %s" % out
-                log_error_and_raise(message, NoSuccess, self._logger)
+                raise NoSuccess("Error finding LoadLeveler tools: %s" % out)
             else:
                 path = out.strip()  # strip removes newline
                 ret, out, _ = self.shell.run_sync("%s -v" % cmd)
                 if ret != 0:
-                    message = "Error finding LoadLeveler tools: %s" % out
-                    log_error_and_raise(message, NoSuccess,
-                        self._logger)
+                    raise NoSuccess("Error finding LoadLeveler tools: %s" % out)
                 else:
                     # version is reported as: "version: x.y.z"
                     version = out.strip().split()[1]
@@ -392,8 +382,7 @@ class LOADLJobService (cpi.job.Service):
             self._logger.info("Remote directory created: %s" % path)
         elif ret != 0:
             # something went wrong
-            message = "Couldn't create remote directory - %s\n%s" % (out, path)
-            log_error_and_raise(message, NoSuccess, self._logger)
+            raise NoSuccess("Couldn't create remote directory - %s\n%s" % (out, path))
 
 
     def __remote_job_info_path(self, loadl_job_id="$LOADL_JOB_NAME"):
@@ -615,8 +604,8 @@ class LOADLJobService (cpi.job.Service):
             script = self.__generate_llsubmit_script(jd)
 
             self._logger.debug("Generated LoadLeveler script: %s" % script)
-        except Exception as ex:
-            log_error_and_raise(str(ex), BadParameter, self._logger)
+        except Exception as e:
+            raise BadParameter('error creating batch script') from e
 
         # try to create the working/output/error directories (if defined)
         # WARNING: this assumes a shared filesystem between login node and
@@ -641,9 +630,9 @@ class LOADLJobService (cpi.job.Service):
 
         if ret != 0:
             # something went wrong
-            message = "Error running job via 'llsubmit': %s. Script was: %s" \
-                % (out, script)
-            log_error_and_raise(message, NoSuccess, self._logger)
+            raise NoSuccess("Error running 'llsubmit' job: %s. Script: %s"
+                            % (out, script))
+
         else:
             # stdout contains the job id
             #job_id = "[%s]-[%s]" % (self.rm, out.strip().split('.')[0])
@@ -680,8 +669,7 @@ class LOADLJobService (cpi.job.Service):
         # OR
         # llq: There is currently no job status to report.
         if ret != 0:
-            message = "Couldn't reconnect to job '%s': %s" % (job_id, out)
-            log_error_and_raise(message, NoSuccess, self._logger)
+            raise NoSuccess("Couldn't reconnect to job '%s': %s" % (job_id, out))
 
         else:
             # the job seems to exist on the backend. let's gather some data
@@ -719,8 +707,8 @@ class LOADLJobService (cpi.job.Service):
                     retries += 1
 
                 if job_info is None:
-                    message = "__get_remote_job_info exceed %d times(s), pid: %s" % (max_retries, pid)
-                    log_error_and_raise(message, NoSuccess, self._logger)
+                    raise NoSuccess("__get_remote_job_info exceed %d times(s), "
+                                    "pid: %s" % (max_retries, pid))
 
                 self._logger.info("_retrieve_job: %r", job_info)
 
@@ -744,8 +732,7 @@ class LOADLJobService (cpi.job.Service):
 
         # if we don't have the job in our dictionary, we don't want it
         if job_id not in self.jobs:
-            message = "Unknown job ID: %s. Can't update state." % job_id
-            log_error_and_raise(message, NoSuccess, self._logger)
+            raise NoSuccess("Unknown job ID: %s. Can't update state." % job_id)
 
         # prev. info contains the info collect when _job_get_info
         # was called the last time
@@ -856,8 +843,7 @@ class LOADLJobService (cpi.job.Service):
             % (self._commands['llcancel']['path'], self.cluster_option, pid))
 
         if ret != 0:
-            message = "Error canceling job via 'llcancel': %s" % out
-            log_error_and_raise(message, NoSuccess, self._logger)
+            raise NoSuccess("Error canceling job via 'llcancel': %s" % out)
 
         #self.__clean_remote_job_info(pid)
 
@@ -878,7 +864,7 @@ class LOADLJobService (cpi.job.Service):
             state = self._job_get_state(job_id=job_id)
 
             if state == c.UNKNOWN :
-                log_error_and_raise("cannot get job state", IncorrectState, self._logger)
+                raise IncorrectState("cannot get job state")
 
             if state in [c.DONE, c.FAILED, c.CANCELED]:
               # self.__clean_remote_job_info(pid)
@@ -901,9 +887,8 @@ class LOADLJobService (cpi.job.Service):
         # check that only supported attributes are provided
         for attribute in jd.list_attributes():
             if attribute not in _ADAPTOR_CAPABILITIES["jdes_attributes"]:
-                message = "'jd.%s' is not supported by this adaptor" \
-                    % attribute
-                log_error_and_raise(message, BadParameter, self._logger)
+                raise BadParameter("'jd.%s' is not supported by this adaptor"
+                                   % attribute)
 
         # this dict is passed on to the job adaptor class -- use it to pass any
         # state information you need there.
@@ -961,11 +946,12 @@ class LOADLJobService (cpi.job.Service):
                                           self._commands['llq']['path'])
 
         if ret != 0 and len(out) > 0:
-            message = "failed to list jobs via 'llq': %s" % out
-            log_error_and_raise(message, NoSuccess, self._logger)
+            raise NoSuccess("failed to list jobs via 'llq': %s" % out)
+
         elif ret != 0 and len(out) == 0:
             # llq | grep `` exits with 1 if the list is empty
             pass
+
         else:
             for line in out.split("\n"):
                 # output looks like this:
@@ -1060,8 +1046,7 @@ class LOADLJob (cpi.job.Job):
         """ implements cpi.job.Job.wait()
         """
         if self._started is False:
-            log_error_and_raise("Can't wait for job that hasn't been started",
-                IncorrectState, self._logger)
+            raise IncorrectState("Can't wait for job that hasn't been started")
         else:
             self.js._job_wait(self._id, timeout)
 
@@ -1072,8 +1057,7 @@ class LOADLJob (cpi.job.Job):
         """ implements cpi.job.Job.cancel()
         """
         if self._started is False:
-            log_error_and_raise("Can't wait for job that hasn't been started",
-                IncorrectState, self._logger)
+            raise IncorrectState("Can't wait for job that hasn't been started")
         else:
             self.js._job_cancel(self._id)
 

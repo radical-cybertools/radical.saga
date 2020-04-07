@@ -91,9 +91,9 @@ class _ContextList (list) :
         else :
             try :
                 ctx_clone._initialize (session)
-            except se.SagaException as e :
+            except se.SagaException as e:
                 msg = "Cannot add context, initialization failed (%s)"  %  str(e)
-                raise se.BadParameter (msg)
+                raise se.BadParameter (msg) from e
 
         return ctx_clone
 

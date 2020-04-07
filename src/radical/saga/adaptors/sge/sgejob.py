@@ -119,13 +119,6 @@ class SgeKeyValueParser(object):
 
 
 # --------------------------------------------------------------------
-#
-def log_error_and_raise(message, exception, logger):
-    logger.error(message)
-    raise exception(message)
-
-
-# --------------------------------------------------------------------
 # some private defs
 #
 _PTY_TIMEOUT = 2.0
@@ -341,8 +334,7 @@ class SGEJobService (cpi.Service):
         for cmd in list(self._commands.keys()):
             ret, out, _ = self.shell.run_sync("which %s " % cmd)
             if ret != 0:
-                message = "Error finding SGE tools: %s" % out
-                log_error_and_raise(message, rse.NoSuccess, self._logger)
+                raise rse.NoSuccess("Error finding SGE tools: %s" % out)
             else:
                 path = out.strip()  # strip removes newline
 
@@ -354,9 +346,7 @@ class SGEJobService (cpi.Service):
                     if cmd == 'qstat':
                         version = out.strip().split('\n')[0]
                     else:
-                        message = "Error finding SGE tools: %s" % out
-                        log_error_and_raise(message, rse.NoSuccess,
-                                            self._logger)
+                        raise rse.NoSuccess("Error finding SGE tools: %s" % out)
                 else:
                     # version is reported in the first row of the
                     # help screen, e.g., GE 6.2u5_1
@@ -373,8 +363,7 @@ class SGEJobService (cpi.Service):
         ret, out, _ = self.shell.run_sync('%s -spl' %
                       (self._commands['qconf']['path']))
         if ret != 0:
-            message = "Error running 'qconf': %s" % out
-            log_error_and_raise(message, rse.NoSuccess, self._logger)
+            raise rse.NoSuccess("Error running 'qconf': %s" % out)
         else:
             for pe in out.split('\n'):
                 if pe != '':
@@ -386,8 +375,7 @@ class SGEJobService (cpi.Service):
         ret, out, _ = self.shell.run_sync('%s -sc'
                                          % (self._commands['qconf']['path']))
         if ret != 0:
-            message = "Error running 'qconf': %s" % out
-            log_error_and_raise(message, rse.NoSuccess, self._logger)
+            raise rse.NoSuccess("Error running 'qconf': %s" % out)
         else:
             mandatory_attrs = []
             optional_attrs = []
@@ -417,11 +405,10 @@ class SGEJobService (cpi.Service):
                 if attr not in flags:
                     missing_flags.append(attr)
             if missing_flags:
-                message = "The following memory attribute(s) are mandatory " \
-                          "in your SGE environment and thus must be " \
-                          "specifiedin the job service URL: %s" \
-                          % ' '.join(missing_flags)
-                log_error_and_raise(message, rse.BadParameter, self._logger)
+                raise rse.BadParameter("The following attribute(s) are "
+                                       "mandatory in your SGE environment and "
+                                       "thus must be specifiedin the job "
+                                       "service URL: %s" % missing_flags)
 
         # if memory attributes were specified in the job.Service URL, check that
         # they correspond to existing optional or mandatory memory attributes
@@ -432,11 +419,10 @@ class SGEJobService (cpi.Service):
                 invalid_attrs.append(f)
 
         if invalid_attrs:
-            message = "The following memory attribute(s) were specified in " \
-                      "the job.Service URL but are not valid memory " \
-                      "attributes in your SGE environment: %s" \
-                      % ' '.join(invalid_attrs)
-            log_error_and_raise(message, rse.BadParameter, self._logger)
+            raise rse.BadParameter("The following attribute(s) are "
+                                   "specifiedin the job service URL but "
+                                   "are not accepted by your SGE "
+                                   "environment: %s" % missing_flags)
 
         # check if accounting is activated
         qres = self.__kvcmd_results('qconf', '-sconf',
@@ -553,8 +539,7 @@ class SGEJobService (cpi.Service):
 
         elif ret != 0:
             # something went wrong
-            message = "Couldn't create remote directory - %s" % (out)
-            log_error_and_raise(message, rse.NoSuccess, self._logger)
+            raise rse.NoSuccess("Couldn't create remote directory - %s" % out)
 
     def __job_info_from_accounting(self, sge_job_id, max_retries=10):
         """
@@ -841,18 +826,17 @@ as a separator.
         # In SGE environments with mandatory memory attributes,
         # 'total_physical_memory' must be specified
         if self.mandatory_memreqs and jd.total_physical_memory is None:
-            log_error_and_raise("Your SGE environments has mandatory memory "
+            raise rse.BadParameter("Your SGE environments has mandatory "
                                 "attributes, so 'total_physical_memory' "
-                                "must be specified in your job descriptor",
-                                rse.BadParameter, self._logger)
+                                "must be specified in your job descriptor")
 
         try:
             # create a SGE job script from SAGA job description
             script = self.__generate_qsub_script(jd)
             self._logger.info("Generated SGE script: %s" % script)
 
-        except Exception as ex:
-            log_error_and_raise(str(ex), rse.BadParameter, self._logger)
+        except Exception as e:
+            raise rse.BadParameter('error generating SGE script') from e
 
         # try to create the working/output/error directories (if defined)
         # WARNING: this assumes a shared filesystem between login node and
@@ -882,8 +866,7 @@ as a separator.
 
         if ret != 0:
             # something went wrong
-            message = "Error running qsub: %s [%s]" % (out, cmdline)
-            log_error_and_raise(message, rse.NoSuccess, self._logger)
+            raise rse.NoSuccess("Error running qsub: %s [%s]" % (out, cmdline))
 
         # stdout contains the job id:
         # Your job 1036608 ("testjob") has been submitted
@@ -892,8 +875,7 @@ as a separator.
             if line.find("Your job") != -1:
                 sge_job_id = line.split()[2]
         if sge_job_id is None:
-            message = "Couldn't parse job id from 'qsub' output: %s" % out
-            log_error_and_raise(message, rse.NoSuccess, self._logger)
+            raise rse.NoSuccess("Couldn't parse job id from 'qsub': %s" % out)
 
         job_id = "[%s]-[%s]" % (self.rm, sge_job_id)
         self._logger.info("Submitted SGE job with id: %s" % job_id)
@@ -940,8 +922,7 @@ as a separator.
             m = _QSTAT_JOB_STATE_RE.match(out)
             if not m:
                 # something wrong with the result of qstat
-                message = "Unexpected qstat results:\n%s" % out.rstrip()
-                log_error_and_raise(message, rse.NoSuccess, self._logger)
+                raise rse.NoSuccess("Unexpected qstat results:\n%s" % out.rstrip())
 
             state, start_time, queue = m.groups()
 
@@ -1001,8 +982,7 @@ as a separator.
             job_info = self.__job_info_from_accounting(pid)
 
         if job_info is None: # Oooops, we couldn't retrieve information from SGE
-            message = "Couldn't reconnect to job '%s'" % job_id
-            log_error_and_raise(message, rse.NoSuccess, self._logger)
+            raise rse.NoSuccess("Couldn't reconnect to job '%s'" % job_id)
 
         elems = ["name", "state", "returncode", "exec_hosts", "create_time",
                  "start_time", "end_time", "gone"]
@@ -1020,8 +1000,7 @@ as a separator.
 
         # if we don't have the job in our dictionary, we don't want it
         if job_id not in self.jobs:
-            message = "Unknown job ID: %s. Can't update state." % job_id
-            log_error_and_raise(message, rse.NoSuccess, self._logger)
+            raise rse.NoSuccess("Unknown job ID: %s" % job_id)
 
         # prev. info contains the info collect when _job_get_info
         # was called the last time
@@ -1145,8 +1124,7 @@ as a separator.
             % (self._commands['qdel']['path'], pid))
 
         if ret != 0:
-            message = "Error canceling job via 'qdel': %s" % out
-            log_error_and_raise(message, rse.NoSuccess, self._logger)
+            raise rse.NoSuccess("Error canceling job via 'qdel': %s" % out)
 
         self.__clean_remote_job_info(pid)
 
@@ -1168,8 +1146,7 @@ as a separator.
             state = self._job_get_state(job_id=job_id)
 
             if state == c.UNKNOWN :
-                log_error_and_raise("cannot get job state",
-                                    rse.IncorrectState, self._logger)
+                raise rse.IncorrectState("cannot get job state")
 
             if state in c.FINAL:
                 self.__clean_remote_job_info(pid)
@@ -1251,8 +1228,7 @@ as a separator.
                            % self._commands['qstat']['path'])
 
         if ret != 0 and len(out) > 0:
-            message = "Failed to list jobs via 'qstat': %s" % out
-            log_error_and_raise(message, rse.NoSuccess, self._logger)
+            raise rse.NoSuccess("Failed to list jobs via 'qstat': %s" % out)
 
         elif ret != 0 and len(out) == 0:
             # qstat | grep `whoami` exits with 1 if the list is empty
@@ -1349,8 +1325,7 @@ class SGEJob (cpi.Job):
         """ implements cpi.Job.wait()
         """
         if self._started is False:
-            log_error_and_raise("Can't wait for job that hasn't been started",
-                rse.IncorrectState, self._logger)
+            raise rse.IncorrectState("Can't wait for job that hasn't been started")
         else:
             self.js._job_wait(self._id, timeout)
 
@@ -1361,8 +1336,7 @@ class SGEJob (cpi.Job):
         """ implements cpi.Job.cancel()
         """
         if self._started is False:
-            log_error_and_raise("Can't wait for job that hasn't been started",
-                rse.IncorrectState, self._logger)
+            raise rse.IncorrectState("Can't wait for job that hasn't been started")
         else:
             self.js._job_cancel(self._id)
 

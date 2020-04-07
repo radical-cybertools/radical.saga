@@ -110,7 +110,7 @@ class _job_state_monitor(threading.Thread):
 
                 time.sleep(MONITOR_UPDATE_INTERVAL)
 
-            except Exception:
+            except Exception as e:
                 self.logger.exception("job monitoring thread failed")
                 break
 
@@ -538,7 +538,7 @@ class LSFJobService(cpi.Service):
             self._logger.info("Generated LSF script: %s" % script)
 
         except Exception as e:
-            raise rse.BadParameter(str(e))
+            raise rse.BadParameter(str(e)) from e
 
         # try to create the working directory (if defined)
         # WARNING: this assumes a shared filesystem between login node and
