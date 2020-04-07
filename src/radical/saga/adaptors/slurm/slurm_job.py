@@ -360,6 +360,9 @@ class SLURMJobService(cpi.Service):
             # FIXME: this only works on the KNL nodes
             self._ppn = 68
 
+        elif 'traverse' in self.rm.host.lower():
+            self._ppn = 32
+
         elif 'frontera' in self.rm.host.lower():
             self._ppn = 56
 
@@ -574,6 +577,7 @@ class SLURMJobService(cpi.Service):
             if 'frontera' in self.rm.host.lower() or \
                'longhorn' in self.rm.host.lower() or \
                'tiger'    in self.rm.host.lower() or \
+               'traverse' in self.rm.host.lower() or \
                'rhea'     in self.rm.host.lower():
                 script += "#SBATCH --chdir %s\n"   % cwd
             else:
@@ -1145,10 +1149,10 @@ class SLURMJob(cpi.Job):
 
             return self.js._slurm_to_saga_state(slurm_state)
 
-        except Exception as ex:
+        except Exception as e:
             self._logger.exception('failed to get job state')
             raise rse.NoSuccess("Error getting the job state for "
-                            "job %s:\n%s" % (pid,ex))
+                                "job %s:\n%s" % (pid, e)) from e
 
         raise rse.NoSuccess._log(self._logger, "Internal SLURM adaptor error "
                                                "in _job_get_state")

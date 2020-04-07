@@ -426,9 +426,9 @@ class Adaptor(a_base.Base):
                         # Continued passed of an entry, name should always exist
                         try:
                             endpoints[name][key] = val
-                        except:
-                            raise rse.NoSuccess(
-                                   "No entry to operate on: %s[%s]" % (key,val))
+                        except Exception as e:
+                            raise rse.NoSuccess("No entry to operate on: %s[%s]"
+                                    % (key,val)) from e
 
                 # replace the ep info dist with the new one, to clean out old
                 # entries.
