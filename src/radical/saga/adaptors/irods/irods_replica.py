@@ -15,7 +15,7 @@ __license__   = "MIT"
 # TODO: Implement Andre's changes in the iRODS adaptors!
 
 
-"""iRODS replica adaptor implementation 
+"""iRODS replica adaptor implementation
    Uses icommands commandline tools
 """
 
@@ -43,7 +43,7 @@ _ADAPTOR_OPTIONS       = []
 _ADAPTOR_CAPABILITIES  = {}
 _ADAPTOR_DOC           = {
     'name'             : _ADAPTOR_NAME,
-    'cfg_options'      : _ADAPTOR_OPTIONS, 
+    'cfg_options'      : _ADAPTOR_OPTIONS,
     'capabilities'     : _ADAPTOR_CAPABILITIES,
     'description'      : 'The iRODS replica adaptor.',
     'details'          : """This adaptor interacts with the iRODS data
@@ -61,7 +61,7 @@ _ADAPTOR_INFO          = {
     'cpis'             : [{
                               'type' : 'radical.saga.replica.LogicalDirectory',
                               'class': 'IRODSDirectory'
-                          }, 
+                          },
                           {
                               'type' : 'radical.saga.replica.LogicalFile',
                               'class': 'IRODSFile'
@@ -97,7 +97,7 @@ class irods_logical_entry:
         # ------------------------------------------------------------------------------
         #
 class irods_resource_entry:
-    '''class to hold info on an iRODS resource 
+    '''class to hold info on an iRODS resource
     '''
     # Resources (not groups) as retreived from ilsresc -l look like this:
     #
@@ -132,7 +132,7 @@ class irods_resource_entry:
     #
     #
     def __init__ (self):
-        # are we a resource group? 
+        # are we a resource group?
         self.is_resource_group = False
 
         # individual resource-specific properties
@@ -157,7 +157,7 @@ class irods_resource_entry:
 # The adaptor class
 
 class Adaptor (rs.adaptors.base.Base):
-    """ 
+    """
     This is the actual adaptor class, which gets loaded by SAGA (i.e. by the
     SAGA engine), and which registers the CPI implementation classes which
     provide the adaptor's functionality.
@@ -167,7 +167,7 @@ class Adaptor (rs.adaptors.base.Base):
     #
     #
     def __init__ (self) :
-        rs.adaptors.base.Base.__init__ (self, 
+        rs.adaptors.base.Base.__init__ (self,
                                           _ADAPTOR_INFO,
                                           _ADAPTOR_OPTIONS)
 
@@ -188,9 +188,9 @@ class Adaptor (rs.adaptors.base.Base):
             if rc != 0:
                 raise Exception("sanity check error")
 
-        except Exception as ex:
+        except Exception as e:
             raise rs.NoSuccess ("Could not run iRODS/ils.  Check iRODS"
-                                  "environment and certificates (%s)" % ex)
+                                "environment and certificates (%s)" % e) from e
         finally :
             # re-enable logger
             self._logger.setLevel (lvl)
@@ -232,7 +232,7 @@ class Adaptor (rs.adaptors.base.Base):
 
                 # if we are listing a directory or remote resource file
                 # location i.e.
-                # 
+                #
                 # [azebro1@gw68]$ ils -L /osg/home/azebro1
                 # /osg/home/azebro1:
                 #    azebro1           1 UFlorida-SSERCA_FTP            12 2012-11-14.09:55 & irods-test.txt
@@ -240,7 +240,7 @@ class Adaptor (rs.adaptors.base.Base):
                 #
                 # then we want to ignore that entry (not using it for now)
                 if item.strip().startswith("/"):
-                    continue 
+                    continue
 
                 # remove whitespace
                 item = item.strip()
@@ -258,7 +258,7 @@ class Adaptor (rs.adaptors.base.Base):
                     # ils -L output looks like this after you split it:
                     #  0           1    2                      3     4                   5    6
                     # ['azebro1', '1', 'UFlorida-SSERCA_FTP', '12', '2012-11-14.09:55', '&', 'irods-test.txt']
-                    # not sure what 1 and 5 are ... 
+                    # not sure what 1 and 5 are ...
                     dir_entry.owner = item.split()[0]
                     dir_entry.locations = [item.split()[2]]
                     dir_entry.size = item.split()[3]
@@ -281,7 +281,8 @@ class Adaptor (rs.adaptors.base.Base):
             return final_list
 
         except Exception as e:
-            raise rs.NoSuccess ("Couldn't get directory listing: %s %s " % e)
+            raise rs.NoSuccess ("Couldn't get directory listing: %s %s " % e) \
+                  from e
 
         return result
 
@@ -292,7 +293,7 @@ class Adaptor (rs.adaptors.base.Base):
     def irods_get_resource_listing(self):
         ''' Return a list of irods resources and resource groups with
             information stored in irods_resource_entry format.
-            It uses commandline tool ilsresc -l 
+            It uses commandline tool ilsresc -l
             :param self: reference to adaptor which called this function
         '''
         result = []
@@ -319,7 +320,7 @@ class Adaptor (rs.adaptors.base.Base):
                 line = cw_result_list.pop(0)
 
                 # check to see if this is the beginning of a
-                # singular resource entry 
+                # singular resource entry
                 if line.startswith("resource name: "):
                     # singular resource entry output from ilsresc -l
                     # LINE NUMBERS AND PADDING ADDED
@@ -365,7 +366,7 @@ class Adaptor (rs.adaptors.base.Base):
 
                     result.append(entry)
 
-                # for some reason, we're at a line which we have 
+                # for some reason, we're at a line which we have
                 # no idea how to handle this is bad -- throw an error
                 else:
                     raise rs.NoSuccess("Error parsing iRODS ilsresc -l output")
@@ -373,7 +374,8 @@ class Adaptor (rs.adaptors.base.Base):
             return result
 
         except Exception as e:
-            raise rs.NoSuccess ("Couldn't get resource listing: %s " % (str(e)))
+            raise rs.NoSuccess("Couldn't get resource listing: %s " % (str(e))) \
+                  from e
 
 
 ###############################################################################
@@ -463,7 +465,7 @@ class IRODSDirectory (rs.adaptors.cpi.replica.LogicalDirectory) :
     @SYNC_CALL
     def open (self, url, flags) :
 
-        if not url.scheme and not url.host : 
+        if not url.scheme and not url.host :
             url = rs.url.Url (str(self._url) + '/' + str(url))
 
         f = rs.replica.LogicalFile (url, flags, self._session,
@@ -488,13 +490,13 @@ class IRODSDirectory (rs.adaptors.cpi.replica.LogicalDirectory) :
                 raise rs.NoSuccess("Could not create dir %s, [%s]: %s"
                                   % (complete_path, str(ret), out))
 
-        except Exception as ex:
+        except Exception as e:
             # did the directory already exist?
-            if "CATALOG_ALREADY_HAS_ITEM_BY_THAT_NAME" in str(ex):
-                raise rs.AlreadyExists ("Directory already exists.")
+            if "CATALOG_ALREADY_HAS_ITEM_BY_THAT_NAME" in str(e):
+                raise rs.AlreadyExists ("Directory already exists.") from e
 
             # couldn't create for unspecificed reason
-            raise rs.NoSuccess ("Couldn't create directory. %s" % ex)
+            raise rs.NoSuccess ("Couldn't create directory. %s" % e)
 
         return
 
@@ -516,16 +518,16 @@ class IRODSDirectory (rs.adaptors.cpi.replica.LogicalDirectory) :
                 raise rs.NoSuccess("Could not remove directory %s [%s]: %s"
                                   % (complete_path, str(ret), out))
 
-        except Exception as ex:
+        except Exception as e:
 
             # was there no directory to delete?
-            if "does not exist" in str(ex):
+            if "does not exist" in str(e):
                 raise rs.DoesNotExist("Directory %s does not exist."
-                                     % complete_path)
+                                     % complete_path) from e
 
             # couldn't delete for unspecificed reason
             raise rs.NoSuccess("Couldn't delete directory %s because %s"
-                              % (complete_path, ex))
+                              % (complete_path, e)) from e
 
         return
 
@@ -561,8 +563,9 @@ class IRODSDirectory (rs.adaptors.cpi.replica.LogicalDirectory) :
                     # result.append("file " + item)
                     result.append(item)
 
-        except Exception as ex:
-            raise rs.NoSuccess ("Couldn't list directory: %s " % (str(ex)))
+        except Exception as e:
+            raise rs.NoSuccess ("Couldn't list directory: %s " % (str(e))) \
+                  from e
 
         return result
 
@@ -727,7 +730,7 @@ class IRODSFile (rs.adaptors.cpi.replica.LogicalFile) :
     @SYNC_CALL
     def remove_location(self, location):
         '''This method is called upon logicaldir.remove_locations()
-        '''     
+        '''
         raise rs.NotImplemented._log (self._logger, "Not implemented")
         return
 
@@ -738,22 +741,22 @@ class IRODSFile (rs.adaptors.cpi.replica.LogicalFile) :
     @SYNC_CALL
     def replicate (self, target, flags):
         '''This method is called upon logicaldir.replicate()
-        '''        
+        '''
 
         # path to file we are replicating on iRODS
-        complete_path = self._url.get_path()        
+        complete_path = self._url.get_path()
 
         # TODO: Verify Correctness in the way the resource is grabbed
         query = rs.Url(target).get_query()
         resource = query.split("=")[1]
         self._logger.debug("Attempting to replicate logical file %s to "
-                           "resource/resource group %s" 
+                           "resource/resource group %s"
                            % (complete_path, resource))
 
         try:
             self._logger.debug("Executing: irepl -R %s %s"
                               % (resource, complete_path))
-            ret, out, _ = self.shell.run_sync("irepl -R %s %s" 
+            ret, out, _ = self.shell.run_sync("irepl -R %s %s"
                                              % (resource, complete_path))
 
             if ret:
@@ -761,8 +764,9 @@ class IRODSFile (rs.adaptors.cpi.replica.LogicalFile) :
                                 "resource/resource group %s, errorcode %s: %s"
                                % (complete_path, resource, str(ret), out))
 
-        except Exception as ex:
-            raise rs.NoSuccess._log(self._logger, "replicate failed: %s" % ex)
+        except Exception as e:
+            raise rs.NoSuccess._log(self._logger, "replicate failed: %s" % e) \
+                  from e
 
 
     # ----------------------------------------------------------------
@@ -787,11 +791,11 @@ class IRODSFile (rs.adaptors.cpi.replica.LogicalFile) :
 
             if ret:
                 raise rs.NoSuccess("Could not move logical file %s to location"
-                                   "%s, errorcode %s: %s" 
+                                   "%s, errorcode %s: %s"
                                   % (source_path, dest_path, str(ret), out))
 
-        except Exception as ex:
-            raise rs.NoSuccess ("Couldn't move file: %s" % ex)
+        except Exception as e:
+            raise rs.NoSuccess ("Couldn't move file: %s" % e) from e
 
 
     # ----------------------------------------------------------------
@@ -820,9 +824,10 @@ class IRODSFile (rs.adaptors.cpi.replica.LogicalFile) :
                 raise rs.NoSuccess("Could not remove file %s [%s]: %s"
                                   % (complete_path, str(ret), out))
 
-        except Exception as ex:
+        except Exception as e:
             # couldn't delete for unspecificed reason
-            raise rs.NoSuccess("delete %s failed: %s" % (complete_path, ex))
+            raise rs.NoSuccess("delete %s failed: %s" % (complete_path, e)) \
+                  from e
 
         return
 
@@ -845,7 +850,7 @@ class IRODSFile (rs.adaptors.cpi.replica.LogicalFile) :
     #
     #   myfile.upload("file://home/ashley/my/local/filesystem/irods.tar.gz",
     #                 "irods://.../?resource=host3")
-    # 
+    #
     @SYNC_CALL
     def upload (self, source, target, flags) :
         '''Uploads a file from the LOCAL, PHYSICAL filesystem to
@@ -901,9 +906,10 @@ class IRODSFile (rs.adaptors.cpi.replica.LogicalFile) :
                 raise rs.NoSuccess("Could not upload file %s, errorcode %s: %s"
                                   % (complete_path, str(ret), out))
 
-        except Exception as ex:
+        except Exception as e:
             # couldn't upload for unspecificed reason
-            raise rs.NoSuccess._log (self._logger, "upload failed: %s" % ex)
+            raise rs.NoSuccess._log (self._logger, "upload failed: %s" % e) \
+                  from e
 
         return
 
@@ -940,7 +946,7 @@ class IRODSFile (rs.adaptors.cpi.replica.LogicalFile) :
                                "specified local target is %s"
                               % (logical_path, target))
 
-            if target: cmd = "iget %s %s" % (logical_path, local_path) 
+            if target: cmd = "iget %s %s" % (logical_path, local_path)
             else     : cmd = "iget %s"    %  logical_path
 
             self._logger.debug("Executing: %s" % cmd)
@@ -951,9 +957,9 @@ class IRODSFile (rs.adaptors.cpi.replica.LogicalFile) :
                 raise rs.NoSuccess("download failed: %s [%s]: %s"
                                   % (logical_path, str(ret), out))
 
-        except Exception as ex:
+        except Exception as e:
             # couldn't download for unspecificed reason
-            raise rs.NoSuccess ("Couldn't download file. %s" % ex)
+            raise rs.NoSuccess ("Couldn't download file. %s" % e) from e
 
 
 # ------------------------------------------------------------------------------

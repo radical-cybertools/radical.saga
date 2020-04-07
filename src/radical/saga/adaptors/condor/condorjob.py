@@ -34,13 +34,6 @@ ASYNC_CALL = cpi.decorators.ASYNC_CALL
 
 # --------------------------------------------------------------------
 #
-def log_error_and_raise(message, exception, logger):
-    logger.error(message)
-    raise exception(message)
-
-
-# --------------------------------------------------------------------
-#
 def _condor_to_saga_jobstate(condorjs):
     """ translates a condor one-letter state to saga
     """
@@ -172,7 +165,7 @@ def _condorscript_generator(url, logger, jds, option_dict=None):
 
         # the actual executable becomes the first argument.
         if not jd.executable:
-            log_error_and_raise("Executable not set", NoSuccess, logger)
+            raise NoSuccess("Executable not set")
         arguments = "%s" % jd.executable
 
         # all other arguments follow
@@ -183,8 +176,7 @@ def _condorscript_generator(url, logger, jds, option_dict=None):
                 # Condor can't deal with multi-line arguments. yep, that's how
                 # bad of a software it is.
                 if '\n' in arg:
-                    message = "Condor doesn't support multi-line arguments: %s" % arg
-                    log_error_and_raise(message, NoSuccess, logger)
+                    raise NoSuccess("Condor doesn't support multi-line arguments: %s" % arg)
 
                 # Condor HATES double quotes in the arguments. It'll return
                 # some crap like: "Found illegal unescaped double-quote: ...
@@ -454,15 +446,13 @@ class CondorJobService (cpi.job.Service):
         ret, out, _ = self.shell.run_sync("which %s " % ' '.join(commands))
 
         if ret != 0:
-            message = "Error finding Condor tools: %s" % out
-            log_error_and_raise(message, NoSuccess, self._logger)
+            raise NoSuccess("Error finding Condor tools: %s" % out)
 
         # split and remove empty lines
         lines = list(filter(bool, out.split('\n')))
 
         if len(lines) != len(commands):
-            message = "Error finding some Condor tools: %s" % out
-            log_error_and_raise(message, NoSuccess, self._logger)
+            raise NoSuccess("Error finding some Condor tools: %s" % out)
 
         for cmd, path in zip(commands, lines):
             self._commands[cmd] = path.strip()
@@ -470,9 +460,7 @@ class CondorJobService (cpi.job.Service):
           # if cmd == 'condor_version':
           #     ret, out, _ = self.shell.run_sync("%s" % cmd)
           #     if ret != 0:
-          #         message = "Error determining Condor version: %s" % out
-          #         log_error_and_raise(message, NoSuccess,
-          #             self._logger)
+          #         raise NoSuccess("Error getting Condor version: %s" % out)
           #     else:
           #         # version is reported as:
           #         # $CondorVersion: 7.8.6 Oct 25 2012 $
@@ -648,9 +636,8 @@ class CondorJobService (cpi.job.Service):
 
         if ret != 0:
             # something went wrong
-            message = "Error running job via 'condor_submit': %s. Script was: %s" \
-                % (out, script)
-            log_error_and_raise(message, NoSuccess, self._logger)
+            raise NoSuccess("Error running job via 'condor_submit': %s."
+                            "Script was: %s" % (out, script))
         else:
             # stdout contains the job id
             for line in out.split("\n"):
@@ -698,9 +685,8 @@ class CondorJobService (cpi.job.Service):
                 egrep=['^JobStatus', '^ExitStatus', '^CompletionDate'])
 
         if ret != 0:
-            message = "Couldn't reconnect to job '%s':\n[%s]\n[%s]" % \
-                    (job_id, out, err)
-            log_error_and_raise(message, NoSuccess, self._logger)
+            raise NoSuccess("Couldn't reconnect to job '%s':\n[%s]\n[%s]"
+                            % (job_id, out, err))
 
         else:
             # the job seems to exist on the backend. let's gather some data
@@ -863,8 +849,7 @@ class CondorJobService (cpi.job.Service):
 
         # if we don't have the job in our dictionary, we don't want it
         if job_id not in self.jobs:
-            message = "Unknown job ID: %s. Can't update state." % job_id
-            log_error_and_raise(message, NoSuccess, self._logger)
+            raise NoSuccess("Unknown job ID: %s." % job_id)
 
         info = self.jobs[job_id]
 
@@ -1315,8 +1300,7 @@ class CondorJobService (cpi.job.Service):
             % (self._commands['condor_rm'], pid))
 
         if ret != 0:
-            message = "Error canceling job via 'condor_rm': %s" % out
-            log_error_and_raise(message, NoSuccess, self._logger)
+            raise NoSuccess("Error canceling job via 'condor_rm': %s" % out)
 
         # assume the job was successfully canceled
         self.jobs[job_id]['state'] = CANCELED
@@ -1528,9 +1512,8 @@ class CondorJobService (cpi.job.Service):
 
         if ret != 0:
             # condor_submit went wrong
-            message = "Error running job via 'condor_submit': %s. Script was: %s" \
-                      % (out, script)
-            log_error_and_raise(message, NoSuccess, self._logger)
+            raise NoSuccess("Error running job via 'condor_submit': %s. "
+                            "Script was: %s" % (out, script))
 
         pids = []
         # stdout contains the job id
@@ -1726,8 +1709,8 @@ class CondorJob (cpi.job.Job):
         """ implements cpi.job.Job.wait()
         """
         if self._started is False:
-            log_error_and_raise("Can't wait for job that hasn't been started",
-                IncorrectState, self._logger)
+            raise IncorrectState("Can't wait for job that hasn't been started")
+
         else:
             self.js._job_wait(self._id, timeout)
 
@@ -1739,8 +1722,8 @@ class CondorJob (cpi.job.Job):
         """ implements cpi.job.Job.cancel()
         """
         if self._started is False:
-            log_error_and_raise("Can't wait for job that hasn't been started",
-                IncorrectState, self._logger)
+            raise IncorrectState("Can't wait for job that hasn't been started")
+
         else:
             self.js._job_cancel(self._id)
 

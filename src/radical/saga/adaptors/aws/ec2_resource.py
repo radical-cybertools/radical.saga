@@ -175,7 +175,7 @@ class Adaptor (a_base.Base):
             self._logger.warning ("Could not load libcloud module, "
                                   "disable EC2 resource adaptor")
             self._logger.warning (str(e))
-            raise rse.NoSuccess ("Cannot load libcloud")
+            raise rse.NoSuccess ("Cannot load libcloud") from e
 
 
     # --------------------------------------------------------------------------
@@ -749,7 +749,7 @@ class EC2ResourceManager (cpi_resource.Manager) :
 
         except Exception as e :
             # FIXME: translate errors more sensibly
-            raise rse.NoSuccess ("Failed with %s" % e)
+            raise rse.NoSuccess ("Failed with %s" % e) from e
 
         if  resource_info :
             if  rd.rtype == c.COMPUTE :
@@ -793,7 +793,7 @@ class EC2ResourceManager (cpi_resource.Manager) :
 
         except Exception as e :
             # FIXME: translate errors more sensibly
-            raise rse.NoSuccess ("Failed with %s" % e)
+            raise rse.NoSuccess ("Failed with %s" % e) from e
 
         return api_resource.Compute(_adaptor=self._adaptor,
                                     _adaptor_state=resource_info)
@@ -824,7 +824,7 @@ class EC2ResourceManager (cpi_resource.Manager) :
 
         except Exception as e :
             # FIXME: translate errors more sensibly
-            raise rse.NoSuccess ("Failed with %s" % e)
+            raise rse.NoSuccess ("Failed with %s" % e) from e
 
         return ret
 

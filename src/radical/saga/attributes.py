@@ -552,9 +552,9 @@ class Attributes (_AttributesBase, ru.DictMixin) :
             try :
                 d['attributes'][key]['recursion'] = True
                 key_setter (val)
-            except Exception as e :
+            except:
                 can_ignore -= 1
-                if not can_ignore : raise e
+                if not can_ignore : raise
             finally :
                 d['attributes'][key]['recursion'] = False
 
@@ -622,7 +622,7 @@ class Attributes (_AttributesBase, ru.DictMixin) :
                 d['attributes'][key]['recursion'] = True
                 val=all_getter (key)
                 d['attributes'][key]['value'] = val
-            except Exception as e :
+            except Exception:
                 retries -= 1
                 if not retries : raise
             finally :
@@ -633,7 +633,7 @@ class Attributes (_AttributesBase, ru.DictMixin) :
                 d['attributes'][key]['recursion'] = True
                 val=key_getter ()
                 d['attributes'][key]['value'] = val
-            except Exception as e :
+            except Exception:
                 retries -= 1
                 if not retries : raise
             finally :
@@ -945,7 +945,8 @@ class Attributes (_AttributesBase, ru.DictMixin) :
             elif t == STRING : return str   (val)
             else             : return        val
         except ValueError as e:
-            raise se.BadParameter ("attribute value %s has incorrect type: %s" %  (key, val))
+            raise se.BadParameter ("attribute value %s has incorrect type: %s" %  (key, val)) \
+                  from e
 
         # we should never get here...
         raise se.BadParameter ("Cannot evaluate attribute type (%s) : %s"  %  (key, str(t)))
