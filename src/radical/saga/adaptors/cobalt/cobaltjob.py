@@ -619,7 +619,6 @@ class CobaltJobService (cpi_job.Service):
                 ret, out, _ = self.shell.run_sync("%s --version" % cmd)
 
                 if ret != 0:
-                    message =
                     raise rse.NoSuccess("Error finding Cobalt tools: %s" % out)
 
                 else:
