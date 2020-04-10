@@ -366,6 +366,13 @@ class SLURMJobService(cpi.Service):
         elif 'frontera' in self.rm.host.lower():
             self._ppn = 56
 
+        elif 'comet' in self.rm.host.lower():
+            self._ppn = 24
+
+        elif 'longhorn' in self.rm.host.lower():
+            # FIXME: other option - get it later by `processes_per_host`
+            self._ppn = 40
+
         self._logger.info("ppn: %s", self._ppn)
 
 
