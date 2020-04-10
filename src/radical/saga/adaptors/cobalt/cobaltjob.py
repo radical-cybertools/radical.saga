@@ -131,7 +131,7 @@ def _cobalt_to_saga_jobstate(cobaltjs):
 # ------------------------------------------------------------------------------
 #
 def _cobaltscript_generator(url, logger, jd, ppn, is_cray=False, queue=None,
-                            run_job='/usr/bin/runjob'):
+        run_job=None):
     """
     Generates Cobalt-style 'qsub' command arguments from a SAGA job description
     """
@@ -155,6 +155,8 @@ def _cobaltscript_generator(url, logger, jd, ppn, is_cray=False, queue=None,
         cobalt_params += '#COBALT --jobname %s\n' % jd.name
 
     if jd.working_directory:
+        if not os.path.isabs(jd.working_directory):
+            jd.working_directory = '$HOME/%s' % jd.working_directory
         cobalt_params += '#COBALT --cwd %s\n' % jd.working_directory
 
     # a workaround is to do an explicit 'cd'
@@ -239,36 +241,36 @@ def _cobaltscript_generator(url, logger, jd, ppn, is_cray=False, queue=None,
         logger.debug("number_of_processes not specified. default: 1 per node")
         number_of_processes = number_of_nodes
 
-    # Get number of processes per host/node
-    # Defaults to processes_per_host = 1
-    if jd.attribute_exists("processes_per_host"):
-        processes_per_host = jd.processes_per_host
-    else:
-        logger.debug("processes_per_host not specified -- default to 1")
-        processes_per_host = 1
-
-    # Need to make sure that the 'processes_per_host' is a valid one
-    # Blue Gene/Q valid modes ==> [1, 2, 4, 8, 16, 32, 64]
-    # At the Blue Gene/Q, 1 Node == 16 Cores
-    # and can handle UP TO 4 tasks per CPU/Core == 64 tasks
-    #
-    # References:
-    #   http://www.alcf.anl.gov/user-guides/cobalt-job-control
-    #   https://www.alcf.anl.gov/user-guides/blue-geneq-versus-blue-genep
-    if processes_per_host not in blue_gene_q_modes:
-        raise rse.BadParameter("#procs per host %d incompatible with #nodes %d"
-                              % (processes_per_host, blue_gene_q_modes),
-
-    # Make sure we aren't doing funky math
-    # References:
-    #   http://www.alcf.anl.gov/user-guides/machine-partitions
-    #   the --proccount flag value must be <= nodecount * mode
-    if  number_of_processes > (number_of_nodes * processes_per_host):
-        raise rse.NoSuccess("number_of_procs (%d) must be <= to"
-                            "(number_of_nodes * procs_per_host) (%d * %d = %d)"
-                           % (number_of_processes, number_of_nodes,
-                              processes_per_host,
-                              number_of_nodes * processes_per_host))
+  # # Get number of processes per host/node
+  # # Defaults to processes_per_host = 1
+  # if jd.attribute_exists("processes_per_host"):
+  #     processes_per_host = jd.processes_per_host
+  # else:
+  #     logger.debug("processes_per_host not specified -- default to 1")
+  #     processes_per_host = 1
+  #
+  # # Need to make sure that the 'processes_per_host' is a valid one
+  # # Blue Gene/Q valid modes ==> [1, 2, 4, 8, 16, 32, 64]
+  # # At the Blue Gene/Q, 1 Node == 16 Cores
+  # # and can handle UP TO 4 tasks per CPU/Core == 64 tasks
+  # #
+  # # References:
+  # #   http://www.alcf.anl.gov/user-guides/cobalt-job-control
+  # #   https://www.alcf.anl.gov/user-guides/blue-geneq-versus-blue-genep
+  # if processes_per_host not in blue_gene_q_modes:
+  #     log_error_and_raise("#processes per host %d incompatible with #nodes %d"
+  #                        % (processes_per_host, blue_gene_q_modes),
+  #                           rse.BadParameter, logger)
+  #
+  # # Make sure we aren't doing funky math
+  # # References:
+  # #   http://www.alcf.anl.gov/user-guides/machine-partitions
+  # #   the --proccount flag value must be <= nodecount * mode
+  # if  number_of_processes > (number_of_nodes * processes_per_host):
+  #     log_error_and_raise (("number_of_processes (%d) must be <= to"
+  #         "(number_of_nodes * processes_per_host) (%d * %d = %d)")
+  #         % (number_of_processes, number_of_nodes, processes_per_host,
+  #             (number_of_nodes * processes_per_host)), rse.NoSuccess, logger)
 
     # Other funky math checks should go here ~
 
@@ -302,15 +304,11 @@ def _cobaltscript_generator(url, logger, jd, ppn, is_cray=False, queue=None,
     # Set the MPI rank per node (mode).
     #   mode --> c1, c2, c4, c8, c16, c32, c64
     #   Mode is represented by the runjob's '--ranks-per-node' flag
-    exec_n_args = ("%s --ranks-per-node %d --np %d --block $COBALT_PARTNAME"
-                   "--verbose=INFO : %s\n") \
-                % (run_job, processes_per_host, number_of_processes,
-                   exec_n_args)
     exec_n_args = exec_n_args.replace('$', '\\$')
 
     # Need a new line before the shebang because linux is a bit of a pain when
     # echoing it.  It will be removed later though...
-    cobaltscript = "\n#!/bin/bash \n%s\n%s" % (cobalt_params, exec_n_args)
+    cobaltscript = "\n#!/bin/bash\n%s\n%s\n\n" % (cobalt_params, exec_n_args)
     cobaltscript = cobaltscript.replace('"', '\\"')
     return cobaltscript
 
@@ -533,7 +531,7 @@ class CobaltJobService (cpi_job.Service):
         """
         self.rm      = rm_url
         self.session = session
-        self.ppn     = 16       # DEFAULT MIRA -- BLUE GENE / Q IS 16
+        self.ppn     = 64       # DEFAULT Theta
         self.is_cray = ""
         self.queue   = None
         self.shell   = None
@@ -575,7 +573,7 @@ class CobaltJobService (cpi_job.Service):
                           'qstat':    None,
                           'qsub':     None,
                           'qdel':     None,
-                          'runjob':   None  # For running scripts
+                        # 'runjob':   None  # For running scripts
                           }
 
         self.shell = rsups.PTYShell(pty_url, self.session)
@@ -621,7 +619,6 @@ class CobaltJobService (cpi_job.Service):
                 ret, out, _ = self.shell.run_sync("%s --version" % cmd)
 
                 if ret != 0:
-                    message =
                     raise rse.NoSuccess("Error finding Cobalt tools: %s" % out)
 
                 else:
@@ -665,7 +662,8 @@ class CobaltJobService (cpi_job.Service):
                                    jd=jd,
                                    ppn=self.ppn,
                                    queue=self.queue,
-                                   run_job=self._commands['runjob']['path']
+                                   is_cray=False,
+                                   run_job=self._commands['qsub']['path']
                                   )
             self._logger.info("Generated Cobalt script: %s" % str(script))
         except Exception as e:
