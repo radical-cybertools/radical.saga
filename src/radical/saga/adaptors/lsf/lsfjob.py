@@ -71,8 +71,8 @@ class _job_state_monitor(threading.Thread):
             try:
                 # do bulk updates here! we don't want to pull information
                 # job by job. that would be too inefficient!
-                for job in self.js._jobs:
-                    job_info = self.js._jobs[job]
+                for job_id in self.js._jobs:
+                    job_info = self.js._jobs[job_id]
 
                     # if the job hasn't been started, we can't update its
                     # state. we can tell if a job has been started if it
@@ -84,17 +84,19 @@ class _job_state_monitor(threading.Thread):
                         state = job_info['state']
                         if state not in [api.DONE, api.FAILED, api.CANCELED]:
 
-                            new_info = self.js._job_get_info(job)
+                            new_info = self.js._job_get_info(job_id)
 
                             if new_info['state'] != state:
                                 # fire job state callback if 'state' has changed
                                 self.logger.info('update Job %s (state: %s)'
-                                                % (job, new_info['state']))
-                                job._api()._attributes_i_set('state',
-                                        new_info['state'], job._api()._UP, True)
+                                                % (job_id, new_info['state']))
+                                job_obj = new_info['obj']
+                                if job_obj:
+                                    job_obj._attributes_i_set('state',
+                                        new_info['state'], job_obj._UP, True)
 
                             # replace job info
-                            self.js._jobs[job] = new_info
+                            self.js._jobs[job_id] = new_info
 
                 time.sleep(MONITOR_UPDATE_INTERVAL)
 
@@ -169,12 +171,6 @@ def _lsfscript_generator(url, logger, jd, ppn, lsf_version):
         for k,v in jd.environment.items():
             env_string += ' %s=%s' % (k,v)
 
-
-    env_variable_list = 'export RADICAL_SAGA_SMT=%d' % SMT
-    if jd.environment:
-        for key in jd.environment:
-            env_variable_list += ' %s=%s ' % (key, jd.environment[key])
-
     # a workaround is to do an explicit 'cd'
     if jd.working_directory is not None:
         lsf_params += '#BSUB -cwd %s \n' % jd.working_directory
@@ -247,7 +243,7 @@ def _lsfscript_generator(url, logger, jd, ppn, lsf_version):
     # only escape '$' in args and exe. not in the params
     exec_n_args = exec_n_args.replace('$', '\\$')
 
-    lsf_bsubs += '#BSUB -nnodes %s \n' % str(nodes)
+    lsf_bsubs += '#BSUB -nnodes %s \n' % str(cpu_nodes)
     lsf_bsubs += '#BSUB -alloc_flags "gpumps smt%d" \n' % SMT
 
     # escape double quotes and dollar signs, otherwise 'echo |'
@@ -437,6 +433,7 @@ class LSFJobService(cpi.Service):
     # --------------------------------------------------------------------------
     #
     def finalize(self, kill_shell=False):
+        # NOTE: kill_shell parameter is left inactive for backward compatibility
 
         if  self._shell:
             self._shell.finalize(True)
@@ -460,9 +457,6 @@ class LSFJobService(cpi.Service):
         # the monitoring thread - one per service instance
         self._monitor = _job_state_monitor(job_service=self)
         self._monitor.start()
-
-        rm_scheme = rm_url.scheme
-        pty_url   = ru.Url(rm_url)
 
         # this adaptor supports options that can be passed via the
         # 'query' component of the job service URL.
@@ -524,7 +518,6 @@ class LSFJobService(cpi.Service):
                 else:
                     # version is reported as: "version: x.y.z"
                     version = out.split("\n")[0]
->>>>>>> devel
 
         _, out, _ = self._shell.run_sync('bsub -V 2>&1 | cut -f 1')
         self._version = out.split()[1].strip()
@@ -562,11 +555,12 @@ class LSFJobService(cpi.Service):
 
     # --------------------------------------------------------------------------
     #
-    def _job_run(self, jd):
+    def _job_run(self, job_obj):
         '''
         runs a job via qsub
         '''
         # get the job description
+        js       = job_obj.jd
         job_name = jd.name
 
         # normalize working directory path
@@ -611,7 +605,6 @@ class LSFJobService(cpi.Service):
 
         # parse the job id. bsub's output looks like this:
         # Job <901545> is submitted to queue <regular>
-        lines = out.split('\n')
         lines = out.split("\n")
         lines = [line.strip() for line in lines if line.strip()]
 
@@ -631,7 +624,8 @@ class LSFJobService(cpi.Service):
 
         # populate job info dict
         state = api.PENDING
-        self._jobs[job_id] = {'job_id'      : job_id,
+        self._jobs[job_id] = {'obj'         : job_obj,
+                              'job_id'      : job_id,
                               'name'        : job_name,
                               'state'       : state,
                               'exec_hosts'  : None,
@@ -653,6 +647,10 @@ class LSFJobService(cpi.Service):
         see if we can get some info about a job that we don't
             know anything about
         '''
+        if job_id in self.jobs:
+            job_info = self.jobs[job_id]
+            return [job_info, job_info['obj'].jd]
+
         rm, pid = self._adaptor.parse_id(job_id)
 
         # bjobs -noheader -o 'stat exec_host exit_code submit_time start_time
@@ -693,6 +691,7 @@ class LSFJobService(cpi.Service):
         if results[0] != '-': job_info['returncode'] = int(results[0])
         else                : job_info['returncode'] = None
 
+        job_info['obj']         = None
         job_info['state']       = _lsf_to_saga_jobstate(results[1])
         job_info['exec_hosts']  = results[2]
         job_info['create_time'] = results[3]
@@ -1076,7 +1075,7 @@ class LSFJob(cpi.job.Job):
         implements cpi.job.Job.run()
         '''
 
-        self._id = self.js._job_run(self.jd)
+        self._id = self.js._job_run(self)
 
         # trigger state callback
         self._attributes_i_set('state', api.PENDING, self._UP, True)
@@ -1139,7 +1138,7 @@ class LSFJob(cpi.job.Job):
         if not self._started:
             return None
 
-        return self.js._job_get_exit_code(self)
+        return self.js._job_get_exit_code(job_id=self._id)
 
 
     # --------------------------------------------------------------------------
@@ -1153,7 +1152,7 @@ class LSFJob(cpi.job.Job):
         if not self._started:
             return None
 
-        return self.js._job_get_create_time(self)
+        return self.js._job_get_create_time(job_id=self._id)
 
 
     # --------------------------------------------------------------------------
@@ -1167,7 +1166,7 @@ class LSFJob(cpi.job.Job):
         if not self._started:
             return None
 
-        return self.js._job_get_start_time(self)
+        return self.js._job_get_start_time(job_id=self._id)
 
 
     # --------------------------------------------------------------------------
@@ -1182,7 +1181,7 @@ class LSFJob(cpi.job.Job):
             return None
 
         # FIXME: convert to EPOCH
-        return self.js._job_get_end_time(self)
+        return self.js._job_get_end_time(job_id=self._id)
 
 
     # --------------------------------------------------------------------------
@@ -1196,7 +1195,7 @@ class LSFJob(cpi.job.Job):
         if not self._started:
             return None
 
-        return self.js._job_get_execution_hosts(self)
+        return self.js._job_get_execution_hosts(job_id=self._id)
 
 
 # ------------------------------------------------------------------------------
