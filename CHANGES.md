@@ -4,6 +4,13 @@ For a list of open issues and known problems, see:
 https://github.com/radical-cybertools/radical.saga/issues
 
 
+Version 1.4.0 Release                                                 2020-05-12
+--------------------------------------------------------------------------------
+
+  - merge #782: Lassen support
+  - support for Frontera's RTX queue
+
+      
 Version 1.3.0 Release                                                 2020-04-10
 --------------------------------------------------------------------------------
 
