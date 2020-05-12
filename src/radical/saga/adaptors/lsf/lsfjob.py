@@ -229,10 +229,12 @@ def _lsfscript_generator(url, logger, jd, ppn, lsf_version):
 
     if   'summitdev' in hostname: cpn = 20 * SMT
     elif 'summit'    in hostname: cpn = 42 * SMT
+    elif 'lassen'    in hostname: cpn = 40 * SMT
     else: raise ValueError('LSF host (%s) not yet supported' % hostname)
 
     if   'summitdev' in hostname: gpn = 4
     elif 'summit'    in hostname: gpn = 6
+    elif 'lassen'    in hostname: gpn = 4
 
     cpu_nodes = int(total_cpu_count / cpn)
     if total_cpu_count > (cpu_nodes * cpn):
