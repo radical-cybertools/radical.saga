@@ -560,6 +560,10 @@ class SLURMJobService(cpi_job.Service):
             elif 'frontera'  in self.rm.host.lower() or \
                  'rhea'      in self.rm.host.lower():
 
+                if queue and 'frontera' in self.rm.host.lower() and \
+                        'rtx' in queue.lower():
+                    self._ppn = 16  # other option is to use: processes_per_host
+
                 assert(self._ppn), 'need unique number of cores per node'
                 n_nodes = int(math.ceil(float(cpu_count) / self._ppn))
                 script += "#SBATCH -N %d\n" % n_nodes
