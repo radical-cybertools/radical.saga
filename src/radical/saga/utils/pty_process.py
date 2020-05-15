@@ -758,13 +758,13 @@ class PTYProcess (object) :
                     if  _debug : print((">>%s<<" % data))
 
                     escaped = escape (data)
-                    if _debug : print(('data    ==%s==' % data))
-                    if _debug : print(('escaped ==%s==' % escaped))
+                    if _debug : print(('data    ==%s==' % ascii(data)))
+                    if _debug : print(('escaped ==%s==' % ascii(escaped)))
 
                     # check current data for any matching pattern
                     for n in range (0, len(patts)) :
 
-                        escaped = data
+                      # escaped = data
                       # escaped = escape (data)
                       # print('-- 1 --%s--' % data)
                       # print('-- 2 --%s--' % escaped)
