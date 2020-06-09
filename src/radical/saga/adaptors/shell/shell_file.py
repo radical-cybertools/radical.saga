@@ -518,7 +518,8 @@ class ShellDirectory(cpi_fs.Directory):
         if  rsumisc.url_is_compatible(cwdurl, src) and \
             rsumisc.url_is_compatible(cwdurl, tgt):
 
-            if  flags & c.CREATE_PARENTS:
+            if  flags & c.CREATE or \
+                flags & c.CREATE_PARENTS:
                 self._create_parent(cwdurl, tgt)
 
             ret, out, err = self._command(" cp %s '%s' '%s'\n"
@@ -535,7 +536,8 @@ class ShellDirectory(cpi_fs.Directory):
 
             # for a remote target, we need to manually create the target dir (if
             # needed)
-            if  flags & c.CREATE_PARENTS:
+            if  flags & c.CREATE or \
+                flags & c.CREATE_PARENTS:
                 self._create_parent(cwdurl, tgt)
 
 
@@ -641,7 +643,8 @@ class ShellDirectory(cpi_fs.Directory):
         if  flags & c.RECURSIVE:
             raise rse.BadParameter("'RECURSIVE' flag not  supported for link()")
 
-        if  flags & c.CREATE_PARENTS:
+        if  flags & c.CREATE or \
+            flags & c.CREATE_PARENTS:
             self._create_parent(cwdurl, tgt)
 
         # if src and tgt point to the same host, we just run a shell link
