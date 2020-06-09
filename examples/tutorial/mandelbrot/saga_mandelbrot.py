@@ -10,7 +10,7 @@ import time
 
 from PIL import Image
 
-import radica.saga as rs
+import radical.saga as rs
 
 
 #-----------------------------------------------------------------------------
