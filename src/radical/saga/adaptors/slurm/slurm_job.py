@@ -554,6 +554,10 @@ class SLURMJobService(cpi_job.Service):
             n_nodes = int(math.ceil(float(cpu_count) / self._ppn))
             memory_per_node = int(memory_per_node / float(n_nodes))
 
+        elif total_memory:
+            raise rse.NotImplemented(
+                'cannot allocate memory, node number unknown')
+
         if spmd_variation:
             if spmd_variation.lower() not in 'mpi':
                 raise rse.BadParameter("Slurm cannot handle spmd variation '%s'"
