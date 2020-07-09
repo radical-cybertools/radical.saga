@@ -402,10 +402,8 @@ class SLURMJobService(cpi_job.Service):
             self._ppn = 32
 
         elif 'frontera' in self.rm.host.lower():
-            if 'rtx' in self.rm.queue:
-                self._ppn = 16
-            else
-                self._ppn = 56
+            # not that this is incorrect for the rtx queue
+            self._ppn = 56
 
         elif 'comet' in self.rm.host.lower():
             self._ppn = 24
