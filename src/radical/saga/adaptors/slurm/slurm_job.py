@@ -539,8 +539,20 @@ class SLURMJobService(cpi_job.Service):
         if not n_procs:
             n_procs = cpu_count
 
-        # get `memory_per_node` from `total_memory` and make sure it is not None
+        # get memory_per_node from total_memory and make sure it is not None
         memory_per_node = total_memory or 0
+
+        # define n_nodes and recalculate memory_per_node (if self._ppn is set)
+        n_nodes = None
+        if self._ppn:
+
+            # exception(s) for earlier defined `self._ppn`
+            if 'frontera' in self.rm.host.lower() and \
+                    queue and 'rtx' in queue.lower():
+                self._ppn = 16  # other option is to use: processes_per_host
+
+            n_nodes = int(math.ceil(float(cpu_count) / self._ppn))
+            memory_per_node = int(memory_per_node / float(n_nodes))
 
         if spmd_variation:
             if spmd_variation.lower() not in 'mpi':
@@ -555,34 +567,21 @@ class SLURMJobService(cpi_job.Service):
             if  'stampede2' in self.rm.host.lower() or \
                 'longhorn'  in self.rm.host.lower():
 
-                assert(self._ppn), 'need unique number of cores per node'
-                n_nodes = int(math.ceil(float(cpu_count) / self._ppn))
+                assert(n_nodes), 'need unique number of cores per node'
                 script += "#SBATCH -N %d\n" % n_nodes
                 script += "#SBATCH -n %s\n" % n_procs
-
-                memory_per_node = int(memory_per_node / float(n_nodes))
 
             elif 'frontera'  in self.rm.host.lower() or \
                  'rhea'      in self.rm.host.lower():
 
-                if queue and 'frontera' in self.rm.host.lower() and \
-                        'rtx' in queue.lower():
-                    self._ppn = 16  # other option is to use: processes_per_host
-
-                assert(self._ppn), 'need unique number of cores per node'
-                n_nodes = int(math.ceil(float(cpu_count) / self._ppn))
+                assert(n_nodes), 'need unique number of cores per node'
                 script += "#SBATCH -N %d\n" % n_nodes
-
-                memory_per_node = int(memory_per_node / float(n_nodes))
 
             elif self._version in ['17.11.5', '18.08.0', '18.08.3']:
 
-                assert(self._ppn), 'need unique number of cores per node'
-                n_nodes = int(math.ceil(float(cpu_count) / self._ppn))
+                assert(n_nodes), 'need unique number of cores per node'
                 script += "#SBATCH -N %d\n" % n_nodes
                 script += "#SBATCH --ntasks=%s\n" % n_procs
-
-                memory_per_node = int(memory_per_node / float(n_nodes))
 
             else:
                 script += "#SBATCH --ntasks=%s\n" % n_procs
@@ -601,9 +600,8 @@ class SLURMJobService(cpi_job.Service):
 
             if gpu_count:
                 # gres resources are specified *per node*
-                assert(self._ppn), 'need unique number of cores per node'
-                number_of_nodes = int(math.ceil(float(cpu_count) / self._ppn))
-                count = int(gpu_count / number_of_nodes)
+                assert(n_nodes), 'need unique number of cores per node'
+                count = int(gpu_count / n_nodes)
 
                 if count:
                     if cpu_arch: gpu_arch = cpu_arch.lower()
@@ -613,19 +611,15 @@ class SLURMJobService(cpi_job.Service):
             # use '-C EGRESS' to enable outbound network
             script += "#SBATCH -C EGRESS\n"
 
-
         elif 'tiger' in self.rm.host.lower():
 
             if gpu_count:
-
                 # gres resources are specified *per node*
-                assert(self._ppn), 'need unique number of cores per node'
-                number_of_nodes = int(math.ceil(float(cpu_count) / self._ppn))
-                count = int(gpu_count / number_of_nodes)
+                assert(n_nodes), 'need unique number of cores per node'
+                count = int(gpu_count / n_nodes)
 
                 if count:
                     script += "#SBATCH --gres=gpu:%s\n" % count
-
 
         elif 'cori' in self.rm.host.lower():
 
@@ -637,7 +631,6 @@ class SLURMJobService(cpi_job.Service):
         else:
 
             if gpu_count: script += "#SBATCH --gpus=%s\n" % gpu_count
-
 
         if cwd:
             if 'frontera' in self.rm.host.lower() or \
