@@ -399,7 +399,10 @@ class SLURMJobService(cpi_job.Service):
             self._ppn = 68
 
         elif 'frontera' in self.rm.host.lower():
-            self._ppn = 56
+            if 'rtx' in self.rm.queue:
+                self._ppn = 16
+            else
+                self._ppn = 56
 
         elif 'comet' in self.rm.host.lower():
             self._ppn = 24
@@ -494,6 +497,7 @@ class SLURMJobService(cpi_job.Service):
         cpu_arch            = jd.as_dict().get(c.CPU_ARCHITECTURE)
         job_contact         = jd.as_dict().get(c.JOB_CONTACT)
         c_hosts             = jd.as_dict().get(c.CANDIDATE_HOSTS)
+
 
         # check to see what's available in our job description
         # to override defaults
