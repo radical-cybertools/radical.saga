@@ -425,7 +425,7 @@ class PTYShellFactory (object, metaclass=ru.Singleton) :
 
             except Exception as e :
                 logger.exception(e)
-                raise ptye.translate_exception (e)
+                raise ptye.translate_exception (e) from e
 
 
     # --------------------------------------------------------------------------

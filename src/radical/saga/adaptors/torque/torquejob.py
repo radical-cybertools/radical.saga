@@ -42,14 +42,14 @@ class _job_state_monitor(threading.Thread):
 
         self.logger = job_service._logger
         self.js = job_service
-        self._stop = threading.Event()
+        self._term = threading.Event()
 
         super(_job_state_monitor, self).__init__()
         self.setDaemon(True)
 
 
     def stop(self):
-        self._stop.set()
+        self._term.set()
 
 
     def run(self):
@@ -58,7 +58,7 @@ class _job_state_monitor(threading.Thread):
         # a row...
         error_type_count = dict()
 
-        while not self._stop.is_set ():
+        while not self._term.is_set ():
 
             try:
                 # FIXME: do bulk updates here! we don't want to pull information
@@ -113,15 +113,6 @@ class _job_state_monitor(threading.Thread):
 
             finally :
                 time.sleep (MONITOR_UPDATE_INTERVAL)
-
-
-# --------------------------------------------------------------------
-#
-def log_error_and_raise(message, exception, logger):
-    """ logs an 'error' message and subsequently throws an exception
-    """
-    logger.error(message)
-    raise exception(message)
 
 
 # --------------------------------------------------------------------
@@ -659,8 +650,7 @@ class TORQUEJobService (cpi.Service):
         ret, out, _ = self.shell.run_sync("qstat --version")
 
         if ret:
-            message = "Error finding PBS tools: %s" % out
-            log_error_and_raise(message, rse.NoSuccess, self._logger)
+            raise rse.NoSuccess("Error finding PBS tools: %s" % out)
 
         self._pbs_version = out.strip()
         self._logger.info("Found PBS version: %s" % self._pbs_version)
@@ -714,8 +704,7 @@ class TORQUEJobService (cpi.Service):
                           % self._commands['pbsnodes'])
 
         if ret != 0:
-            message = "Error running pbsnodes: %s" % out
-            log_error_and_raise(message, rse.NoSuccess, self._logger)
+            raise rse.NoSuccess("Error running pbsnodes: %s" % out)
         else:
             # this is black magic. we just assume that the highest occurrence
             # of a specific np is the number of processors (cores) per compute
@@ -767,8 +756,8 @@ class TORQUEJobService (cpi.Service):
                                    )
 
             self._logger.info("Generated PBS script: %s" % script)
-        except Exception as ex:
-            log_error_and_raise(str(ex), rse.BadParameter, self._logger)
+        except Exception as e:
+            raise rse.BadParameter('error generating pbs script') from e
 
         # try to create the working directory (if defined)
         # WARNING: this assumes a shared filesystem between login node and
@@ -779,8 +768,7 @@ class TORQUEJobService (cpi.Service):
                                              % jd.working_directory)
             if ret != 0:
                 # something went wrong
-                message = "Couldn't create working directory - %s" % (out)
-                log_error_and_raise(message, rse.NoSuccess, self._logger)
+                raise rse.NoSuccess("Couldn't create workdir - %s" % out)
 
         # Now we want to execute the script. This process consists of two steps:
         # (1) we create a temporary file with 'mktemp' and write the contents of
@@ -797,9 +785,7 @@ class TORQUEJobService (cpi.Service):
 
         if ret != 0:
             # something went wrong
-            message = "Error running job via 'qsub': %s. Commandline was: %s" \
-                % (out, cmdline)
-            log_error_and_raise(message, rse.NoSuccess, self._logger)
+            raise rse.NoSuccess("Error running qsub: %s: %s" % (out, cmdline))
         else:
             # parse the job id. qsub usually returns just the job id, but
             # sometimes there are a couple of lines of warnings before.
@@ -848,8 +834,7 @@ class TORQUEJobService (cpi.Service):
         # If we don't have the job in our dictionary, we don't want it,
         # unless we are trying to reconnect.
         if not reconnect and job_id not in self.jobs:
-            message = "Unknown job id: %s. Can't update state." % job_id
-            log_error_and_raise(message, rse.NoSuccess, self._logger)
+            raise rse.NoSuccess("Unknown job id: %s" % job_id)
 
         if not reconnect:
             # job_info contains the info collect when _job_get_info
@@ -1033,12 +1018,10 @@ class TORQUEJobService (cpi.Service):
 
             else:
                 if reconnect:
-                    log_error_and_raise("Couldn't reconnect to '%s'" % job_id,
-                                        rse.NoSuccess, self._logger)
+                    raise rse.NoSuccess("Couldn't reconnect to '%s'" % job_id)
 
                 else:
-                    log_error_and_raise("Error retrieving info for %s" % job_id,
-                                        rse.NoSuccess, self._logger)
+                    raise rse.NoSuccess("Error retrieving info for %s" % job_id)
 
         # return the updated job info
         return job_info
@@ -1108,8 +1091,7 @@ class TORQUEJobService (cpi.Service):
                                        % (self._commands['qdel'], pid))
 
         if ret != 0:
-            message = "Error canceling job via 'qdel': %s" % out
-            log_error_and_raise(message, rse.NoSuccess, self._logger)
+            raise rse.NoSuccess("Error canceling job via 'qdel': %s" % out)
 
         # assume the job was succesfully canceled
         self.jobs[job_id]['state'] = api.CANCELED
@@ -1220,8 +1202,7 @@ class TORQUEJobService (cpi.Service):
                                      % self._commands['qstat'])
 
         if ret != 0 and len(out) > 0:
-            message = "failed to list jobs via 'qstat': %s" % out
-            log_error_and_raise(message, rse.NoSuccess, self._logger)
+            raise rse.NoSuccess("failed to list jobs via 'qstat': %s" % out)
         elif ret != 0 and len(out) == 0:
             # qstat | grep `` exits with 1 if the list is empty
             pass
@@ -1332,8 +1313,7 @@ class TORQUEJob (cpi.Job):
         """
 
         if self._started is False:
-            log_error_and_raise("Can't wait for job that hasn't been started",
-                rse.IncorrectState, self._logger)
+            raise rse.IncorrectState("Can't wait for job that hasn't been started")
         else:
             self.js._job_wait(job_id=self._id, timeout=timeout)
 
@@ -1346,8 +1326,7 @@ class TORQUEJob (cpi.Job):
         """
 
         if self._started is False:
-            log_error_and_raise("Can't wait for job that hasn't been started",
-                rse.IncorrectState, self._logger)
+            raise rse.IncorrectState("Can't wait for job that hasn't been started")
         else:
             self.js._job_cancel(self._id)
 

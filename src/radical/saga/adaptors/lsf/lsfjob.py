@@ -51,7 +51,7 @@ class _job_state_monitor(threading.Thread):
 
         self.logger = job_service._logger
         self.js     = job_service
-        self._stop  = threading.Event()
+        self._term  = threading.Event()
 
         super(_job_state_monitor, self).__init__()
         self.setDaemon(True)
@@ -61,15 +61,17 @@ class _job_state_monitor(threading.Thread):
     #
     def stop(self):
 
-        self._stop.set()
+        self.logger.info('stop  thread for %s', self.js.get_url())
+        self._term.set()
 
 
     # --------------------------------------------------------------------------
     #
     def run(self):
 
-        while not self._stop.isSet():
-
+        self.logger.info('start thread for %s', self.js.get_url())
+        while not self._term.isSet():
+        
             try:
                 # do bulk updates here! we don't want to pull information
                 # job by job. that would be too inefficient!
@@ -108,8 +110,11 @@ class _job_state_monitor(threading.Thread):
 
                 time.sleep(MONITOR_UPDATE_INTERVAL)
 
-            except Exception:
+            except Exception as e:
                 self.logger.exception("job monitoring thread failed")
+                break
+
+        self.logger.info('close thread for %s', self.js.get_url())
 
 
 # ------------------------------------------------------------------------------
@@ -204,10 +209,12 @@ def _lsfscript_generator(url, logger, jd, ppn, lsf_version, queue):
 
     if   'summitdev' in hostname: cpn = 20 * SMT
     elif 'summit'    in hostname: cpn = 42 * SMT
+    elif 'lassen'    in hostname: cpn = 40 * SMT
     else: raise ValueError('LSF host (%s) not yet supported' % hostname)
 
     if   'summitdev' in hostname: gpn = 4
     elif 'summit'    in hostname: gpn = 6
+    elif 'lassen'    in hostname: gpn = 4
 
     cpu_nodes = int(total_cpu_count / cpn)
     if total_cpu_count > (cpu_nodes * cpn):
@@ -379,10 +386,11 @@ class LSFJobService(cpi.Service):
     def close(self):
 
         if  self.mt:
+            self._logger.info("stop   monitoring thread: %s", self.rm)
             self.mt.stop()
             self.mt.join(10)  # don't block forever on join()
 
-        self._logger.info("Job monitoring thread stopped.")
+        self._logger.info("stopped monitoring thread: %s", self.rm)
 
         self.finalize(True)
 
@@ -532,7 +540,7 @@ class LSFJobService(cpi.Service):
             self._logger.info("Generated LSF script: %s" % script)
 
         except Exception as e:
-            raise rse.BadParameter(str(e))
+            raise rse.BadParameter(str(e)) from e
 
         # try to create the working directory (if defined)
         # WARNING: this assumes a shared filesystem between login node and

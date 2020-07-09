@@ -175,7 +175,7 @@ class Engine(object, metaclass=ru.Singleton):
 
             except Exception as e:
                 self._logger.warning("skip adaptor %s: import failed (%s)",
-                                  module_name, e)
+                                     module_name, e, exc_info=True)
                 continue
 
             # we expect the module to have an 'Adaptor' class
@@ -190,12 +190,12 @@ class Engine(object, metaclass=ru.Singleton):
 
             except rse.SagaException:
                 self._logger.warning("skip adaptor %s: failed to load",
-                                  module_name, exc_info=True)
+                                     module_name, exc_info=True)
                 continue
 
             except Exception:
                 self._logger.warning("skip adaptor %s: init failed",
-                                  module_name, exc_info=True)
+                                     module_name, exc_info=True)
                 continue
 
 
@@ -208,14 +208,14 @@ class Engine(object, metaclass=ru.Singleton):
 
             except Exception:
                 self._logger.warning("skip adaptor %s: test failed",
-                                  module_name, exc_info=True)
+                                     module_name, exc_info=True)
                 continue
 
 
             # check if we have a valid adaptor_info
             if adaptor_info is None :
                 self._logger.warning("skip adaptor %s: invalid adaptor data",
-                                  module_name)
+                                     module_name)
                 continue
 
 
@@ -224,7 +224,7 @@ class Engine(object, metaclass=ru.Singleton):
                 'version' not in adaptor_info or \
                 'schemas' not in adaptor_info    :
                 self._logger.warning("skip adaptor %s: incomplete data",
-                                  module_name)
+                                     module_name)
                 continue
 
 
@@ -241,7 +241,7 @@ class Engine(object, metaclass=ru.Singleton):
                    'beta'  in adaptor_version.lower()    :
 
                     self._logger.warning("skip beta adaptor %s (version %s)",
-                                      module_name, adaptor_version)
+                                         module_name, adaptor_version)
                     continue
 
 
@@ -258,12 +258,12 @@ class Engine(object, metaclass=ru.Singleton):
 
             except rse.SagaException:
                 self._logger.warning("skip adaptor %s: init failed",
-                                  module_name, exc_info=True)
+                                     module_name, exc_info=True)
                 continue
 
             except Exception as e:
                 self._logger.warning("skip adaptor %s: init error",
-                                  module_name, exc_info=True)
+                                     module_name, exc_info=True)
                 continue
 
 
@@ -276,7 +276,7 @@ class Engine(object, metaclass=ru.Singleton):
             # check if the adaptor has anything to register
             if 0 == len (adaptor_info['cpis']) :
                 self._logger.warning("skip adaptor %s: adaptor has no cpis",
-                                  module_name)
+                                     module_name)
                 continue
 
 
@@ -288,7 +288,7 @@ class Engine(object, metaclass=ru.Singleton):
                 if  'type'  not in cpi_info or \
                     'class' not in cpi_info    :
                     self._logger.warning("skip %s cpi: incomplete info detail",
-                                      module_name)
+                                         module_name)
                     continue
 
 
@@ -304,8 +304,8 @@ class Engine(object, metaclass=ru.Singleton):
                     # this exception likely means that the adaptor does not call
                     # the radical.saga.adaptors.Base initializer (correctly)
                     self._logger.warning("skip adaptor %s: invalid %s",
-                                      module_name, cpi_info['class'],
-                                      exc_info=True)
+                                         module_name, cpi_info['class'],
+                                         exc_info=True)
                     continue
 
                 # make sure the cpi class is a valid cpi for the given type.
@@ -338,13 +338,13 @@ class Engine(object, metaclass=ru.Singleton):
                 if  len(cpi_type_nselems) < 3 or \
                     len(cpi_type_nselems) > 4    :
                     self._logger.warning("skip adaptor %s invalid cpi %s",
-                                      module_name, cpi_type)
+                                         module_name, cpi_type)
                     continue
 
                 if  cpi_type_nselems[0] != 'radical' and \
                     cpi_type_nselems[1] != 'saga'    :
                     self._logger.warning("skip adaptor %s: invalid cpi ns %s",
-                                      module_name, cpi_type, exc_info=True)
+                                         module_name, cpi_type, exc_info=True)
                     continue
 
                 # -> ['radical', 'saga',                    'job', 'Service']
@@ -374,7 +374,7 @@ class Engine(object, metaclass=ru.Singleton):
              #
              #  if  not cpi_type_modname :
              #      self._logger.warning("skip adaptor %s: unknown cpi %s",
-             #                        module_name, cpi_type, exc_info=True)
+             #                           module_name, cpi_type, exc_info=True)
              #      sys.exit()
              #      continue
              #
@@ -390,8 +390,8 @@ class Engine(object, metaclass=ru.Singleton):
              #
              #  if not cpi_ok :
              #      self._logger.warning("skip adaptor %s: no cpi %s (%s)",
-             #                        module_name, cpi_class, cpi_type,
-             #                       exc_info=True)
+             #                           module_name, cpi_class, cpi_type,
+             #                            exc_info=True)
              #      continue
 
 
@@ -422,8 +422,8 @@ class Engine(object, metaclass=ru.Singleton):
                     # make sure this tuple was not registered, yet
                     if info in self._adaptor_registry[cpi_type][adaptor_schema]:
                         self._logger.warning("skip adaptor %s: exists %s: %s",
-                                          module_name, cpi_class,
-                                          adaptor_instance, exc_info=True)
+                                             module_name, cpi_class,
+                                             adaptor_instance, exc_info=True)
                         continue
 
                     self._adaptor_registry[cpi_type] \

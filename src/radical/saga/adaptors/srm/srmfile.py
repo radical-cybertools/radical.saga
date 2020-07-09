@@ -97,9 +97,9 @@ class Adaptor(rsab.Base):
             # Following columns are displayed for each entry:
             # mode, number of links, group id, userid, size, last modification time, and name.
             rc, out, _ = shell.run_sync("gfal-ls --color never --timeout %d --long %s" % (CONNECTION_TIMEOUT, url))
-        except:
+        except Exception as e:
             shell.finalize(kill_pty=True)
-            raise Exception("get_size failed")
+            raise Exception("get_size failed") from e
 
         if rc != 0:
             if 'SRM_INVALID_PATH' in out:
@@ -125,9 +125,9 @@ class Adaptor(rsab.Base):
             # mode, number of links, group id, userid, size, last modification time, and name.
             rc, out, _ = shell.run_sync(
                 "gfal-ls --color never --timeout %d --directory --long %s" % (CONNECTION_TIMEOUT, url))
-        except:
+        except Exception as e:
             shell.finalize(kill_pty=True)
-            raise Exception("stat failed")
+            raise Exception("stat failed") from e
 
         if rc != 0:
             if 'SRM_INVALID_PATH' in out:
@@ -179,9 +179,9 @@ class Adaptor(rsab.Base):
         try:
             rc, out, _ = shell.run_sync('gfal-copy --parent --timeout %d --transfer-timeout %d %s %s' % (
                 OPERATION_TIMEOUT, TRANSFER_TIMEOUT, src, dst))
-        except:
+        except Exception as e:
             shell.finalize(kill_pty=True)
-            raise Exception("transfer failed")
+            raise Exception("transfer failed") from e
 
         if rc != 0:
             if 'SRM_INVALID_PATH' in out:
@@ -203,9 +203,9 @@ class Adaptor(rsab.Base):
 
         try:
             rc, out, _ = shell.run_sync("gfal-rm --timeout %d %s" % (CONNECTION_TIMEOUT, tgt))
-        except:
+        except Exception as e:
             shell.finalize(kill_pty=True)
-            raise Exception("remove failed")
+            raise Exception("remove failed") from e
 
         if rc != 0:
             if 'SRM_INVALID_PATH' in out:
@@ -227,9 +227,9 @@ class Adaptor(rsab.Base):
 
         try:
             rc, out, _ = shell.run_sync("gfal-rm --recursive %s" % tgt)
-        except:
+        except Exception as e:
             shell.finalize(kill_pty=True)
-            raise Exception("remove failed")
+            raise Exception("remove failed") from e
 
         if rc != 0:
             if 'SRM_INVALID_PATH' in out:
@@ -251,9 +251,9 @@ class Adaptor(rsab.Base):
 
         try:
             rc, out, _ = shell.run_sync("gfal-ls --color never --timeout %d %s" % (CONNECTION_TIMEOUT, url))
-        except:
+        except Exception as e:
             shell.finalize(kill_pty=True)
-            raise Exception("list failed")
+            raise Exception("list failed") from e
 
         if rc != 0:
             if 'SRM_INVALID_PATH' in out:
@@ -270,10 +270,10 @@ class Adaptor(rsab.Base):
 
         try:
             rc, out, _ = shell.run_sync("gfal-ls --color never --timeout %d --long %s" % (CONNECTION_TIMEOUT, url))
-        except:
+        except Exception as e:
             shell.finalize(kill_pty=True)
             # TODO: raise something else or catch better?
-            raise Exception("list failed")
+            raise Exception("list failed") from e
 
         if rc != 0:
             if 'SRM_INVALID_PATH' in out:
@@ -349,17 +349,18 @@ class SRMDirectory (cpi.Directory):
         try:
             # open a shell
             self.shell = sups.PTYShell(self._adaptor.pty_url, self.session)
-        except:
-            raise rse.BadParameter("Couldn't open shell (%s)" % self._adaptor.pty_url)
+        except Exception as e:
+            raise rse.BadParameter("Couldn't open shell (%s)" % self._adaptor.pty_url) \
+                  from e
 
         #
         # Test for valid proxy
         #
         try:
             rc, out, _ = self.shell.run_sync("grid-proxy-info")
-        except:
+        except Exception as e:
             self.shell.finalize(kill_pty=True)
-            raise rse.NoSuccess("grid-proxy-info failed (runsync)")
+            raise rse.NoSuccess("grid-proxy-info failed (runsync)") from e
 
         if rc != 0:
             raise rse.NoSuccess("grid-proxy-info failed (rc!=0)")
@@ -372,9 +373,9 @@ class SRMDirectory (cpi.Directory):
         #
         try:
             rc, _, _ = self.shell.run_sync("gfal2_version")
-        except:
+        except Exception as e:
             self.shell.finalize(kill_pty=True)
-            raise rse.NoSuccess("gfal2_version")
+            raise rse.NoSuccess("gfal2_version") from e
 
         if rc != 0:
             raise rse.DoesNotExist("gfal2 client not found")
@@ -432,9 +433,9 @@ class SRMDirectory (cpi.Directory):
 
         try:
             rc, out, _ = self.shell.run_sync("srmmkdir %s" % url)
-        except:
+        except Exception as e:
             self.shell.finalize(kill_pty=True)
-            raise Exception(" failed")
+            raise Exception(" failed") from e
 
         if rc != 0:
             if 'SRM_DUPLICATION_ERROR' in out:
@@ -610,17 +611,17 @@ class SRMFile(cpi.File):
         try:
             # open a shell
             self.shell = sups.PTYShell(self._adaptor.pty_url, self.session)
-        except:
-            raise rse.NoSuccess("Couldn't open shell")
+        except Exception as e:
+            raise rse.NoSuccess("Couldn't open shell") from e
 
         #
         # Test for valid proxy
         #
         try:
             rc, out, _ = self.shell.run_sync("grid-proxy-info")
-        except:
+        except Exception as e:
             self.shell.finalize(kill_pty=True)
-            raise rse.NoSuccess("grid-proxy-info failed")
+            raise rse.NoSuccess("grid-proxy-info failed") from e
 
         if rc != 0:
             raise rse.NoSuccess("grid-proxy-info failed")
@@ -633,9 +634,9 @@ class SRMFile(cpi.File):
         #
         try:
             rc, _, _ = self.shell.run_sync("gfal2_version")
-        except:
+        except Exception as e:
             self.shell.finalize(kill_pty=True)
-            raise rse.NoSuccess("gfal2_version")
+            raise rse.NoSuccess("gfal2_version") from e
 
         if rc != 0:
             raise rse.DoesNotExist("gfal2 client not found")
