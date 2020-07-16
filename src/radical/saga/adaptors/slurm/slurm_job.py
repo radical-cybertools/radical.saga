@@ -603,6 +603,7 @@ class SLURMJobService(cpi_job.Service):
         if 'bridges' in self.rm.host.lower():
 
             if gpu_count:
+                # gres resources are specified *per node*
                 assert(n_nodes), 'need unique number of cores per node'
 
                 if cpu_arch: gpu_arch = cpu_arch.lower()
