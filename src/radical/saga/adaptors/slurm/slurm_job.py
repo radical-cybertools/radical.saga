@@ -599,7 +599,7 @@ class SLURMJobService(cpi_job.Service):
                 if count:
                     if cpu_arch: gpu_arch = cpu_arch.lower()
                     else       : gpu_arch = 'p100'
-                    script += "#SBATCH --gres=gpu:%s:%s\n" % (gpu_arch, count)
+                    script += "#SBATCH --gres=gpu:%s:2\n" % (gpu_arch)  # Make sure we take a full GPU node
 
             # use '-C EGRESS' to enable outbound network
             script += "#SBATCH -C EGRESS\n"
