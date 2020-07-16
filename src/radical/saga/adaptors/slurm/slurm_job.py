@@ -605,12 +605,12 @@ class SLURMJobService(cpi_job.Service):
             if gpu_count:
                 # gres resources are specified *per node*
                 assert(n_nodes), 'need unique number of cores per node'
-                count = int(gpu_count / n_nodes)
 
-                if count:
-                    if cpu_arch: gpu_arch = cpu_arch.lower()
-                    else       : gpu_arch = 'p100'
-                    script += "#SBATCH --gres=gpu:%s:%s\n" % (gpu_arch, count)
+                if cpu_arch: gpu_arch = cpu_arch.lower()
+                else       : gpu_arch = 'p100'
+                if gpu_arch == 'k80': count = 4
+                else                : count = 2
+                script += "#SBATCH --gres=gpu:%s:%d\n" % (gpu_arch, count)  # Make sure we take a full GPU node
 
             # use '-C EGRESS' to enable outbound network
             script += "#SBATCH -C EGRESS\n"
