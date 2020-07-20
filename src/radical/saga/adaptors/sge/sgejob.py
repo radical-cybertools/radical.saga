@@ -13,9 +13,9 @@ import re
 import os
 import time
 
-from cgi      import parse_qs
-from io import StringIO
 from datetime import datetime
+from io import StringIO
+from urllib.parse import parse_qs
 
 import radical.utils as ru
 
