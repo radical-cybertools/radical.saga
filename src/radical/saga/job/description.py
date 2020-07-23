@@ -63,8 +63,10 @@ class Description (sa.Attributes) :
         self._attributes_register  (PROJECT              , None, sa.STRING, sa.SCALAR, sa.WRITEABLE)
         self._attributes_register  (JOB_CONTACT          , None, sa.STRING, sa.VECTOR, sa.WRITEABLE)
         self._attributes_register  (SPMD_VARIATION       , None, sa.ENUM,   sa.SCALAR, sa.WRITEABLE)
+        self._attributes_register  (SMT                  , None, sa.ENUM,   sa.SCALAR, sa.WRITEABLE)
 
         self._attributes_set_enums (SPMD_VARIATION,      ['MPI', 'OpenMP', 'MPICH-G'])
+        self._attributes_set_enums (SMT,                 [1, 2, 4])
 
         self._env_is_list = False
 

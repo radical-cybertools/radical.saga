@@ -76,6 +76,10 @@ PROCESSES_PER_HOST    = 'ProcessesPerHost';    """ :todo: docstring """
 THREADS_PER_PROCESS   = 'ThreadsPerProcess';   """ :todo: docstring """ 
 JOB_CONTACT           = 'JobContact';          """ :todo: docstring """
 NAME                  = 'Name';                """ The name of your job """ # non-GFD.90
+SMT                   = 'SMT';                 """ Simultaneous Multi-Threading, 
+                                                   meaning each physical core 
+                                                   supports up to the number of 
+                                                   Hardware Threads """
 
 
 ################################################################################

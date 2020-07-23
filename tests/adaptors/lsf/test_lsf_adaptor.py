@@ -9,10 +9,8 @@ __license__   = 'MIT'
 This test tests the LSF script generator function as well as the LSF adaptor
 '''
 
-import unittest
-
-import radical.saga.url as surl
 import radical.saga     as rs
+import radical.saga.url as rsurl
 
 from radical.saga.adaptors.lsf.lsfjob import _lsfscript_generator
 
@@ -21,8 +19,7 @@ from radical.saga.adaptors.lsf.lsfjob import _lsfscript_generator
 #
 def test_lsfscript_generator():
 
-    smt = 4
-    url = surl.Url('gsissh://summit.ccs.ornl.gov')
+    url = rsurl.Url('gsissh://summit.ccs.ornl.gov')
     jd  = rs.job.Description()
 
     jd.name            = 'Test'
@@ -34,7 +31,8 @@ def test_lsfscript_generator():
     jd.queue           = 'normal-queue'
     jd.project         = 'TestProject'
     jd.wall_time_limit = 70
-    jd.total_cpu_count = 65 * smt
+    jd.smt             = 2
+    jd.total_cpu_count = 65 * jd.smt
 
     tgt_script = '\n#!/bin/bash \n' \
                + '#BSUB -q normal-queue \n' \
@@ -44,9 +42,9 @@ def test_lsfscript_generator():
                + '#BSUB -e error.log \n' \
                + '#BSUB -P TestProject \n' \
                + '#BSUB -nnodes 2 \n' \
-               + "#BSUB -alloc_flags 'gpumps smt4' \n" \
+               + "#BSUB -alloc_flags 'gpumps smt2' \n" \
                + '\n' \
-               + 'export RADICAL_SAGA_SMT=%d test_env=15\n' % smt \
+               + 'export test_env=15\n' \
                + '/bin/sleep 60'
 
     script = _lsfscript_generator(url=url, logger=None, jd=jd,
