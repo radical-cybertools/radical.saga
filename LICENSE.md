@@ -1,7 +1,8 @@
 radical.saga is licensed under the MIT License (MIT)
 ----------------------------------------------------
 
-Copyright (C) 2011-2013 by The SAGA Project 
+Copyright (C) 2011-2020 by the RADICAL-Cybertools Team 
+(info@radical-cybertools.org)
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to
