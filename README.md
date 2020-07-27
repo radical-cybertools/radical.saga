@@ -15,7 +15,7 @@ https://radicalsaga.readthedocs.io/en/stable/
 
 Additional information is provided in the
 [wiki](https://github.com/radical-cybertools/radical.saga/wiki) section of RS
-GitHub respository.
+GitHub repository.
 
 ## Code
 
