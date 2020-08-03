@@ -186,11 +186,6 @@ def _lsfscript_generator(url, logger, jd, ppn, lsf_version, queue):
         else                      : path = ''
         lsf_bsubs += "#BSUB -e %s%s \n" % (path, jd.error)
 
-    if jd.environment:
-        env_string = "export"
-        for k, v in jd.environment.items():
-            env_string += " %s=%s" % (k, v)
-
     if jd.project and ':' in jd.project:
         account, reservation = jd.project.split(':', 1)
         lsf_bsubs += "#BSUB -P %s \n" % account
@@ -239,6 +234,11 @@ def _lsfscript_generator(url, logger, jd, ppn, lsf_version, queue):
 
     lsf_bsubs += "#BSUB -nnodes %s \n" % str(nodes)
     lsf_bsubs += "#BSUB -alloc_flags 'gpumps smt%d' \n" % smt
+
+    env_string += "export RADICAL_SAGA_SMT=%d" % smt
+    if jd.environment:
+        for k, v in jd.environment.items():
+            env_string += " %s=%s" % (k, v)
 
     # escape double quotes and dollar signs, otherwise 'echo |'
     # further down won't work

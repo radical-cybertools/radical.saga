@@ -44,7 +44,7 @@ def test_lsfscript_generator():
                + '#BSUB -nnodes 2 \n' \
                + "#BSUB -alloc_flags 'gpumps smt2' \n" \
                + '\n' \
-               + 'export test_env=15\n' \
+               + 'export RADICAL_SAGA_SMT=2 test_env=15\n' \
                + '/bin/sleep 60'
 
     script = _lsfscript_generator(url=url, logger=None, jd=jd,
