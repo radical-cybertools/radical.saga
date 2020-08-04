@@ -38,16 +38,12 @@ SMT_DEFAULT = 4
 
 # FIXME: will be taken from resource config
 RESOURCES = {
-    '_names': ['summitdev', 'summit', 'lassen'],  # to keep the order (py36)
-    'summitdev': {'cpn': 20,
-                  'gpn': 4,
-                  'smt': SMT_DEFAULT},
-    'summit'   : {'cpn': 42,
-                  'gpn': 6,
-                  'smt': SMT_DEFAULT},
-    'lassen'   : {'cpn': 40,
-                  'gpn': 4,
-                  'smt': SMT_DEFAULT}
+    'summit': {'cpn': 42,
+               'gpn': 6,
+               'smt': SMT_DEFAULT},
+    'lassen': {'cpn': 40,
+               'gpn': 4,
+               'smt': SMT_DEFAULT}
 }
 
 
@@ -212,7 +208,7 @@ def _lsfscript_generator(url, logger, jd, ppn, lsf_version, queue):
         raise RuntimeError('cannot determine target host f or %s' % url)
 
     cpn, gpn, smt = 0, 1, SMT_DEFAULT
-    for resource_name in RESOURCES['_names']:
+    for resource_name in RESOURCES:
         if resource_name in hostname:
             smt = jd.smt or RESOURCES[resource_name].get('smt', smt)
             cpn = RESOURCES[resource_name].get('cpn', cpn) * smt
