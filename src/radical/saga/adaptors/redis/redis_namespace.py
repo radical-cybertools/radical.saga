@@ -57,8 +57,7 @@ import time
 import string
 import threading as mt
 
-import radical.utils         as ru
-import radical.utils.threads as rut
+import radical.utils as ru
 
 from . import redis_cache
 
@@ -104,7 +103,7 @@ def redis_ns_name(path):
 
 # ------------------------------------------------------------------------------
 #
-class redis_ns_monitor(mt.Thread):
+class redis_ns_monitor(object):
 
     # --------------------------------------------------------------------------
     #
@@ -118,16 +117,31 @@ class redis_ns_monitor(mt.Thread):
                 'ATTRIBUTE': re.compile('\s*\[(?P<key>[^=]+)=(?P<val>.+)]\s*')
         }
 
-        rut.Thread.__init__(self, self.work)
-        self.setDaemon(True)
+        self._term   = mt.Event()
+        self._worker = mt.Thread(target=self.work)
+        self._worker.daemon = True
 
 
     # --------------------------------------------------------------------------
     #
-    def run(self):
+    def stop(self):
+
+        self._term.set()
+
+
+    # --------------------------------------------------------------------------
+    #
+    def work(self):
+
+        while not self._term.is_set():
+            self._work()
+
+
+    # --------------------------------------------------------------------------
+    #
+    def _work(self):
 
         try:
-
             callbacks = self.r.callbacks
             sub       = self.pub.listen()
 
