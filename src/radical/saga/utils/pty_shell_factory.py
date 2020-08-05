@@ -7,7 +7,6 @@ __license__   = "MIT"
 import os
 import pwd
 import time
-import string
 import getpass
 import threading as mt
 
@@ -334,8 +333,8 @@ class PTYShellFactory (object, metaclass=ru.Singleton) :
                     elif n == 1 :
                         logger.info ("got passphrase prompt : %s" % match)
 
-                        start = string.find (match, "'", 0)
-                        end   = string.find (match, "'", start + 1)
+                        start = match.find("'", 0)
+                        end   = match.find("'", start + 1)
 
                         if start == -1 or end == -1 :
                             raise rse.AuthenticationFailed(
