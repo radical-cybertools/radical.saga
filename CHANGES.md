@@ -4,6 +4,12 @@ For a list of open issues and known problems, see:
 https://github.com/radical-cybertools/radical.saga/issues
 
 
+Version 1.5.2 Release                                                 2020-08-05
+--------------------------------------------------------------------------------
+
+  - fix a python3 transition remnant
+  
+
 Version 1.5.1 Release                                                 2020-08-05
 --------------------------------------------------------------------------------
 
