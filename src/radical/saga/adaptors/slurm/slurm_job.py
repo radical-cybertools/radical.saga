@@ -498,7 +498,7 @@ class SLURMJobService(cpi_job.Service):
         wall_time           = jd.as_dict().get(c.WALL_TIME_LIMIT)
         queue               = jd.as_dict().get(c.QUEUE)
         project             = jd.as_dict().get(c.PROJECT)
-        job_memory          = jd.as_dict().get(c.TOTAL_PHYSICAL_MEMORY)
+        total_memory        = jd.as_dict().get(c.TOTAL_PHYSICAL_MEMORY)
         cpu_arch            = jd.as_dict().get(c.CPU_ARCHITECTURE)
         job_contact         = jd.as_dict().get(c.JOB_CONTACT)
         c_hosts             = jd.as_dict().get(c.CANDIDATE_HOSTS)
@@ -509,7 +509,7 @@ class SLURMJobService(cpi_job.Service):
 
         # try to create the working directory (if defined)
         # NOTE: this assumes a shared filesystem between login node and
-        #       comnpute nodes.
+        #       compute nodes.
         if cwd:
 
             self._logger.info("Creating working directory %s" % cwd)
@@ -541,6 +541,25 @@ class SLURMJobService(cpi_job.Service):
         if not n_procs:
             n_procs = cpu_count
 
+        # get memory_per_node from total_memory and make sure it is not None
+        memory_per_node = total_memory or 0
+
+        # define n_nodes and recalculate memory_per_node (if self._ppn is set)
+        n_nodes = None
+        if self._ppn:
+
+            # exception(s) for earlier defined `self._ppn`
+            if 'frontera' in self.rm.host.lower() and \
+                    queue and 'rtx' in queue.lower():
+                self._ppn = 16  # other option is to use: processes_per_host
+
+            n_nodes = int(math.ceil(float(cpu_count) / self._ppn))
+            memory_per_node = int(memory_per_node / float(n_nodes))
+
+        elif total_memory:
+            raise rse.NotImplemented(
+                'cannot allocate memory, node number unknown')
+
         if spmd_variation:
             if spmd_variation.lower() not in 'mpi':
                 raise rse.BadParameter("Slurm cannot handle spmd variation '%s'"
@@ -554,26 +573,19 @@ class SLURMJobService(cpi_job.Service):
             if  'stampede2' in self.rm.host.lower() or \
                 'longhorn'  in self.rm.host.lower():
 
-                assert(self._ppn), 'need unique number of cores per node'
-                n_nodes = int(math.ceil(float(cpu_count) / self._ppn))
+                assert(n_nodes), 'need unique number of cores per node'
                 script += "#SBATCH -N %d\n" % n_nodes
                 script += "#SBATCH -n %s\n" % n_procs
 
             elif 'frontera'  in self.rm.host.lower() or \
                  'rhea'      in self.rm.host.lower():
 
-                if queue and 'frontera' in self.rm.host.lower() and \
-                        'rtx' in queue.lower():
-                    self._ppn = 16  # other option is to use: processes_per_host
-
-                assert(self._ppn), 'need unique number of cores per node'
-                n_nodes = int(math.ceil(float(cpu_count) / self._ppn))
+                assert(n_nodes), 'need unique number of cores per node'
                 script += "#SBATCH -N %d\n" % n_nodes
 
             elif self._version in ['17.11.5', '18.08.0', '18.08.3']:
 
-                assert(self._ppn), 'need unique number of cores per node'
-                n_nodes = int(math.ceil(float(cpu_count) / self._ppn))
+                assert(n_nodes), 'need unique number of cores per node'
                 script += "#SBATCH -N %d\n" % n_nodes
                 script += "#SBATCH --ntasks=%s\n" % n_procs
 
@@ -593,32 +605,27 @@ class SLURMJobService(cpi_job.Service):
         if 'bridges' in self.rm.host.lower():
 
             if gpu_count:
-                # gres resouurces are specified *per node*
-                assert(self._ppn), 'need unique number of cores per node'
-                number_of_nodes = int(math.ceil(float(cpu_count) / self._ppn))
-                count = int(gpu_count / number_of_nodes)
+                # gres resources are specified *per node*
+                assert(n_nodes), 'need unique number of cores per node'
 
-                if count:
-                    if cpu_arch: gpu_arch = cpu_arch.lower()
-                    else       : gpu_arch = 'p100'
-                    script += "#SBATCH --gres=gpu:%s:%s\n" % (gpu_arch, count)
+                if cpu_arch: gpu_arch = cpu_arch.lower()
+                else       : gpu_arch = 'p100'
+                if gpu_arch == 'k80': count = 4
+                else                : count = 2
+                script += "#SBATCH --gres=gpu:%s:%d\n" % (gpu_arch, count)  # Make sure we take a full GPU node
 
             # use '-C EGRESS' to enable outbound network
             script += "#SBATCH -C EGRESS\n"
 
-
         elif 'tiger' in self.rm.host.lower():
 
             if gpu_count:
-
-                # gres resouurces are specified *per node*
-                assert(self._ppn), 'need unique number of cores per node'
-                number_of_nodes = int(math.ceil(float(cpu_count) / self._ppn))
-                count = int(gpu_count / number_of_nodes)
+                # gres resources are specified *per node*
+                assert(n_nodes), 'need unique number of cores per node'
+                count = int(gpu_count / n_nodes)
 
                 if count:
                     script += "#SBATCH --gres=gpu:%s\n" % count
-
 
         elif 'cori' in self.rm.host.lower():
 
@@ -631,7 +638,6 @@ class SLURMJobService(cpi_job.Service):
 
             if gpu_count: script += "#SBATCH --gpus=%s\n" % gpu_count
 
-
         if cwd:
             if 'frontera' in self.rm.host.lower() or \
                'longhorn' in self.rm.host.lower() or \
@@ -642,17 +648,17 @@ class SLURMJobService(cpi_job.Service):
             else:
                 script += "#SBATCH --workdir %s\n" % cwd
 
-        if output     : script += "#SBATCH --output %s\n"      % output
-        if error      : script += "#SBATCH --error %s\n"       % error
-        if queue      : script += "#SBATCH --partition %s\n"   % queue
-        if job_name   : script += '#SBATCH -J "%s"\n'          % job_name
-        if job_memory : script += "#SBATCH --mem=%s\n"         % job_memory
-        if c_hosts    : script += "#SBATCH --nodelist=%s\n"    % c_hosts
-        if job_contact: script += "#SBATCH --mail-user=%s\n"   % job_contact
-        if account    : script += "#SBATCH --account %s\n"     % account
-        if reservation: script += "#SBATCH --reservation %s\n" % reservation
-        if wall_time  : script += "#SBATCH --time %02d:%02d:00\n" \
+        if output         : script += "#SBATCH --output %s\n"      % output
+        if error          : script += "#SBATCH --error %s\n"       % error
+        if queue          : script += "#SBATCH --partition %s\n"   % queue
+        if job_name       : script += '#SBATCH -J "%s"\n'          % job_name
+        if c_hosts        : script += "#SBATCH --nodelist=%s\n"    % c_hosts
+        if job_contact    : script += "#SBATCH --mail-user=%s\n"   % job_contact
+        if account        : script += "#SBATCH --account %s\n"     % account
+        if reservation    : script += "#SBATCH --reservation %s\n" % reservation
+        if wall_time      : script += "#SBATCH --time %02d:%02d:00\n" \
                                          % (int(wall_time / 60), wall_time % 60)
+        if memory_per_node: script += "#SBATCH --mem=%s\n" % memory_per_node
 
         if env:
             script += "\n## ENVIRONMENT\n"

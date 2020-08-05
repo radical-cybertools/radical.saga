@@ -136,10 +136,10 @@ control (start, stop) and monitor the job:
 
     myjob = js.create_job(jd) # create a new job instance
     myjob.run() # start the job instance
-    print "Initial Job ID    : %s" % (myjob.jobid)
-    print "Initial Job State : %s" % (myjob.get_state())
+    print("Initial Job ID    : %s" % (myjob.jobid))
+    print("Initial Job State : %s" % (myjob.get_state()))
     myjob.wait() # Wait for the job to reach either 'Done' or 'Failed' state
-    print "Final Job ID    : %s" % (myjob.jobid)
-    print "Final Job State : %s" % (myjob.get_state())
+    print("Final Job ID    : %s" % (myjob.jobid))
+    print("Final Job State : %s" % (myjob.get_state()))
 
 

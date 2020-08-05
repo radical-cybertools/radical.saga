@@ -10,7 +10,7 @@ import time
 
 from PIL import Image
 
-import radica.saga as rs
+import radical.saga as rs
 
 
 #-----------------------------------------------------------------------------
@@ -85,8 +85,8 @@ if __name__ == "__main__":
                 jd.working_directory = workdir.get_url().path
                 jd.executable        = 'sh'
                 jd.arguments         = ['mandelbrot.sh', imgx, imgy,
-                                        (imgx/tilesx*x), (imgx/tilesx*(x+1)),
-                                        (imgy/tilesy*y), (imgy/tilesy*(y+1)),
+                                        int(imgx/tilesx*x), int(imgx/tilesx*(x+1)),
+                                        int(imgy/tilesy*y), int(imgy/tilesy*(y+1)),
                                         outputfile]
                 # create the job from the description
                 # above, launch it and add it to the list of jobs
@@ -119,8 +119,8 @@ if __name__ == "__main__":
             for y in range(0, tilesy):
                 partimage = Image.open('tile_x%s_y%s.gif' % (x, y))
                 fullimage.paste(partimage,
-                                (imgx/tilesx*x, imgy/tilesy*y,
-                                 imgx/tilesx*(x+1), imgy/tilesy*(y+1)))
+                                (int(imgx/tilesx*x), int(imgy/tilesy*y),
+                                 int(imgx/tilesx*(x+1)), int(imgy/tilesy*(y+1))))
         fullimage.save("mandelbrot_full.gif", "GIF")
         sys.exit(0)
 

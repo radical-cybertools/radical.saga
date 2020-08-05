@@ -24,7 +24,7 @@ implement input and output file staging.
 Installation
 ============
 
-.. warning:: RADICAL-SAGA requires **Python >= 2.7**. It won't work with an older version of Python.
+.. warning:: RADICAL-SAGA requires **Python >= 3.6**. It won't work with an older version of Python.
 
 Install Virtualenv
 ------------------
@@ -71,5 +71,5 @@ command below should be version number of the radical.saga module):
 
 .. code-block:: bash
 
-   python -c "import radical.saga as rs; print rs.version"
+   python -c "import radical.saga as rs; print(rs.version)"
 

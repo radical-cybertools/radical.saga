@@ -13,7 +13,7 @@ import time
 import datetime
 import threading
 
-from cgi  import parse_qs
+from urllib.parse import parse_qs
 
 from ...url           import Url
 from ...              import exceptions as rse
