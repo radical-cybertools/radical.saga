@@ -4,6 +4,16 @@ For a list of open issues and known problems, see:
 https://github.com/radical-cybertools/radical.saga/issues
 
 
+Version 1.5.0 Release                                                 2020-08-05
+--------------------------------------------------------------------------------
+
+  - Access to K80 and P100 gpus on Bridges
+  - added exception if number of nodes is not set, but memory is allocated
+  - get `parse_qs` from `urllib.parse` (module `cgi` is not used in SAGA)
+  - replace PIL with Pillow
+  - set min python version to 3.6
+
+      
 Version 1.4.0 Release                                                 2020-05-12
 --------------------------------------------------------------------------------
 
