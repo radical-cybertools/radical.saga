@@ -33,7 +33,7 @@ Add the following code after the last print, right before the except statement:
     out = saga.filesystem.File(outfilesource, session=ses)
     out.copy(outfiletarget)
 
-    print "Staged out %s to %s (size: %s bytes)" % (outfilesource, outfiletarget, out.get_size())
+    print("Staged out %s to %s (size: %s bytes)" % (outfilesource, outfiletarget, out.get_size()))
 
 
 Run the Code
@@ -88,5 +88,5 @@ diffently due some missing path normalization. URL should be coded with single
     remote_dir_url.username = $PASSWORD
     remote_dir_url.host = hostname
     remote_dir_url.port = port
-    remote_dir_url.path = /some/path
+    remote_dir_url.path = '/some/path'
 
