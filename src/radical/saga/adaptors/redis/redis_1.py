@@ -3,10 +3,9 @@ __author__    = "Andre Merzky"
 __copyright__ = "Copyright 2013, The SAGA Project"
 __license__   = "MIT"
 
-
 import redis
 
-r = redis.Redis (host='localhost', password='securedis')
+r = redis.Redis (host='localhost')
 
 print("------------------ set / get ------------------")
 print(r.set ("name", "DeGizmo"))
@@ -29,9 +28,9 @@ print(r.lindex ("members", 1))
 
 print("------------------ dict set -------------------")
 
-print(r.hmset ("key1", {'11' : 'ONE', '1' : 'one'}))
-print(r.hmset ("key2", {'22' : 'TWO', '2' : 'two'}))
-print(r.hmset ("key3", {'33' : 'TRE', '3' : 'tre'}))
+print(r.hset ("key1", None, None, {'11' : 'ONE', '1' : 'one'}))
+print(r.hset ("key2", None, None, {'22' : 'TWO', '2' : 'two'}))
+print(r.hset ("key3", None, None, {'33' : 'TRE', '3' : 'tre'}))
 
 print("------------------ pipeline dict get ----------")
 pipe = r.pipeline()
