@@ -14,7 +14,7 @@ import os
 import time
 import threading
 
-from cgi  import parse_qs
+from urllib.parse import parse_qs
 
 import radical.utils as ru
 

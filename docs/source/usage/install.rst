@@ -9,7 +9,7 @@ Requirements
 
 radical.saga has the following requirements:
 
-* Python 3.5 or newer
+* Python 3.6 or newer
 
 
 Installation via PyPi
