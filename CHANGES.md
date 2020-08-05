@@ -4,7 +4,7 @@ For a list of open issues and known problems, see:
 https://github.com/radical-cybertools/radical.saga/issues
 
 
-Version 1.5.0 Release                                                 2020-08-05
+Version 1.5.1 Release                                                 2020-08-05
 --------------------------------------------------------------------------------
 
   - Access to K80 and P100 gpus on Bridges
