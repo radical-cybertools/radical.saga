@@ -81,11 +81,11 @@ class Task (sbase.SimpleBase, satt.Attributes) :
         self._attributes_camelcasing   (True)
 
         # register properties with the attribute interface
-        self._attributes_register  (c.RESULT,    None,    satt.ANY,  satt.SCALAR, satt.READONLY)
+        self._attributes_register  (c.RESULT,    None,      satt.ANY,  satt.SCALAR, satt.READONLY)
         self._attributes_set_getter(c.RESULT,    self.get_result)
         self._attributes_set_setter(c.RESULT,    self._set_result)
 
-        self._attributes_register  (c.EXCEPTION, None,    satt.ANY,  satt.SCALAR, satt.READONLY)
+        self._attributes_register  (c.EXCEPTION, None,      satt.ANY,  satt.SCALAR, satt.READONLY)
         self._attributes_set_getter(c.EXCEPTION, self.get_exception)
         self._attributes_set_setter(c.EXCEPTION, self._set_exception)
 
@@ -93,6 +93,11 @@ class Task (sbase.SimpleBase, satt.Attributes) :
         self._attributes_set_enums (c.STATE,     STATES)
         self._attributes_set_getter(c.STATE,     self.get_state)
         self._attributes_set_setter(c.STATE,     self._set_state)
+
+        self._attributes_register  (c.ID,        None,    satt.STRING, satt.SCALAR, satt.READONLY)
+        self._attributes_set_getter(c.ID,        self.get_id)
+
+        self._uid = ru.generate_id('task.')
 
         self._set_state (c.NEW)
 
@@ -119,6 +124,26 @@ class Task (sbase.SimpleBase, satt.Attributes) :
             self.run  ()
         elif self._ttype == c.TASK :
             pass
+
+
+    # --------------------------------------------------------------------------
+    #
+    @rus.takes   ('Task',
+                  rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
+    @rus.returns ((rus.nothing, str, st.Task))
+    def get_id   (self, ttype=None) :
+        """
+        get_id()
+
+        Return the task ID.
+        """
+
+        try:
+            id = self._adaptor.get_id (ttype=ttype)
+        except:
+            id = self._uid
+
+        return id
 
 
     # --------------------------------------------------------------------------
@@ -346,7 +371,6 @@ class Container (sbase.SimpleBase, satt.Attributes) :
       # if task not in self.tasks :
         if True:
             self.tasks.append (task)
-
 
 
     # --------------------------------------------------------------------------

@@ -107,7 +107,6 @@ class Job (sb.Base, st.Task, sasync.Async) :
         self._attributes_register   (STARTED,          None,    sa.INT,    sa.SCALAR, sa.READONLY)
         self._attributes_register   (FINISHED,         None,    sa.INT,    sa.SCALAR, sa.READONLY)
         self._attributes_register   (EXECUTION_HOSTS,  None,    sa.STRING, sa.VECTOR, sa.READONLY)
-        self._attributes_register   (ID,               None,    sa.STRING, sa.SCALAR, sa.READONLY)
         self._attributes_register   (NAME,             None,    sa.STRING, sa.SCALAR, sa.READONLY)
         self._attributes_register   (SERVICE_URL,      None,    sa.URL,    sa.SCALAR, sa.READONLY)
 
@@ -115,7 +114,6 @@ class Job (sb.Base, st.Task, sasync.Async) :
                                              DONE,    FAILED,  CANCELED, SUSPENDED])
 
         self._attributes_set_getter (STATE,           self.get_state)
-        self._attributes_set_getter (ID,              self.get_id)
         self._attributes_set_getter (NAME,            self.get_name)
         self._attributes_set_getter (EXIT_CODE,       self._get_exit_code)
         self._attributes_set_getter (CREATED,         self._get_created)
@@ -142,21 +140,6 @@ class Job (sb.Base, st.Task, sasync.Async) :
             return 'no job id'
 
         return str (self.id)
-
-
-    # --------------------------------------------------------------------------
-    #
-    @rus.takes   ('Job',
-                  rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
-    @rus.returns ((rus.nothing, str, st.Task))
-    def get_id   (self, ttype=None) :
-        """
-        get_id()
-
-        Return the job ID.
-        """
-        id = self._adaptor.get_id (ttype=ttype)
-        return id
 
 
     # --------------------------------------------------------------------------
