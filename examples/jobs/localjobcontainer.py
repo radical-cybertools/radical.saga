@@ -59,7 +59,6 @@ def main():
                 jd.executable  = '/bin/sleep'
                 jd.arguments   = ['$RUNTIME']
                 jd.name        = ['job.%02d.%03d' % (c, j)]
-                jd.project         = 'TG-CCR140028'
                 j = service.create_job(jd)
                 containers[c].add(j)
 
