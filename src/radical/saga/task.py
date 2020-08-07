@@ -27,14 +27,14 @@ class Task (sbase.SimpleBase, satt.Attributes) :
 
     # --------------------------------------------------------------------------
     #
-    @rus.takes   ('Task', 
-                  'CPIBase', 
+    @rus.takes   ('Task',
+                  'CPIBase',
                   str,
-                  dict, 
+                  dict,
                   rus.one_of (c.SYNC, c.ASYNC, c.TASK))
     @rus.returns (rus.nothing)
     def __init__ (self, _adaptor, _method_type, _method_context, _ttype) :
-        """ 
+        """
         This saga.Task constructor is private.
 
         ``_adaptor`` references the adaptor class instance from which this task
@@ -137,7 +137,7 @@ class Task (sbase.SimpleBase, satt.Attributes) :
 
     # --------------------------------------------------------------------------
     #
-    @rus.takes   ('Task', 
+    @rus.takes   ('Task',
                   rus.optional (float))
     @rus.returns (bool)
     def wait (self, timeout=None) :
@@ -156,7 +156,7 @@ class Task (sbase.SimpleBase, satt.Attributes) :
 
     # ----------------------------------------------------------------
     #
-    @rus.takes   ('Task', 
+    @rus.takes   ('Task',
                   float)
     @rus.returns (rus.nothing)
     def cancel (self) :
@@ -172,8 +172,8 @@ class Task (sbase.SimpleBase, satt.Attributes) :
 
     # --------------------------------------------------------------------------
     #
-    @rus.takes   ('Task', 
-                  rus.one_of (c.UNKNOWN, c.NEW, c.RUNNING, c.DONE, 
+    @rus.takes   ('Task',
+                  rus.one_of (c.UNKNOWN, c.NEW, c.RUNNING, c.DONE,
                               c.FAILED,  c.CANCELED))
     @rus.returns (rus.nothing)
     def _set_state (self, state) :
@@ -199,7 +199,7 @@ class Task (sbase.SimpleBase, satt.Attributes) :
 
     # --------------------------------------------------------------------------
     #
-    @rus.takes   ('Task', 
+    @rus.takes   ('Task',
                   rus.anything)
     @rus.returns (rus.nothing)
     def _set_result (self, result) :
@@ -236,8 +236,8 @@ class Task (sbase.SimpleBase, satt.Attributes) :
 
     # --------------------------------------------------------------------------
     #
-    @rus.takes   ('Task', 
-                  str, 
+    @rus.takes   ('Task',
+                  str,
                   rus.anything)
     @rus.returns (rus.nothing)
     def _set_metric (self, metric, value) :
@@ -248,7 +248,7 @@ class Task (sbase.SimpleBase, satt.Attributes) :
 
     # --------------------------------------------------------------------------
     #
-    @rus.takes   ('Task', 
+    @rus.takes   ('Task',
                   se.SagaException)
     @rus.returns (rus.nothing)
     def _set_exception (self, e) :
@@ -327,7 +327,7 @@ class Container (sbase.SimpleBase, satt.Attributes) :
 
     # --------------------------------------------------------------------------
     #
-    @rus.takes   ('Container', 
+    @rus.takes   ('Container',
                   Task)
     @rus.returns (rus.nothing)
     def add      (self, task) :
@@ -337,14 +337,21 @@ class Container (sbase.SimpleBase, satt.Attributes) :
             raise se.BadParameter ("Container handles tasks, not %s"
                                 % (type(task)))
 
-        if task not in self.tasks :
+        # FIXME: at some point, task membership in a list seems to have broken
+        #        - I have no idea how and why.  Note that this also holds for
+        #        a plain Python list (so, when disabling the TASK attribute and
+        #        adding `self.tasks = list()` in `__init__`.  the tasks *do*
+        #        have different object IDs.  No idea how `in` is implemented
+        #
+      # if task not in self.tasks :
+        if True:
             self.tasks.append (task)
 
 
 
     # --------------------------------------------------------------------------
     #
-    @rus.takes   ('Container', 
+    @rus.takes   ('Container',
                   Task)
     @rus.returns (rus.nothing)
     def remove   (self, task) :
@@ -413,7 +420,7 @@ class Container (sbase.SimpleBase, satt.Attributes) :
 
     # --------------------------------------------------------------------------
     #
-    @rus.takes   ('Container', 
+    @rus.takes   ('Container',
                   rus.one_of   (c.ANY, c.ALL),
                   rus.optional (float))
     @rus.returns (rus.list_of (Task))
@@ -433,7 +440,7 @@ class Container (sbase.SimpleBase, satt.Attributes) :
 
     # --------------------------------------------------------------------------
     #
-    @rus.takes   ('Container', 
+    @rus.takes   ('Container',
                   float)
     @rus.returns (rus.list_of (Task))
     def _wait_any (self, timeout) :
@@ -485,7 +492,7 @@ class Container (sbase.SimpleBase, satt.Attributes) :
 
     # --------------------------------------------------------------------------
     #
-    @rus.takes   ('Container', 
+    @rus.takes   ('Container',
                   float)
     @rus.returns (rus.list_of (Task))
     def _wait_all (self, timeout) :
@@ -522,7 +529,7 @@ class Container (sbase.SimpleBase, satt.Attributes) :
 
     # --------------------------------------------------------------------------
     #
-    @rus.takes   ('Container', 
+    @rus.takes   ('Container',
                   rus.optional (float))
     @rus.returns (rus.nothing)
     def cancel   (self, timeout=None) :
@@ -565,7 +572,7 @@ class Container (sbase.SimpleBase, satt.Attributes) :
 
     # --------------------------------------------------------------------------
     #
-    @rus.takes   ('Container', 
+    @rus.takes   ('Container',
                   'basestring')
     @rus.returns (Task)
     def get_task (self, id) :
@@ -653,7 +660,7 @@ class Container (sbase.SimpleBase, satt.Attributes) :
 
             if  task._adaptor and task._adaptor._container :
 
-                # the task's adaptor has a valid associated container class 
+                # the task's adaptor has a valid associated container class
                 # which can handle the container ops - great!
                 b = task._adaptor._container
                 m = task._method_type
