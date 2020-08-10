@@ -54,7 +54,7 @@ It also installs pip:
 Using Conda
 -----------
 
-Similar to Virtualenv, another method you can employ to create a Python environment is by using conda, the package manager associated with Anaconda. Before moving further, make sure you have Anaconda already installed. For more info about that, check out this `link<https://docs.anaconda.com/anaconda/install/>`_
+Similar to Virtualenv, another method you can employ to create a Python environment is by using conda, the package manager associated with Anaconda. Before moving further, make sure you have Anaconda already installed. For more info about that, check out this `link <https://docs.anaconda.com/anaconda/install/>`_
 
 .. code-block:: bash
 
