@@ -94,9 +94,6 @@ class Task (sbase.SimpleBase, satt.Attributes) :
         self._attributes_set_getter(c.STATE,     self.get_state)
         self._attributes_set_setter(c.STATE,     self._set_state)
 
-        self._attributes_register  (c.ID,        None,    satt.STRING, satt.SCALAR, satt.READONLY)
-        self._attributes_set_getter(c.ID,        self.get_id)
-
         self._uid = ru.generate_id('task.')
 
         self._set_state (c.NEW)
@@ -128,22 +125,30 @@ class Task (sbase.SimpleBase, satt.Attributes) :
 
     # --------------------------------------------------------------------------
     #
-    @rus.takes   ('Task',
-                  rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
-    @rus.returns ((rus.nothing, str, st.Task))
-    def get_id   (self, ttype=None) :
-        """
-        get_id()
+    def __eq__ (self, other) :
 
-        Return the task ID.
-        """
+        # we need to define __eq__ to ensure that tasks and jobs with different
+        # IDs but same dict representation can be added to Python containers
+        # (see Container.add()).
 
-        try:
-            id = self._adaptor.get_id (ttype=ttype)
-        except:
-            id = self._uid
+        id_self  = self.get_id()
+        id_other = None
 
-        return id
+        if other:
+            id_other = other.get_id()
+
+        if id_self and id_other:
+            return id_self == id_other
+        else:
+            return super(Task, self).__eq__(other)
+
+
+    # --------------------------------------------------------------------------
+    #
+    def get_id(self):
+
+        # implement get_id for __eq__
+        return self._uid
 
 
     # --------------------------------------------------------------------------
@@ -362,14 +367,7 @@ class Container (sbase.SimpleBase, satt.Attributes) :
             raise se.BadParameter ("Container handles tasks, not %s"
                                 % (type(task)))
 
-        # FIXME: at some point, task membership in a list seems to have broken
-        #        - I have no idea how and why.  Note that this also holds for
-        #        a plain Python list (so, when disabling the TASK attribute and
-        #        adding `self.tasks = list()` in `__init__`.  the tasks *do*
-        #        have different object IDs.  No idea how `in` is implemented
-        #
-      # if task not in self.tasks :
-        if True:
+        if task not in self.tasks :
             self.tasks.append (task)
 
 
