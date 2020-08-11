@@ -11,7 +11,7 @@
         "radical.saga.adaptors.shell.shell_job",
         "radical.saga.adaptors.shell.shell_file",
         "radical.saga.adaptors.shell.shell_resource",
-        "radical.saga.adaptors.redis.redis_advert",
+      # "radical.saga.adaptors.redis.redis_advert",
         "radical.saga.adaptors.sge.sgejob",
       # "radical.saga.adaptors.pbs.pbsjob",
         "radical.saga.adaptors.lsf.lsfjob",

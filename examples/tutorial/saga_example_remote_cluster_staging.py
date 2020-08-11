@@ -7,7 +7,7 @@ __license__   = "MIT"
 
 import sys
 
-import radica.saga as rs
+import radical.saga as rs
 
  
 REMOTE_HOST = "alamo.futuregrid.org"
