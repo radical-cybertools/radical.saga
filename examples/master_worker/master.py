@@ -153,7 +153,7 @@ def main(number_of_tasks, number_of_workers, number_of_machines):
     timefile.write("Coordination Time : " + str(coordination_time) + "\n")
     timefile.write("Communication Time: " + str(communication_time) + "\n")
 
-    timefile.close
+    timefile.close()
 
 
 if __name__ == "__main__":

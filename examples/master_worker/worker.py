@@ -47,7 +47,7 @@ if __name__ == "__main__":
     timefile = open("benchmarks_" + str(sys.argv[4]) + ".txt", 'a')
     timefile.write("Communication Time: " + str(communication_time) + "\n")
     timefile.write("Execution Time: " + str(execution_time) + "\n\n")
-    timefile.close
+    timefile.close()
 
     sys.exit(0)
 
