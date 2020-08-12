@@ -94,8 +94,6 @@ class Task (sbase.SimpleBase, satt.Attributes) :
         self._attributes_set_getter(c.STATE,     self.get_state)
         self._attributes_set_setter(c.STATE,     self._set_state)
 
-        self._uid = ru.generate_id('task.')
-
         self._set_state (c.NEW)
 
         # check if this task is supposed to wrap a callable in a future
