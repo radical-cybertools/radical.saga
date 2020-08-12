@@ -129,14 +129,8 @@ class Task (sbase.SimpleBase, satt.Attributes) :
         # IDs but same dict representation can be added to Python containers
         # (see Container.add()).
 
-        id_self  = self.get_id()
-        id_other = None
-
-        if other:
-            id_other = other.get_id()
-
-        if id_self and id_other:
-            return id_self == id_other
+        if isinstance(other, Task):
+            return self.get_id() == other.get_id()
         else:
             return super(Task, self).__eq__(other)
 
