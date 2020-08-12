@@ -140,7 +140,7 @@ class Task (sbase.SimpleBase, satt.Attributes) :
     def get_id(self):
 
         # implement get_id for __eq__
-        return self._uid
+        return self._id
 
 
     # --------------------------------------------------------------------------
@@ -596,7 +596,7 @@ class Container (sbase.SimpleBase, satt.Attributes) :
             raise se.NoSuccess ("Lookup requires non-empty id (not '%s')" % id)
 
         for t in self.tasks:
-            if t.id == id:
+            if t.get_id() == id:
                 return t
 
         raise se.NoSuccess ("task '%s' not found in container" % id)
