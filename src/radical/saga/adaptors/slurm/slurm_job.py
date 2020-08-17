@@ -70,8 +70,7 @@ _ADAPTOR_CAPABILITIES  = {
                           c.CLEANUP,
                           c.WALL_TIME_LIMIT,
                           c.TOTAL_PHYSICAL_MEMORY,
-                          c.CPU_ARCHITECTURE,
-                          c.GPU_ARCHITECTURE,
+                          c.SYSTEM_ARCHITECTURE,
                         # c.OPERATING_SYSTEM_TYPE,
                           c.CANDIDATE_HOSTS,
                           c.QUEUE,
@@ -499,10 +498,12 @@ class SLURMJobService(cpi_job.Service):
         queue               = jd.as_dict().get(c.QUEUE)
         project             = jd.as_dict().get(c.PROJECT)
         total_memory        = jd.as_dict().get(c.TOTAL_PHYSICAL_MEMORY)
-        cpu_arch            = jd.as_dict().get(c.CPU_ARCHITECTURE)
-        gpu_arch            = jd.as_dict().get(c.GPU_ARCHITECTURE)
+        sys_arch            = jd.as_dict().get(c.SYSTEM_ARCHITECTURE)
         job_contact         = jd.as_dict().get(c.JOB_CONTACT)
         c_hosts             = jd.as_dict().get(c.CANDIDATE_HOSTS)
+
+        cpu_arch            = sys_arch.get('cpu')
+        gpu_arch            = sys_arch.get('gpu')
 
         # check to see what's available in our job description
         # to override defaults

@@ -22,17 +22,17 @@ def test_lsfscript_generator():
     url = rsurl.Url('gsissh://summit.ccs.ornl.gov')
     jd  = rs.job.Description()
 
-    jd.name            = 'Test'
-    jd.executable      = '/bin/sleep'
-    jd.arguments       = 60
-    jd.environment     = {'test_env': 15}
-    jd.output          = 'output.log'
-    jd.error           = 'error.log'
-    jd.queue           = 'normal-queue'
-    jd.project         = 'TestProject'
-    jd.wall_time_limit = 70
-    jd.smt             = 2
-    jd.total_cpu_count = 65 * jd.smt
+    jd.name                = 'Test'
+    jd.executable          = '/bin/sleep'
+    jd.arguments           = 60
+    jd.environment         = {'test_env': 15}
+    jd.output              = 'output.log'
+    jd.error               = 'error.log'
+    jd.queue               = 'normal-queue'
+    jd.project             = 'TestProject'
+    jd.wall_time_limit     = 70
+    jd.system_architecture = {'smt': 2}
+    jd.total_cpu_count     = 65 * jd.system_architecture['smt']
 
     tgt_script = '\n#!/bin/bash \n' \
                + '#BSUB -q normal-queue \n' \

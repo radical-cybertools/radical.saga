@@ -35,6 +35,7 @@ MONITOR_UPDATE_INTERVAL   = 3  # seconds
 
 # Intel LSF hosts have SMT default to 4
 SMT_DEFAULT = 4
+SMT_VALID_VALUES = [1, 2, 4]
 
 # FIXME: will be taken from resource config
 RESOURCES = {
@@ -210,13 +211,17 @@ def _lsfscript_generator(url, logger, jd, ppn, lsf_version, queue):
     cpn, gpn, smt = 0, 1, SMT_DEFAULT
     for resource_name in RESOURCES:
         if resource_name in hostname:
-            smt = jd.smt or RESOURCES[resource_name].get('smt', smt)
+            smt = jd.system_architecture.get('smt') or \
+                  RESOURCES[resource_name].get('smt', smt)
             cpn = RESOURCES[resource_name].get('cpn', cpn) * smt
             gpn = RESOURCES[resource_name].get('gpn', gpn)
             break
 
     if not cpn:
         raise ValueError('LSF host (%s) not yet supported' % hostname)
+
+    if smt not in SMT_VALID_VALUES:
+        smt = SMT_DEFAULT
 
     cpu_nodes = int(total_cpu_count / cpn)
     if total_cpu_count > (cpu_nodes * cpn):
@@ -278,7 +283,7 @@ _ADAPTOR_CAPABILITIES = {
                           rsj.PROCESSES_PER_HOST,
                           rsj.TOTAL_CPU_COUNT,
                           rsj.TOTAL_GPU_COUNT,
-                          rsj.SMT],
+                          rsj.SYSTEM_ARCHITECTURE],
     "job_attributes":    [rsj.EXIT_CODE,
                           rsj.EXECUTION_HOSTS,
                           rsj.CREATED,
@@ -286,9 +291,9 @@ _ADAPTOR_CAPABILITIES = {
                           rsj.FINISHED],
     "metrics":           [rsj.STATE],
     "callbacks":         [rsj.STATE],
-    "contexts":          {"ssh": "SSH public/private keypair",
-                          "x509": "GSISSH X509 proxy context",
-                          "userpass": "username/password pair (ssh)"}
+    "contexts":          {"ssh"      : "SSH public/private keypair",
+                          "x509"     : "GSISSH X509 proxy context",
+                          "userpass" : "username/password pair (ssh)"}
 }
 
 # ------------------------------------------------------------------------------

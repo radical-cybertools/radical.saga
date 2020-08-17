@@ -60,9 +60,8 @@ CLEANUP               = 'Cleanup';             """ :todo: docstring """
 JOB_START_TIME        = 'JobStartTime';        """ :todo: docstring """ 
 WALL_TIME_LIMIT       = 'WallTimeLimit';       """ :todo: docstring """ 
 TOTAL_CPU_TIME        = 'TotalCPUTime';        """ :todo: docstring """ 
-TOTAL_PHYSICAL_MEMORY = 'TotalPhysicalMemory'; """ :todo: docstring """ 
-CPU_ARCHITECTURE      = 'CPUArchitecture';     """ :todo: docstring """
-GPU_ARCHITECTURE      = 'GPUArchitecture';     """ :todo: docstring """
+TOTAL_PHYSICAL_MEMORY = 'TotalPhysicalMemory'; """ :todo: docstring """
+SYSTEM_ARCHITECTURE   = 'SystemArchitecture';  """ :todo: docstring """
 OPERATING_SYSTEM_TYPE = 'OperatingSystemType'; """ :todo: docstring """ 
 CANDIDATE_HOSTS       = 'CandidateHosts';      """ :todo: docstring """ 
 QUEUE                 = 'Queue';               """ :todo: docstring """ 
@@ -77,10 +76,6 @@ PROCESSES_PER_HOST    = 'ProcessesPerHost';    """ :todo: docstring """
 THREADS_PER_PROCESS   = 'ThreadsPerProcess';   """ :todo: docstring """ 
 JOB_CONTACT           = 'JobContact';          """ :todo: docstring """
 NAME                  = 'Name';                """ The name of your job """ # non-GFD.90
-SMT                   = 'SMT';                 """ Simultaneous Multi-Threading, 
-                                                   meaning each physical core 
-                                                   supports up to the number of 
-                                                   Hardware Threads """
 
 
 ################################################################################
