@@ -34,17 +34,15 @@ SYNC_WAIT_UPDATE_INTERVAL = 1  # seconds
 MONITOR_UPDATE_INTERVAL   = 3  # seconds
 
 # Intel LSF hosts have SMT default to 4
-SMT_DEFAULT = 4
+SMT_DEFAULT = 1
 SMT_VALID_VALUES = [1, 2, 4]
 
 # FIXME: will be taken from resource config
 RESOURCES = {
     'summit': {'cpn': 42,
-               'gpn': 6,
-               'smt': SMT_DEFAULT},
+               'gpn': 6},
     'lassen': {'cpn': 40,
-               'gpn': 4,
-               'smt': SMT_DEFAULT}
+               'gpn': 4}
 }
 
 
@@ -211,8 +209,7 @@ def _lsfscript_generator(url, logger, jd, ppn, lsf_version, queue):
     cpn, gpn, smt = 0, 1, SMT_DEFAULT
     for resource_name in RESOURCES:
         if resource_name in hostname:
-            smt = jd.system_architecture.get('smt') or \
-                  RESOURCES[resource_name].get('smt', smt)
+            smt = jd.system_architecture.get('smt') or smt
             cpn = RESOURCES[resource_name].get('cpn', cpn) * smt
             gpn = RESOURCES[resource_name].get('gpn', gpn)
             break
