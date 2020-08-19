@@ -70,7 +70,7 @@ _ADAPTOR_CAPABILITIES  = {
                           c.CLEANUP,
                           c.WALL_TIME_LIMIT,
                           c.TOTAL_PHYSICAL_MEMORY,
-                          c.CPU_ARCHITECTURE,
+                          c.SYSTEM_ARCHITECTURE,
                         # c.OPERATING_SYSTEM_TYPE,
                           c.CANDIDATE_HOSTS,
                           c.QUEUE,
@@ -498,9 +498,12 @@ class SLURMJobService(cpi_job.Service):
         queue               = jd.as_dict().get(c.QUEUE)
         project             = jd.as_dict().get(c.PROJECT)
         total_memory        = jd.as_dict().get(c.TOTAL_PHYSICAL_MEMORY)
-        cpu_arch            = jd.as_dict().get(c.CPU_ARCHITECTURE)
+        sys_arch            = jd.as_dict().get(c.SYSTEM_ARCHITECTURE)
         job_contact         = jd.as_dict().get(c.JOB_CONTACT)
         c_hosts             = jd.as_dict().get(c.CANDIDATE_HOSTS)
+
+        cpu_arch            = sys_arch.get('cpu')
+        gpu_arch            = sys_arch.get('gpu')
 
         # check to see what's available in our job description
         # to override defaults
@@ -606,11 +609,12 @@ class SLURMJobService(cpi_job.Service):
                 # gres resources are specified *per node*
                 assert(n_nodes), 'need unique number of cores per node'
 
-                if cpu_arch: gpu_arch = cpu_arch.lower()
+                if gpu_arch: gpu_arch = gpu_arch.lower()
                 else       : gpu_arch = 'p100'
                 if gpu_arch == 'k80': count = 4
                 else                : count = 2
-                script += "#SBATCH --gres=gpu:%s:%d\n" % (gpu_arch, count)  # Make sure we take a full GPU node
+                # Make sure we take a full GPU node
+                script += "#SBATCH --gres=gpu:%s:%d\n" % (gpu_arch, count)
 
             # use '-C EGRESS' to enable outbound network
             script += "#SBATCH -C EGRESS\n"
