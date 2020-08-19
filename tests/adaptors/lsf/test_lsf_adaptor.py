@@ -31,7 +31,8 @@ def test_lsfscript_generator():
     jd.queue               = 'normal-queue'
     jd.project             = 'TestProject'
     jd.wall_time_limit     = 70
-    jd.system_architecture = {'smt': 2}
+    jd.system_architecture = {'smt': 2,
+                              'options': ['gpumps', 'nvme']}
     jd.total_cpu_count     = 65 * jd.system_architecture['smt']
 
     tgt_script = '\n#!/bin/bash \n' \
@@ -42,7 +43,7 @@ def test_lsfscript_generator():
                + '#BSUB -e error.log \n' \
                + '#BSUB -P TestProject \n' \
                + '#BSUB -nnodes 2 \n' \
-               + "#BSUB -alloc_flags 'gpumps smt2' \n" \
+               + "#BSUB -alloc_flags 'gpumps nvme smt2' \n" \
                + '\n' \
                + 'export RADICAL_SAGA_SMT=2 test_env=15\n' \
                + '/bin/sleep 60'
