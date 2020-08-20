@@ -40,9 +40,17 @@ SMT_VALID_VALUES = [1, 2, 4]
 # FIXME: will be taken from resource config
 RESOURCES = {
     'summit': {'cpn': 42,
-               'gpn': 6},
+               'gpn': 6,
+               'valid_alloc_flags': [
+                   'gpumps',
+                   'gpudefault',
+                   'nvme',
+                   'spectral',
+                   'maximizegpfs'
+               ]},
     'lassen': {'cpn': 40,
-               'gpn': 4}
+               'gpn': 4,
+               'valid_alloc_flags': []}
 }
 
 
@@ -206,12 +214,13 @@ def _lsfscript_generator(url, logger, jd, ppn, lsf_version, queue):
     if not hostname:
         raise RuntimeError('cannot determine target host f or %s' % url)
 
-    cpn, gpn, smt = 0, 1, SMT_DEFAULT
+    cpn, gpn, smt, valid_alloc_flags = 0, 1, SMT_DEFAULT, []
     for resource_name in RESOURCES:
         if resource_name in hostname:
             smt = jd.system_architecture.get('smt') or smt
-            cpn = RESOURCES[resource_name].get('cpn', cpn) * smt
-            gpn = RESOURCES[resource_name].get('gpn', gpn)
+            cpn = RESOURCES[resource_name]['cpn'] * smt
+            gpn = RESOURCES[resource_name]['gpn']
+            valid_alloc_flags = RESOURCES[resource_name]['valid_alloc_flags']
             break
 
     if not cpn:
@@ -229,9 +238,14 @@ def _lsfscript_generator(url, logger, jd, ppn, lsf_version, queue):
         gpu_nodes += 1
 
     nodes = max(cpu_nodes, gpu_nodes)
-
     lsf_bsubs += "#BSUB -nnodes %s \n" % str(nodes)
-    lsf_bsubs += "#BSUB -alloc_flags 'gpumps smt%d' \n" % smt
+
+    alloc_flags = []
+    for flag in jd.system_architecture.get('options', []):
+        if flag.lower() in valid_alloc_flags:
+            alloc_flags.append(flag.lower())
+    alloc_flags.append('smt%d' % smt)
+    lsf_bsubs += "#BSUB -alloc_flags '%s' \n" % ' '.join(alloc_flags)
 
     env_string += "export RADICAL_SAGA_SMT=%d" % smt
     if jd.environment:
