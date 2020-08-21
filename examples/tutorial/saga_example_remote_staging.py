@@ -9,7 +9,7 @@ import os
 import sys
 import getpass
 
-import radica.saga as rs
+import radical.saga as rs
 
 
 REMOTE_HOST = "localhost"

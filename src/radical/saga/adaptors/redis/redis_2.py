@@ -3,13 +3,10 @@ __author__    = "Andre Merzky"
 __copyright__ = "Copyright 2013, The SAGA Project"
 __license__   = "MIT"
 
-
 import redis
-from   pprint import pprint
 
-r = redis.Redis (host='localhost', password='securedis')
+r = redis.Redis (host='localhost')
 
-keep = True
 keep = False
 
 print("-----------------------------------------------")
@@ -18,7 +15,7 @@ keys = r.keys ("*")
 keys.sort()
 
 for k in keys :
-    t = r.type (k)
+    t = str(r.type (k), 'utf-8')
 
     if  t == 'hash' :
         d = r.hgetall (k)
