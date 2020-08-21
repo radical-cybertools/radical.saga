@@ -55,7 +55,7 @@ class Description (sa.Attributes) :
         self._attributes_register  (JOB_START_TIME       , None, sa.TIME,   sa.SCALAR, sa.WRITEABLE)
         self._attributes_register  (WALL_TIME_LIMIT      , None, sa.INT,    sa.SCALAR, sa.WRITEABLE)
         self._attributes_register  (TOTAL_PHYSICAL_MEMORY, None, sa.INT,    sa.SCALAR, sa.WRITEABLE)
-        self._attributes_register  (CPU_ARCHITECTURE     , None, sa.ENUM,   sa.SCALAR, sa.WRITEABLE)
+        self._attributes_register  (SYSTEM_ARCHITECTURE  ,   {}, sa.STRING, sa.DICT,   sa.WRITEABLE)
         self._attributes_register  (OPERATING_SYSTEM_TYPE, None, sa.ENUM,   sa.SCALAR, sa.WRITEABLE)
         self._attributes_register  (CANDIDATE_HOSTS      , None, sa.STRING, sa.VECTOR, sa.WRITEABLE)
         self._attributes_register  (QUEUE                , None, sa.STRING, sa.SCALAR, sa.WRITEABLE)

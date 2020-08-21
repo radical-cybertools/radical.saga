@@ -81,11 +81,11 @@ class Task (sbase.SimpleBase, satt.Attributes) :
         self._attributes_camelcasing   (True)
 
         # register properties with the attribute interface
-        self._attributes_register  (c.RESULT,    None,    satt.ANY,  satt.SCALAR, satt.READONLY)
+        self._attributes_register  (c.RESULT,    None,      satt.ANY,  satt.SCALAR, satt.READONLY)
         self._attributes_set_getter(c.RESULT,    self.get_result)
         self._attributes_set_setter(c.RESULT,    self._set_result)
 
-        self._attributes_register  (c.EXCEPTION, None,    satt.ANY,  satt.SCALAR, satt.READONLY)
+        self._attributes_register  (c.EXCEPTION, None,      satt.ANY,  satt.SCALAR, satt.READONLY)
         self._attributes_set_getter(c.EXCEPTION, self.get_exception)
         self._attributes_set_setter(c.EXCEPTION, self._set_exception)
 
@@ -119,6 +119,28 @@ class Task (sbase.SimpleBase, satt.Attributes) :
             self.run  ()
         elif self._ttype == c.TASK :
             pass
+
+
+    # --------------------------------------------------------------------------
+    #
+    def __eq__ (self, other) :
+
+        # we need to define __eq__ to ensure that tasks and jobs with different
+        # IDs but same dict representation can be added to Python containers
+        # (see Container.add()).
+
+        if isinstance(other, Task):
+            return self.get_id() == other.get_id()
+        else:
+            return super(Task, self).__eq__(other)
+
+
+    # --------------------------------------------------------------------------
+    #
+    def get_id(self):
+
+        # implement get_id for __eq__
+        return self._id
 
 
     # --------------------------------------------------------------------------
@@ -337,16 +359,8 @@ class Container (sbase.SimpleBase, satt.Attributes) :
             raise se.BadParameter ("Container handles tasks, not %s"
                                 % (type(task)))
 
-        # FIXME: at some point, task membership in a list seems to have broken
-        #        - I have no idea how and why.  Note that this also holds for
-        #        a plain Python list (so, when disabling the TASK attribute and
-        #        adding `self.tasks = list()` in `__init__`.  the tasks *do*
-        #        have different object IDs.  No idea how `in` is implemented
-        #
-      # if task not in self.tasks :
-        if True:
+        if task not in self.tasks :
             self.tasks.append (task)
-
 
 
     # --------------------------------------------------------------------------
@@ -582,7 +596,7 @@ class Container (sbase.SimpleBase, satt.Attributes) :
             raise se.NoSuccess ("Lookup requires non-empty id (not '%s')" % id)
 
         for t in self.tasks:
-            if t.id == id:
+            if t.get_id() == id:
                 return t
 
         raise se.NoSuccess ("task '%s' not found in container" % id)
