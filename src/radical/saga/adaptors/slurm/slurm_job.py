@@ -637,6 +637,14 @@ class SLURMJobService(cpi_job.Service):
             if cpu_arch : script += "#SBATCH -C %s\n"     % cpu_arch
             if gpu_count: script += "#SBATCH --gpus=%s\n" % gpu_count
 
+        elif queue == 'tmp3':
+
+            # this is a special queue, which is associated with SuperMUC-NG,
+            # but since there is no machine name in config data we only track
+            # this queue name to set SLURM QoS option
+            script += "#SBATCH --qos=nolimit\n"
+            self._logger.debug("SLURM QoS is set (SuperMUC-NG only)\n")
+
         else:
 
             if gpu_count: script += "#SBATCH --gpus=%s\n" % gpu_count
