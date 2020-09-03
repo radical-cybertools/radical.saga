@@ -13,7 +13,7 @@ import time
 import datetime
 import threading
 
-from cgi  import parse_qs
+from urllib.parse import parse_qs
 
 from ...url           import Url
 from ...              import exceptions as rse
@@ -40,13 +40,13 @@ class _job_state_monitor(threading.Thread):
 
         self.logger = job_service._logger
         self.js = job_service
-        self._stop = threading.Event()
+        self._term = threading.Event()
 
         super(_job_state_monitor, self).__init__()
         self.setDaemon(True)
 
     def stop(self):
-        self._stop.set()
+        self._term.set()
 
 
     def run(self):
@@ -55,7 +55,7 @@ class _job_state_monitor(threading.Thread):
         # a row...
         error_type_count = dict()
 
-        while not self._stop.is_set ():
+        while not self._term.is_set ():
 
             try:
                 # FIXME: do bulk updates here! we don't want to pull information
@@ -107,15 +107,6 @@ class _job_state_monitor(threading.Thread):
 
             finally :
                 time.sleep (MONITOR_UPDATE_INTERVAL)
-
-
-# ------------------------------------------------------------------------------
-#
-def log_error_and_raise(message, exception, logger):
-    """ logs an 'error' message and subsequently throws an exception
-    """
-    logger.error(message)
-    raise exception(message)
 
 
 # ------------------------------------------------------------------------------
@@ -617,17 +608,19 @@ class CobaltJobService (cpi_job.Service):
 
         # Check if all required cobalt tools are available
         for cmd in list(self._commands.keys()):
+
             ret, out, _ = self.shell.run_sync("which %s " % cmd)
+
             if ret != 0:
-                message = "Error finding Cobalt tools: %s" % out
-                log_error_and_raise(message, rse.NoSuccess, self._logger)
+                raise rse.NoSuccess("Error finding Cobalt tools: %s" % out)
+
             else:
                 path = out.strip()  # strip removes newline
                 ret, out, _ = self.shell.run_sync("%s --version" % cmd)
+
                 if ret != 0:
-                    message = "Error finding Cobalt tools: %s" % out
-                    log_error_and_raise(message, rse.NoSuccess,
-                        self._logger)
+                    raise rse.NoSuccess("Error finding Cobalt tools: %s" % out)
+
                 else:
                     # version is reported as
                     # "version: x.y.z" #.strip().split()[1]
@@ -673,8 +666,8 @@ class CobaltJobService (cpi_job.Service):
                                    run_job=self._commands['qsub']['path']
                                   )
             self._logger.info("Generated Cobalt script: %s" % str(script))
-        except Exception as ex:
-            log_error_and_raise(str(ex), rse.BadParameter, self._logger)
+        except Exception as e:
+            raise rse.BadParameter('cobalt script generation failed') from e
 
         # try to create the working directory (if defined)
         # WARNING: this assumes a shared filesystem between login node and
@@ -686,8 +679,7 @@ class CobaltJobService (cpi_job.Service):
             job_current_workdir = jd.working_directory  # Keep track of the cwd,
             if ret != 0:
                 # something went wrong
-                message = "Couldn't create working directory - %s" % (out)
-                log_error_and_raise(message, rse.NoSuccess, self._logger)
+                raise rse.NoSuccess("Couldn't create workdir - %s" % out)
 
 
         # Now we want to execute the script. This process consists of two steps:
@@ -707,8 +699,7 @@ class CobaltJobService (cpi_job.Service):
                 -t RS-PBSProJobScript.XXXXXX` && echo $SCRIPTFILE"
                 % (self._adaptor.base_workdir))
         if ret != 0:
-            message = "Couldn't create Cobalt script file - %s" % (out)
-            log_error_and_raise(message, rse.NoSuccess, self._logger)
+            raise rse.NoSuccess("Couldn't create Cobalt script file - %s" % out)
 
         # Save Script file for later...
         # Cobalt *needs* the file to stick around, even after submission
@@ -722,8 +713,7 @@ class CobaltJobService (cpi_job.Service):
                 > $SCRIPTFILE && chmod +x $SCRIPTFILE && echo $SCRIPTFILE'
                 % (cobalt_script_file, script))
         if ret != 0:
-            message = "Couldn't create Cobalt script file - %s" % (out)
-            log_error_and_raise(message, rse.NoSuccess, self._logger)
+            raise rse.NoSuccess("Couldn't create Cobalt script file - %s" % out)
 
         cmdline = "%s --mode script %s" \
                 % (self._commands['qsub']['path'], cobalt_script_file)
@@ -731,9 +721,9 @@ class CobaltJobService (cpi_job.Service):
 
         if ret != 0:
             # something went wrong
-            message = "Error running job via 'qsub': %s. Commandline was: %s" \
-                % (out, cmdline)
-            log_error_and_raise(message, rse.NoSuccess, self._logger)
+            raise rse.NoSuccess("Error running 'qsub': %s. Commandline: %s"
+                               % (out, cmdline))
+
         else:
             # parse the job id. qsub usually returns just the job id, but
             # sometimes there are a couple of lines of warnings before.
@@ -795,8 +785,7 @@ class CobaltJobService (cpi_job.Service):
         # If we don't have the job in our dictionary, we don't want it,
         # unless we are trying to reconnect.
         if not reconnect and job_id not in self.jobs:
-            message = "Unknown job id: %s. Can't update state." % job_id
-            log_error_and_raise(message, rse.NoSuccess, self._logger)
+            raise rse.NoSuccess("Unknown job id: %s." % job_id)
 
         if not reconnect:
             # job_info contains the info collect when _job_get_info
@@ -841,8 +830,8 @@ class CobaltJobService (cpi_job.Service):
         if ret != 0:
 
             if reconnect:
-                message = "Couldn't reconnect to job '%s': %s" % (job_id, out)
-                log_error_and_raise(message, rse.NoSuccess, self._logger)
+                raise rse.NoSuccess("Couldn't reconnect to job '%s': %s"
+                                   % (job_id, out))
 
             if out.strip() == '':
                 # Cobalt's 'qstat' command return's nothing
@@ -870,8 +859,8 @@ class CobaltJobService (cpi_job.Service):
 
                 if ret != 0:
                     if reconnect:
-                        message = "Couldn't reconnect to job '%s': %s" % (job_id, out)
-                        log_error_and_raise(message, rse.NoSuccess, self._logger)
+                        raise rse.NoSuccess("Couldn't reconnect to job '%s': %s"
+                                            % (job_id, out))
                 elif out.strip() == '':
                     # Let's see if the last known job state was running or pending. in
                     # that case, the job is gone now, which can either mean DONE,
@@ -893,8 +882,7 @@ class CobaltJobService (cpi_job.Service):
                         timestamp = matches.group(1).strip()
                         exit_code = matches.group(2).strip()
                     except Exception as e:
-                        log_error_and_raise('Could not parse job status %s' % e,
-                                            rse.NoSuccess, self._logger)
+                        raise rse.NoSuccess('Could not parse job status') from e
 
                     # Current format: Mon Jan 23 02:44:05 2017 +0000 (UTC)
                     # ASSUMPTION: Date is in UTC (as seen on the servers)
@@ -916,8 +904,8 @@ class CobaltJobService (cpi_job.Service):
                         job_info['state'] = api.DONE
             else:
                 # something went wrong
-                message = "Error retrieving job info via 'qstat': %s" % out
-                log_error_and_raise(message, rse.NoSuccess, self._logger)
+                raise rse.NoSuccess("Error retrieving job info via 'qstat': %s"
+                                    % out)
         else:
 
             # The job seems to exist on the system. let's process some data.
@@ -1038,8 +1026,7 @@ class CobaltJobService (cpi_job.Service):
                                         % (self._commands['qdel']['path'], pid))
 
         if ret != 0:
-            message = "Error canceling job via 'qdel': %s" % out
-            log_error_and_raise(message, rse.NoSuccess, self._logger)
+            raise rse.NoSuccess("Error canceling job via 'qdel': %s" % out)
 
         # assume the job was succesfully canceled
         self.jobs[job_id]['state'] = api.CANCELED
@@ -1148,11 +1135,12 @@ class CobaltJobService (cpi_job.Service):
             % self._commands['qstat']['path'])
 
         if ret != 0 and len(out) > 0:
-            message = "failed to list jobs via 'qstat': %s" % out
-            log_error_and_raise(message, rse.NoSuccess, self._logger)
+            raise rse.NoSuccess("failed to list jobs via 'qstat': %s" % out)
+
         elif ret != 0 and len(out) == 0:
             # qstat | grep `` exits with 1 if the list is empty
             pass
+
         else:
             for line in out.split("\n"):
                 # output looks like this:
@@ -1262,8 +1250,7 @@ class CobaltJob (cpi_job.Job):
         """ implements cpi_job.Job.wait()
         """
         if self._started is False:
-            log_error_and_raise("Can't wait for job that hasn't been started",
-                rse.IncorrectState, self._logger)
+            raise rse.IncorrectState("Can't wait for job that hasn't been started")
         else:
             self.js._job_wait(job_id=self._id, timeout=timeout)
 
@@ -1275,8 +1262,8 @@ class CobaltJob (cpi_job.Job):
         """ implements cpi_job.Job.cancel()
         """
         if self._started is False:
-            log_error_and_raise("Can't wait for job that hasn't been started",
-                rse.IncorrectState, self._logger)
+            raise rse.IncorrectState("Can't wait for job that hasn't been started")
+
         else:
             self.js._job_cancel(self._id)
 

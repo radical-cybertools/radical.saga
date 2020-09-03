@@ -4,6 +4,46 @@ For a list of open issues and known problems, see:
 https://github.com/radical-cybertools/radical.saga/issues
 
 
+Version 1.5.2 Release                                                 2020-08-05
+--------------------------------------------------------------------------------
+
+  - fix a python3 transition remnant
+  
+
+Version 1.5.1 Release                                                 2020-08-05
+--------------------------------------------------------------------------------
+
+  - Access to K80 and P100 gpus on Bridges
+  - added exception if number of nodes is not set, but memory is allocated
+  - get `parse_qs` from `urllib.parse` (module `cgi` is not used in SAGA)
+  - replace PIL with Pillow
+  - set min python version to 3.6
+
+      
+Version 1.4.0 Release                                                 2020-05-12
+--------------------------------------------------------------------------------
+
+  - merge #782: Lassen support
+  - support for Frontera's RTX queue
+
+      
+Version 1.3.0 Release                                                 2020-04-10
+--------------------------------------------------------------------------------
+
+  - pr/768: Removing some warnings
+  - pr/769: fix ppn for frontera
+  - pr/771: fixed handling of Longhorn's sbatch
+  - pr/776: clean up logs
+  - pr/778: traverse support also ensure baclward compatibility for cgi module
+  - add example for cobalt
+  - doc fixes (issue #765)
+  - First commit fixing the docs
+  - apply exception chaining and some exception / logging cleanup
+  - longhorn ppn fix
+  - mira -> theta
+  - resolve name conflict with threading module
+
+      
 Version 1.2.0 Release                                                 2020-03-07
 --------------------------------------------------------------------------------
 

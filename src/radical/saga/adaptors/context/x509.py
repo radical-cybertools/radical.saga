@@ -150,7 +150,7 @@ class ContextX509 (cpi.Context) :
             fh = open (api.user_proxy)
         except Exception as e:
             raise PermissionDenied ("X509 proxy '%s' not readable: %s" \
-                                 % (api.user_proxy, str(e)))
+                                 % (api.user_proxy, str(e))) from e
         else :
             fh.close ()
 

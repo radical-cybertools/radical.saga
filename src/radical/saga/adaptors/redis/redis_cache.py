@@ -5,9 +5,8 @@ __license__   = "MIT"
 
 
 import time
-
-import threading
-from . import redis_ordered_dict    as rod
+import threading as mt
+from collections import OrderedDict
 
 CACHE_DEFAULT_SIZE = 10000
 CACHE_DEFAULT_TTL  = 1.0    # 1 second
@@ -31,8 +30,8 @@ class Cache :
 
         self.size   = size
         self.ttl    = ttl
-        self.dict   = rod.OrderedDict ()
-        self.lock   = threading.RLock ()
+        self.dict   = OrderedDict()
+        self.lock   = mt.RLock()
         self.logger = logger
         self.hit    = 0
         self.miss   = 0

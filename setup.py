@@ -1,10 +1,9 @@
 #!/usr/bin/env python
 
-__author__    = 'RADICAL Team'
-__email__     = 'radical@rutgers.edu'
-__copyright__ = 'Copyright 2013-16, RADICAL Research, Rutgers University'
+__author__    = 'RADICAL-Cybertools Team'
+__email__     = 'info@radical-cybertools.org'
+__copyright__ = 'Copyright 2013-20, The RADICAL-Cybertools Team'
 __license__   = 'MIT'
-
 
 """ Setup script, only usable via pip. """
 
@@ -15,7 +14,6 @@ import glob
 import shutil
 
 import subprocess as sp
-
 
 from setuptools import setup, Command, find_namespace_packages
 
@@ -134,13 +132,13 @@ def get_version(mod_root):
         return version_base, version_detail, sdist_name
 
     except Exception as e:
-        raise RuntimeError('Could not extract/set version: %s' % e)
+        raise RuntimeError('Could not extract/set version: %s' % e) from e
 
 
 # ------------------------------------------------------------------------------
-# check python version. we need >= 2.7, <3.x
-if  sys.hexversion <= 0x03050000:
-    raise RuntimeError('%s requires Python 3.5 or higher' % name)
+# check python version, should be >= 3.6
+if sys.hexversion < 0x03060000:
+    raise RuntimeError('ERROR: %s requires Python 3.6 or newer' % name)
 
 
 # ------------------------------------------------------------------------------
@@ -182,12 +180,6 @@ class RunTwine(Command):
 
 # ------------------------------------------------------------------------------
 #
-if sys.hexversion <= 0x03050000:
-    raise RuntimeError("SETUP ERROR: %s requires Python 3.5 or higher" % name)
-
-
-# ------------------------------------------------------------------------------
-#
 df = list()
 df.append(('share/%s/examples' % name, glob.glob('examples/*.py')))
 
@@ -209,7 +201,7 @@ setup_args = {
     'url'                : 'http://radical-cybertools.github.io/radical.saga/',
     'license'            : 'MIT',
     'keywords'           : 'radical job saga',
-    'python_requires'    : '>=3.5',
+    'python_requires'    : '>=3.6',
     'classifiers'        : [
         'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Developers',
@@ -217,7 +209,7 @@ setup_args = {
         'License :: OSI Approved :: MIT License',
         'Programming Language :: Python',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6',
         'Topic :: Utilities',
         'Topic :: System :: Distributed Computing',
         'Topic :: Scientific/Engineering :: Interface Engine/Protocol Translator',

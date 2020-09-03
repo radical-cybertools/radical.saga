@@ -46,11 +46,11 @@ _ADAPTOR_CAPABILITIES  = {
 #
 _ADAPTOR_DOC           = {
     "name"             : _ADAPTOR_NAME,
-    "cfg_options"      : _ADAPTOR_OPTIONS, 
+    "cfg_options"      : _ADAPTOR_OPTIONS,
     "capabilities"     : _ADAPTOR_CAPABILITIES,
     "description"      : """The HTTP file adpator allows file transfer (copy) from remote resources to the local machine via the HTTP/HTTPS protocol, similar to cURL.""",
     "example"          : "examples/files/http_file_copy.py",
-    "schemas"          : {"http"   :"use the http protocol to access a remote file", 
+    "schemas"          : {"http"   :"use the http protocol to access a remote file",
                           "https"  :"use the https protocol to access a remote file"}
 }
 
@@ -219,7 +219,7 @@ class HTTPFile (cpi_fs.File):
             urllib.request.urlretrieve(str(src), target)
         except Exception as e:
             raise BadParameter("Couldn't copy %s to %s: %s" %
-                                    (str(src), target, str(e)))
+                                    (str(src), target, str(e))) from e
 
     # ----------------------------------------------------------------
     #

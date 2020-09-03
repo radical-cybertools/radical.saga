@@ -9,15 +9,13 @@ Requirements
 
 radical.saga has the following requirements:
 
-* Python 3.5 or newer
+* Python 3.6 or newer
 
 
 Installation via PyPi
 ---------------------
 
-radical.saga is available for download via PyPI and may be installed using
-easy_install or pip (preferred). Both automatically download and install all
-dependencies required by radical.saga if they can't be found on your system:
+radical.saga is available for download via PyPI and may be installed using pip. This automatically downloads and installs all dependencies required by radical.saga if they can't be found on your system:
 
 .. code-block:: bash
 
@@ -39,16 +37,29 @@ alternative Python environment (e.g., in your home directory):
     pip install radical.saga
 
 
-**What if my system Doesn't come With virtualenv, pip or easy_install?**
+**What if my system Doesn't come With virtualenv, pip?**
 
 There's a simple workaround for that using the 'instant' version of virtualenv.
-It also installs easy_install and pip:
+It also installs pip:
 
 .. code-block:: bash
 
     wget https://raw.githubusercontent.com/pypa/virtualenv/1.9.1/virtualenv.py
     python virtualenv.py $HOME/sagaenv/ --no-site-packages
     . $HOME/sagaenv/bin/activate
+    pip install radical.saga
+    
+    
+
+Using Conda
+-----------
+
+Similar to Virtualenv, another method you can employ to create a Python environment is by using conda, the package manager associated with Anaconda. Before moving further, make sure you have Anaconda already installed. For more info about that, check out this `link <https://docs.anaconda.com/anaconda/install/>`_
+
+.. code-block:: bash
+
+    conda create --name env_name python=3.7
+    conda activate env_name
     pip install radical.saga
 
 

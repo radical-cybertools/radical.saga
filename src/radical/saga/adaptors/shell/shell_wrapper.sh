@@ -75,7 +75,7 @@ NOTIFICATIONS="$BASE/notifications"
 LOG="$BASE/log"
 
 # this process will terminate when idle for longer than TIMEOUT seconds
-TIMEOUT=30
+TIMEOUT=300
 
 # update timestamp function
 TIMESTAMP=0
@@ -94,7 +94,7 @@ EXIT_VAL=1
 \trap cleanup_handler_quit QUIT
 \trap cleanup_handler_term TERM
 \trap cleanup_handler_exit EXIT
-# \trap idle_handler ALRM
+\trap idle_handler ALRM
 #\trap '' ALRM
 
 \trap cleanup_handler_sighup  HUP
@@ -847,8 +847,8 @@ cmd_quit () {
     \touch "$BASE/timed_out.$GID"
     EXIT_VAL=2
 # FIXME: re-enable the lines below when idle-checker is re-enabled
-# else
-#   \touch "$BASE/quit.$GID"
+  else
+    \touch "$BASE/quit.$GID"
   fi
 
   # kill idle checker
@@ -893,8 +893,8 @@ listen() {
   fi
 
   # make sure we get killed when idle
-  #( idle_checker $GID 1>/dev/null 2>/dev/null 3</dev/null & ) &
-  #IDLE=$!
+  ( idle_checker $GID 1>/dev/null 2>/dev/null 3</dev/null & ) &
+  IDLE=$!
 
   # make sure the fifo to communicate with the monitors exists
   \rm -f  "$BASE/fifo.$GID"

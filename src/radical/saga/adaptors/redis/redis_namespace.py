@@ -54,16 +54,14 @@ import redis
 import re
 import os
 import time
-import string
 import threading as mt
 
-import radical.utils         as ru
-import radical.utils.threads as rut
+import radical.utils as ru
+
+from ...       import exceptions as rse
+from ...advert import constants  as rsac
 
 from . import redis_cache
-
-import radical.saga.exceptions       as rse
-import radical.saga.advert.constants as c
 
 
 TYPE   = 'type'
@@ -104,7 +102,7 @@ def redis_ns_name(path):
 
 # ------------------------------------------------------------------------------
 #
-class redis_ns_monitor(mt.Thread):
+class redis_ns_monitor(object):
 
     # --------------------------------------------------------------------------
     #
@@ -118,16 +116,34 @@ class redis_ns_monitor(mt.Thread):
                 'ATTRIBUTE': re.compile('\s*\[(?P<key>[^=]+)=(?P<val>.+)]\s*')
         }
 
-        rut.Thread.__init__(self, self.work)
-        self.setDaemon(True)
-
+        self._term   = mt.Event()
+        self._worker = mt.Thread(target=self.work)
+        self._worker.daemon = True
 
     # --------------------------------------------------------------------------
     #
-    def run(self):
+    def start(self):
+
+        self._worker.start()
+
+    # --------------------------------------------------------------------------
+    #
+    def stop(self):
+
+        self._term.set()
+
+    # --------------------------------------------------------------------------
+    #
+    def work(self):
+
+        while not self._term.is_set():
+            self._work()
+
+    # --------------------------------------------------------------------------
+    #
+    def _work(self):
 
         try:
-
             callbacks = self.r.callbacks
             sub       = self.pub.listen()
 
@@ -146,7 +162,6 @@ class redis_ns_monitor(mt.Thread):
                     self.logger.warn("ignoring event args: %s"  %  data)
                     continue
 
-
                 self.logger.debug("sub %s"  %  data)
                 event = elems[0]
                 path  = elems[1]
@@ -156,26 +171,24 @@ class redis_ns_monitor(mt.Thread):
 
                     if event == 'ATTRIBUTE':
 
-                        for arg in args:
+                        # args are formatted like '[key=val]'
+                        match = self.pat[event].match(' '.join(args))
 
-                            # args are formatted like '[key=val]'
-                            match = self.pat[event].match(string.join(args,' '))
+                        if not match:
+                            self.logger.warn("parse error for %s" % args)
+                            continue
 
-                            if not match:
-                                self.logger.warn("parse error for %s" % args)
-                                continue
+                        # FIXME: error check
+                        key     = match.group('key')
+                        val     = match.group('val')
 
-                            # FIXME: error check
-                            key     = match.group('key')
-                            val     = match.group('val')
+                        if key in callbacks[path]:
+                            for idx in callbacks[path][key]:
 
-                            if key in callbacks[path]:
-                                for idx in callbacks[path][key]:
+                              # cb  = callbacks[path][key][idx][0]
+                                obj = callbacks[path][key][idx][1]
 
-                                  # cb  = callbacks[path][key][idx][0]
-                                    obj = callbacks[path][key][idx][1]
-
-                                    obj.set_attribute(key, val, obj._UP)
+                                obj.set_attribute(key, val, obj._UP)
 
                     if event == 'ATTRIBUTES':
                         self.logger.warn("unknown event type %s" % event)
@@ -242,8 +255,6 @@ class redis_ns_server(redis.Redis):
         self.monitor = redis_ns_monitor(self, self.pub)
         self.monitor.start()
 
-
-
     def __del__(self):
 
         if self.pub:
@@ -268,7 +279,6 @@ class redis_ns_entry:
         self.cache     = r.cache
         self.callbacks = r.callbacks
 
-
     # --------------------------------------------------------------------------
     #
     def _dump(self):
@@ -283,7 +293,6 @@ class redis_ns_entry:
         print("self.cache    : %s" % str(self.cache    ))
         print("self.callbacks: %s" % str(self.callbacks))
 
-
     # --------------------------------------------------------------------------
     #
     @classmethod
@@ -291,27 +300,24 @@ class redis_ns_entry:
 
         r.logger.debug("redis_ns_entry.opendir %s" % path)
 
-        e = redis_ns_entry(r, path)
+        ns_en = redis_ns_entry(r, path)
 
         try:
-            e.fetch()
-
+            ns_en.fetch()
         except Exception as e:
 
-            if c.CREATE         & flags or \
-               c.CREATE_PARENTS & flags    :
-                e = redis_ns_entry(r, path)
-                e.mkdir(flags)
-
+            if rsac.CREATE         & flags or \
+               rsac.CREATE_PARENTS & flags    :
+                ns_en = redis_ns_entry(r, path)
+                ns_en.mkdir(flags)
             else:
-                raise rse.BadParameter("Cannot open %s (does not exist)" % path)
+                raise rse.BadParameter(
+                    "Cannot open %s (does not exist)" % path) from e
 
-
-        if not e.is_dir():
+        if not ns_en.is_dir():
             raise rse.BadParameter("Cannot open %s (not a directory)" % path)
 
-        return e
-
+        return ns_en
 
     # --------------------------------------------------------------------------
     #
@@ -320,39 +326,31 @@ class redis_ns_entry:
         # FIXME: the checks below make open quite slow, as we travel down the
         #        path components.  This should be done in a single pipeline.
 
-
         r.logger.debug("redis_ns_entry.open %s" % path)
 
         # make sure parent dir exists
         try:
             parent_path = redis_ns_parent(path)
-
             # go down the rabbit hole
             parent = self.opendir(r, parent_path, flags)
-
-
         except Exception as e:
-
-            raise rse.BadParameter("Cannot open parent %s (%s)" % (parent, e))
-
+            raise rse.BadParameter(
+                "Cannot open parent %s (%s)" % (path, e)) from e
 
         # try to open entry itself
-        e = redis_ns_entry(r, path)
+        ns_en = redis_ns_entry(r, path)
         try:
-            e.fetch()
+            ns_en.fetch()
+        except Exception as e:
 
-        except Exception:
-
-            if c.CREATE & flags:
-                e.node[TYPE] = ENTRY
-                e.create(flags)
-
+            if rsac.CREATE & flags:
+                ns_en.node[TYPE] = ENTRY
+                ns_en.create(flags)
             else:
-                raise rse.BadParameter("Cannot open %s (no such entry)" % path)
+                raise rse.BadParameter(
+                    "Cannot open %s (no such entry)" % path) from e
 
-
-        return e
-
+        return ns_en
 
     # --------------------------------------------------------------------------
     #
@@ -366,7 +364,7 @@ class redis_ns_entry:
         path = self.path
 
         if self.valid:
-            raise rse.IncorrectState("mkdir %s failed, entry exists" %  path)
+            raise rse.IncorrectState("mkdir %s failed, entry exists" % path)
 
         self.logger.debug("redis_ns_entry.mkdir %s" % path)
 
@@ -376,12 +374,12 @@ class redis_ns_entry:
             # if CREATE_PARENTS is set, we need to check all parents, and need
             # to create them as needed.  We go top down, and terminate once
             # a parent is found
-            if c.CREATE_PARENTS & flags:
+            if rsac.CREATE_PARENTS & flags:
 
                 # this will recursively travel down the chimney hole, and stop
                 # whenever it finds an existing  directory
                 parent = redis_ns_parent(path)
-                pe = redis_ns_entry.opendir(self.r, parent, c.CREATE_PARENTS)
+                pe = redis_ns_entry.opendir(self.r, parent, rsac.CREATE_PARENTS)
 
             else:
                 # if 'CREATE_PARENTS is not set, parent must exist.
@@ -394,7 +392,7 @@ class redis_ns_entry:
 
                 except Exception as e:
                     raise rse.BadParameter("parent does not exist on %s: %s" %
-                                           (path, e))
+                                           (path, e)) from e
 
                 if not pe.is_dir():
                     raise rse.BadParameter("parent is no directory for %s: %s" %
@@ -402,7 +400,6 @@ class redis_ns_entry:
 
         self.node[TYPE] = DIR
         self.create(flags)
-
 
     # --------------------------------------------------------------------------
     #
@@ -431,9 +428,9 @@ class redis_ns_entry:
 
         p = self.r.pipeline()
         # FIXME: add guard
-        if len(self.node): p.hmset(NODE + ':' + path, self.node)
-        if len(self.data): p.hmset(DATA + ':' + path, self.data)
-        if len(self.kids): p.hmset(KIDS + ':' + path, self.kids)
+        if len(self.node): p.hset(NODE + ':' + path, None, None, self.node)
+        if len(self.data): p.hset(DATA + ':' + path, None, None, self.data)
+        if len(self.kids): p.hset(KIDS + ':' + path, None, None, self.kids)
 
         # add entry as  kid to parent
         # FIXME: avoid duplicated entries!
@@ -445,7 +442,6 @@ class redis_ns_entry:
             val = self.data[key]
             p.sadd(KEYS + ':' + str(key), path)
             p.sadd(VALS + ':' + str(val), path)
-
 
         # FIXME: eval vals
         p.execute()
@@ -461,14 +457,12 @@ class redis_ns_entry:
 
         self.valid = True
 
-
     # --------------------------------------------------------------------------
     #
     def __str__(self):
 
         return "[%-4s] %-25s %s %s : %s" \
              % (self.node[TYPE], self.path, self.node, self.kids, self.data)
-
 
     # --------------------------------------------------------------------------
     #
@@ -478,7 +472,6 @@ class redis_ns_entry:
             return True
         else:
             return False
-
 
     # --------------------------------------------------------------------------
     #
@@ -490,7 +483,6 @@ class redis_ns_entry:
         self.fetch()
 
         return self.kids
-
 
     # --------------------------------------------------------------------------
     #
@@ -514,7 +506,6 @@ class redis_ns_entry:
             # some cache ops failed, so we need to properly fetch data.  We
             # simply fetch all of it
             pass
-
 
         try:
             p = self.r.pipeline()
@@ -548,8 +539,8 @@ class redis_ns_entry:
 
         except Exception as e:
             self.valid = False
-            raise rse.IncorrectState("backend entry gone or corrupted: %s" % e)
-
+            raise rse.IncorrectState(
+                "backend entry gone or corrupted: %s" % e) from e
 
     # --------------------------------------------------------------------------
     #
@@ -560,7 +551,6 @@ class redis_ns_entry:
         self.fetch()  # refresh cache/state as needed
 
         return self.data
-
 
     # --------------------------------------------------------------------------
     #
@@ -574,7 +564,6 @@ class redis_ns_entry:
         # respective SAGA API object (if possible)
 
         return None
-
 
     # --------------------------------------------------------------------------
     #
@@ -593,7 +582,6 @@ class redis_ns_entry:
             self.cache._dump()
 
         return val
-
 
     # --------------------------------------------------------------------------
     #
@@ -616,12 +604,11 @@ class redis_ns_entry:
             # nothing else to do
             return
 
-
         # need to set the key, and update the key/val indexes
         p = self.r.pipeline()
         # FIXME: add guard
-        p.hmset(NODE + ':' + path, {'mtime': time.time()})
-        p.hmset(DATA + ':' + path, {key    : val})
+        p.hset(NODE + ':' + path, None, None, {'mtime': time.time()})
+        p.hset(DATA + ':' + path, None, None, {key    : val})
 
         # delete old invalid index entry
         if key in self.data:
@@ -644,7 +631,6 @@ class redis_ns_entry:
         # update cache
         self.data[key] = val
         self.cache.set(DATA + ':' + path, self.data)
-
 
     # --------------------------------------------------------------------------
     #

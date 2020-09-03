@@ -233,6 +233,13 @@ SAGA defines the following constants as valid job description attributes:
 
    :type: int() or str()
 
+.. autodata:: TOTAL_GPU_COUNT
+.. data:: total_gpu_count
+
+   (Property) Same as attribute :data:`~radical.saga.job.TOTAL_GPU_COUNT`.
+
+   :type: int() or str()
+
 .. autodata:: NUMBER_OF_PROCESSES
 .. data:: number_of_processes 
 
@@ -280,10 +287,12 @@ SAGA defines the following constants as valid job description attributes:
 
    (Property) Same as attribute :data:`~radical.saga.job.TOTAL_PHYSICAL_MEMORY`.
 
-.. autodata:: CPU_ARCHITECTURE
-.. data:: cpu_architecture 
+.. autodata:: SYSTEM_ARCHITECTURE
+.. data:: system_architecture
 
-   (Property) Same as attribute :data:`~radical.saga.job.CPU_ARCHITECTURE`.
+   (Property) Same as attribute :data:`~radical.saga.job.SYSTEM_ARCHITECTURE`.
+
+   :type: dict()
 
 .. autodata:: OPERATING_SYSTEM_TYPE
 .. data:: operating_system_type 

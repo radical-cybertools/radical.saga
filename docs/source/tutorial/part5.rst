@@ -20,7 +20,7 @@ module, the Python Image Library (PIL). This is done via pip:
 
 .. code-block:: bash
 
-    pip install PIL
+    pip install Pillow
 
 Next, we need to download the Mandelbrot fractal generator itself as well as the
 shell wrapper scrip. It is really just a very simple python script that, if

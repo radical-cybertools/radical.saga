@@ -10,11 +10,11 @@ __license__   = "MIT"
 """
 
 import re
-import os 
+import os
 import time
 import threading
 
-from cgi  import parse_qs
+from urllib.parse import parse_qs
 
 import radical.utils as ru
 
@@ -42,13 +42,13 @@ class _job_state_monitor(threading.Thread):
 
         self.logger = job_service._logger
         self.js = job_service
-        self._stop = threading.Event()
+        self._term = threading.Event()
 
         super(_job_state_monitor, self).__init__()
         self.setDaemon(True)
 
     def stop(self):
-        self._stop.set()
+        self._term.set()
 
 
     def run(self):
@@ -57,7 +57,7 @@ class _job_state_monitor(threading.Thread):
         # a row...
         error_type_count = dict()
 
-        while not self._stop.is_set ():
+        while not self._term.is_set ():
 
             try:
                 # FIXME: do bulk updates here! we don't want to pull information
@@ -69,7 +69,7 @@ class _job_state_monitor(threading.Thread):
                     job_info = jobs[job_id]
 
                     # we only need to monitor jobs that are not in a
-                    # terminal state, so we can skip the ones that are 
+                    # terminal state, so we can skip the ones that are
                     # either done, failed or canceled
                     if  job_info['state'] \
                         not in [api.DONE, api.FAILED, api.CANCELED] :
@@ -110,17 +110,8 @@ class _job_state_monitor(threading.Thread):
 
 # ------------------------------------------------------------------------------
 #
-def log_error_and_raise(message, exception, logger):
-    """ logs an 'error' message and subsequently throws an exception
-    """
-    logger.error(message)
-    raise exception(message)
-
-
-# ------------------------------------------------------------------------------
-#
 def _pbs_to_saga_jobstate(state):
-    """ 
+    """
     translates a pbs one-letter state to saga states
     """
 
@@ -167,7 +158,7 @@ def _pbscript_generator(url, logger, jd, ppn, gres, pbs_version, is_cray=False,
 
     if jd.environment:
         pbs_params += "#PBS -v %s\n" % \
-                ','.join (["%s=%s" % (k,v) 
+                ','.join (["%s=%s" % (k,v)
                            for k,v in jd.environment.items()])
 
 # apparently this doesn't work with older PBS installations
@@ -191,7 +182,7 @@ def _pbscript_generator(url, logger, jd, ppn, gres, pbs_version, is_cray=False,
             if os.path.isabs(jd.output):
                 pbs_params += "#PBS -o %s \n" % jd.output
             else:
-                # user provided a relative path for STDOUT. in this case 
+                # user provided a relative path for STDOUT. in this case
                 # we prepend the workind directory path before passing
                 # it on to PBS
                 pbs_params += "#PBS -o %s/%s \n" % (jd.working_directory,
@@ -200,14 +191,14 @@ def _pbscript_generator(url, logger, jd, ppn, gres, pbs_version, is_cray=False,
             pbs_params += "#PBS -o %s \n" % jd.output
 
     if jd.error:
-        # if working directory is set, we want stderr to end up in 
+        # if working directory is set, we want stderr to end up in
         # the working directory as well, unless it contains a specific
-        # path name. 
+        # path name.
         if jd.working_directory:
             if os.path.isabs(jd.error):
                 pbs_params += "#PBS -e %s \n" % jd.error
             else:
-                # user provided a realtive path for STDERR. in this case 
+                # user provided a realtive path for STDERR. in this case
                 # we prepend the workind directory path before passing
                 # it on to PBS
                 pbs_params += "#PBS -e %s/%s \n" % (jd.working_directory,
@@ -411,8 +402,8 @@ _ADAPTOR_INFO = {
 ###############################################################################
 # The adaptor class
 class Adaptor (a_base.Base):
-    """ this is the actual adaptor class, which gets loaded by SAGA (i.e. by 
-        the SAGA engine), and which registers the CPI implementation classes 
+    """ this is the actual adaptor class, which gets loaded by SAGA (i.e. by
+        the SAGA engine), and which registers the CPI implementation classes
         which provide the adaptor's functionality.
     """
 
@@ -558,8 +549,8 @@ class PBSJobService (cpi_job.Service):
         for cmd in list(self._commands.keys()):
             ret, out, _ = self.shell.run_sync("which %s " % cmd)
             if ret != 0:
-                message = "Error finding PBS tools: %s" % out
-                log_error_and_raise(message, rse.NoSuccess, self._logger)
+                raise rse.NoSuccess("Error finding PBS tools: %s" % out)
+
             else:
                 path = out.strip()  # strip removes newline
                 if cmd == 'qdel':  # qdel doesn't support --version!
@@ -571,9 +562,7 @@ class PBSJobService (cpi_job.Service):
                 else:
                     ret, out, _ = self.shell.run_sync("%s --version" % cmd)
                     if ret != 0:
-                        message = "Error finding PBS tools: %s" % out
-                        log_error_and_raise(message, rse.NoSuccess,
-                            self._logger)
+                        raise rse.NoSuccess("Error finding PBS tools: %s" % out)
                     else:
                         # version is reported as: "version: x.y.z"
                         version = out  # .strip().split()[1]
@@ -599,7 +588,7 @@ class PBSJobService (cpi_job.Service):
                 self._logger.info("Host '%s' seems to be a Cray machine."
                     % self.rm.host)
                 self.is_cray = "unknowncray"
-        else: 
+        else:
             self._logger.info("'craytype' set to: %s" % self.is_cray)
 
         #
@@ -614,7 +603,7 @@ class PBSJobService (cpi_job.Service):
         if any(ver in self._commands['qstat']['version']
                    for ver in ('PBSPro_13', 'PBSPro_12', 'PBSPro_11.3')):
             ret, out, _ = self.shell.run_sync('unset GREP_OPTIONS; %s -a '
-                          '| grep -E "resources_available.ncpus"' % 
+                          '| grep -E "resources_available.ncpus"' %
                           self._commands['pbsnodes']['path'])
         else:
             ret, out, _ = self.shell.run_sync('unset GREP_OPTIONS; %s -a '
@@ -622,8 +611,7 @@ class PBSJobService (cpi_job.Service):
                           self._commands['pbsnodes']['path'])
 
         if ret != 0:
-            message = "Error running pbsnodes: %s" % out
-            log_error_and_raise(message, rse.NoSuccess, self._logger)
+            raise rse.NoSuccess("Error running pbsnodes: %s" % out)
 
         else:
             # this is black magic. we just assume that the highest occurrence
@@ -674,8 +662,8 @@ class PBSJobService (cpi_job.Service):
                                )
 
             self._logger.info("Generated PBS script: %s" % script)
-        except Exception as ex:
-            log_error_and_raise(str(ex), rse.BadParameter, self._logger)
+        except Exception as e:
+            raise rse.BadParameter('error generating pbs script') from e
 
         # try to create the working directory (if defined)
         # WARNING: this assumes a shared filesystem between login node and
@@ -688,11 +676,10 @@ class PBSJobService (cpi_job.Service):
 
             if ret != 0:
                 # something went wrong
-                message = "Couldn't create working directory - %s" % (out)
-                log_error_and_raise(message, rse.NoSuccess, self._logger)
+                raise rse.NoSuccess("Couldn't create workdir - %s" % out)
 
         # Now we want to execute the script. This process consists of two steps:
-        # (1) we create a temporary file with 'mktemp' and write the contents of 
+        # (1) we create a temporary file with 'mktemp' and write the contents of
         #     the generated PBS script into it
         # (2) we call 'qsub <tmpfile>' to submit the script to the
         #     queueing system
@@ -705,9 +692,8 @@ class PBSJobService (cpi_job.Service):
 
         if ret != 0:
             # something went wrong
-            message = "Error running job via 'qsub': %s. Commandline was: %s" \
-                % (out, cmdline)
-            log_error_and_raise(message, rse.NoSuccess, self._logger)
+            raise rse.NoSuccess("Error running qsub: %s (%s)" % (out, cmdline))
+
         else:
             # parse the job id. qsub usually returns just the job id, but
             # sometimes there are a couple of lines of warnings before.
@@ -767,8 +753,7 @@ class PBSJobService (cpi_job.Service):
         #       % (self._commands['qstat']['path'], qstat_flag, pid))
 
         # if ret != 0:
-        #     message = "Couldn't reconnect to job '%s': %s" % (job_id, out)
-        #     log_error_and_raise(message, NoSuccess, self._logger)
+        #     raise NoSuccess("Couldn't reconnect job '%s': %s" % (job_id, out))
 
         # else:
         #     # the job seems to exist on the backend. let's gather some data
@@ -796,8 +781,7 @@ class PBSJobService (cpi_job.Service):
         # If we don't have the job in our dictionary, we don't want it,
         # unless we are trying to reconnect.
         if not reconnect and job_id not in self.jobs:
-            message = "Unknown job id: %s. Can't update state." % job_id
-            log_error_and_raise(message, rse.NoSuccess, self._logger)
+            raise rse.NoSuccess("Unknown job id: %s" % job_id)
 
         if not reconnect:
             # job_info contains the info collect when _job_get_info
@@ -838,8 +822,7 @@ class PBSJobService (cpi_job.Service):
         if ret != 0:
 
             if reconnect:
-                message = "Couldn't reconnect to job '%s': %s" % (job_id, out)
-                log_error_and_raise(message, rse.NoSuccess, self._logger)
+                raise rse.NoSuccess("Couldn't reconnect job %s: %s" % (job_id, out))
 
             if ("Unknown Job Id" in out):
 
@@ -860,8 +843,7 @@ class PBSJobService (cpi_job.Service):
                     job_info['state'] = api.FAILED
             else:
                 # something went wrong
-                message = "Error retrieving job info via 'qstat': %s" % out
-                log_error_and_raise(message, rse.NoSuccess, self._logger)
+                raise rse.NoSuccess("Error running 'qstat': %s" % out)
         else:
 
             # The job seems to exist on the backend. let's process some data.
@@ -990,8 +972,7 @@ class PBSJobService (cpi_job.Service):
             % (self._commands['qdel']['path'], pid))
 
         if ret != 0:
-            message = "Error canceling job via 'qdel': %s" % out
-            log_error_and_raise(message, rse.NoSuccess, self._logger)
+            raise rse.NoSuccess("Error canceling job via 'qdel': %s" % out)
 
         # assume the job was succesfully canceled
         self.jobs[job_id]['state'] = api.CANCELED
@@ -1095,8 +1076,7 @@ class PBSJobService (cpi_job.Service):
                           self._commands['qstat']['path'])
 
         if ret != 0 and len(out) > 0:
-            message = "failed to list jobs via 'qstat': %s" % out
-            log_error_and_raise(message, rse.NoSuccess, self._logger)
+            raise rse.NoSuccess("failed to list jobs via 'qstat': %s" % out)
 
         elif ret != 0 and len(out) == 0:
             # qstat | grep `` exits with 1 if the list is empty
@@ -1194,8 +1174,7 @@ class PBSJob (cpi_job.Job):
         """ implements cpi_job.Job.wait()
         """
         if self._started is False:
-            log_error_and_raise("Can't wait for job that hasn't been started",
-                rse.IncorrectState, self._logger)
+            raise rse.IncorrectState("Can't wait for job that hasn't been started")
         else:
             self.js._job_wait(job_id=self._id, timeout=timeout)
 
@@ -1206,8 +1185,7 @@ class PBSJob (cpi_job.Job):
         """ implements cpi_job.Job.cancel()
         """
         if self._started is False:
-            log_error_and_raise("Can't wait for job that hasn't been started",
-                rse.IncorrectState, self._logger)
+            raise rse.IncorrectState("Can't wait for job that hasn't been started")
         else:
             self.js._job_cancel(self._id)
 
@@ -1240,7 +1218,7 @@ class PBSJob (cpi_job.Job):
     #
     @SYNC_CALL
     def get_name (self):
-        """ Implements cpi_job.Job.get_name() """        
+        """ Implements cpi_job.Job.get_name() """
         return self._name
 
     # --------------------------------------------------------------------------

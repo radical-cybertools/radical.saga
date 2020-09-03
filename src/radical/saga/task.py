@@ -27,14 +27,14 @@ class Task (sbase.SimpleBase, satt.Attributes) :
 
     # --------------------------------------------------------------------------
     #
-    @rus.takes   ('Task', 
-                  'CPIBase', 
+    @rus.takes   ('Task',
+                  'CPIBase',
                   str,
-                  dict, 
+                  dict,
                   rus.one_of (c.SYNC, c.ASYNC, c.TASK))
     @rus.returns (rus.nothing)
     def __init__ (self, _adaptor, _method_type, _method_context, _ttype) :
-        """ 
+        """
         This saga.Task constructor is private.
 
         ``_adaptor`` references the adaptor class instance from which this task
@@ -81,11 +81,11 @@ class Task (sbase.SimpleBase, satt.Attributes) :
         self._attributes_camelcasing   (True)
 
         # register properties with the attribute interface
-        self._attributes_register  (c.RESULT,    None,    satt.ANY,  satt.SCALAR, satt.READONLY)
+        self._attributes_register  (c.RESULT,    None,      satt.ANY,  satt.SCALAR, satt.READONLY)
         self._attributes_set_getter(c.RESULT,    self.get_result)
         self._attributes_set_setter(c.RESULT,    self._set_result)
 
-        self._attributes_register  (c.EXCEPTION, None,    satt.ANY,  satt.SCALAR, satt.READONLY)
+        self._attributes_register  (c.EXCEPTION, None,      satt.ANY,  satt.SCALAR, satt.READONLY)
         self._attributes_set_getter(c.EXCEPTION, self.get_exception)
         self._attributes_set_setter(c.EXCEPTION, self._set_exception)
 
@@ -123,6 +123,28 @@ class Task (sbase.SimpleBase, satt.Attributes) :
 
     # --------------------------------------------------------------------------
     #
+    def __eq__ (self, other) :
+
+        # we need to define __eq__ to ensure that tasks and jobs with different
+        # IDs but same dict representation can be added to Python containers
+        # (see Container.add()).
+
+        if isinstance(other, Task):
+            return self.get_id() == other.get_id()
+        else:
+            return super(Task, self).__eq__(other)
+
+
+    # --------------------------------------------------------------------------
+    #
+    def get_id(self):
+
+        # implement get_id for __eq__
+        return self._id
+
+
+    # --------------------------------------------------------------------------
+    #
     @rus.takes   ('Task')
     @rus.returns (rus.nothing)
     def run      (self) :
@@ -137,7 +159,7 @@ class Task (sbase.SimpleBase, satt.Attributes) :
 
     # --------------------------------------------------------------------------
     #
-    @rus.takes   ('Task', 
+    @rus.takes   ('Task',
                   rus.optional (float))
     @rus.returns (bool)
     def wait (self, timeout=None) :
@@ -156,7 +178,7 @@ class Task (sbase.SimpleBase, satt.Attributes) :
 
     # ----------------------------------------------------------------
     #
-    @rus.takes   ('Task', 
+    @rus.takes   ('Task',
                   float)
     @rus.returns (rus.nothing)
     def cancel (self) :
@@ -172,8 +194,8 @@ class Task (sbase.SimpleBase, satt.Attributes) :
 
     # --------------------------------------------------------------------------
     #
-    @rus.takes   ('Task', 
-                  rus.one_of (c.UNKNOWN, c.NEW, c.RUNNING, c.DONE, 
+    @rus.takes   ('Task',
+                  rus.one_of (c.UNKNOWN, c.NEW, c.RUNNING, c.DONE,
                               c.FAILED,  c.CANCELED))
     @rus.returns (rus.nothing)
     def _set_state (self, state) :
@@ -199,7 +221,7 @@ class Task (sbase.SimpleBase, satt.Attributes) :
 
     # --------------------------------------------------------------------------
     #
-    @rus.takes   ('Task', 
+    @rus.takes   ('Task',
                   rus.anything)
     @rus.returns (rus.nothing)
     def _set_result (self, result) :
@@ -236,8 +258,8 @@ class Task (sbase.SimpleBase, satt.Attributes) :
 
     # --------------------------------------------------------------------------
     #
-    @rus.takes   ('Task', 
-                  str, 
+    @rus.takes   ('Task',
+                  str,
                   rus.anything)
     @rus.returns (rus.nothing)
     def _set_metric (self, metric, value) :
@@ -248,7 +270,7 @@ class Task (sbase.SimpleBase, satt.Attributes) :
 
     # --------------------------------------------------------------------------
     #
-    @rus.takes   ('Task', 
+    @rus.takes   ('Task',
                   se.SagaException)
     @rus.returns (rus.nothing)
     def _set_exception (self, e) :
@@ -327,7 +349,7 @@ class Container (sbase.SimpleBase, satt.Attributes) :
 
     # --------------------------------------------------------------------------
     #
-    @rus.takes   ('Container', 
+    @rus.takes   ('Container',
                   Task)
     @rus.returns (rus.nothing)
     def add      (self, task) :
@@ -341,10 +363,9 @@ class Container (sbase.SimpleBase, satt.Attributes) :
             self.tasks.append (task)
 
 
-
     # --------------------------------------------------------------------------
     #
-    @rus.takes   ('Container', 
+    @rus.takes   ('Container',
                   Task)
     @rus.returns (rus.nothing)
     def remove   (self, task) :
@@ -413,7 +434,7 @@ class Container (sbase.SimpleBase, satt.Attributes) :
 
     # --------------------------------------------------------------------------
     #
-    @rus.takes   ('Container', 
+    @rus.takes   ('Container',
                   rus.one_of   (c.ANY, c.ALL),
                   rus.optional (float))
     @rus.returns (rus.list_of (Task))
@@ -433,7 +454,7 @@ class Container (sbase.SimpleBase, satt.Attributes) :
 
     # --------------------------------------------------------------------------
     #
-    @rus.takes   ('Container', 
+    @rus.takes   ('Container',
                   float)
     @rus.returns (rus.list_of (Task))
     def _wait_any (self, timeout) :
@@ -485,7 +506,7 @@ class Container (sbase.SimpleBase, satt.Attributes) :
 
     # --------------------------------------------------------------------------
     #
-    @rus.takes   ('Container', 
+    @rus.takes   ('Container',
                   float)
     @rus.returns (rus.list_of (Task))
     def _wait_all (self, timeout) :
@@ -522,7 +543,7 @@ class Container (sbase.SimpleBase, satt.Attributes) :
 
     # --------------------------------------------------------------------------
     #
-    @rus.takes   ('Container', 
+    @rus.takes   ('Container',
                   rus.optional (float))
     @rus.returns (rus.nothing)
     def cancel   (self, timeout=None) :
@@ -565,7 +586,7 @@ class Container (sbase.SimpleBase, satt.Attributes) :
 
     # --------------------------------------------------------------------------
     #
-    @rus.takes   ('Container', 
+    @rus.takes   ('Container',
                   'basestring')
     @rus.returns (Task)
     def get_task (self, id) :
@@ -575,7 +596,7 @@ class Container (sbase.SimpleBase, satt.Attributes) :
             raise se.NoSuccess ("Lookup requires non-empty id (not '%s')" % id)
 
         for t in self.tasks:
-            if t.id == id:
+            if t.get_id() == id:
                 return t
 
         raise se.NoSuccess ("task '%s' not found in container" % id)
@@ -653,7 +674,7 @@ class Container (sbase.SimpleBase, satt.Attributes) :
 
             if  task._adaptor and task._adaptor._container :
 
-                # the task's adaptor has a valid associated container class 
+                # the task's adaptor has a valid associated container class
                 # which can handle the container ops - great!
                 b = task._adaptor._container
                 m = task._method_type

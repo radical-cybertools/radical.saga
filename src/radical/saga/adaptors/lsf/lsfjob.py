@@ -33,9 +33,25 @@ ASYNC_CALL = cpi_base.decorators.ASYNC_CALL
 SYNC_WAIT_UPDATE_INTERVAL = 1  # seconds
 MONITOR_UPDATE_INTERVAL   = 3  # seconds
 
-# newer (2019) Intel LSF hosts have SMT default to 4
-# FIXME: move to a resource config
-SMT = 4
+# Intel LSF hosts have SMT default to 4
+SMT_DEFAULT = 1
+SMT_VALID_VALUES = [1, 2, 4]
+
+# FIXME: will be taken from resource config
+RESOURCES = {
+    'summit': {'cpn': 42,
+               'gpn': 6,
+               'valid_alloc_flags': [
+                   'gpumps',
+                   'gpudefault',
+                   'nvme',
+                   'spectral',
+                   'maximizegpfs'
+               ]},
+    'lassen': {'cpn': 40,
+               'gpn': 4,
+               'valid_alloc_flags': []}
+}
 
 
 # ------------------------------------------------------------------------------
@@ -51,7 +67,7 @@ class _job_state_monitor(threading.Thread):
 
         self.logger = job_service._logger
         self.js     = job_service
-        self._stop  = threading.Event()
+        self._term  = threading.Event()
 
         super(_job_state_monitor, self).__init__()
         self.setDaemon(True)
@@ -61,15 +77,17 @@ class _job_state_monitor(threading.Thread):
     #
     def stop(self):
 
-        self._stop.set()
+        self.logger.info('stop  thread for %s', self.js.get_url())
+        self._term.set()
 
 
     # --------------------------------------------------------------------------
     #
     def run(self):
 
-        while not self._stop.isSet():
-
+        self.logger.info('start thread for %s', self.js.get_url())
+        while not self._term.isSet():
+        
             try:
                 # do bulk updates here! we don't want to pull information
                 # job by job. that would be too inefficient!
@@ -108,8 +126,11 @@ class _job_state_monitor(threading.Thread):
 
                 time.sleep(MONITOR_UPDATE_INTERVAL)
 
-            except Exception:
+            except Exception as e:
                 self.logger.exception("job monitoring thread failed")
+                break
+
+        self.logger.info('close thread for %s', self.js.get_url())
 
 
 # ------------------------------------------------------------------------------
@@ -141,9 +162,8 @@ def _lsfscript_generator(url, logger, jd, ppn, lsf_version, queue):
     if jd.executable: command += "%s " % (jd.executable)
     if jd.arguments : command += ' '.join(jd.arguments)
 
-    if       jd.queue and     queue: lsf_bsubs += "#BSUB -q %s \n" % queue
-    elif     jd.queue and not queue: lsf_bsubs += "#BSUB -q %s \n" % jd.queue
-    elif not jd.queue and     queue: lsf_bsubs += "#BSUB -q %s \n" % queue
+    bsub_queue = queue or jd.queue
+    if bsub_queue          : lsf_bsubs += "#BSUB -q %s \n" % bsub_queue
 
     if jd.name             : lsf_bsubs += "#BSUB -J %s \n" % jd.name
     if jd.job_contact      : lsf_bsubs += "#BSUB -u %s \n" % jd.job_contact
@@ -154,7 +174,7 @@ def _lsfscript_generator(url, logger, jd, ppn, lsf_version, queue):
                                                         int(jd.wall_time_limit % 60))
 
     # if working directory is set, we want stdout to end up in the
-    # working directory as well, unless it containes a specific
+    # working directory as well, unless it contains a specific
     # path name - otherwise we pass `output` as is.
     if jd.output:
         if os.path.isabs(jd.output): path = ''
@@ -169,21 +189,13 @@ def _lsfscript_generator(url, logger, jd, ppn, lsf_version, queue):
         else                      : path = ''
         lsf_bsubs += "#BSUB -e %s%s \n" % (path, jd.error)
 
-
-    env_string += "export RADICAL_SAGA_SMT=%d" % SMT
-    if jd.environment:
-        for k,v in jd.environment.items():
-            env_string += " %s=%s" % (k,v)
-
-
     if jd.project and ':' in jd.project:
-        account, reservation = jd.project.split(':',1)
+        account, reservation = jd.project.split(':', 1)
         lsf_bsubs += "#BSUB -P %s \n" % account
         lsf_bsubs += "#BSUB -U %s \n" % reservation
 
     elif jd.project:
         lsf_bsubs += "#BSUB -P %s \n" % jd.project
-
 
     # Request enough nodes to cater for the number of gpus and cores requested
     if not jd.total_cpu_count: total_cpu_count = 1
@@ -202,12 +214,20 @@ def _lsfscript_generator(url, logger, jd, ppn, lsf_version, queue):
     if not hostname:
         raise RuntimeError('cannot determine target host f or %s' % url)
 
-    if   'summitdev' in hostname: cpn = 20 * SMT
-    elif 'summit'    in hostname: cpn = 42 * SMT
-    else: raise ValueError('LSF host (%s) not yet supported' % hostname)
+    cpn, gpn, smt, valid_alloc_flags = 0, 1, SMT_DEFAULT, []
+    for resource_name in RESOURCES:
+        if resource_name in hostname:
+            smt = jd.system_architecture.get('smt') or smt
+            cpn = RESOURCES[resource_name]['cpn'] * smt
+            gpn = RESOURCES[resource_name]['gpn']
+            valid_alloc_flags = RESOURCES[resource_name]['valid_alloc_flags']
+            break
 
-    if   'summitdev' in hostname: gpn = 4
-    elif 'summit'    in hostname: gpn = 6
+    if not cpn:
+        raise ValueError('LSF host (%s) not yet supported' % hostname)
+
+    if smt not in SMT_VALID_VALUES:
+        smt = SMT_DEFAULT
 
     cpu_nodes = int(total_cpu_count / cpn)
     if total_cpu_count > (cpu_nodes * cpn):
@@ -218,9 +238,19 @@ def _lsfscript_generator(url, logger, jd, ppn, lsf_version, queue):
         gpu_nodes += 1
 
     nodes = max(cpu_nodes, gpu_nodes)
-
     lsf_bsubs += "#BSUB -nnodes %s \n" % str(nodes)
-    lsf_bsubs += "#BSUB -alloc_flags 'gpumps smt%d' \n" % SMT
+
+    alloc_flags = []
+    for flag in jd.system_architecture.get('options', []):
+        if flag.lower() in valid_alloc_flags:
+            alloc_flags.append(flag.lower())
+    alloc_flags.append('smt%d' % smt)
+    lsf_bsubs += "#BSUB -alloc_flags '%s' \n" % ' '.join(alloc_flags)
+
+    env_string += "export RADICAL_SAGA_SMT=%d" % smt
+    if jd.environment:
+        for k, v in jd.environment.items():
+            env_string += " %s=%s" % (k, v)
 
     # escape double quotes and dollar signs, otherwise 'echo |'
     # further down won't work
@@ -263,7 +293,8 @@ _ADAPTOR_CAPABILITIES = {
                           rsj.SPMD_VARIATION,
                           rsj.PROCESSES_PER_HOST,
                           rsj.TOTAL_CPU_COUNT,
-                          rsj.TOTAL_GPU_COUNT],
+                          rsj.TOTAL_GPU_COUNT,
+                          rsj.SYSTEM_ARCHITECTURE],
     "job_attributes":    [rsj.EXIT_CODE,
                           rsj.EXECUTION_HOSTS,
                           rsj.CREATED,
@@ -271,9 +302,9 @@ _ADAPTOR_CAPABILITIES = {
                           rsj.FINISHED],
     "metrics":           [rsj.STATE],
     "callbacks":         [rsj.STATE],
-    "contexts":          {"ssh": "SSH public/private keypair",
-                          "x509": "GSISSH X509 proxy context",
-                          "userpass": "username/password pair (ssh)"}
+    "contexts":          {"ssh"      : "SSH public/private keypair",
+                          "x509"     : "GSISSH X509 proxy context",
+                          "userpass" : "username/password pair (ssh)"}
 }
 
 # ------------------------------------------------------------------------------
@@ -288,7 +319,7 @@ The LSF adaptor allows to run and manage jobs on
 """,
     "example": "examples/jobs/lsfjob.py",
     "schemas": {"lsf":        "connect to a local cluster",
-                "lsf+ssh":    "conenct to a remote cluster via SSH",
+                "lsf+ssh":    "connect to a remote cluster via SSH",
                 "lsf+gsissh": "connect to a remote cluster via GSISSH"}
 }
 
@@ -379,10 +410,11 @@ class LSFJobService(cpi.Service):
     def close(self):
 
         if  self.mt:
+            self._logger.info("stop   monitoring thread: %s", self.rm)
             self.mt.stop()
             self.mt.join(10)  # don't block forever on join()
 
-        self._logger.info("Job monitoring thread stopped.")
+        self._logger.info("stopped monitoring thread: %s", self.rm)
 
         self.finalize(True)
 
@@ -532,7 +564,7 @@ class LSFJobService(cpi.Service):
             self._logger.info("Generated LSF script: %s" % script)
 
         except Exception as e:
-            raise rse.BadParameter(str(e))
+            raise rse.BadParameter(str(e)) from e
 
         # try to create the working directory (if defined)
         # WARNING: this assumes a shared filesystem between login node and
