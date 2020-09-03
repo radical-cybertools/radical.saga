@@ -143,8 +143,6 @@ def _cobaltscript_generator(url, logger, jd, ppn, is_cray=False, queue=None,
     processes_per_host  = None
     blue_gene_q_modes   = [1, 2, 4, 8, 16, 32, 64]
 
-    ppn = 64  # for now, defaulting to number of cores per node in Blue Gene/Q
-
     if jd.executable:
         exec_n_args += "%s " % (jd.executable)
     if jd.arguments:
