@@ -125,12 +125,15 @@ class Task (sbase.SimpleBase, satt.Attributes) :
     #
     def __eq__ (self, other) :
 
-        # we need to define __eq__ to ensure that tasks and jobs with different
-        # IDs but same dict representation can be added to Python containers
-        # (see Container.add()).
+        # we need to define __eq__ to ensure that tasks and jobs with
+        # the same # dict representation can be added to Python containers
+        # (see Container.add()).  Note that we cannot use `self.get_id()`
+        # (or the attribute version `self.id`): job's have the public ID
+        # set to `None` until the adaptor assigns a backend specific ID.
 
         if isinstance(other, Task):
-            return self.get_id() == other.get_id()
+            return self._id == other._id
+
         else:
             return super(Task, self).__eq__(other)
 
