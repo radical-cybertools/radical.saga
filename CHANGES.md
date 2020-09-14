@@ -4,6 +4,14 @@ For a list of open issues and known problems, see:
 https://github.com/radical-cybertools/radical.saga/issues
 
 
+Version 1.5.4 Release                                                 2020-09-14
+--------------------------------------------------------------------------------
+
+  - added job description attribute `SystemArchitecture`
+  - removed `summitdev` from LSFJob, fix cobalt/theta settings
+  - updates for LSF and SLURM job modules
+
+
 Version 1.5.2 Release                                                 2020-08-05
 --------------------------------------------------------------------------------
 
