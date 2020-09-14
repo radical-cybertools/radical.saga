@@ -717,10 +717,11 @@ class CobaltJobService (cpi_job.Service):
                 % (self._commands['qsub']['path'], cobalt_script_file)
         ret, out, _ = self.shell.run_sync(cmdline)
 
-        if ret != 0:
+        if ret != 0 and 'Job routed' not in out:
             # something went wrong
-            raise rse.NoSuccess("Error running 'qsub': %s. Commandline: %s"
-                               % (out, cmdline))
+            raise rse.NoSuccess(
+                "\nError message while running 'qsub' (%s): %s\nCommand: %s\n" %
+                (ret, out, cmdline))
 
         else:
             # parse the job id. qsub usually returns just the job id, but
