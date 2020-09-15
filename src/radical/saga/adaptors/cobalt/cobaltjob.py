@@ -717,7 +717,7 @@ class CobaltJobService (cpi_job.Service):
                 % (self._commands['qsub']['path'], cobalt_script_file)
         ret, out, _ = self.shell.run_sync(cmdline)
 
-        if ret != 0 and 'Job routed' not in out:
+        if ret != 0:
             # something went wrong
             raise rse.NoSuccess(
                 "\nError message while running 'qsub' (%s): %s\nCommand: %s\n" %
@@ -1184,6 +1184,16 @@ class CobaltJobService (cpi_job.Service):
         # TODO: this is not optimized yet
         for job in jobs:
             job.cancel(timeout)
+
+
+    # --------------------------------------------------------------------------
+    #
+    def container_get_states(self, jobs):
+        # TODO: this is not optimized yet
+        states = list()
+        for job in jobs:
+            states.append(job.get_state())
+        return states
 
 
 ###############################################################################
