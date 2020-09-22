@@ -10,8 +10,6 @@ import sys
 import errno
 import tempfile
 
-import threading as mt
-
 import radical.utils              as ru
 
 from  .  import misc              as sumisc
@@ -336,10 +334,6 @@ class PTYShell (object) :
                     if not self.finalized :
                         self.pty_shell.finalize ()
                         self.finalized = True
-
-            # cancle ping timer if needed
-            if self._ping:
-                self._ping.cancel()
 
         except Exception:
             pass

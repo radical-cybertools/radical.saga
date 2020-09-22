@@ -158,7 +158,6 @@ idle_checker () {
       exit 0
     fi
 
-    \echo "timeout test: ok"
     \touch "$BASE/idle.$ppid"
   done
 }
