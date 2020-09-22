@@ -214,7 +214,7 @@ def helper_multiple_services(i):
     jd  = rs.job.Description()
 
     jd.executable = '/bin/sleep'
-    jd.arguments  = ['1']
+    jd.arguments  = ['3']
     jd = sutc.configure_jd(cfg=cfg, jd=jd)
 
     j1 = js1.create_job(jd)
@@ -236,10 +236,12 @@ def helper_multiple_services(i):
 
 # ------------------------------------------------------------------------------
 #
-NUM_SERVICES = 20
+NUM_SERVICES = 5
 
 def test_multiple_services():
-    """ Test to create multiple job service instances  (this test might take a while) """
+    """
+    test concurrent job services (takes a while)
+    """
     import threading as mt
     import queue
 
