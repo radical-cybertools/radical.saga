@@ -158,6 +158,7 @@ idle_checker () {
       exit 0
     fi
 
+    \echo "timeout test: ok"
     \touch "$BASE/idle.$ppid"
   done
 }
@@ -824,7 +825,6 @@ cmd_purge () {
 #
 cmd_ping () {
 
-  echo "ping $(date %+s >> /tmp/t)"
   RETVAL="PONG"
 }
 

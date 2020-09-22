@@ -8,7 +8,7 @@ __license__   = "MIT"
 
 import re
 import time
-import threading
+import threading as mt
 
 import radical.utils as ru
 
@@ -25,7 +25,12 @@ from . import shell_wrapper
 
 # ------------------------------------------------------------------------------
 #
-class _job_state_monitor(threading.Thread):
+_PING_DELAY  = 60.0
+
+
+# ------------------------------------------------------------------------------
+#
+class _job_state_monitor(mt.Thread):
     ''' thread that periodically monitors job states '''
 
     # --------------------------------------------------------------------------
@@ -491,10 +496,11 @@ class ShellJobService(cpi.Service):
             #   cmd_state() { touch $DIR/purgeable; ... }
             # When should that be done?
 
-         #  self.shell.run_sync("PURGE", iomode=None)
-            self.shell.run_async("QUIT")
-            self.shell.finalize(kill_pty=True)
-            self.shell = None
+            with self._shell_lock:
+             #  self.shell.run_sync("PURGE", iomode=None)
+                self.shell.run_async("QUIT")
+                self.shell.finalize(kill_pty=True)
+                self.shell = None
 
         if self.monitor:
             self.monitor.finalize()
@@ -505,9 +511,27 @@ class ShellJobService(cpi.Service):
     #
     def initialize(self):
 
+        # the underlying shell is not always ready to receive new commands,
+        # e.g.,  when running an async command and still collecting output.
+        # The driving code is usually aware of the shell's state - but we want
+        # to send `PING` requests now and then to ensure the shell does not
+        # time out, and the thread triggering that ping is *not* aware of the
+        # shell state.  To avoid interfering with async calls, we lock any
+        # interaction with the shell
+        self._shell_lock = mt.RLock()
+
+        # at regular intervals, run a ping toward the shell wrapper to avoid
+        # timeouts kicking in
+        # FIXME: configurable frequency
+        self._ping = mt.Timer(_PING_DELAY, self._ping_cb)
+        self._ping.start()
+
+
         # very first step: get the remote environment, and expand the config
         # settings
-        ret, out, err = self.shell.run_sync(' env')
+        with self._shell_lock:
+            ret, out, err = self.shell.run_sync(' env')
+
         if ret != 0:
             raise rse.NoSuccess("env query failed(%s):(%s)(%s)"
                     % (ret, out, err))
@@ -536,7 +560,9 @@ class ShellJobService(cpi.Service):
 
         base = self.base_workdir
 
-        ret, out, _ = self.shell.run_sync(" mkdir -p %s" % base)
+        with self._shell_lock:
+            ret, out, _ = self.shell.run_sync(" mkdir -p %s" % base)
+
         if ret != 0:
             raise rse.NoSuccess("host setup failed(%s):(%s)" % (ret, out))
 
@@ -548,7 +574,9 @@ class ShellJobService(cpi.Service):
         # an adaptor lock on this one.
         with self._adaptor._lock:
 
-            ret, out, _ = self.shell.run_sync(" test -f %s" % tgt)
+            with self._shell_lock:
+                ret, out, _ = self.shell.run_sync(" test -f %s" % tgt)
+
             if ret != 0:
                 # yep, need to stage...
                 src = shell_wrapper._WRAPPER_SCRIPT
@@ -561,7 +589,10 @@ class ShellJobService(cpi.Service):
                 # /<path_to_home_dir>/$HOME/.....
                 if tgt.startswith("$HOME") or tgt.startswith("${HOME}"):
                     tgt = tgt[tgt.find('/') + 1:]
-                self.shell.write_to_remote(src, tgt)
+
+                with self._shell_lock:
+                    self.shell.write_to_remote(src, tgt)
+
 
         # ----------------------------------------------------------------------
         # we run the script.  In principle, we should set a new / different
@@ -572,13 +603,15 @@ class ShellJobService(cpi.Service):
         # Thus, when the script times out, the shell dies and the connection
         # drops -- that will free all associated resources, and allows for
         # a clean reconnect.
-        # ret, out, _ = self.shell.run_sync(" exec sh %s/wrapper.sh" % base)
+        # with self._shell_lock:
+        #     ret, out, _ = self.shell.run_sync(" exec sh %s/wrapper.sh" % base)
 
         # Well, actually, we do not use exec, as that does not give us good
         # feedback on failures(the shell just quits) -- so we replace it with
         # this poor-man's version...
-        ret, out, _ = self.shell.run_sync(" /bin/sh %s/wrapper.sh %s" % (base,
-            base))
+        with self._shell_lock:
+            ret, out, _ = self.shell.run_sync(" /bin/sh %s/wrapper.sh %s" 
+                                             % (base, base))
 
         # shell_wrapper.sh will report its own PID -- we use that to sync prompt
         # detection, too.
@@ -620,6 +653,19 @@ class ShellJobService(cpi.Service):
         # we actually don't care much about the PID:-P
 
         self._logger.debug("got mon prompt(%s)(%s)" % (ret, out.strip()))
+
+
+    # ----------------------------------------------------------------
+    #
+    def _ping_cb (self) :
+
+        with self._shell_lock:
+
+            _, out, _ = self.shell.run_sync('PING')
+            assert('PONG' in out), out
+
+            self._ping = mt.Timer(_PING_DELAY, self._ping_cb)
+            self._ping.start()
 
 
     # --------------------------------------------------------------------------
@@ -674,7 +720,8 @@ class ShellJobService(cpi.Service):
         '''
 
         # stage data, then run job
-        self._adaptor.stage_input(self.shell, jd)
+        with self._shell_lock:
+            self._adaptor.stage_input(self.shell, jd)
 
         # create command to run
         cmd = self._jd2cmd(jd)
@@ -693,7 +740,9 @@ class ShellJobService(cpi.Service):
 
         run_cmd = run_cmd.replace("\\", "\\\\\\\\")  # hello MacOS
 
-        ret, out, _ = self.shell.run_sync(run_cmd)
+        with self._shell_lock:
+            ret, out, _ = self.shell.run_sync(run_cmd)
+
         if ret != 0:
             raise rse.NoSuccess("failed to run Job '%s':(%s)(%s)"
                                % (cmd, ret, out))
@@ -720,7 +769,9 @@ class ShellJobService(cpi.Service):
 
         # clean 'BULK COMPLETED message from lrun
         if use_lrun:
-            ret, out = self.shell.find_prompt()
+            with self._shell_lock:
+                ret, out = self.shell.find_prompt()
+
             if ret != 0:
                 raise rse.NoSuccess("failed to run multiline job '%s':(%s)(%s)"
                                    % (run_cmd, ret, out))
@@ -735,8 +786,10 @@ class ShellJobService(cpi.Service):
         get the job stats from the wrapper shell
         '''
 
-        rm, pid     = self._adaptor.parse_id(id)
-        ret, out, _ = self.shell.run_sync("STATS %s\n" % pid)
+        rm, pid = self._adaptor.parse_id(id)
+
+        with self._shell_lock:
+            ret, out, _ = self.shell.run_sync("STATS %s\n" % pid)
 
         if ret != 0:
             raise rse.NoSuccess("failed to get job stats for '%s':(%s)(%s)"
@@ -804,7 +857,9 @@ class ShellJobService(cpi.Service):
 
         rm, pid = self._adaptor.parse_id(id)
 
-        ret, out, _ = self.shell.run_sync("RESULT %s\n" % pid)
+        with self._shell_lock:
+            ret, out, _ = self.shell.run_sync("RESULT %s\n" % pid)
+
         if ret != 0:
             raise rse.NoSuccess ("failed to get exit code for '%s':(%s)(%s)"
                                % (id, ret, out))
@@ -843,7 +898,9 @@ class ShellJobService(cpi.Service):
 
         rm, pid = self._adaptor.parse_id(id)
 
-        ret, out, _ = self.shell.run_sync("SUSPEND %s\n" % pid)
+        with self._shell_lock:
+            ret, out, _ = self.shell.run_sync("SUSPEND %s\n" % pid)
+
         if ret != 0:
             raise rse.NoSuccess("failed to suspend job '%s':(%s)(%s)"
                                % (id, ret, out))
@@ -857,7 +914,9 @@ class ShellJobService(cpi.Service):
 
         rm, pid = self._adaptor.parse_id(id)
 
-        ret, out, _ = self.shell.run_sync("RESUME %s\n" % pid)
+        with self._shell_lock:
+            ret, out, _ = self.shell.run_sync("RESUME %s\n" % pid)
+
         if ret != 0:
             raise rse.NoSuccess("failed to resume job '%s':(%s)(%s)"
                                % (id, ret, out))
@@ -871,7 +930,9 @@ class ShellJobService(cpi.Service):
 
         rm, pid = self._adaptor.parse_id(id)
 
-        ret, out, _ = self.shell.run_sync("CANCEL %s\n" % pid)
+        with self._shell_lock:
+            ret, out, _ = self.shell.run_sync("CANCEL %s\n" % pid)
+
         if ret != 0:
             raise rse.NoSuccess("failed to cancel job '%s':(%s)(%s)"
                                % (id, ret, out))
@@ -947,7 +1008,9 @@ class ShellJobService(cpi.Service):
 
         # FIXME: this should also fetch job state and metadata, and cache those
 
-        ret, out, _ = self.shell.run_sync("LIST\n")
+        with self._shell_lock:
+            ret, out, _ = self.shell.run_sync("LIST\n")
+
         if ret != 0:
             raise rse.NoSuccess("failed to list jobs:(%s)(%s)" % (ret, out))
 
@@ -1033,65 +1096,67 @@ class ShellJobService(cpi.Service):
         # ------------------------------------------------------------
 
         bulk += "BULK_RUN\n"
-        self.shell.run_async(bulk)
+        with self._shell_lock:
 
-        for job in jobs:
+            self.shell.run_async(bulk)
 
+            for job in jobs:
+
+                ret, out = self.shell.find_prompt()
+
+                if ret != 0:
+                    job._adaptor._set_state(api.FAILED)
+                    job._adaptor._exception = rse.NoSuccess \
+                           ("failed to run job:(%s)(%s)" % (ret, out))
+                    continue
+
+                lines = [_f for _f in out.split("\n") if _f]
+
+                if len(lines) < 2:
+                    job._adaptor._set_state(api.FAILED)
+                    job._adaptor._exception = rse.NoSuccess \
+                           ("failed to run job:(%s)(%s)" % (ret, out))
+                    continue
+
+                if lines[-2] != "OK":
+                    job._adaptor._set_state(api.FAILED)
+                    job._adaptor._exception = rse.NoSuccess \
+                           ("failed to run job:(%s)(%s)" % (ret, out))
+                    continue
+
+                # FIXME: verify format of returned pid(\d+)!
+                pid    = lines[-1].strip()
+                job_id = "[%s]-[%s]" % (self.rm, pid)
+
+                self._logger.debug("started job %s" % job_id)
+
+                self.njobs += 1
+
+                # FIXME: at this point we need to make sure that we actually created
+                # the job.  Well, we should make sure of this *before* we run it.
+                # But, actually, the container sorter should have done that already?
+                # Check!
+                job._adaptor._id = job_id
+
+            # we also need to find the output of the bulk op itself
             ret, out = self.shell.find_prompt()
 
             if ret != 0:
-                job._adaptor._set_state(api.FAILED)
-                job._adaptor._exception = rse.NoSuccess \
-                       ("failed to run job:(%s)(%s)" % (ret, out))
-                continue
+                self._logger.error("failed to run(parts of ) bulk jobs:(%s)(%s)"
+                                  % (ret, out))
+                return
 
             lines = [_f for _f in out.split("\n") if _f]
 
             if len(lines) < 2:
-                job._adaptor._set_state(api.FAILED)
-                job._adaptor._exception = rse.NoSuccess \
-                       ("failed to run job:(%s)(%s)" % (ret, out))
-                continue
+                self._logger.error("no status of bulk job submission:(%s)(%s)"
+                                  % (ret, out))
+                return
 
             if lines[-2] != "OK":
-                job._adaptor._set_state(api.FAILED)
-                job._adaptor._exception = rse.NoSuccess \
-                       ("failed to run job:(%s)(%s)" % (ret, out))
-                continue
-
-            # FIXME: verify format of returned pid(\d+)!
-            pid    = lines[-1].strip()
-            job_id = "[%s]-[%s]" % (self.rm, pid)
-
-            self._logger.debug("started job %s" % job_id)
-
-            self.njobs += 1
-
-            # FIXME: at this point we need to make sure that we actually created
-            # the job.  Well, we should make sure of this *before* we run it.
-            # But, actually, the container sorter should have done that already?
-            # Check!
-            job._adaptor._id = job_id
-
-        # we also need to find the output of the bulk op itself
-        ret, out = self.shell.find_prompt()
-
-        if ret != 0:
-            self._logger.error("failed to run(parts of ) bulk jobs:(%s)(%s)"
-                              % (ret, out))
-            return
-
-        lines = [_f for _f in out.split("\n") if _f]
-
-        if len(lines) < 2:
-            self._logger.error("no status of bulk job submission:(%s)(%s)"
-                              % (ret, out))
-            return
-
-        if lines[-2] != "OK":
-            self._logger.error("failed to run(parts of ) bulk jobs:(%s)(%s)"
-                              % (ret, out))
-            return
+                self._logger.error("failed to run(parts of ) bulk jobs:(%s)(%s)"
+                                  % (ret, out))
+                return
 
 
     # --------------------------------------------------------------------------
@@ -1123,51 +1188,53 @@ class ShellJobService(cpi.Service):
                 bulk   += "WAIT %s\n" % pid
 
         bulk += "BULK_RUN\n"
-        self.shell.run_async(bulk)
 
-        for job in jobs:
+        with self._shell_lock:
+            self.shell.run_async(bulk)
 
+            for job in jobs:
+
+                ret, out = self.shell.find_prompt()
+
+                if ret != 0:
+                    job._adaptor._set_state(api.FAILED)
+                    job._adaptor._exception = rse.NoSuccess \
+                           ("failed to wait for job:(%s)(%s)" % (ret, out))
+                    continue
+
+                lines = [_f for _f in out.split("\n") if _f]
+
+                if len(lines) < 2:
+                    job._adaptor._set_state(api.FAILED)
+                    job._adaptor._exception = rse.NoSuccess \
+                           ("failed to wait for job:(%s)(%s)" % (ret, out))
+                    continue
+
+                if lines[-2] != "OK":
+                    job._adaptor._set_state(api.FAILED)
+                    job._adaptor._exception = rse.NoSuccess \
+                           ("failed to wait for job:(%s)(%s)" % (ret, out))
+                    continue
+
+            # we also need to find the output of the bulk op itself
             ret, out = self.shell.find_prompt()
 
             if ret != 0:
-                job._adaptor._set_state(api.FAILED)
-                job._adaptor._exception = rse.NoSuccess \
-                       ("failed to wait for job:(%s)(%s)" % (ret, out))
-                continue
+                self._logger.error("failed to wait for(part of) bulk job:(%s)(%s)"
+                                  % (ret, out))
+                return
 
             lines = [_f for _f in out.split("\n") if _f]
 
             if len(lines) < 2:
-                job._adaptor._set_state(api.FAILED)
-                job._adaptor._exception = rse.NoSuccess \
-                       ("failed to wait for job:(%s)(%s)" % (ret, out))
-                continue
+                self._logger.error("no status of bulk job wait:(%s)(%s)"
+                                  % (ret, out))
+                return
 
             if lines[-2] != "OK":
-                job._adaptor._set_state(api.FAILED)
-                job._adaptor._exception = rse.NoSuccess \
-                       ("failed to wait for job:(%s)(%s)" % (ret, out))
-                continue
-
-        # we also need to find the output of the bulk op itself
-        ret, out = self.shell.find_prompt()
-
-        if ret != 0:
-            self._logger.error("failed to wait for(part of) bulk job:(%s)(%s)"
-                              % (ret, out))
-            return
-
-        lines = [_f for _f in out.split("\n") if _f]
-
-        if len(lines) < 2:
-            self._logger.error("no status of bulk job wait:(%s)(%s)"
-                              % (ret, out))
-            return
-
-        if lines[-2] != "OK":
-            self._logger.error("failed to wait for part of bulk job:(%s)(%s)"
-                              % (ret, out))
-            return
+                self._logger.error("failed to wait for part of bulk job:(%s)(%s)"
+                                  % (ret, out))
+                return
 
 
     # --------------------------------------------------------------------------
@@ -1184,51 +1251,53 @@ class ShellJobService(cpi.Service):
             bulk   += "CANCEL %s\n" % pid
 
         bulk += "BULK_RUN\n"
-        self.shell.run_async(bulk)
 
-        for job in jobs:
+        with self._shell_lock:
+            self.shell.run_async(bulk)
 
+            for job in jobs:
+
+                ret, out = self.shell.find_prompt()
+
+                if ret != 0:
+                    job._adaptor._set_state(api.FAILED)
+                    job._adaptor._exception = rse.NoSuccess \
+                           ("failed to cancel job:(%s)(%s)" % (ret, out))
+                    continue
+
+                lines = [_f for _f in out.split("\n") if _f]
+
+                if len(lines) < 2:
+                    job._adaptor._set_state(api.FAILED)
+                    job._adaptor._exception = rse.NoSuccess \
+                           ("failed to cancel job:(%s)(%s)" % (ret, out))
+                    continue
+
+                if lines[-2] != "OK":
+                    job._adaptor._set_state(api.FAILED)
+                    job._adaptor._exception = rse.NoSuccess \
+                           ("failed to cancel job:(%s)(%s)" % (ret, out))
+                    continue
+
+            # we also need to find the output of the bulk op itself
             ret, out = self.shell.find_prompt()
 
             if ret != 0:
-                job._adaptor._set_state(api.FAILED)
-                job._adaptor._exception = rse.NoSuccess \
-                       ("failed to cancel job:(%s)(%s)" % (ret, out))
-                continue
+                self._logger.error("failed to cancel part of bulk job:(%s)(%s)"
+                                  % (ret, out))
+                return
 
             lines = [_f for _f in out.split("\n") if _f]
 
             if len(lines) < 2:
-                job._adaptor._set_state(api.FAILED)
-                job._adaptor._exception = rse.NoSuccess \
-                       ("failed to cancel job:(%s)(%s)" % (ret, out))
-                continue
+                self._logger.error("no status of bulk job cancel:(%s)(%s)"
+                                  % (ret, out))
+                return
 
             if lines[-2] != "OK":
-                job._adaptor._set_state(api.FAILED)
-                job._adaptor._exception = rse.NoSuccess \
-                       ("failed to cancel job:(%s)(%s)" % (ret, out))
-                continue
-
-        # we also need to find the output of the bulk op itself
-        ret, out = self.shell.find_prompt()
-
-        if ret != 0:
-            self._logger.error("failed to cancel part of bulk job:(%s)(%s)"
-                              % (ret, out))
-            return
-
-        lines = [_f for _f in out.split("\n") if _f]
-
-        if len(lines) < 2:
-            self._logger.error("no status of bulk job cancel:(%s)(%s)"
-                              % (ret, out))
-            return
-
-        if lines[-2] != "OK":
-            self._logger.error("failed to cancel part of bulk job:(%s)(%s)"
-                              % (ret, out))
-            return
+                self._logger.error("failed to cancel part of bulk job:(%s)(%s)"
+                                  % (ret, out))
+                return
 
 
     # --------------------------------------------------------------------------
@@ -1250,57 +1319,59 @@ class ShellJobService(cpi.Service):
             bulk   += "STATE %s\n" % pid
 
         bulk += "BULK_RUN\n"
-        self.shell.run_async(bulk)
 
-        for job in jobs:
+        with self._shell_lock:
+            self.shell.run_async(bulk)
 
+            for job in jobs:
+
+                ret, out = self.shell.find_prompt()
+
+                if ret != 0:
+                    job._adaptor._set_state(api.FAILED)
+                    job._adaptor._exception = rse.NoSuccess \
+                           ("failed to get job state:(%s)(%s)" % (ret, out))
+                    continue
+
+                lines = [_f for _f in out.split("\n") if _f]
+
+                if len(lines) < 2:
+                    job._adaptor._set_state(api.FAILED)
+                    job._adaptor._exception = rse.NoSuccess \
+                           ("failed to get job state:(%s)(%s)" % (ret, out))
+                    continue
+
+                if lines[-2] != "OK":
+                    job._adaptor._set_state(api.FAILED)
+                    job._adaptor._exception = rse.NoSuccess \
+                           ("failed to get job state:(%s)(%s)" % (ret, out))
+                    continue
+
+                state = self._adaptor.string_to_state(lines[-1])
+
+                job._adaptor._update_state(state)
+                states.append(state)
+
+
+            # we also need to find the output of the bulk op itself
             ret, out = self.shell.find_prompt()
 
             if ret != 0:
-                job._adaptor._set_state(api.FAILED)
-                job._adaptor._exception = rse.NoSuccess \
-                       ("failed to get job state:(%s)(%s)" % (ret, out))
-                continue
+                self._logger.error("no state for part of bulk job:(%s)(%s)"
+                                  % (ret, out))
+                return
 
             lines = [_f for _f in out.split("\n") if _f]
 
             if len(lines) < 2:
-                job._adaptor._set_state(api.FAILED)
-                job._adaptor._exception = rse.NoSuccess \
-                       ("failed to get job state:(%s)(%s)" % (ret, out))
-                continue
+                self._logger.error("Cannot eval status of bulk job:(%s)(%s)"
+                                  % (ret, out))
+                return
 
             if lines[-2] != "OK":
-                job._adaptor._set_state(api.FAILED)
-                job._adaptor._exception = rse.NoSuccess \
-                       ("failed to get job state:(%s)(%s)" % (ret, out))
-                continue
-
-            state = self._adaptor.string_to_state(lines[-1])
-
-            job._adaptor._update_state(state)
-            states.append(state)
-
-
-        # we also need to find the output of the bulk op itself
-        ret, out = self.shell.find_prompt()
-
-        if ret != 0:
-            self._logger.error("no state for part of bulk job:(%s)(%s)"
-                              % (ret, out))
-            return
-
-        lines = [_f for _f in out.split("\n") if _f]
-
-        if len(lines) < 2:
-            self._logger.error("Cannot eval status of bulk job:(%s)(%s)"
-                              % (ret, out))
-            return
-
-        if lines[-2] != "OK":
-            self._logger.error("no state for part of bulk job:(%s)(%s)"
-                              % (ret, out))
-            return
+                self._logger.error("no state for part of bulk job:(%s)(%s)"
+                                  % (ret, out))
+                return
 
         return states
 
