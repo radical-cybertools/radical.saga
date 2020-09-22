@@ -10,6 +10,8 @@ import sys
 import errno
 import tempfile
 
+import threading as mt
+
 import radical.utils              as ru
 
 from  .  import misc              as sumisc
@@ -26,6 +28,7 @@ from  ..import exceptions         as rse
 # ------------------------------------------------------------------------------
 #
 _PTY_TIMEOUT = 2.0
+_PING_DELAY  = 2.0
 
 # ------------------------------------------------------------------------------
 #
@@ -224,6 +227,22 @@ class PTYShell (object) :
         self.prompt_re = re.compile ("^(.*?)%s"    % self.prompt, re.DOTALL)
         self.logger.info ("PTY prompt pattern: %s" % self.prompt)
 
+        # the underlying shell is not always ready to receive new commands,
+        # e.g.,  when running an async command and still collecting output.
+        # The driving code is usually aware of the shell's state - but we want
+        # to send `PING` requests now and then to ensure the shell does not
+        # time out, and the thread triggering that ping is *not* aware of the
+        # shell state.  To avoid interfering with async calls, we mark the shell
+        # as `dirty` while it is in a state where it cannot receive new
+        # commands.
+        self._dirty = mt.Event()
+        self._dirty.clear()
+
+        # at regular intervals, run a ping toward the shell wrapper to avoid
+        # timeouts kicking in
+        # FIXME: configurable frequency
+        self._ping = mt.Timer(_PING_DELAY, self._ping_cb)
+
         # we need a local dir for file staging caches.  At this point we use
         # $HOME, but should make this configurable (FIXME)
         self.base = os.environ['HOME'] + '/.radical/saga/adaptors/shell/'
@@ -249,6 +268,16 @@ class PTYShell (object) :
         self._trace ('init : %s' % self.pty_shell.command)
 
         self.initialize ()
+
+
+    # ----------------------------------------------------------------
+    #
+    def _ping_cb (self) :
+
+        pong = self.run_sync('PING')
+        assert(pong == 'PONG\n')
+
+        self._ping = mt.Timer(_PING_DELAY, self._ping_cb)
 
 
     # ----------------------------------------------------------------
@@ -334,6 +363,10 @@ class PTYShell (object) :
                         self.pty_shell.finalize ()
                         self.finalized = True
 
+            # cancle ping timer if needed
+            if self._ping:
+                self._ping.cancel()
+
         except Exception:
             pass
 
@@ -382,6 +415,8 @@ class PTYShell (object) :
               #                  % (self.prompt, match))
                 ret, txt = self._eval_prompt (match)
 
+                # a prompt detection clears the shell
+                self._dirty.clear
                 return (ret, txt)
 
             except Exception as e :
@@ -673,6 +708,8 @@ class PTYShell (object) :
                 if iomode == STDOUT  : redir  =  " 2>/dev/null"
                 if iomode == STDERR  : redir  =  " 2>&1 1>/dev/null"
 
+                # the shell is dirty while cmd is in progress
+                self._dirty.set()
 
                 self.logger.debug    ('run_sync: %s%s'   % (command, redir))
                 self.pty_shell.write (          "%s%s\n" % (command, redir))
@@ -731,6 +768,9 @@ class PTYShell (object) :
             except Exception as e :
                 raise ptye.translate_exception (e) from e
 
+            finally:
+                self._dirty.clear()
+
 
     # ----------------------------------------------------------------
     #
@@ -761,6 +801,10 @@ class PTYShell (object) :
                                       % self.pty_shell.autopsy ())
 
             try :
+                # the shell is dirty while cmd is in progress.
+                # `self.find_prompt()` will have to be called to undirty it.
+                self._dirty.set()
+
                 command = command.strip ()
                 self.send ("%s\n" % command)
 
@@ -776,6 +820,10 @@ class PTYShell (object) :
         """
 
         with self.pty_shell.rlock :
+            # any ongoing data write marks the shell dirty
+            # self.find_prompt will have to be called to clear
+            self._dirty.set()
+
 
             if not self.pty_shell.alive (recover=False) :
                 raise rse.IncorrectState("Cannot send data:\n%s"
@@ -786,6 +834,7 @@ class PTYShell (object) :
 
             except Exception as e :
                 raise ptye.translate_exception (e) from e
+
 
     # ----------------------------------------------------------------
     #
@@ -806,6 +855,10 @@ class PTYShell (object) :
         """
 
         try :
+
+            # any ongoing data write marks the shell dirty - find_prompt() will
+            # have to be called to clear
+            self._dirty.set()
 
           # self._trace ("write     : %s -> %s" % (src, tgt))
 
@@ -886,10 +939,16 @@ class PTYShell (object) :
         # prompt, and updating pwd state on every find_prompt.
 
         try :
+            # any ongoing data write marks the shell dirty
+            self._dirty.set()
+
             return self.run_copy_to (src, tgt, cp_flags)
 
         except Exception as e :
             raise ptye.translate_exception (e) from e
+
+        finally:
+            self._dirty.clear
 
 
     # ----------------------------------------------------------------
@@ -917,6 +976,10 @@ class PTYShell (object) :
 
         except Exception as e :
             raise ptye.translate_exception (e) from e
+
+        finally:
+            self._dirty.clear
+
 
     # --------------------------------------------------------------------------
     #

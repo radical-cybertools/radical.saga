@@ -214,7 +214,7 @@ def helper_multiple_services(i):
     jd  = rs.job.Description()
 
     jd.executable = '/bin/sleep'
-    jd.arguments  = ['3']
+    jd.arguments  = ['1']
     jd = sutc.configure_jd(cfg=cfg, jd=jd)
 
     j1 = js1.create_job(jd)
@@ -240,18 +240,46 @@ NUM_SERVICES = 20
 
 def test_multiple_services():
     """ Test to create multiple job service instances  (this test might take a while) """
-    try:
-        cfg = config()
-        for i in range(0, NUM_SERVICES):
+    import threading as mt
+    import queue
+
+    q = queue.Queue()
+
+    def _test_ms(i):
+
+        try:
+            cfg = config()
             helper_multiple_services(i)
+            q.put(True)
 
-    except rs.NotImplemented as ni:
-        assert cfg.notimpl_warn_only, "%s " % ni
-        if cfg.notimpl_warn_only:
-            print("%s " % ni)
+        except rs.NotImplemented as ni:
+            assert cfg.notimpl_warn_only, "%s " % ni
+            if cfg.notimpl_warn_only:
+                print("%s " % ni)
+            q.put(True)
 
-    except rs.SagaException as se:
-        assert False, "Unexpected exception: %s" % se
+        except rs.SagaException as se:
+            assert False, "Unexpected exception: %s" % se
+            q.put(False)
+
+        except:
+            assert False, "Unexpected exception"
+            q.put(False)
+
+
+    threads = list()
+    for i in range(0, NUM_SERVICES):
+        t = mt.Thread(target=_test_ms, args=[i])
+        t.start()
+        threads.append(t)
+
+    for t in threads:
+        t.join()
+
+    for t in threads:
+        ret = q.get_nowait()
+        assert(ret == True), 'test failed'
+
 
 
 # ------------------------------------------------------------------------------
