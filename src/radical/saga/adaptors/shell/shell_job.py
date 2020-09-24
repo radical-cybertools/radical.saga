@@ -386,6 +386,7 @@ class Adaptor(base.Base):
             return
 
         if jd.file_transfer is not None:
+
             td = TransferDirectives(jd.file_transfer)
 
             if td.in_append or td.out_append:
@@ -396,7 +397,9 @@ class Adaptor(base.Base):
                     source = local
                     target = remote
                     self._logger.info("stage %s to %s" % (source, target))
-                    shell.stage_to_remote(source, target)
+
+                    with self._shell_lock:
+                        shell.stage_to_remote(source, target)
 
 
     # --------------------------------------------------------------------------
@@ -417,7 +420,9 @@ class Adaptor(base.Base):
                     source = remote
                     target = local
                     self._logger.info("stage %s to %s" % (source, target))
-                    shell.stage_from_remote(source, target)
+
+                    with self._shell_lock:
+                        shell.stage_from_remote(source, target)
 
 
 # ------------------------------------------------------------------------------
@@ -720,8 +725,7 @@ class ShellJobService(cpi.Service):
         '''
 
         # stage data, then run job
-        with self._shell_lock:
-            self._adaptor.stage_input(self.shell, jd)
+        self._adaptor.stage_input(self.shell, jd)
 
         # create command to run
         cmd = self._jd2cmd(jd)
