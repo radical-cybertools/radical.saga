@@ -380,7 +380,7 @@ class Adaptor(base.Base):
 
     # --------------------------------------------------------------------------
     #
-    def stage_input(self, shell, jd):
+    def stage_input(self, shell, lock, jd):
 
         if not jd:
             return
@@ -398,13 +398,13 @@ class Adaptor(base.Base):
                     target = remote
                     self._logger.info("stage %s to %s" % (source, target))
 
-                    with self._shell_lock:
+                    with lock:
                         shell.stage_to_remote(source, target)
 
 
     # --------------------------------------------------------------------------
     #
-    def stage_output(self, shell, jd):
+    def stage_output(self, shell, lock, jd):
 
         if not jd:
             return
@@ -421,7 +421,7 @@ class Adaptor(base.Base):
                     target = local
                     self._logger.info("stage %s to %s" % (source, target))
 
-                    with self._shell_lock:
+                    with lock:
                         shell.stage_from_remote(source, target)
 
 
@@ -725,7 +725,7 @@ class ShellJobService(cpi.Service):
         '''
 
         # stage data, then run job
-        self._adaptor.stage_input(self.shell, jd)
+        self._adaptor.stage_input(self.shell, self._shell_lock, jd)
 
         # create command to run
         cmd = self._jd2cmd(jd)
@@ -1096,7 +1096,8 @@ class ShellJobService(cpi.Service):
         # FIXME: this is now blocking the run() method.  Ideally, this activity
         # should be passed to a data manager thread/process/service.
         for job in jobs:
-            self._adaptor.stage_input(self.shell, job.description)
+            self._adaptor.stage_input(self.shell, self._shell_lock,
+                                      job.description)
         # ------------------------------------------------------------
 
         bulk += "BULK_RUN\n"
@@ -1464,7 +1465,7 @@ class ShellJob(cpi.Job):
             # stage output data
             # FIXME: _update_state blocks until data are staged.
             #        That should not happen.
-            self._adaptor.stage_output(self.js.shell, self.jd)
+            self._adaptor.stage_output(self.js.shell, self._shell_lock, self.jd)
 
         # files are staged -- update state, and report to application
         self._state = state
