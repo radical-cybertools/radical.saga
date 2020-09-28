@@ -820,6 +820,16 @@ cmd_purge () {
 
 # --------------------------------------------------------------------
 #
+# ping shell to ensure it is not hitting idle timeout
+#
+cmd_ping () {
+
+  RETVAL="PONG"
+}
+
+
+# --------------------------------------------------------------------
+#
 # purge tmp files for bulks etc.
 #
 # NOTE: we need to be able to handle unremovable nsf lockfiles (`|| true`)
@@ -957,6 +967,7 @@ listen() {
         LOG       ) cmd_log     "$ARGS"  ;;
         LIST      ) cmd_list    "$ARGS"  ;;
         PURGE     ) cmd_purge   "$ARGS"  ;;
+        PING      ) cmd_ping    "$ARGS"  ;;
         QUIT      ) cmd_quit    "$IDLE"  ;;
         HELP      ) cat <<EOT
 
@@ -965,6 +976,7 @@ listen() {
         MONITOR            - monitor for events
         PURGE              - purge completed jobs
         NOOP               - do nothing
+        PING               - update keepalive timer
         QUIT               - quit
         RUN     <cmd>      - run a job, prints job ID
         LRUN               - multiline run
