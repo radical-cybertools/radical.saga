@@ -36,7 +36,6 @@ def _silent_close_js(js_obj):
     # try to cancel job but silently ignore all errors
     try:
         js_obj.close()
-        js_obj.close()
     except Exception:
         pass
 
@@ -232,6 +231,7 @@ def helper_multiple_services(i):
     assert (j2.state == rs.job.DONE)
 
     _silent_close_js(js1)
+    _silent_close_js(js2)
 
 
 # ------------------------------------------------------------------------------

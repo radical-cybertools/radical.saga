@@ -502,6 +502,9 @@ class ShellJobService(cpi.Service):
             # When should that be done?
 
             with self._shell_lock:
+                # cancel scheduled `PING` request
+                self._ping.cancel()
+
              #  self.shell.run_sync("PURGE", iomode=None)
                 self.shell.run_async("QUIT")
                 self.shell.finalize(kill_pty=True)
