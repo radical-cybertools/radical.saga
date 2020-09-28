@@ -27,6 +27,7 @@ from  ..import exceptions         as rse
 #
 _PTY_TIMEOUT = 2.0
 
+
 # ------------------------------------------------------------------------------
 #
 # iomode flags
@@ -673,7 +674,6 @@ class PTYShell (object) :
                 if iomode == STDOUT  : redir  =  " 2>/dev/null"
                 if iomode == STDERR  : redir  =  " 2>&1 1>/dev/null"
 
-
                 self.logger.debug    ('run_sync: %s%s'   % (command, redir))
                 self.pty_shell.write (          "%s%s\n" % (command, redir))
 
@@ -786,6 +786,7 @@ class PTYShell (object) :
 
             except Exception as e :
                 raise ptye.translate_exception (e) from e
+
 
     # ----------------------------------------------------------------
     #
@@ -917,6 +918,7 @@ class PTYShell (object) :
 
         except Exception as e :
             raise ptye.translate_exception (e) from e
+
 
     # --------------------------------------------------------------------------
     #
