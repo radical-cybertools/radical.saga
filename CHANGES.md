@@ -4,6 +4,12 @@ For a list of open issues and known problems, see:
 https://github.com/radical-cybertools/radical.saga/issues
 
 
+Version 1.5.5 Hotfix Release                                          2020-09-28
+--------------------------------------------------------------------------------
+
+  - fix ssh timeout on idle (but alive) connections
+
+
 Version 1.5.4 Release                                                 2020-09-14
 --------------------------------------------------------------------------------
 
