@@ -4,6 +4,12 @@ For a list of open issues and known problems, see:
 https://github.com/radical-cybertools/radical.saga/issues
 
 
+Version 1.5.6 Hotfix Release                                          2020-09-29
+--------------------------------------------------------------------------------
+
+  - better fix ssh timeout
+
+
 Version 1.5.5 Hotfix Release                                          2020-09-28
 --------------------------------------------------------------------------------
 
