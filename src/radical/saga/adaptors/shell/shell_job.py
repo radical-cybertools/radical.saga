@@ -1468,7 +1468,8 @@ class ShellJob(cpi.Job):
             # stage output data
             # FIXME: _update_state blocks until data are staged.
             #        That should not happen.
-            self._adaptor.stage_output(self.js.shell, self._shell_lock, self.jd)
+            self._adaptor.stage_output(self.js.shell, self.js._shell_lock,
+                                       self.jd)
 
         # files are staged -- update state, and report to application
         self._state = state
