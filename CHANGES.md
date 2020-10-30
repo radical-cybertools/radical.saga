@@ -4,6 +4,15 @@ For a list of open issues and known problems, see:
 https://github.com/radical-cybertools/radical.saga/issues
 
 
+Version 1.5.7 Release                                                 2020-10-30
+--------------------------------------------------------------------------------
+
+  - added QoS option for special queue "tmp3" at SuperMUC-NG 
+  - fixed the case when job is routed to a different queue,
+    thus SAGA shouldn't fail the job in this case (Cobalt) 
+  - rtx switch for ppn 
+
+
 Version 1.5.6 Hotfix Release                                          2020-09-29
 --------------------------------------------------------------------------------
 
