@@ -619,6 +619,18 @@ class SLURMJobService(cpi_job.Service):
             # use '-C EGRESS' to enable outbound network
             script += "#SBATCH -C EGRESS\n"
 
+        elif 'comet' in self.rm.host.lower():
+
+            if gpu_count:
+                # gres resources are specified *per node*
+                assert(n_nodes), 'need unique number of cores per node'
+
+                if gpu_arch: gpu_arch = gpu_arch.lower()
+                else       : gpu_arch = 'p100'
+                count = 4
+                # Make sure we take a full GPU node
+                script += "#SBATCH --gres=gpu:%s:%d\n" % (gpu_arch, count)
+
         elif 'tiger' in self.rm.host.lower():
 
             if gpu_count:
