@@ -424,7 +424,7 @@ class Container (sbase.SimpleBase, satt.Attributes) :
 
         # wait for all futures to finish
         for future in futures :
-            if  future.isAlive () :
+            if  future.is_alive () :
                 future.join ()
 
             if  future.state == c.FAILED :
@@ -497,7 +497,7 @@ class Container (sbase.SimpleBase, satt.Attributes) :
             if future.state == c.FAILED :
                 raise future.exception
 
-            if not future.isAlive() :
+            if not future.is_alive() :
                 # future indeed finished -- dig return value from this
                 # futures queue
                 result = future.result
