@@ -51,7 +51,11 @@ RESOURCES = {
     'lassen': {'cpn': 40,
                'gpn': 4,
                'valid_alloc_flags': [
-                   'ipisolate']}
+                   'atsdisable',
+                   'autonumaoff',
+                   'cpublink',
+                   'ipisolate'
+               ]}
 }
 
 
