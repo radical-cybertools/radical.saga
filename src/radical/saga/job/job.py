@@ -691,11 +691,7 @@ class Job (sb.Base, st.Task, sasync.Async) :
                         rus.optional (rus.one_of (SYNC, ASYNC, TASK)))
     @rus.returns       ((rus.nothing, int, st.Task))
     def _get_exit_code (self, ttype=None) :
-        ec = self._adaptor.get_exit_code(ttype=ttype)
-        if ec in [None, ""]:
-            return None
-        else:
-            return ec
+        return self._adaptor.get_exit_code(ttype=ttype)
 
     # --------------------------------------------------------------------------
     #
