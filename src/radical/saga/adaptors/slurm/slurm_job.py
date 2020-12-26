@@ -402,6 +402,7 @@ class SLURMJobService(cpi_job.Service):
             self._ppn = 32
 
         elif 'frontera' in self.rm.host.lower():
+            # not that this is incorrect for the rtx queue
             self._ppn = 56
 
         elif 'comet' in self.rm.host.lower():
@@ -619,6 +620,20 @@ class SLURMJobService(cpi_job.Service):
             # use '-C EGRESS' to enable outbound network
             script += "#SBATCH -C EGRESS\n"
 
+        elif 'comet' in self.rm.host.lower():
+
+            if gpu_count:
+                # gres resources are specified *per node*
+                assert(n_nodes), 'need unique number of cores per node'
+
+                # if no `gpu_arch` then first available gpu node (either type)
+                # gpu types are "p100" and "k80"
+                if gpu_arch: gpu_arch_str = ':%s' % gpu_arch.lower()
+                else       : gpu_arch_str = ''
+                count = 4
+                # Make sure we take a full GPU node
+                script += "#SBATCH --gres=gpu%s:%d\n" % (gpu_arch_str, count)
+
         elif 'tiger' in self.rm.host.lower():
 
             if gpu_count:
@@ -635,6 +650,14 @@ class SLURMJobService(cpi_job.Service):
             # modes) for KNL, etc.
             if cpu_arch : script += "#SBATCH -C %s\n"     % cpu_arch
             if gpu_count: script += "#SBATCH --gpus=%s\n" % gpu_count
+
+        elif queue == 'tmp3':
+
+            # this is a special queue, which is associated with SuperMUC-NG,
+            # but since there is no machine name in config data we only track
+            # this queue name to set SLURM QoS option
+            script += "#SBATCH --qos=nolimit\n"
+            self._logger.debug("SLURM QoS is set (SuperMUC-NG only)\n")
 
         else:
 

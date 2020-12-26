@@ -138,7 +138,7 @@ def _cobaltscript_generator(url, logger, jd, ppn, is_cray=False, queue=None,
     cobalt_params       = str()
     exec_n_args         = str()
     cobaltscript        = str()
-    total_cpu_count     = None
+    total_cpu_count     = 1  # default value
     number_of_processes = None
     processes_per_host  = None
     blue_gene_q_modes   = [1, 2, 4, 8, 16, 32, 64]
@@ -218,13 +218,14 @@ def _cobaltscript_generator(url, logger, jd, ppn, is_cray=False, queue=None,
     #
     # This section takes care of CPU/Process/Node calculation
     #
-    # Handle number of cores
-    # Default total_cpu_count = 1
-    if jd.attribute_exists ("total_cpu_count"):
+
+    # handle number of cores
+    if jd.attribute_exists('total_cpu_count'):
         total_cpu_count = jd.total_cpu_count
-    else:
-        logger.warning("total_cpu_count not specified -- default to (1)")
-        total_cpu_count = 1
+
+    # ppn: processes/cores per node (default value is an input parameter)
+    if jd.attribute_exists('processes_per_host'):
+        ppn = jd.processes_per_host
 
     # Request enough nodes to cater for the number of cores requested
     number_of_nodes = total_cpu_count / ppn
@@ -233,7 +234,7 @@ def _cobaltscript_generator(url, logger, jd, ppn, is_cray=False, queue=None,
 
     # Get number of processes
     # Defaults to number_of_processes = number_of_nodes
-    if jd.attribute_exists ("number_of_processes"):
+    if jd.attribute_exists('number_of_processes'):
         number_of_processes = jd.number_of_processes
     else:
         logger.debug("number_of_processes not specified. default: 1 per node")
@@ -374,6 +375,7 @@ _ADAPTOR_CAPABILITIES = {
                           api.SPMD_VARIATION,  # TODO: 'hot'-fix for BigJob
                           api.PROCESSES_PER_HOST,
                           api.TOTAL_CPU_COUNT,
+                          api.TOTAL_GPU_COUNT,
                           api.NUMBER_OF_PROCESSES,
                           api.JOB_CONTACT],
     "job_attributes":    [api.EXIT_CODE,
@@ -719,8 +721,9 @@ class CobaltJobService (cpi_job.Service):
 
         if ret != 0:
             # something went wrong
-            raise rse.NoSuccess("Error running 'qsub': %s. Commandline: %s"
-                               % (out, cmdline))
+            raise rse.NoSuccess(
+                "\nError message while running 'qsub' (%s): %s\nCommand: %s\n" %
+                (ret, out, cmdline))
 
         else:
             # parse the job id. qsub usually returns just the job id, but
@@ -1183,6 +1186,16 @@ class CobaltJobService (cpi_job.Service):
         # TODO: this is not optimized yet
         for job in jobs:
             job.cancel(timeout)
+
+
+    # --------------------------------------------------------------------------
+    #
+    def container_get_states(self, jobs):
+        # TODO: this is not optimized yet
+        states = list()
+        for job in jobs:
+            states.append(job.get_state())
+        return states
 
 
 ###############################################################################
