@@ -4,6 +4,24 @@ For a list of open issues and known problems, see:
 https://github.com/radical-cybertools/radical.saga/issues
 
 
+Version 1.5.8 Release                                                 2020-12-26
+--------------------------------------------------------------------------------
+
+  - Comet takes --gres for gpu
+  - extended list of valid alloc_flags options for Lassen
+  - ip-isolate flag for distributed pytorch on Lassen
+  - updated slurm script record for Comet
+
+
+Version 1.5.7 Release                                                 2020-10-30
+--------------------------------------------------------------------------------
+
+  - added QoS option for special queue "tmp3" at SuperMUC-NG
+  - fixed the case when job is routed to a different queue,
+    thus SAGA shouldn't fail the job in this case (Cobalt)
+  - rtx switch for ppn
+
+
 Version 1.5.6 Hotfix Release                                          2020-09-29
 --------------------------------------------------------------------------------
 
