@@ -644,8 +644,8 @@ class ShellDirectory(cpi_fs.Directory):
         if  flags & c.RECURSIVE:
             raise rse.BadParameter("'RECURSIVE' flag not  supported for link()")
 
-        if  flags & c.CREATE or \
-            flags & c.CREATE_PARENTS:
+        if (flags & c.CREATE) or \
+           (flags & c.CREATE_PARENTS):
             self._create_parent(cwdurl, tgt)
 
         # if src and tgt point to the same host, we just run a shell link
