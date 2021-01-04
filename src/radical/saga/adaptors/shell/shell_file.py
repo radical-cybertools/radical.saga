@@ -518,8 +518,8 @@ class ShellDirectory(cpi_fs.Directory):
         if  rsumisc.url_is_compatible(cwdurl, src) and \
             rsumisc.url_is_compatible(cwdurl, tgt):
 
-            if  flags & c.CREATE or \
-                flags & c.CREATE_PARENTS:
+            if (flags & c.CREATE) or \
+               (flags & c.CREATE_PARENTS):
                 self._create_parent(cwdurl, tgt)
 
             ret, out, err = self._command(" cp %s '%s' '%s'\n"
@@ -536,8 +536,8 @@ class ShellDirectory(cpi_fs.Directory):
 
             # for a remote target, we need to manually create the target dir (if
             # needed)
-            if  flags & c.CREATE or \
-                flags & c.CREATE_PARENTS:
+            if (flags & c.CREATE) or \
+               (flags & c.CREATE_PARENTS):
                 self._create_parent(cwdurl, tgt)
 
 
@@ -565,7 +565,8 @@ class ShellDirectory(cpi_fs.Directory):
 
                 else:
                     # we cannot support the combination of URLs
-                    raise rse.BadParameter("unsupported copy %s to %s" % (src, tgt))
+                    raise rse.BadParameter("unsupported copy %s to %s"
+                                          % (src, tgt))
 
 
             # if cwd is local, and src or tgt are remote, we need to actually
