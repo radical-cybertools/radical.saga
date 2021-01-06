@@ -618,7 +618,7 @@ class ShellJobService(cpi.Service):
         # feedback on failures(the shell just quits) -- so we replace it with
         # this poor-man's version...
         with self._shell_lock:
-            ret, out, _ = self.shell.run_sync(" /bin/sh %s/wrapper.sh %s" 
+            ret, out, _ = self.shell.run_sync(" /bin/sh %s/wrapper.sh %s"
                                              % (base, base))
 
         # shell_wrapper.sh will report its own PID -- we use that to sync prompt
@@ -938,11 +938,11 @@ class ShellJobService(cpi.Service):
         rm, pid = self._adaptor.parse_id(id)
 
         with self._shell_lock:
-            ret, out, _ = self.shell.run_sync("CANCEL %s\n" % pid)
+            ret, out, err = self.shell.run_sync("CANCEL %s\n" % pid)
 
         if ret != 0:
-            raise rse.NoSuccess("failed to cancel job '%s':(%s)(%s)"
-                               % (id, ret, out))
+            raise rse.NoSuccess("failed to cancel job '%s':(%s)(%s)(%s)"
+                               % (id, ret, out, err))
 
         lines = [_f for _f in out.split("\n") if _f]
         self._logger.debug(lines)
@@ -951,10 +951,17 @@ class ShellJobService(cpi.Service):
             # shell did not manage to do 'stty -echo'?
             del(lines[0])
 
-        if len(lines) != 2:
-            raise rse.NoSuccess("failed to cancel job '%s':(%s)" % (id, lines))
-
         if lines[0] != "OK":
+            # this can happen if the cancel raced with some other final state
+            # transition.  Lets check if the job is final by now - if it is, we
+            # are good.
+            if len(lines) > 1:
+                state = lines[1].split(':')[1].strip()
+                state = self._adaptor.string_to_state(state)
+                if state in [api.DONE, api.FAILED, api.CANCELED]:
+                    # nothing to do
+                    return
+
             raise rse.NoSuccess("failed to cancel job '%s'(%s)" % (id, lines))
 
 
@@ -1473,7 +1480,8 @@ class ShellJob(cpi.Job):
 
         # files are staged -- update state, and report to application
         self._state = state
-        self._api()._attributes_i_set('state', self._state, self._api()._UP)
+        if self._state != old_state:
+            self._api()._attributes_i_set('state', self._state, self._api()._UP)
 
 
     # --------------------------------------------------------------------------
@@ -1498,13 +1506,16 @@ class ShellJob(cpi.Job):
 
         # no need to re-check final states
         if self._state == api.DONE      or \
-            self._state == api.FAILED    or \
-            self._state == api.CANCELED    :
+           self._state == api.FAILED    or \
+           self._state == api.CANCELED    :
                 return self._state
 
         if 'state' not in stats:
             raise rse.NoSuccess("failed to get job state for '%s':(%s)"
                                % (self._id, stats))
+
+        if self._exit_code is None and stats.get('ecode'):
+            self._exit_code = int(stats['ecode'])
 
         self._update_state(self._adaptor.string_to_state(stats['state']))
 
@@ -1520,7 +1531,7 @@ class ShellJob(cpi.Job):
         # on state changes, trigger notifications
         if old_state != state:
             self._state  = state
-            self._api()._attributes_i_set('state', state, self._api()._UP)
+            self._api()._attributes_i_set('state', self._state, self._api()._UP)
 
         return self._state
 

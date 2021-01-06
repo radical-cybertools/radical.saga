@@ -552,6 +552,10 @@ cmd_stats () {
   DIR="$BASE/$1"
   STATE=`\grep -e ' $' "$DIR/state" | \tail -n 1 | \tr -d ' '`
   RETVAL="STATE : $STATE\n"
+  if test -r "$DIR/exit"
+  then
+    RETVAL="$RETVAL\nECODE=`cat $DIR/exit`"
+  fi
   RETVAL="$RETVAL\n`\cat $DIR/stats`\n"
 
   # if state is FAILED, we also deliver the last couple of lines from stderr,
@@ -717,7 +721,8 @@ cmd_cancel () {
   state=`\grep -e ' $' "$DIR/state" | \tail -n 1 | \tr -d ' '`
   if test "$state" = "FAILED" -o "$state" = "DONE" -o "$state" = "CANCELED"
   then
-    ERROR="job $1 in incorrect state ('$state' = 'DONE|FAILED|CANCELED')"
+    ERROR="state: $state\n job $1 is in final state"
+    RETVAL="$1 $state"
     return
   fi
 
@@ -727,7 +732,7 @@ cmd_cancel () {
 
   # FIXME: how can we check for success?  ps?
   \printf "CANCELED \n" >> "$DIR/state"
-  RETVAL="$1 canceled"
+  RETVAL="$1 CANCELED"
 }
 
 
@@ -882,6 +887,40 @@ cmd_quit () {
 }
 
 
+# ------------------------------------------------------------------------------
+#
+# print help message
+#
+cmd_help() {
+
+    cat <<EOT
+
+        HELP               - print this message
+        LIST               - list all job IDs
+        MONITOR            - monitor for events
+        PURGE              - purge completed jobs
+        NOOP               - do nothing
+        PING               - update keepalive timer
+        QUIT               - quit
+        RUN     <cmd>      - run a job, prints job ID
+        LRUN               - multiline run
+        RESULT  <id>       - show job return value
+        RESUME  <id>       - resume job after suspend
+        STATE   <id>       - print state of job
+        STATS   <id>       - print stats of job
+        STDERR  <id>       - print stderr of job
+        STDOUT  <id>       - print stdout of job
+        STDIN   <id> <txt> - send txt to stdin of job
+        CANCEL  <id>       - cancel job
+        SUSPEND <id>       - suspend job
+        WAIT    <id>       - wait for job completion
+        <cmd>              - run as synchronous shell command
+
+EOT
+
+}
+
+
 # --------------------------------------------------------------------
 #
 # main even loop -- wait for incoming command lines, and react on them
@@ -969,31 +1008,7 @@ listen() {
         PURGE     ) cmd_purge   "$ARGS"  ;;
         PING      ) cmd_ping    "$ARGS"  ;;
         QUIT      ) cmd_quit    "$IDLE"  ;;
-        HELP      ) cat <<EOT
-
-        HELP               - print this message
-        LIST               - list all job IDs
-        MONITOR            - monitor for events
-        PURGE              - purge completed jobs
-        NOOP               - do nothing
-        PING               - update keepalive timer
-        QUIT               - quit
-        RUN     <cmd>      - run a job, prints job ID
-        LRUN               - multiline run
-        RESULT  <id>       - show job return value
-        RESUME  <id>       - resume job after suspend
-        STATE   <id>       - print state of job
-        STATS   <id>       - print stats of job
-        STDERR  <id>       - print stderr of job
-        STDOUT  <id>       - print stdout of job
-        STDIN   <id> <txt> - send txt to stdin of job
-        CANCEL  <id>       - cancel job
-        SUSPEND <id>       - suspend job
-        WAIT    <id>       - wait for job completion
-        <cmd>              - run as synchronous shell command
-
-EOT
-;;
+        HELP      ) cmd_help             ;;
         NOOP      ) ERROR="NOOP"         ;;
         BULK_EVAL ) ERROR="$BULK_ERROR"
                     RETVAL="BULK COMPLETED"
