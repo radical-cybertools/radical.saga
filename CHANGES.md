@@ -4,6 +4,14 @@ For a list of open issues and known problems, see:
 https://github.com/radical-cybertools/radical.saga/issues
 
 
+Version 1.5.9 Release                                                 2021-01-22
+--------------------------------------------------------------------------------
+
+  - address race condition on cancellation
+  - re-enabel prompt escape
+  - fix #787
+
+
 Version 1.5.8 Release                                                 2020-12-26
 --------------------------------------------------------------------------------
 
