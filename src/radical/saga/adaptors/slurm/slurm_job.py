@@ -604,7 +604,14 @@ class SLURMJobService(cpi_job.Service):
         # target host specifica
         # FIXME: these should be moved into resource config files
         self._logger.debug ("submit SLURM script to %s", self.rm)
-        if 'bridges' in self.rm.host.lower():
+        if 'bridges2' in self.rm.host.lower():
+             if gpu_count:
+                 # gres resources are specified *per node*
+                 assert(n_nodes), 'need unique number of cores per node'
+
+                 script += "#SBATCH --gres=gpu:v100:8\n"
+
+        elif 'bridges' in self.rm.host.lower():
 
             if gpu_count:
                 # gres resources are specified *per node*
@@ -668,7 +675,8 @@ class SLURMJobService(cpi_job.Service):
                'longhorn' in self.rm.host.lower() or \
                'tiger'    in self.rm.host.lower() or \
                'traverse' in self.rm.host.lower() or \
-               'rhea'     in self.rm.host.lower():
+               'rhea'     in self.rm.host.lower() or \
+               'bridges2' in self.rm.host.lower():
                 script += "#SBATCH --chdir %s\n"   % cwd
             else:
                 script += "#SBATCH --workdir %s\n" % cwd
