@@ -502,6 +502,7 @@ class SLURMJobService(cpi_job.Service):
         sys_arch            = jd.as_dict().get(c.SYSTEM_ARCHITECTURE)
         job_contact         = jd.as_dict().get(c.JOB_CONTACT)
         c_hosts             = jd.as_dict().get(c.CANDIDATE_HOSTS)
+        gpus_per_node       = jd.as_dict().get(c.GPUS_PER_NODE)
 
         cpu_arch            = sys_arch.get('cpu')
         gpu_arch            = sys_arch.get('gpu')
@@ -608,24 +609,8 @@ class SLURMJobService(cpi_job.Service):
              if gpu_count:
                  # gres resources are specified *per node*
                  assert(n_nodes), 'need unique number of cores per node'
-
+                gpu_arch =
                  script += "#SBATCH --gres=gpu:v100:8\n"
-
-        elif 'bridges' in self.rm.host.lower():
-
-            if gpu_count:
-                # gres resources are specified *per node*
-                assert(n_nodes), 'need unique number of cores per node'
-
-                if gpu_arch: gpu_arch = gpu_arch.lower()
-                else       : gpu_arch = 'p100'
-                if gpu_arch == 'k80': count = 4
-                else                : count = 2
-                # Make sure we take a full GPU node
-                script += "#SBATCH --gres=gpu:%s:%d\n" % (gpu_arch, count)
-
-            # use '-C EGRESS' to enable outbound network
-            script += "#SBATCH -C EGRESS\n"
 
         elif 'comet' in self.rm.host.lower():
 
