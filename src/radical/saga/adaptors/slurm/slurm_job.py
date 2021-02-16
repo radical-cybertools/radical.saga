@@ -604,21 +604,11 @@ class SLURMJobService(cpi_job.Service):
         # target host specifica
         # FIXME: these should be moved into resource config files
         self._logger.debug ("submit SLURM script to %s", self.rm)
-        if 'bridges' in self.rm.host.lower():
-
-            if gpu_count:
-                # gres resources are specified *per node*
-                assert(n_nodes), 'need unique number of cores per node'
-
-                if gpu_arch: gpu_arch = gpu_arch.lower()
-                else       : gpu_arch = 'p100'
-                if gpu_arch == 'k80': count = 4
-                else                : count = 2
-                # Make sure we take a full GPU node
-                script += "#SBATCH --gres=gpu:%s:%d\n" % (gpu_arch, count)
-
-            # use '-C EGRESS' to enable outbound network
-            script += "#SBATCH -C EGRESS\n"
+        if 'bridges2' in self.rm.host.lower():
+             if gpu_count:
+                 # gres resources are specified *per node*
+                 assert(n_nodes), 'need unique number of cores per node'
+                 script += "#SBATCH --gres=gpu:%s:8\n" % (gpu_arch)
 
         elif 'comet' in self.rm.host.lower():
 
@@ -668,7 +658,8 @@ class SLURMJobService(cpi_job.Service):
                'longhorn' in self.rm.host.lower() or \
                'tiger'    in self.rm.host.lower() or \
                'traverse' in self.rm.host.lower() or \
-               'rhea'     in self.rm.host.lower():
+               'rhea'     in self.rm.host.lower() or \
+               'bridges2' in self.rm.host.lower():
                 script += "#SBATCH --chdir %s\n"   % cwd
             else:
                 script += "#SBATCH --workdir %s\n" % cwd
