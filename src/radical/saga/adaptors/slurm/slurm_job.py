@@ -580,7 +580,7 @@ class SLURMJobService(cpi_job.Service):
                 script += "#SBATCH -n %s\n" % n_procs
 
             elif 'frontera'  in self.rm.host.lower() or \
-                 'rhea'      in self.rm.host.lower():
+                 'andes'      in self.rm.host.lower():
 
                 assert(n_nodes), 'need unique number of cores per node'
                 script += "#SBATCH -N %d\n" % n_nodes
@@ -658,7 +658,7 @@ class SLURMJobService(cpi_job.Service):
                'longhorn' in self.rm.host.lower() or \
                'tiger'    in self.rm.host.lower() or \
                'traverse' in self.rm.host.lower() or \
-               'rhea'     in self.rm.host.lower() or \
+               'andes'     in self.rm.host.lower() or \
                'bridges2' in self.rm.host.lower():
                 script += "#SBATCH --chdir %s\n"   % cwd
             else:
