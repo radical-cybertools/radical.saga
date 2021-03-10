@@ -4,11 +4,17 @@ For a list of open issues and known problems, see:
 https://github.com/radical-cybertools/radical.saga/issues
 
 
+Version 1.6.0 Release                                                 2021-03-09
+--------------------------------------------------------------------------------
+
+  - bridges2 support
+
+
 Version 1.5.9 Release                                                 2021-01-22
 --------------------------------------------------------------------------------
 
   - address race condition on cancellation
-  - re-enabel prompt escape
+  - re-enable prompt escape
   - fix #787
 
 
