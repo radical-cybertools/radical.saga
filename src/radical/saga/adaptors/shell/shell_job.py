@@ -1802,10 +1802,10 @@ class ShellJob(cpi.Job):
             raise rse.IncorrectState("Cannot cancel, job is not running")
 
         if self._state in [api.CANCELED, api.DONE, api.FAILED]:
-            self._set_state(api.CANCELED)
             return
 
         self.js._job_cancel(self._id)
+        self._set_state(api.CANCELED)
 
 
     # --------------------------------------------------------------------------
