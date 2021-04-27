@@ -1,9 +1,12 @@
 #!/usr/bin/env python
 
+# pylint: disable=unused-argument,no-member
+
 __author__    = "Andre Merzky, Ole Weidner"
 __copyright__ = "Copyright 2013, The SAGA Project"
 __license__   = "MIT"
 
+import os
 
 import radical.saga                   as rs
 import radical.utils                  as ru
@@ -45,8 +48,9 @@ def _silent_close_js(js_obj):
 def test_close():
     """ Test job service close()
     """
+    cfg = config()
+
     try:
-        cfg = config()
         js = rs.job.Service(cfg.job_service_url, cfg.session)
         js.close()
         js.get_url()
@@ -65,11 +69,11 @@ def test_close():
 def test_open_close():
     """ Test job service create / close() in a big loop
     """
-    js = None
-    try:
-        cfg = config()
+    js  = None
+    cfg = config()
 
-        for i in range(0, 10):
+    try:
+        for _ in range(0, 10):
             js = rs.job.Service(cfg.job_service_url, cfg.session)
             js.close()
 
@@ -88,9 +92,10 @@ def test_open_close():
 def test_get_url():
     """ Test job service url/get_url()
     """
-    js = None
+    js  = None
+    cfg = config()
+
     try:
-        cfg = config()
         js = rs.job.Service(cfg.job_service_url, cfg.session)
         assert(str(js.get_url()) == str(cfg.job_service_url)), \
                 'expected %s [%s]' % (js.get_url(), cfg.job_service_url)
@@ -111,10 +116,11 @@ def test_get_url():
 #
 def test_list_jobs():
     """ Test if a submitted job shows up in Service.list() """
-    j  = None
-    js = None
+    j   = None
+    js  = None
+    cfg = config()
+
     try:
-        cfg = config()
         js = rs.job.Service(cfg.job_service_url, cfg.session)
 
         # create job service and job
@@ -148,9 +154,10 @@ def test_list_jobs():
 #
 def test_run_job():
     """ Test to submit a job via run_job, and retrieve id"""
-    js = None
+    js  = None
+    cfg = config()
+
     try:
-        cfg = config()
         js = rs.job.Service(cfg.job_service_url, cfg.session)
 
         # create job service and job
@@ -171,10 +178,11 @@ def test_run_job():
 #
 def test_get_job():
     """ Test to submit a job, and retrieve it by id """
-    j  = None
-    js = None
+    j   = None
+    js  = None
+    cfg = config()
+
     try:
-        cfg = config()
         js = rs.job.Service(cfg.job_service_url, cfg.session)
 
         # create job service and job
@@ -238,6 +246,7 @@ def helper_multiple_services(i):
 #
 NUM_SERVICES = 5
 
+
 def test_multiple_services():
     """
     test concurrent job services (takes a while)
@@ -248,9 +257,9 @@ def test_multiple_services():
     q = queue.Queue()
 
     def _test_ms(i):
+        cfg = config()
 
         try:
-            cfg = config()
             helper_multiple_services(i)
             q.put(True)
 
@@ -261,13 +270,12 @@ def test_multiple_services():
             q.put(True)
 
         except rs.SagaException as se:
-            assert False, "Unexpected exception: %s" % se
             q.put(False)
+            assert False, "Unexpected exception: %s" % se
 
         except:
-            assert False, "Unexpected exception"
             q.put(False)
-
+            assert False, "Unexpected exception"
 
     threads = list()
     for i in range(0, NUM_SERVICES):
@@ -280,8 +288,7 @@ def test_multiple_services():
 
     for t in threads:
         ret = q.get_nowait()
-        assert(ret == True), 'test failed'
-
+        assert(ret is True), 'test failed'
 
 
 # ------------------------------------------------------------------------------
@@ -292,8 +299,6 @@ def test_jobid_viability ():
     # the actual job instance.  We test by killing that pid and checking state.
 
     try:
-        import os
-
         cfg = config()
 
         js_url = rs.Url (cfg.job_service_url)
@@ -309,7 +314,7 @@ def test_jobid_viability ():
         j   = js.run_job ("/bin/sleep 100")
         jid = j.id
 
-        js_part, j_part = jid.split ('-', 1)
+        _, j_part = jid.split('-', 1)
         pid = j_part[1:-3]
 
         # kill the children (i.e. the only child) of the pid, which is the
@@ -318,9 +323,11 @@ def test_jobid_viability ():
 
         assert (j.state == rs.job.FAILED), 'job.state: %s' % j.state
 
+        _silent_close_js(js)
 
     except rs.SagaException as se:
         assert False, "Unexpected exception: %s" % se
+
 
 
 # ------------------------------------------------------------------------------
