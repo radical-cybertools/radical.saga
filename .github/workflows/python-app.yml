@@ -36,7 +36,7 @@ jobs:
         LOC: testenv/lib/python3.6/site-packages
       run: |
         . testenv/bin/activate
-        coverage run --include=$LOC/radical/saga/* -m pytest -ra --timeout=600 -vvv --showlocals tests/
+        coverage run --include=$LOC/radical/saga/* -m pytest -ra --timeout=600 -vvv --showlocals tests/unittests/
         coverage xml
     - name: Codecov
       uses: codecov/codecov-action@v1
