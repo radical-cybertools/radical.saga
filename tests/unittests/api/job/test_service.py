@@ -314,8 +314,7 @@ def test_jobid_viability ():
 
         # kill the children (i.e. the only child) of the pid, which is the
         # actual job
-        os.system (('ps -ef | cut -c 8-21 | grep " %s " | cut -c 1-8 '
-                    '| grep -v " %s " | xargs -r kill') % (pid, pid))
+        os.system('pkill -TERM -P %s' % pid)
 
         assert (j.state == rs.job.FAILED), 'job.state: %s' % j.state
 
