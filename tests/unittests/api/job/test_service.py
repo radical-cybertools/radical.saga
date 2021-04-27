@@ -329,7 +329,6 @@ def test_jobid_viability ():
         assert False, "Unexpected exception: %s" % se
 
 
-
 # ------------------------------------------------------------------------------
 #
 if __name__ == '__main__':
