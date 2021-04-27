@@ -1,0 +1,98 @@
+# This workflow will install Python dependencies, run tests and lint with a single version of Python
+# For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
+
+name: Build
+
+on:
+  push:
+    branches: [ devel ]
+  pull_request:
+    branches: [ devel ]
+
+jobs:
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 2
+    - name: Set up Python 3.6
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.6.13
+    - name: Install dependencies
+      run: |
+        python -m venv testenv
+        . testenv/bin/activate
+        python -m pip install --upgrade pip setuptools
+        python -m pip install --upgrade .
+        python -m pip install coverage
+        python -m pip install codecov
+        python -m pip install pytest
+        python -m pip install pytest-timeout
+    - name: Test with pytest
+      env:
+        LOC: testenv/lib/python3.6/site-packages
+      run: |
+        . testenv/bin/activate
+        coverage run --include=$LOC/radical/saga/* -m pytest -ra --timeout=600 -vvv --showlocals tests/
+        coverage xml
+    - name: Codecov
+      uses: codecov/codecov-action@v1
+      with:
+        file: ./coverage.xml
+
+  flake8:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 2
+    - name: Set up Python 3.6
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.6.13
+    - name: Install dependencies
+      run: |
+        python -m venv testenv
+        . testenv/bin/activate
+        python -m pip install --upgrade pip setuptools
+        python -m pip install --upgrade .
+        python -m pip install flake8 flake8-per-file-ignores
+    - name: Lint with flake8
+      run: |
+        . testenv/bin/activate
+        LOG=`git log -n 1 | grep Merge`
+        NEW=`echo $LOG | cut -d ' ' -f2`
+        OLD=`echo $LOG | cut -d ' ' -f3`
+        DIFF=`git diff  --name-only --diff-filter=db $NEW..$OLD`
+        FILTERED=$(for f in $DIFF; do echo $f; done | grep -v '/archive/' | grep -e '\.py$' |  sed "s|^|$PWD/|")
+        test -z "$FILTERED" && echo 'nothing to flake8' || flake8 $FILTERED
+
+  pylint:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 2
+    - name: Set up Python 3.6
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.6.13
+    - name: Install dependencies
+      run: |
+        python -m venv testenv
+        . testenv/bin/activate
+        python -m pip install --upgrade pip setuptools
+        python -m pip install --upgrade .
+        python -m pip install pylint
+    - name: Lint with pylint
+      run: |
+        . testenv/bin/activate
+        LOG=`git log -n 1 | grep Merge`
+        NEW=`echo $LOG | cut -d ' ' -f2`
+        OLD=`echo $LOG | cut -d ' ' -f3`
+        DIFF=`git diff  --name-only --diff-filter=db $NEW..$OLD`
+        FILTERED=$(for f in $DIFF; do echo $f; done | grep -v '/archive/' | grep -e '\.py$' |  sed "s|^|$PWD/|")
+        test -z "$FILTERED" && echo 'nothing to pylint' || pylint $FILTERED
