@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 
+# pylint: disable=no-member
+
 __author__    = "Andre Merzky"
 __copyright__ = "Copyright 2013, The SAGA Project"
 __license__   = "MIT"
 
-
-import radical.utils as ru
-
+import radical.utils                as ru
 import radical.saga                 as saga
 import radical.saga.utils.pty_shell as sups
 

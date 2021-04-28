@@ -26,7 +26,6 @@ def config():
 # ------------------------------------------------------------------------------
 #
 def _silent_cancel(job_obj):
-    # try to cancel job but silently ignore all errors
     try:
         job_obj.cancel()
     except Exception:
@@ -36,7 +35,6 @@ def _silent_cancel(job_obj):
 # ------------------------------------------------------------------------------
 #
 def _silent_close_js(js_obj):
-    # try to cancel job but silently ignore all errors
     try:
         js_obj.close()
     except Exception:

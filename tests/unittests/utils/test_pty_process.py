@@ -4,13 +4,10 @@ __author__    = "Andre Merzky"
 __copyright__ = "Copyright 2013, The SAGA Project"
 __license__   = "MIT"
 
-
 import os
 import time
 import signal
 import radical.saga.utils.pty_process as supp
-
-import radical.utils as ru
 
 
 # ------------------------------------------------------------------------------
@@ -41,6 +38,7 @@ def test_ptyprocess_term () :
     assert (not pty.alive ())
     assert (pty.exit_signal == signal.SIGTERM), "'%s' == '%s'" % \
            (pty.exit_signal ,  signal.SIGTERM)
+
 
 # ------------------------------------------------------------------------------
 #
@@ -105,7 +103,6 @@ def test_ptyprocess_write () :
            (txt ,  out)
 
 
-
 # ------------------------------------------------------------------------------
 #
 def test_ptyprocess_find () :
@@ -113,7 +110,6 @@ def test_ptyprocess_find () :
     txt = "______1_____2______3_____"
     pty = supp.PTYProcess ("printf \"%s\"" % txt)
     out = pty.find ('2', '3')
-  # print out
     assert (out == (0, '______1_____2')), "'%s' == '%s'" % \
            (out ,  (0, '______1_____2'))
 

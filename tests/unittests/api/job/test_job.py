@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 
+# pylint: disable=no-member
+
 __author__    = "Andre Merzky, Ole Weidner"
 __copyright__ = "Copyright 2013, The SAGA Project"
 __license__   = "MIT"
-
 
 import time
 import unittest
@@ -28,24 +29,9 @@ def config():
 
 # ------------------------------------------------------------------------------
 #
-def _silent_cancel(job_obj):
-    # try to cancel job but silently ignore all errors
-
-    try:
-        job_obj.cancel()
-    except Exception:
-        pass
-
-
-# ------------------------------------------------------------------------------
-#
 def _silent_close_js(js_obj):
-    # try to cancel job but silently ignore all errors
-
     try:
         js_obj.close()
-        js_obj.close()
-
     except Exception:
         pass
 
@@ -56,7 +42,7 @@ class TestJob(unittest.TestCase):
 
     # --------------------------------------------------------------------------
     #
-    def  setUp(self):
+    def setUp(self):
 
         self.cfg     = config()
         self.session = rs.Session()
@@ -67,20 +53,16 @@ class TestJob(unittest.TestCase):
         assert self.js._adaptor.get_session() == self.session
         assert self.js._adaptor.session       == self.session
 
-
     # --------------------------------------------------------------------------
     #
-    def shutDown(self):
-
+    def tearDown(self):
         _silent_close_js(self.js)
-
 
     # --------------------------------------------------------------------------
     #
     def test_job_service_get_url(self):
         """ Test if the job service URL is returned correctly
         """
-
         try:
             assert(self.js), "job service creation failed?"
             assert(self.cfg['job_service_url'] == str(self.js.url))
@@ -88,15 +70,12 @@ class TestJob(unittest.TestCase):
         except rs.SagaException as ex:
             assert False, "unexpected exception %s" % ex
 
-
     # --------------------------------------------------------------------------
     #
     def test_job_service_invalid_url(self):
         """ Test if a non-resolvable hostname results in a proper exception
         """
-
         tmp_js = None
-
         try:
             invalid_url        = rs.Url(self.cfg['job_service_url'])
             invalid_url.schema = "ssh"
@@ -121,13 +100,11 @@ class TestJob(unittest.TestCase):
         finally:
             _silent_close_js(tmp_js)
 
-
     # --------------------------------------------------------------------------
     #
     def test_job_service_create(self):
         """ Test service.create_job() - expecting state 'NEW'
         """
-
         j = None
         try:
             jd = rs.job.Description()
@@ -147,7 +124,6 @@ class TestJob(unittest.TestCase):
 
         finally:
             sutc.silent_cancel(j)
-
 
     # --------------------------------------------------------------------------
     #
@@ -175,14 +151,12 @@ class TestJob(unittest.TestCase):
         finally:
             sutc.silent_cancel(j)
 
-
     # --------------------------------------------------------------------------
     #
     def test_job_wait(self):
         """
         Test job.wait() - expecting state: DONE
         """
-
         j = None
         try:
             t_min = time.time()
@@ -220,7 +194,6 @@ class TestJob(unittest.TestCase):
         finally:
             sutc.silent_cancel(j)
 
-
     # --------------------------------------------------------------------------
     #
     def test_job_multiline_run(self):
@@ -253,8 +226,6 @@ if True:
         finally:
             sutc.silent_cancel(j)
 
-
-
     # --------------------------------------------------------------------------
     #
     def test_job_suspend_resume(self):
@@ -286,7 +257,6 @@ if True:
         finally:
             sutc.silent_cancel(j)
 
-
     # --------------------------------------------------------------------------
     #
     def test_job_cancel(self):
@@ -313,18 +283,14 @@ if True:
         finally:
             sutc.silent_cancel(j)
 
-
     # --------------------------------------------------------------------------
     #
     def test_job_run_many(self):
         """ Run a bunch of jobs concurrently via the same job service.
         """
-
-        NUM_JOBS = 32
+        num_jobs = 32
         jobs     = list()
-
         try:
-
             jd = rs.job.Description()
 
             jd.executable = '/bin/sleep'
@@ -333,7 +299,7 @@ if True:
             # add options from the test .cfg file if set
             sutc.configure_jd(self.cfg, jd)
 
-            for i in range(0, NUM_JOBS):
+            for i in range(0, num_jobs):
                 j = self.js.create_job(jd)
                 jobs.append(j)
 
@@ -350,7 +316,6 @@ if True:
 
         finally:
             sutc.silent_cancel(jobs)
-
 
     # --------------------------------------------------------------------------
     #
@@ -378,16 +343,13 @@ if True:
         finally:
             sutc.silent_cancel(j)
 
-
     # --------------------------------------------------------------------------
     #
     def test_get_stdio(self):
         """ Test job.get_stdin/get_stdout/get_log
         """
-
         j = None
         try:
-            cfg = config()
             jd  = rs.job.Description()
 
             jd.pre_exec   = ['echo pre' ]
@@ -396,7 +358,7 @@ if True:
             jd.post_exec  = ['echo post']
 
             # add options from the test .cfg file if set
-            jd = sutc.configure_jd(cfg=cfg, jd=jd)
+            jd = sutc.configure_jd(self.cfg, jd)
             j  = self.js.create_job(jd)
 
             j.run()
@@ -415,23 +377,22 @@ if True:
             assert 'err'  in j.stderr
 
         except rs.NotImplemented as ni:
-            assert cfg.notimpl_warn_only, "%s " % ni
-            if cfg.notimpl_warn_only:
+            assert self.cfg.notimpl_warn_only, "%s " % ni
+            if self.cfg.notimpl_warn_only:
                 print("%s " % ni)
 
         except rs.SagaException as se:
             assert False, "Unexpected exception: %s" % se
 
         finally:
-            _silent_cancel(j)
-
+            sutc.silent_cancel(j)
 
     # --------------------------------------------------------------------------
     #
     def test_get_service_url(self):
         """ Test if job.service_url == Service.url
         """
-
+        j = None
         try:
             jd = rs.job.Description()
 
@@ -451,16 +412,13 @@ if True:
         finally:
             sutc.silent_cancel(j)
 
-
     # --------------------------------------------------------------------------
     #
     def test_get_id(self):
         """ Test job.get_id() / job.id
         """
-
         j = None
         try:
-
             jd = rs.job.Description()
 
             jd.executable = '/bin/sleep'
@@ -490,7 +448,6 @@ if __name__ == '__main__':
     tj.test_job_service_get_url()
     tj.test_job_service_invalid_url()
     tj.test_job_service_create()
-    tj.test_job_service_get_session()
     tj.test_job_run()
     tj.test_job_wait()
     tj.test_job_multiline_run()
