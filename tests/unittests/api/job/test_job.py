@@ -299,7 +299,7 @@ if True:
             # add options from the test .cfg file if set
             sutc.configure_jd(self.cfg, jd)
 
-            for i in range(0, num_jobs):
+            for _ in range(0, num_jobs):
                 j = self.js.create_job(jd)
                 jobs.append(j)
 
