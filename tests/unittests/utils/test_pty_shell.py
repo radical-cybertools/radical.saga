@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 
+# pylint: disable=no-member
+
 __author__    = "Andre Merzky"
 __copyright__ = "Copyright 2013, The SAGA Project"
 __license__   = "MIT"
 
-
-import radical.utils as ru
-
+import radical.utils                as ru
 import radical.saga                 as saga
 import radical.saga.utils.pty_shell as sups
 
@@ -105,22 +105,23 @@ def test_ptyshell_prompt () :
 
 # ------------------------------------------------------------------------------
 #
-def test_ptyshell_file_stage () :
-    """ Test pty_shell file staging """
-    conf  = config()
-    shell = sups.PTYShell (saga.Url(conf.job_service_url), conf.session)
-
-    txt = "______1______2_____3_____"
-    shell.write_to_remote   (txt, "/tmp/saga-test-staging")
-    out = shell.read_from_remote ("/tmp/saga-test-staging")
-
-    assert (txt == out)  , "%s == %s" % (repr(out), repr(txt))
-
-    ret, out, _ = shell.run_sync ("rm /tmp/saga-test-staging")
-    assert (ret == 0)    , "%s"       % (repr(ret))
-    assert (out == "")   , "%s == ''" % (repr(out))
-
-
+# def test_ptyshell_file_stage () :
+#     """ Test pty_shell file staging """
+#     conf  = config()
+#     shell = sups.PTYShell (saga.Url(conf.job_service_url), conf.session)
+#
+#     txt = "______1______2_____3_____"
+#     shell.write_to_remote   (txt, "/tmp/saga-test-staging")
+#     out = shell.read_from_remote ("/tmp/saga-test-staging")
+#
+#     assert (txt == out)  , "%s == %s" % (repr(out), repr(txt))
+#
+#     ret, out, _ = shell.run_sync ("rm /tmp/saga-test-staging")
+#     assert (ret == 0)    , "%s"       % (repr(ret))
+#     assert (out == "")   , "%s == ''" % (repr(out))
+#
+#     shell.finalize(True)
+#
 # ------------------------------------------------------------------------------
 #
 if __name__ == '__main__':

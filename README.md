@@ -1,6 +1,7 @@
 # RADICAL-SAGA (RS)
 
-[![Build Status](https://travis-ci.org/radical-cybertools/radical.saga.svg?branch=devel)](https://travis-ci.org/radical-cybertools/radical.saga)
+[![Build Status](https://github.com/radical-cybertools/radical.saga/actions/workflows/python-app.yml/badge.svg)](https://github.com/radical-cybertools/radical.saga/actions/workflows/python-app.yml)
+[![codecov](https://codecov.io/gh/radical-cybertools/radical.saga/branch/devel/graph/badge.svg)](https://codecov.io/gh/radical-cybertools/radical.saga)
 
 RADICAL-SAGA (RS) is a Python package that implements the interface
 specification of the Open Grid Forum (OGF) Simple API for Grid Applications

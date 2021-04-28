@@ -1,0 +1,40 @@
+[flake8]
+exclude          = .git,__pycache__,docs,build,dist,examples,setup.py,bin
+max-complexity   = 10
+max-line-length  = 80
+per-file-ignores =
+     # imported but unused, star-import, unmatched F*
+     __init__.py: F401, F403, X100
+ignore           =
+     # module level import location
+     E402,
+     # space before/after operator
+     E221, E222,E251,
+     # multiple spaces after/after keyword
+     E271, E272,
+     # line too long
+     E501,
+     # whitespace before/after ...
+     E203, E202, E231, E241, E211, E116, E127,
+     # same indent
+     E129,
+     # comment indent not mod(4)
+     E114,
+     # cont line indentation
+     E128, E126, E124, E125, E131,
+     # blank lines
+     W391, E301, E303,
+     # multiple statements on one line
+     E701, E704,
+     # space before bracket
+     C0326,
+     # trailing whitespace
+     W291,
+     # Complex methods
+     C901,
+     # Do not use bare 'except'
+     E722,
+     # allow line breaks after binary operators
+     W504,
+     # allow lambda assignment (used for partial callbacks)
+     E731
