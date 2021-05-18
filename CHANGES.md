@@ -3,6 +3,10 @@
 For a list of open issues and known problems, see:
 https://github.com/radical-cybertools/radical.saga/issues
 
+Version 1.6.6 Release                                                 2021-05-18
+--------------------------------------------------------------------------------
+
+  - linting, GH actions
 
 
 Version 1.6.5 Release                                                 2021-04-14
