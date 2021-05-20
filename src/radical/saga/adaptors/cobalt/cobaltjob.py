@@ -262,7 +262,8 @@ def _cobaltscript_generator(url, logger, jd, ppn, queue=None, run_job=None):
 
     if jd.environment:
         cobalt_params += '#COBALT --env %s\n' % \
-            ':'.join(['%s=%s' % (k, v.replace(':', '\\:').replace('=', '\\='))
+            ':'.join(['%s=%s' % (k, str(v).replace(':', '\\:')
+                                          .replace('=', '\\='))
                       for k, v in jd.environment.items()])
 
     # Why do I need this?
@@ -282,7 +283,7 @@ def _cobaltscript_generator(url, logger, jd, ppn, queue=None, run_job=None):
     # may not need to escape all double quotes and dollar-signs,
     # since we don't do 'echo |' further down (like torque/pbspro)
     # only escape '$' in args and exe, not in the params
-    exec_n_args = exec_n_args.replace('$', '\\$')
+    exec_n_args = exec_n_args.replace('$', '\\$').strip()
 
     # Set the MPI rank per node (mode).
     #   mode --> c1, c2, c4, c8, c16, c32, c64
