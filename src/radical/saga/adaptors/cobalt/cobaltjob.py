@@ -186,7 +186,9 @@ def _cobaltscript_generator(url, logger, jd, ppn, queue=None, run_job=None):
         cobalt_params += '#COBALT --time %s:%s:00\n' \
             % (str(hours).zfill(2), str(minutes).zfill(2))
 
-    cobalt_params += '#COBALT --queue %s\n' % (queue or jd.queue)
+    queue = queue or jd.queue
+    if queue:
+        cobalt_params += '#COBALT --queue %s\n' % queue
 
     if jd.project:
         cobalt_params += '#COBALT --project %s\n' % str(jd.project)
