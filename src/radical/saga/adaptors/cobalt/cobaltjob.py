@@ -36,6 +36,7 @@ MONITOR_UPDATE_INTERVAL   = 60  # seconds
 class _job_state_monitor(threading.Thread):
     """ thread that periodically monitors job states
     """
+
     def __init__(self, job_service):
 
         self.logger = job_service._logger
@@ -47,7 +48,6 @@ class _job_state_monitor(threading.Thread):
 
     def stop(self):
         self._term.set()
-
 
     def run(self):
 
@@ -130,24 +130,12 @@ def _cobalt_to_saga_jobstate(cobaltjs):
 
 # ------------------------------------------------------------------------------
 #
-def _cobaltscript_generator(url, logger, jd, ppn, is_cray=False, queue=None,
-        run_job=None):
+def _cobaltscript_generator(url, logger, jd, ppn, queue=None, run_job=None):
     """
     Generates Cobalt-style 'qsub' command arguments from a SAGA job description
     """
-    cobalt_params       = str()
-    exec_n_args         = str()
-    cobaltscript        = str()
-    total_cpu_count     = 1  # default value
-    number_of_processes = None
-    processes_per_host  = None
-    blue_gene_q_modes   = [1, 2, 4, 8, 16, 32, 64]
-
-    if jd.executable:
-        exec_n_args += "%s " % (jd.executable)
-    if jd.arguments:
-        for arg in jd.arguments:
-            exec_n_args += "%s " % (arg)
+    cobalt_params   = ''
+    total_cpu_count = 1  # default value
 
     if jd.name:
         cobalt_params += '#COBALT --jobname %s\n' % jd.name
@@ -168,35 +156,29 @@ def _cobaltscript_generator(url, logger, jd, ppn, is_cray=False, queue=None,
 
     if jd.output:
         # if working directory is set, we want stdout to end up in
-        # the working directory as well, unless it containes a specific
+        # the working directory as well, unless it contains a specific
         # path name.
-        if jd.working_directory:
-            if os.path.isabs(jd.output):
-                cobalt_params += '#COBALT --output %s\n' % jd.output
-            else:
-                # user provided a relative path for STDOUT. in this case
-                # we prepend the workind directory path before passing
-                # it on to Cobalt
-                cobalt_params += '#COBALT --output %s/%s\n' \
-                               % (jd.working_directory, jd.output)
+        if jd.working_directory and not os.path.isabs(jd.output):
+            # user provided a relative path for STDOUT, in this case
+            # we prepend the working directory path before passing
+            # it on to Cobalt
+            std_output = '%s/%s' % (jd.working_directory, jd.output)
         else:
-            cobalt_params += '#COBALT --output %s\n' % jd.output
+            std_output = jd.output
+        cobalt_params += '#COBALT --output %s\n' % std_output
 
     if jd.error:
         # if working directory is set, we want stderr to end up in
         # the working directory as well, unless it contains a specific
         # path name.
-        if jd.working_directory:
-            if os.path.isabs(jd.error):
-                cobalt_params += '#COBALT --error %s\n' % jd.error
-            else:
-                # user provided a realtive path for STDERR. in this case
-                # we prepend the workind directory path before passing
-                # it on to Cobalt
-                cobalt_params += '#COBALT --error %s/%s\n' \
-                               % (jd.working_directory, jd.error)
+        if jd.working_directory and not os.path.isabs(jd.error):
+            # user provided a relative path for STDERR, in this case
+            # we prepend the working directory path before passing
+            # it on to Cobalt
+            std_error = '%s/%s' % (jd.working_directory, jd.error)
         else:
-            cobalt_params += '#COBALT --error %s\n' % jd.error
+            std_error = jd.error
+        cobalt_params += '#COBALT --error %s\n' % std_error
 
     if jd.wall_time_limit:
         hours = int(jd.wall_time_limit / 60)
@@ -204,10 +186,9 @@ def _cobaltscript_generator(url, logger, jd, ppn, is_cray=False, queue=None,
         cobalt_params += '#COBALT --time %s:%s:00\n' \
             % (str(hours).zfill(2), str(minutes).zfill(2))
 
+    queue = queue or jd.queue
     if queue:
         cobalt_params += '#COBALT --queue %s\n' % queue
-    elif jd.queue:
-        cobalt_params += '#COBALT --queue %s\n' % jd.queue
 
     if jd.project:
         cobalt_params += '#COBALT --project %s\n' % str(jd.project)
@@ -233,21 +214,19 @@ def _cobaltscript_generator(url, logger, jd, ppn, is_cray=False, queue=None,
         number_of_nodes += 1
 
     # Get number of processes
-    # Defaults to number_of_processes = number_of_nodes
     if jd.attribute_exists('number_of_processes'):
         number_of_processes = jd.number_of_processes
     else:
-        logger.debug("number_of_processes not specified. default: 1 per node")
+        # Defaults to number_of_processes = number_of_nodes
+        logger.debug('number_of_processes not specified. default: 1 per node')
         number_of_processes = number_of_nodes
 
-  # # Get number of processes per host/node
-  # # Defaults to processes_per_host = 1
+  # # Get number of processes per host/node (default: processes_per_host = 1)
   # if jd.attribute_exists("processes_per_host"):
   #     processes_per_host = jd.processes_per_host
   # else:
   #     logger.debug("processes_per_host not specified -- default to 1")
   #     processes_per_host = 1
-  #
   # # Need to make sure that the 'processes_per_host' is a valid one
   # # Blue Gene/Q valid modes ==> [1, 2, 4, 8, 16, 32, 64]
   # # At the Blue Gene/Q, 1 Node == 16 Cores
@@ -256,6 +235,7 @@ def _cobaltscript_generator(url, logger, jd, ppn, is_cray=False, queue=None,
   # # References:
   # #   http://www.alcf.anl.gov/user-guides/cobalt-job-control
   # #   https://www.alcf.anl.gov/user-guides/blue-geneq-versus-blue-genep
+  # blue_gene_q_modes = [1, 2, 4, 8, 16, 32, 64]
   # if processes_per_host not in blue_gene_q_modes:
   #     log_error_and_raise("#processes per host %d incompatible with #nodes %d"
   #                        % (processes_per_host, blue_gene_q_modes),
@@ -271,22 +251,21 @@ def _cobaltscript_generator(url, logger, jd, ppn, is_cray=False, queue=None,
   #         % (number_of_processes, number_of_nodes, processes_per_host,
   #             (number_of_nodes * processes_per_host)), rse.NoSuccess, logger)
 
-    # Other funky math checks should go here ~
-
     # Set number of nodes
     cobalt_params += '#COBALT --nodecount %d\n' % number_of_nodes
 
     # Set the total number of processes
     cobalt_params += '#COBALT --proccount %d\n' % number_of_processes
 
-    # The Environments are added at the end because for now
-    # Cobalt isn't supporting spaces in the env variables...
-    # Which mess up the whole script if they are at the begining of the list...
+    cobalt_attrs = jd.system_architecture.get('options', [])
+    if cobalt_attrs:
+        cobalt_params += '#COBALT --attrs %s\n' % ':'.join(cobalt_attrs)
+
     if jd.environment:
         cobalt_params += '#COBALT --env %s\n' % \
-                ':'.join (["%s=%s" % (k,v.replace(':', '\\:')
-                                         .replace('=', '\\='))  # escape chars
-                           for k,v in jd.environment.items()])
+            ':'.join(['%s=%s' % (k, str(v).replace(':', '\\:')
+                                          .replace('=', '\\='))
+                      for k, v in jd.environment.items()])
 
     # Why do I need this?
     # Andre on Dev 16 2016:
@@ -295,15 +274,21 @@ def _cobaltscript_generator(url, logger, jd, ppn, is_cray=False, queue=None,
     # This makes sense to be exported as an environment Variable
     cobalt_params += '#COBALT --env SAGA_PPN=%d\n' % ppn
 
-    # may not need to escape all double quotes and dollarsigns,
+    exec_n_args = ''
+    if jd.executable:
+        exec_n_args += '%s ' % jd.executable
+    if jd.arguments:
+        for arg in jd.arguments:
+            exec_n_args += '%s ' % arg
+
+    # may not need to escape all double quotes and dollar-signs,
     # since we don't do 'echo |' further down (like torque/pbspro)
-    # only escape '$' in args and exe. not in the params
-    # exec_n_args = exec_n_args.replace('$', '\\$')
+    # only escape '$' in args and exe, not in the params
+    exec_n_args = exec_n_args.replace('$', '\\$').strip()
 
     # Set the MPI rank per node (mode).
     #   mode --> c1, c2, c4, c8, c16, c32, c64
     #   Mode is represented by the runjob's '--ranks-per-node' flag
-    exec_n_args = exec_n_args.replace('$', '\\$')
 
     # Need a new line before the shebang because linux is a bit of a pain when
     # echoing it.  It will be removed later though...
@@ -377,6 +362,7 @@ _ADAPTOR_CAPABILITIES = {
                           api.TOTAL_CPU_COUNT,
                           api.TOTAL_GPU_COUNT,
                           api.NUMBER_OF_PROCESSES,
+                          api.SYSTEM_ARCHITECTURE,
                           api.JOB_CONTACT],
     "job_attributes":    [api.EXIT_CODE,
                           api.EXECUTION_HOSTS,
@@ -532,7 +518,6 @@ class CobaltJobService (cpi_job.Service):
         self.rm      = rm_url
         self.session = session
         self.ppn     = 64       # DEFAULT Theta
-        self.is_cray = ""
         self.queue   = None
         self.shell   = None
         self.jobs    = dict()
@@ -657,14 +642,13 @@ class CobaltJobService (cpi_job.Service):
 
         try:
             # create a Cobalt job script from SAGA job description
-            script = _cobaltscript_generator(url=self.rm,
-                                   logger=self._logger,
-                                   jd=jd,
-                                   ppn=self.ppn,
-                                   queue=self.queue,
-                                   is_cray=False,
-                                   run_job=self._commands['qsub']['path']
-                                  )
+            script = _cobaltscript_generator(
+                url=self.rm,
+                logger=self._logger,
+                jd=jd,
+                ppn=self.ppn,
+                queue=self.queue,
+                run_job=self._commands['qsub']['path'])
             self._logger.info("Generated Cobalt script: %s" % str(script))
         except Exception as e:
             raise rse.BadParameter('cobalt script generation failed') from e
