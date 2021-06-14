@@ -532,6 +532,7 @@ class ShellJobService(cpi.Service):
         # timeouts kicking in
         # FIXME: configurable frequency
         self._ping = mt.Timer(_PING_DELAY, self._ping_cb)
+        self._ping.daemon = True
         self._ping.start()
 
 
@@ -673,6 +674,7 @@ class ShellJobService(cpi.Service):
             assert('PONG' in out), out
 
             self._ping = mt.Timer(_PING_DELAY, self._ping_cb)
+            self._ping.daemon = True
             self._ping.start()
 
 
