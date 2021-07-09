@@ -752,6 +752,7 @@ class SLURMJobService(cpi_job.Service):
     #                        failure condition.
     #    NF  NODE_FAIL       Job terminated due to failure of one or more
     #                        allocated nodes.
+    #    OOM OUT_OF_MEMORY   Job required more memory than available.
     #    PD  PENDING         Job is awaiting resource allocation.
     #    PR  PREEMPTED       Job terminated due to preemption.
     #    R   RUNNING         Job currently has an allocation.
@@ -764,18 +765,19 @@ class SLURMJobService(cpi_job.Service):
         translates a slurm one-letter state to saga
         '''
 
-        if   slurmjs in ['CA', "CANCELLED"  ]: return c.CANCELED
-        elif slurmjs in ['CD', "COMPLETED"  ]: return c.DONE
-        elif slurmjs in ['CF', "CONFIGURING"]: return c.PENDING
-        elif slurmjs in ['CG', "COMPLETING" ]: return c.RUNNING
-        elif slurmjs in ['F' , "FAILED"     ]: return c.FAILED
-        elif slurmjs in ['NF', "NODE_FAIL"  ]: return c.FAILED
-        elif slurmjs in ['PD', "PENDING"    ]: return c.PENDING
-        elif slurmjs in ['PR', "PREEMPTED"  ]: return c.CANCELED
-        elif slurmjs in ['R' , "RUNNING"    ]: return c.RUNNING
-        elif slurmjs in ['S' , "SUSPENDED"  ]: return c.SUSPENDED
-        elif slurmjs in ['TO', "TIMEOUT"    ]: return c.CANCELED
-        else                                 : return c.UNKNOWN
+        if   slurmjs in ['CA' , "CANCELLED"    ]: return c.CANCELED
+        elif slurmjs in ['CD' , "COMPLETED"    ]: return c.DONE
+        elif slurmjs in ['CF' , "CONFIGURING"  ]: return c.PENDING
+        elif slurmjs in ['CG' , "COMPLETING"   ]: return c.RUNNING
+        elif slurmjs in ['F'  , "FAILED"       ]: return c.FAILED
+        elif slurmjs in ['NF' , "NODE_FAIL"    ]: return c.FAILED
+        elif slurmjs in ['OOM', "OUT_OF_MEMORY"]: return c.FAILED
+        elif slurmjs in ['PD' , "PENDING"      ]: return c.PENDING
+        elif slurmjs in ['PR' , "PREEMPTED"    ]: return c.CANCELED
+        elif slurmjs in ['R'  , "RUNNING"      ]: return c.RUNNING
+        elif slurmjs in ['S'  , "SUSPENDED"    ]: return c.SUSPENDED
+        elif slurmjs in ['TO' , "TIMEOUT"      ]: return c.CANCELED
+        else                                    : return c.UNKNOWN
 
 
     # --------------------------------------------------------------------------
