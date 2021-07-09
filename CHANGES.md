@@ -3,12 +3,13 @@
 For a list of open issues and known problems, see:
 https://github.com/radical-cybertools/radical.saga/issues
 
-Version 1.6.7 Release                                                 2021-07-08
+Version 1.6.8 Release                                                 2021-07-08
 --------------------------------------------------------------------------------
 
   - option `--attrs`, refresh Cobalt script generation
   - added test for Cobalt
   - daemonize timer thread
+  - fix slurm workdir
   - remove flake8 and pylint actions
 
 
