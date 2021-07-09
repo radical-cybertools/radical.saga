@@ -651,30 +651,22 @@ class SLURMJobService(cpi_job.Service):
 
         else:
 
-            if gpu_count: script += "#SBATCH --gpus=%s\n" % gpu_count
+            if gpu_count:
+                script += "#SBATCH --gpus=%s\n" % gpu_count
 
-        if cwd:
-            if 'frontera' in self.rm.host.lower() or \
-               'longhorn' in self.rm.host.lower() or \
-               'tiger'    in self.rm.host.lower() or \
-               'traverse' in self.rm.host.lower() or \
-               'andes'     in self.rm.host.lower() or \
-               'bridges2' in self.rm.host.lower():
-                script += "#SBATCH --chdir %s\n"   % cwd
-            else:
-                script += "#SBATCH --workdir %s\n" % cwd
 
-        if output         : script += "#SBATCH --output %s\n"      % output
-        if error          : script += "#SBATCH --error %s\n"       % error
-        if queue          : script += "#SBATCH --partition %s\n"   % queue
-        if job_name       : script += '#SBATCH -J "%s"\n'          % job_name
-        if c_hosts        : script += "#SBATCH --nodelist=%s\n"    % c_hosts
-        if job_contact    : script += "#SBATCH --mail-user=%s\n"   % job_contact
-        if account        : script += "#SBATCH --account %s\n"     % account
-        if reservation    : script += "#SBATCH --reservation %s\n" % reservation
-        if wall_time      : script += "#SBATCH --time %02d:%02d:00\n" \
+        if job_name       : script += '#SBATCH -J "%s"\n'            % job_name
+        if cwd            : script += '#SBATCH -D "%s"\n'            % cwd
+        if output         : script += '#SBATCH --output "%s"\n'      % output
+        if error          : script += '#SBATCH --error "%s"\n'       % error
+        if queue          : script += '#SBATCH --partition "%s"\n'   % queue
+        if c_hosts        : script += '#SBATCH --nodelist="%s"\n'    % c_hosts
+        if job_contact    : script += '#SBATCH --mail-user="%s"\n'   % job_contact
+        if account        : script += '#SBATCH --account "%s"\n'     % account
+        if reservation    : script += '#SBATCH --reservation "%s"\n' % reservation
+        if memory_per_node: script += '#SBATCH --mem="%s"\n'         % memory_per_node
+        if wall_time      : script += '#SBATCH --time %02d:%02d:00\n' \
                                          % (int(wall_time / 60), wall_time % 60)
-        if memory_per_node: script += "#SBATCH --mem=%s\n" % memory_per_node
 
         if env:
             script += "\n## ENVIRONMENT\n"
@@ -760,6 +752,7 @@ class SLURMJobService(cpi_job.Service):
     #                        failure condition.
     #    NF  NODE_FAIL       Job terminated due to failure of one or more
     #                        allocated nodes.
+    #    OOM OUT_OF_MEMORY   Job required more memory than available.
     #    PD  PENDING         Job is awaiting resource allocation.
     #    PR  PREEMPTED       Job terminated due to preemption.
     #    R   RUNNING         Job currently has an allocation.
@@ -772,18 +765,19 @@ class SLURMJobService(cpi_job.Service):
         translates a slurm one-letter state to saga
         '''
 
-        if   slurmjs in ['CA', "CANCELLED"  ]: return c.CANCELED
-        elif slurmjs in ['CD', "COMPLETED"  ]: return c.DONE
-        elif slurmjs in ['CF', "CONFIGURING"]: return c.PENDING
-        elif slurmjs in ['CG', "COMPLETING" ]: return c.RUNNING
-        elif slurmjs in ['F' , "FAILED"     ]: return c.FAILED
-        elif slurmjs in ['NF', "NODE_FAIL"  ]: return c.FAILED
-        elif slurmjs in ['PD', "PENDING"    ]: return c.PENDING
-        elif slurmjs in ['PR', "PREEMPTED"  ]: return c.CANCELED
-        elif slurmjs in ['R' , "RUNNING"    ]: return c.RUNNING
-        elif slurmjs in ['S' , "SUSPENDED"  ]: return c.SUSPENDED
-        elif slurmjs in ['TO', "TIMEOUT"    ]: return c.CANCELED
-        else                                 : return c.UNKNOWN
+        if   slurmjs in ['CA' , "CANCELLED"    ]: return c.CANCELED
+        elif slurmjs in ['CD' , "COMPLETED"    ]: return c.DONE
+        elif slurmjs in ['CF' , "CONFIGURING"  ]: return c.PENDING
+        elif slurmjs in ['CG' , "COMPLETING"   ]: return c.RUNNING
+        elif slurmjs in ['F'  , "FAILED"       ]: return c.FAILED
+        elif slurmjs in ['NF' , "NODE_FAIL"    ]: return c.FAILED
+        elif slurmjs in ['OOM', "OUT_OF_MEMORY"]: return c.FAILED
+        elif slurmjs in ['PD' , "PENDING"      ]: return c.PENDING
+        elif slurmjs in ['PR' , "PREEMPTED"    ]: return c.CANCELED
+        elif slurmjs in ['R'  , "RUNNING"      ]: return c.RUNNING
+        elif slurmjs in ['S'  , "SUSPENDED"    ]: return c.SUSPENDED
+        elif slurmjs in ['TO' , "TIMEOUT"      ]: return c.CANCELED
+        else                                    : return c.UNKNOWN
 
 
     # --------------------------------------------------------------------------
