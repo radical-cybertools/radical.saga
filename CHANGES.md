@@ -3,6 +3,12 @@
 For a list of open issues and known problems, see:
 https://github.com/radical-cybertools/radical.saga/issues
 
+Hotfix Version 1.6.9 Release                                          2021-07-16
+--------------------------------------------------------------------------------
+
+  - typo
+
+
 Version 1.6.8 Release                                                 2021-07-08
 --------------------------------------------------------------------------------
 
