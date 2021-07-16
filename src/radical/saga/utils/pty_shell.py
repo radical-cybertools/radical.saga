@@ -982,7 +982,9 @@ class PTYShell (object) :
                 import glob
                 src_list = glob.glob (src)
                 for s in src_list :
-                    if  os.path.isdir (s) :
+                    if os.path.isdir (s) :
+                        if s.endswith('/'):
+                            s = os.path.split(s)[0]
                         prep = "mkdir %s/%s\n" % (tgt, os.path.basename (s))
                         # TODO: handle multiple levels of creation
 
@@ -1110,7 +1112,9 @@ class PTYShell (object) :
                 src_list = out[1].split('\n')
 
                 for s in src_list :
-                    if  os.path.isdir (s) :
+                    if os.path.isdir (s) :
+                        if s.endswith('/'):
+                            s = os.path.split(s)[0]
                         prep += "lmkdir %s/%s\n" % (tgt, os.path.basename (s))
 
             self.cp_slave.flush ()
