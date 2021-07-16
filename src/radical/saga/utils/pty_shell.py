@@ -1120,7 +1120,7 @@ class PTYShell (object) :
                 for s in src_list :
                     if os.path.isdir (s) :
                         if s.endswith('/'):
-                            s = os.path.split(s)[0]
+                            s = os.path.dirname(s)
                         prep += "lmkdir %s/%s\n" % (tgt, os.path.basename (s))
 
             self.cp_slave.flush ()
