@@ -978,24 +978,15 @@ class PTYShell (object) :
 
             self.cp_slave.flush ()
             if  'sftp' in s_cmd :
-                # prepare target dirs for recursive copy, if needed
-                import glob
-                src_list = glob.glob (src)
-                for s in src_list :
-                    if os.path.isdir (s) :
-                        if s.endswith('/'):
-                            s = os.path.split(s)[0]
-                        prep = "mkdir -p %s/%s\n" % (tgt, os.path.basename (s))
-                        # TODO: handle multiple levels of creation
 
-                        self.cp_slave.flush()
-                        self.cp_slave.write("%s\n" % prep)
-                        self.cp_slave.find(['[\$\>\]]\s*$'], -1)
-                        # TODO: check return values
-
-                if cp_flags == sfs.CREATE_PARENTS and os.path.split(tgt)[0]:
+                # ensure that parent directory exists in case of recursive copy
+                # (*) option "-p" for "mkdir" is not applicable within "sftp"
+                if '-r' in cp_flags and os.path.split(tgt)[0]:
+                    # with recursive flag it is assumed that `tgt` is directory
+                    if tgt.endswith('/'):
+                        tgt = os.path.dirname(tgt)
                     # TODO: this needs to be numeric and checking the flag
-                    prep = "mkdir -p %s\n" % os.path.dirname(tgt)
+                    prep = "mkdir %s\n" % tgt
                     # TODO: this doesn't deal with multiple levels of creation
 
                     self.cp_slave.flush()
@@ -1003,9 +994,24 @@ class PTYShell (object) :
                     self.cp_slave.find(['[\$\>\]]\s*$'], -1)
                     # TODO: check return values
 
+                # prepare target dirs for recursive copy, if needed
+                import glob
+                src_list = glob.glob (src)
+                for s in src_list :
+                    if os.path.isdir (s) :
+                        if s.endswith('/'):
+                            s = os.path.dirname(s)
+                        prep = "mkdir %s/%s\n" % (tgt, os.path.basename (s))
+                        # TODO: handle multiple levels of creation
+
+                        self.cp_slave.flush()
+                        self.cp_slave.write("%s\n" % prep)
+                        self.cp_slave.find(['[\$\>\]]\s*$'], -1)
+                        # TODO: check return values
+
             self.cp_slave.flush()
-            _ = self.cp_slave.write("%s\n" % s_in)
-            _, out = self.cp_slave.find(['[\$\>\]]\s*$'], -1)
+            self.cp_slave.write("%s\n" % s_in)
+            out = self.cp_slave.find(['[\$\>\]]\s*$'], -1)[1]
 
             # FIXME: we don't really get exit codes from copy
             # if  self.cp_slave.exit_code != 0 :
@@ -1118,8 +1124,8 @@ class PTYShell (object) :
                         prep += "lmkdir %s/%s\n" % (tgt, os.path.basename (s))
 
             self.cp_slave.flush ()
-            _      = self.cp_slave.write("%s%s\n" % (prep, s_in))
-            _, out = self.cp_slave.find (['[\$\>\]] *$'], -1)
+            self.cp_slave.write("%s%s\n" % (prep, s_in))
+            out = self.cp_slave.find (['[\$\>\]] *$'], -1)[1]
 
             # FIXME: we don't really get exit codes from copy
           # if  self.cp_slave.exit_code != 0 :
