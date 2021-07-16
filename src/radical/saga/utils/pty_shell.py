@@ -985,7 +985,7 @@ class PTYShell (object) :
                     if os.path.isdir (s) :
                         if s.endswith('/'):
                             s = os.path.split(s)[0]
-                        prep = "mkdir %s/%s\n" % (tgt, os.path.basename (s))
+                        prep = "mkdir -p %s/%s\n" % (tgt, os.path.basename (s))
                         # TODO: handle multiple levels of creation
 
                         self.cp_slave.flush()
@@ -995,7 +995,7 @@ class PTYShell (object) :
 
                 if cp_flags == sfs.CREATE_PARENTS and os.path.split(tgt)[0]:
                     # TODO: this needs to be numeric and checking the flag
-                    prep = "mkdir %s\n" % os.path.dirname(tgt)
+                    prep = "mkdir -p %s\n" % os.path.dirname(tgt)
                     # TODO: this doesn't deal with multiple levels of creation
 
                     self.cp_slave.flush()
