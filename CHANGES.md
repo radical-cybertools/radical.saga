@@ -3,6 +3,13 @@
 For a list of open issues and known problems, see:
 https://github.com/radical-cybertools/radical.saga/issues
 
+Hotfix 1.8.0 Release                                                  2021-09-23
+--------------------------------------------------------------------------------
+
+  - fix directory creation (recursive flag is set)
+  - add longhorn GRES exception
+
+
 Hotfix Version 1.6.10 Release                                         2021-07-16
 --------------------------------------------------------------------------------
 
