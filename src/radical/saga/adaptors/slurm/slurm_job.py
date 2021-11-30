@@ -573,7 +573,8 @@ class SLURMJobService(cpi_job.Service):
             mpi_cmd = ''
 
             if  'stampede2' in self.rm.host.lower() or \
-                'longhorn'  in self.rm.host.lower():
+                'longhorn'  in self.rm.host.lower() or \
+                'expanse'   in self.rm.host.lower():
 
                 assert(n_nodes), 'need unique number of cores per node'
                 script += "#SBATCH -N %d\n" % n_nodes
