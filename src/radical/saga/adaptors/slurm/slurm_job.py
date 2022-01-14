@@ -645,6 +645,9 @@ class SLURMJobService(cpi_job.Service):
         elif 'longhorn' in self.rm.host.lower():
             self._logger.debug("SLURM GRES is not set (longhorn exception)\n")
 
+        elif 'traverse' in self.rm.host.lower():
+            if gpu_count: script += "#SBATCH --gpus-per-task=1\n"
+
         elif queue == 'tmp3':
 
             # this is a special queue, which is associated with SuperMUC-NG,
