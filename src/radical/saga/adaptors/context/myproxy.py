@@ -14,6 +14,8 @@ from ..cpi         import context as cpi
 from ...           import context as api
 from ...exceptions import *
 
+import radical.utils as ru
+
 
 ######################################################################
 #
@@ -66,7 +68,7 @@ class Adaptor (base.Base):
 
         # there are no default myproxy contexts
         self._default_contexts = []
-        self.base_workdir = self._cfg.get('base_workdir', os.getcwd())
+        self.base_workdir = ru.get_radical_base() + '/saga/adaptors/myproxy'
 
 
     def sanity_check (self) :
@@ -89,7 +91,8 @@ class ContextMyProxy (cpi.Context) :
 
         _cpi_base = super  (ContextMyProxy, self)
         _cpi_base.__init__ (api, adaptor)
-        self.base_workdir = adaptor.base_workdir
+
+        self.base_workdir = ru.get_radical_base() + '/saga/adaptors/myproxy'
 
 
     @SYNC_CALL

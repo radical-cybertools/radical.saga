@@ -133,7 +133,7 @@ class PTYShell (object) :
     that purpose, the shell started on the first channel will create a named
     pipe, at::
 
-      $HOME/.radical/saga/adaptors/shell/async.$$
+      $RADICAL_BASE/.radical/saga/adaptors/shell/async.$$
 
     ``$$`` here represents the pid of the shell process.  It will also set the
     environment variable ``SAGA_ASYNC_PIPE`` to point to that named pipe -- any
@@ -227,7 +227,7 @@ class PTYShell (object) :
 
         # we need a local dir for file staging caches.  At this point we use
         # $HOME, but should make this configurable (FIXME)
-        self.base = os.environ['HOME'] + '/.radical/saga/adaptors/shell/'
+        self.base = ru.get_radical_base() + '/saga/adaptors/shell/'
 
         try:
             os.makedirs (self.base)
