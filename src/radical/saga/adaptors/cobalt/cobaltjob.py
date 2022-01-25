@@ -429,7 +429,7 @@ class Adaptor (a_base.Base):
         self.purge_on_start   = self._cfg['purge_on_start']
         self.purge_older_than = self._cfg['purge_older_than']
 
-        self.base_workdir = ru.get_radical_base() + '/saga/adaptors/cobalt'
+        self.base_workdir = ru.get_radical_base('saga') + 'adaptors/cobalt'
 
         # dictionaries to keep track of certain Cobalt jobs data
         self._script_file         = dict()  # location of cobalt script file
@@ -564,6 +564,10 @@ class CobaltJobService (cpi_job.Service):
     # --------------------------------------------------------------------------
     #
     def initialize(self):
+
+        # Create the staging directory
+        ret, out, _ = self.shell.run_sync("mkdir -p %s"
+                                          % self._adaptor.base_workdir)
 
         if  ret != 0 :
             raise rse.NoSuccess("Error creating staging directory. (%s): (%s)"

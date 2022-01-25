@@ -558,7 +558,7 @@ class ShellJobService(cpi.Service):
         self.notifications  = cfg.enable_notifications
         self.purge_on_start = cfg.purge_on_star
 
-        self.base_workdir   = ru.get_radical_base() + '/saga/adaptors/shell_job'
+        self.base_workdir   = ru.get_radical_base('saga') + 'adaptors/shell_job'
 
         # start the shell, find its prompt.  If that is up and running, we can
         # bootstrap our wrapper script, and then run jobs etc.
@@ -568,6 +568,11 @@ class ShellJobService(cpi.Service):
         # stdio.
 
         base = self.base_workdir
+        with self._shell_lock:
+            ret, out, _ = self.shell.run_sync(' mkdir -p %s' % base)
+
+        if ret != 0:
+            raise rse.NoSuccess('host setup failed (%s):(%s)' % (ret, out))
 
         # TODO: replace some constants in the script with values from config
         # files, such as 'timeout' or 'purge_on_quit' ...
