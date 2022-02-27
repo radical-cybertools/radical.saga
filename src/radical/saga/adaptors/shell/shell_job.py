@@ -263,7 +263,7 @@ _ADAPTOR_DOC           = {
           * number of files are limited, as is disk space: the job.service will
 
             keep job state on the remote disk, in
-            ``~/.radical/saga/adaptors/shell_job/``.
+            `$RADICAL_BASE/.radical/saga/adaptors/shell_job/`.
             Quota limitations may limit the number of files created there,
             and/or the total size of that directory.
 
@@ -557,8 +557,8 @@ class ShellJobService(cpi.Service):
         # expand those config entries we want to use(where needed)
         self.notifications  = cfg.enable_notifications
         self.purge_on_start = cfg.purge_on_star
-        self.base_workdir   = ru.expand_env(cfg.base_workdir, env)
 
+        self.base_workdir   = ru.get_radical_base('saga') + 'adaptors/shell_job'
 
         # start the shell, find its prompt.  If that is up and running, we can
         # bootstrap our wrapper script, and then run jobs etc.
@@ -568,12 +568,11 @@ class ShellJobService(cpi.Service):
         # stdio.
 
         base = self.base_workdir
-
         with self._shell_lock:
-            ret, out, _ = self.shell.run_sync(" mkdir -p %s" % base)
+            ret, out, _ = self.shell.run_sync(' mkdir -p %s' % base)
 
         if ret != 0:
-            raise rse.NoSuccess("host setup failed(%s):(%s)" % (ret, out))
+            raise rse.NoSuccess('host setup failed (%s):(%s)' % (ret, out))
 
         # TODO: replace some constants in the script with values from config
         # files, such as 'timeout' or 'purge_on_quit' ...

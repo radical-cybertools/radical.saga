@@ -1,8 +1,5 @@
 
 {
-    # where to store state
-    "base_workdir"     : "${HOME}/.radical/saga/adaptors/cobalt_job/}",
-
     # purge old state on start
     "purge_on_start"   : false,
 
