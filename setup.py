@@ -223,7 +223,7 @@ setup_args = {
     'package_data'       : {'': ['*.txt', '*.sh', '*.json', '*.gz',
                                  'VERSION', 'SDIST', sdist_name]},
   # 'setup_requires'     : ['pytest-runner'],
-    'install_requires'   : ['radical.utils',
+    'install_requires'   : ['radical.utils>=1.12',
                             'apache-libcloud',
                             'parse'
                            ],
