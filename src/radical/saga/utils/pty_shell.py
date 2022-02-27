@@ -133,7 +133,7 @@ class PTYShell (object) :
     that purpose, the shell started on the first channel will create a named
     pipe, at::
 
-      $HOME/.radical/saga/adaptors/shell/async.$$
+      $RADICAL_BASE/.radical/saga/adaptors/shell/async.$$
 
     ``$$`` here represents the pid of the shell process.  It will also set the
     environment variable ``SAGA_ASYNC_PIPE`` to point to that named pipe -- any
@@ -225,20 +225,12 @@ class PTYShell (object) :
         self.prompt_re = re.compile ("^(.*?)%s"    % self.prompt, re.DOTALL)
         self.logger.info ("PTY prompt pattern: %s" % self.prompt)
 
-        # we need a local dir for file staging caches.  At this point we use
-        # $HOME, but should make this configurable (FIXME)
-        self.base = os.environ['HOME'] + '/.radical/saga/adaptors/shell/'
-
+        # local dir for file staging caches
+        self.base = ru.get_radical_base('saga') + 'adaptors/shell/'
         try:
-            os.makedirs (self.base)
-
+            ru.rec_makedir(self.base)
         except OSError as e:
-            if e.errno == errno.EEXIST and os.path.isdir (self.base):
-                pass
-            else:
-                raise rse.NoSuccess ("could not create staging dir: %s" % e) \
-                      from e
-
+            raise rse.NoSuccess('could not create staging dir: %s' % e) from e
 
         self.factory    = supsf.PTYShellFactory   ()
         self.pty_info   = self.factory.initialize (self.url,    self.session,

@@ -217,7 +217,8 @@ class Adaptor (a_base.Base):
 
         self.purge_on_start   = self._cfg['purge_on_start']
         self.purge_older_than = self._cfg['purge_older_than']
-        self.base_workdir     = self._cfg['base_workdir']
+
+        self.base_workdir = ru.get_radical_base('saga') + 'adaptors/sge'
 
 
     # ----------------------------------------------------------------
