@@ -3,10 +3,11 @@
 For a list of open issues and known problems, see:
 https://github.com/radical-cybertools/radical.saga/issues
 
-1.11.0 Release                                                        2022-01-19
+1.11.1 Release                                                        2022-01-19
 --------------------------------------------------------------------------------
 
   - expanse support
+  - fix PBS host lookup
 
 
 Hotfix 1.8.0 Release                                                  2021-09-23

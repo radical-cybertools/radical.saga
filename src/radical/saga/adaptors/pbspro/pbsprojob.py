@@ -886,7 +886,7 @@ class PBSProJobService (cpi.Service):
                   #        For now we use mtime for both TORQUE and PBS Pro.
 
             # split exec hosts list if set
-            if job_info['exec_host']:
+            if job_info.get('exec_host'):
                 job_info['exec_hosts'] = job_info['exec_hosts'].split('+')
 
             # TORQUE doesn't allow us to distinguish DONE/FAILED on final state

@@ -23,6 +23,8 @@ from ..               import base       as a_base
 from ..cpi            import job        as cpi_job
 from ..cpi            import decorators as cpi_decs
 
+import radical.utils as ru
+
 
 SYNC_CALL  = cpi_decs.SYNC_CALL
 ASYNC_CALL = cpi_decs.ASYNC_CALL
@@ -310,16 +312,6 @@ _ADAPTOR_SCHEMAS       = ["cobalt", "cobalt+ssh", "cobalt+gsissh"]
 _ADAPTOR_OPTIONS       = [
     {
         'category'         : 'radical.saga.adaptors.cobaltjob',
-        'name'             : 'base_workdir',
-        'type'             : str,
-        'default'          : "$HOME/.radical/saga/adaptors/cobaltjob/",
-        'documentation'    : '''The adaptor stores job state information on the
-                              filesystem on the target resource. This parameter
-                              specified what location should be used.''',
-        'env_variable'     : None
-    },
-    {
-        'category'         : 'radical.saga.adaptors.cobaltjob',
         'name'             : 'purge_on_start',
         'type'             : bool,
         'default'          : True,
@@ -434,11 +426,10 @@ class Adaptor (a_base.Base):
         self.epoch = datetime.datetime(1970,1,1)
 
         # Adaptor Options
-        self.base_workdir     = self._cfg['base_workdir']
         self.purge_on_start   = self._cfg['purge_on_start']
         self.purge_older_than = self._cfg['purge_older_than']
 
-        self.base_workdir     = os.path.normpath(self.base_workdir)
+        self.base_workdir = ru.get_radical_base('saga') + 'adaptors/cobalt'
 
         # dictionaries to keep track of certain Cobalt jobs data
         self._script_file         = dict()  # location of cobalt script file
@@ -575,8 +566,9 @@ class CobaltJobService (cpi_job.Service):
     def initialize(self):
 
         # Create the staging directory
-        ret, out, _ = self.shell.run_sync ("mkdir -p %s"
-                                                   % self._adaptor.base_workdir)
+        ret, out, _ = self.shell.run_sync("mkdir -p %s"
+                                          % self._adaptor.base_workdir)
+
         if  ret != 0 :
             raise rse.NoSuccess("Error creating staging directory. (%s): (%s)"
                            % (ret, out))
