@@ -3,6 +3,13 @@
 For a list of open issues and known problems, see:
 https://github.com/radical-cybertools/radical.saga/issues
 
+1.12.0 Release                                                        2022-02-28
+--------------------------------------------------------------------------------
+
+  - adding SDSC expanse to slurm adaptor
+  - consistent use of radical_base
+
+
 1.11.1 Release                                                        2022-01-19
 --------------------------------------------------------------------------------
 
