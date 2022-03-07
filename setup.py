@@ -47,7 +47,7 @@ def sh_callout(cmd):
 #     tree.
 #   - The VERSION file is used to provide the runtime version information.
 #
-def get_version(mod_root):
+def get_version(_mod_root):
     '''
     a VERSION file containes the version strings is created in mod_root,
     during installation.  That file is used at runtime to get the version
@@ -56,16 +56,17 @@ def get_version(mod_root):
 
     try:
 
-        version_base   = None
-        version_detail = None
+        _version_base   = None
+        _version_detail = None
+        _sdist_name     = None
 
         # get version from './VERSION'
         src_root = os.path.dirname(__file__)
         if not src_root:
             src_root = '.'
 
-        with open(src_root + '/VERSION', 'r') as f:
-            version_base = f.readline().strip()
+        with open(src_root + '/VERSION', 'r', encoding='utf-8') as f:
+            _version_base = f.readline().strip()
 
         # attempt to get version detail information from git
         # We only do that though if we are in a repo root dir,
@@ -74,42 +75,43 @@ def get_version(mod_root):
         # and the pip version used uses an install tmp dir in the ve space
         # instead of /tmp (which seems to happen with some pip/setuptools
         # versions).
-        out, err, ret = sh_callout(
+        out, _, ret = sh_callout(
             'cd %s ; '
             'test -z `git rev-parse --show-prefix` || exit -1; '
             'tag=`git describe --tags --always` 2>/dev/null ; '
             'branch=`git branch | grep -e "^*" | cut -f 2- -d " "` 2>/dev/null ; '
             'echo $tag@$branch' % src_root)
-        version_detail = out.strip()
-        version_detail = version_detail.decode()
-        version_detail = version_detail.replace('detached from ', 'detached-')
+        _version_detail = out.strip()
+        _version_detail = _version_detail.decode()
+        _version_detail = _version_detail.replace('detached from ', 'detached-')
 
         # remove all non-alphanumeric (and then some) chars
-        version_detail = re.sub('[/ ]+', '-', version_detail)
-        version_detail = re.sub('[^a-zA-Z0-9_+@.-]+', '', version_detail)
+        _version_detail = re.sub('[/ ]+', '-', _version_detail)
+        _version_detail = re.sub('[^a-zA-Z0-9_+@.-]+', '', _version_detail)
 
-        if  ret            !=  0  or \
-            version_detail == '@' or \
-            'git-error'      in version_detail or \
-            'not-a-git-repo' in version_detail or \
-            'not-found'      in version_detail or \
-            'fatal'          in version_detail :
-            version = version_base
-        elif '@' not in version_base:
-            version = '%s-%s' % (version_base, version_detail)
+        if ret              !=  0  or \
+            _version_detail == '@' or \
+            'git-error'      in _version_detail or \
+            'not-a-git-repo' in _version_detail or \
+            'not-found'      in _version_detail or \
+            'fatal'          in _version_detail :
+            _version = _version_base
+        elif '@' not in _version_base:
+            _version = '%s-%s' % (_version_base, _version_detail)
         else:
-            version = version_base
+            _version = _version_base
 
         # make sure the version files exist for the runtime version inspection
-        path = '%s/%s' % (src_root, mod_root)
-        with open(path + '/VERSION', 'w') as f:
-            f.write(version + '\n')
+        _path = '%s/%s' % (src_root, _mod_root)
+        with open(_path + '/VERSION', 'w', encoding='utf-8') as f:
+            f.write(_version_base + '\n')
+            f.write(_version      + '\n')
 
-        sdist_name = '%s-%s.tar.gz' % (name, version)
-        sdist_name = sdist_name.replace('/', '-')
-        sdist_name = sdist_name.replace('@', '-')
-        sdist_name = sdist_name.replace('#', '-')
-        sdist_name = sdist_name.replace('_', '-')
+        _sdist_name = '%s-%s.tar.gz' % (name, _version_base)
+      # _sdist_name = _sdist_name.replace('/', '-')
+      # _sdist_name = _sdist_name.replace('@', '-')
+      # _sdist_name = _sdist_name.replace('#', '-')
+      # _sdist_name = _sdist_name.replace('_', '-')
 
         if '--record'    in sys.argv or \
            'bdist_egg'   in sys.argv or \
@@ -119,20 +121,21 @@ def get_version(mod_root):
             # pip install will untar the sdist in a tmp tree.  In that tmp
             # tree, we won't be able to derive git version tags -- so we pack
             # the formerly derived version as ./VERSION
-            shutil.move("VERSION", "VERSION.bak")            # backup version
-            shutil.copy("%s/VERSION" % path, "VERSION")      # use full version
-            os.system  ("python3 setup.py sdist")             # build sdist
-            shutil.copy('dist/%s' % sdist_name,
-                        '%s/%s'   % (mod_root, sdist_name))  # copy into tree
-            shutil.move('VERSION.bak', 'VERSION')            # restore version
+            shutil.move("VERSION", "VERSION.bak")              # backup
+            shutil.copy("%s/VERSION" % _path, "VERSION")       # version to use
+            os.system  ("python3 setup.py sdist")               # build sdist
+            shutil.copy('dist/%s' % _sdist_name,
+                        '%s/%s'   % (_mod_root, _sdist_name))  # copy into tree
+            shutil.move('VERSION.bak', 'VERSION')              # restore version
 
-        with open(path + '/SDIST', 'w') as f:
-            f.write(sdist_name + '\n')
+        with open(_path + '/SDIST', 'w', encoding='utf-8') as f:
+            f.write(_sdist_name + '\n')
 
-        return version_base, version_detail, sdist_name
+        return _version_base, _version_detail, _sdist_name, _path
 
     except Exception as e:
         raise RuntimeError('Could not extract/set version: %s' % e) from e
+
 
 
 # ------------------------------------------------------------------------------
@@ -143,7 +146,7 @@ if sys.hexversion < 0x03060000:
 
 # ------------------------------------------------------------------------------
 # get version info -- this will create VERSION and srcroot/VERSION
-version, version_detail, sdist_name = get_version(mod_root)
+version, version_detail, sdist_name, path = get_version(mod_root)
 
 
 # ------------------------------------------------------------------------------
@@ -239,7 +242,18 @@ setup_args = {
 #
 setup(**setup_args)
 
-os.system('rm -rf src/%s.egg-info' % name)
+
+# ------------------------------------------------------------------------------
+# clean temporary files from source tree
+sdist = open('%s/SDIST' % path).read().strip()
+if sdist:
+    os.system('rm -vf  %s/%s' % (path, sdist))
+
+os.system('rm -vrf src/%s.egg-info' % name)
+os.system('rm -vf  %s/VERSION'      % path)
+os.system('rm -vf  %s/SDIST'        % path)
+
+
 
 
 # ------------------------------------------------------------------------------
