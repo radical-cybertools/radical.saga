@@ -5,7 +5,8 @@ __email__     = 'info@radical-cybertools.org'
 __copyright__ = 'Copyright 2013-20, The RADICAL-Cybertools Team'
 __license__   = 'MIT'
 
-""" Setup script, only usable via pip. """
+
+''' Setup script, only usable via pip. '''
 
 import re
 import os
@@ -22,6 +23,8 @@ from setuptools import setup, Command, find_namespace_packages
 name     = 'radical.saga'
 mod_root = 'src/radical/saga/'
 
+sdist_level = int(os.environ.get('SDIST_LEVEL', 0))
+os.environ['SDIST_LEVEL'] = str(sdist_level + 1)
 
 # ------------------------------------------------------------------------------
 #
@@ -123,7 +126,7 @@ def get_version(_mod_root):
             # the formerly derived version as ./VERSION
             shutil.move("VERSION", "VERSION.bak")              # backup
             shutil.copy("%s/VERSION" % _path, "VERSION")       # version to use
-            os.system  ("python3 setup.py sdist")               # build sdist
+            os.system  ("python3 setup.py sdist")              # build sdist
             shutil.copy('dist/%s' % _sdist_name,
                         '%s/%s'   % (_mod_root, _sdist_name))  # copy into tree
             shutil.move('VERSION.bak', 'VERSION')              # restore version
@@ -137,6 +140,10 @@ def get_version(_mod_root):
         raise RuntimeError('Could not extract/set version: %s' % e) from e
 
 
+# ------------------------------------------------------------------------------
+# get version info -- this will create VERSION and srcroot/VERSION
+version, version_detail, sdist_name, path = get_version(mod_root)
+
 
 # ------------------------------------------------------------------------------
 # check python version, should be >= 3.6
@@ -145,27 +152,10 @@ if sys.hexversion < 0x03060000:
 
 
 # ------------------------------------------------------------------------------
-# get version info -- this will create VERSION and srcroot/VERSION
-version, version_detail, sdist_name, path = get_version(mod_root)
-
-
-# ------------------------------------------------------------------------------
-#
-class our_test(Command):
-    user_options = []
-    def initialize_options(self): pass
-    def finalize_options  (self): pass
-    def run(self):
-        testdir = "%s/tests/" % os.path.dirname(os.path.realpath(__file__))
-        retval  = sp.call(['pytest',testdir])
-        raise SystemExit(retval)
-
-
-# ------------------------------------------------------------------------------
 #
 def read(fname):
     try:
-        return open(fname).read()
+        return open(fname, encoding='utf-8').read()
     except Exception:
         return ''
 
@@ -245,15 +235,11 @@ setup(**setup_args)
 
 # ------------------------------------------------------------------------------
 # clean temporary files from source tree
-sdist = open('%s/SDIST' % path).read().strip()
-if sdist:
-    os.system('rm -vf  %s/%s' % (path, sdist))
-
-os.system('rm -vrf src/%s.egg-info' % name)
-os.system('rm -vf  %s/VERSION'      % path)
-os.system('rm -vf  %s/SDIST'        % path)
-
-
+if sdist_level == 0:
+    os.system('rm -vrf src/%s.egg-info' % name)
+    os.system('rm -vf  %s/%s'           % (path, sdist_name))
+    os.system('rm -vf  %s/VERSION'      % path)
+    os.system('rm -vf  %s/SDIST'        % path)
 
 
 # ------------------------------------------------------------------------------
