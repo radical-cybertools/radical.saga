@@ -2,7 +2,7 @@
 
 __author__    = 'RADICAL-Cybertools Team'
 __email__     = 'info@radical-cybertools.org'
-__copyright__ = 'Copyright 2013-20, The RADICAL-Cybertools Team'
+__copyright__ = 'Copyright 2013-22, The RADICAL-Cybertools Team'
 __license__   = 'MIT'
 
 
@@ -23,8 +23,30 @@ from setuptools import setup, Command, find_namespace_packages
 name     = 'radical.saga'
 mod_root = 'src/radical/saga/'
 
+# ------------------------------------------------------------------------------
+#
+# pip warning:
+# "In-tree builds are now default. pip 22.1 will enforce this behaviour change.
+#  A possible replacement is to remove the --use-feature=in-tree-build flag."
+#
+# With this change we need to make sure to clean out all temporary files from
+# the src tree. Specifically create (and thus need to clean)
+#   - VERSION
+#   - SDIST
+#   - the sdist file itself (a tarball)
+#
+# `pip install` (or any other direct or indirect invocation of `setup.py`) will
+# in fact run `setup.py` multiple times: one on the top level, and internally
+# again with other arguments to build sdist and bwheel packages.  We must *not*
+# clean out temporary files in those internal runs as that would invalidate the
+# install.
+#
+# We thus introduce an env variable `SDIST_LEVEL` which allows us to separate
+# internal calls from the top level invocation - we only clean on the latter
+# (see end of this file).
 sdist_level = int(os.environ.get('SDIST_LEVEL', 0))
 os.environ['SDIST_LEVEL'] = str(sdist_level + 1)
+
 
 # ------------------------------------------------------------------------------
 #
@@ -124,9 +146,9 @@ def get_version(_mod_root):
             # pip install will untar the sdist in a tmp tree.  In that tmp
             # tree, we won't be able to derive git version tags -- so we pack
             # the formerly derived version as ./VERSION
-            shutil.move("VERSION", "VERSION.bak")              # backup
-            shutil.copy("%s/VERSION" % _path, "VERSION")       # version to use
-            os.system  ("python3 setup.py sdist")              # build sdist
+            shutil.move('VERSION', 'VERSION.bak')              # backup
+            shutil.copy('%s/VERSION' % _path, 'VERSION')       # version to use
+            os.system  ('python3 setup.py sdist')              # build sdist
             shutil.copy('dist/%s' % _sdist_name,
                         '%s/%s'   % (_mod_root, _sdist_name))  # copy into tree
             shutil.move('VERSION.bak', 'VERSION')              # restore version
@@ -149,15 +171,6 @@ version, version_detail, sdist_name, path = get_version(mod_root)
 # check python version, should be >= 3.6
 if sys.hexversion < 0x03060000:
     raise RuntimeError('ERROR: %s requires Python 3.6 or newer' % name)
-
-
-# ------------------------------------------------------------------------------
-#
-def read(fname):
-    try:
-        return open(fname, encoding='utf-8').read()
-    except Exception:
-        return ''
 
 
 # ------------------------------------------------------------------------------
@@ -186,7 +199,6 @@ setup_args = {
     'description'        : 'A light-weight access layer for distributed '
                            'computing infrastructure '
                            '(http://radical.rutgers.edu/)',
-  # 'long_description'   : (read('README.md') + '\n\n' + read('CHANGES.md')),
     'author'             : 'RADICAL Group at Rutgers University',
     'author_email'       : 'radical@rutgers.edu',
     'maintainer'         : 'The RADICAL Group',
