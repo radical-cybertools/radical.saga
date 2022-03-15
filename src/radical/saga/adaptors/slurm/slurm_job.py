@@ -578,8 +578,7 @@ class SLURMJobService(cpi_job.Service):
             mpi_cmd = ''
 
             if  'stampede2' in self.rm.host.lower() or \
-                'longhorn'  in self.rm.host.lower() or \
-                'expanse'   in self.rm.host.lower():
+                'longhorn'  in self.rm.host.lower():
 
                 assert(n_nodes), 'need unique number of cores per node'
                 script += "#SBATCH -N %d\n" % n_nodes
@@ -649,14 +648,6 @@ class SLURMJobService(cpi_job.Service):
 
         elif 'longhorn' in self.rm.host.lower():
             self._logger.debug("SLURM GRES is not set (longhorn exception)\n")
-
-        elif queue == 'tmp3':
-
-            # this is a special queue, which is associated with SuperMUC-NG,
-            # but since there is no machine name in config data we only track
-            # this queue name to set SLURM QoS option
-            script += "#SBATCH --qos=nolimit\n"
-            self._logger.debug("SLURM QoS is set (SuperMUC-NG only)\n")
 
         else:
 
