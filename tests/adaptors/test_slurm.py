@@ -44,6 +44,7 @@ def test_slurm_generator(mocked_handle_ft, mocked_init):
     jd.processes_per_host  = PROCESSES_PER_NODE
     jd.total_cpu_count     = PROCESSES_PER_NODE * 2
     # jd.system_architecture = {'gpu': 'p100'}
+    jd.system_architecture = {'options': ['nvme', 'intel']}
 
     tgt_script = """#!/bin/sh
 
@@ -57,6 +58,7 @@ def test_slurm_generator(mocked_handle_ft, mocked_init):
 #SBATCH --account "TestProject"
 #SBATCH --reservation "ReservationTag"
 #SBATCH --time 01:10:00
+#SBATCH --constraint "nvme&intel"
 
 ## ENVIRONMENT
 export "test_env"="15"
