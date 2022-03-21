@@ -3,6 +3,14 @@
 For a list of open issues and known problems, see:
 https://github.com/radical-cybertools/radical.saga/issues
 
+1.13.0 Release                                                        2022-03-21
+--------------------------------------------------------------------------------
+
+  - support node features (constraints) in SLURM
+  - clean temporary setup files
+  - updated slurm script for `crusher`
+  
+
 1.12.0 Release                                                        2022-02-28
 --------------------------------------------------------------------------------
 
