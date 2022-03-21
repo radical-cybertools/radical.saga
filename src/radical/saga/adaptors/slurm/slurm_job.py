@@ -506,6 +506,11 @@ class SLURMJobService(cpi_job.Service):
         cpu_arch            = sys_arch.get('cpu')
         gpu_arch            = sys_arch.get('gpu')
 
+        # default: only nodes with all of specified features will be used
+        constraints = []
+        for opt in sys_arch.get('options', []):
+            constraints.append(opt.lower())
+
         # check to see what's available in our job description
         # to override defaults
 
@@ -543,10 +548,10 @@ class SLURMJobService(cpi_job.Service):
         if not n_procs:
             n_procs = cpu_count
 
-        # get memory_per_node from total_memory and make sure it is not None
-        memory_per_node = total_memory or 0
+        # get mem_per_node from total_memory and make sure it is not None
+        mem_per_node = total_memory or 0
 
-        # define n_nodes and recalculate memory_per_node (if self._ppn is set)
+        # define n_nodes and recalculate mem_per_node (if self._ppn is set)
         n_nodes = None
         if self._ppn:
 
@@ -556,7 +561,7 @@ class SLURMJobService(cpi_job.Service):
                 self._ppn = 16  # other option is to use: processes_per_host
 
             n_nodes = int(math.ceil(float(cpu_count) / self._ppn))
-            memory_per_node = int(memory_per_node / float(n_nodes))
+            mem_per_node = int(mem_per_node / float(n_nodes))
 
         elif total_memory:
             raise rse.NotImplemented(
@@ -573,15 +578,15 @@ class SLURMJobService(cpi_job.Service):
             mpi_cmd = ''
 
             if  'stampede2' in self.rm.host.lower() or \
-                'longhorn'  in self.rm.host.lower() or \
-                'expanse'   in self.rm.host.lower():
+                'longhorn'  in self.rm.host.lower():
 
                 assert(n_nodes), 'need unique number of cores per node'
                 script += "#SBATCH -N %d\n" % n_nodes
                 script += "#SBATCH -n %s\n" % n_procs
 
             elif 'frontera'  in self.rm.host.lower() or \
-                 'andes'      in self.rm.host.lower():
+                 'andes'     in self.rm.host.lower() or \
+                 'crusher'   in self.rm.host.lower():
 
                 assert(n_nodes), 'need unique number of cores per node'
                 script += "#SBATCH -N %d\n" % n_nodes
@@ -639,19 +644,11 @@ class SLURMJobService(cpi_job.Service):
 
             # Set to "haswell" for Haswell nodes, to "knl,quad,cache" (or other
             # modes) for KNL, etc.
-            if cpu_arch : script += "#SBATCH -C %s\n"     % cpu_arch
+            if cpu_arch : constraints.append(cpu_arch)
             if gpu_count: script += "#SBATCH --gpus=%s\n" % gpu_count
 
         elif 'longhorn' in self.rm.host.lower():
             self._logger.debug("SLURM GRES is not set (longhorn exception)\n")
-
-        elif queue == 'tmp3':
-
-            # this is a special queue, which is associated with SuperMUC-NG,
-            # but since there is no machine name in config data we only track
-            # this queue name to set SLURM QoS option
-            script += "#SBATCH --qos=nolimit\n"
-            self._logger.debug("SLURM QoS is set (SuperMUC-NG only)\n")
 
         else:
 
@@ -659,18 +656,20 @@ class SLURMJobService(cpi_job.Service):
                 script += "#SBATCH --gpus=%s\n" % gpu_count
 
 
-        if job_name       : script += '#SBATCH -J "%s"\n'            % job_name
-        if cwd            : script += '#SBATCH -D "%s"\n'            % cwd
-        if output         : script += '#SBATCH --output "%s"\n'      % output
-        if error          : script += '#SBATCH --error "%s"\n'       % error
-        if queue          : script += '#SBATCH --partition "%s"\n'   % queue
-        if c_hosts        : script += '#SBATCH --nodelist="%s"\n'    % c_hosts
-        if job_contact    : script += '#SBATCH --mail-user="%s"\n'   % job_contact
-        if account        : script += '#SBATCH --account "%s"\n'     % account
-        if reservation    : script += '#SBATCH --reservation "%s"\n' % reservation
-        if memory_per_node: script += '#SBATCH --mem="%s"\n'         % memory_per_node
-        if wall_time      : script += '#SBATCH --time %02d:%02d:00\n' \
-                                         % (int(wall_time / 60), wall_time % 60)
+        if job_name    : script += '#SBATCH -J "%s"\n'            % job_name
+        if cwd         : script += '#SBATCH -D "%s"\n'            % cwd
+        if output      : script += '#SBATCH --output "%s"\n'      % output
+        if error       : script += '#SBATCH --error "%s"\n'       % error
+        if queue       : script += '#SBATCH --partition "%s"\n'   % queue
+        if c_hosts     : script += '#SBATCH --nodelist="%s"\n'    % c_hosts
+        if job_contact : script += '#SBATCH --mail-user="%s"\n'   % job_contact
+        if account     : script += '#SBATCH --account "%s"\n'     % account
+        if reservation : script += '#SBATCH --reservation "%s"\n' % reservation
+        if mem_per_node: script += '#SBATCH --mem="%s"\n'         % mem_per_node
+        if wall_time   : script += '#SBATCH --time %02d:%02d:00\n'% \
+                                   (int(wall_time / 60), wall_time % 60)
+        if constraints : script += '#SBATCH --constraint "%s"\n'  % \
+                                   '&'.join(constraints)
 
         if env:
             script += "\n## ENVIRONMENT\n"
