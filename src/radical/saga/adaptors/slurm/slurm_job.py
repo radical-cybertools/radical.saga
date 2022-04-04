@@ -578,7 +578,8 @@ class SLURMJobService(cpi_job.Service):
             mpi_cmd = ''
 
             if  'stampede2' in self.rm.host.lower() or \
-                'longhorn'  in self.rm.host.lower():
+                'longhorn'  in self.rm.host.lower() or \
+                'traverse'  in self.rm.host.lower():
 
                 assert(n_nodes), 'need unique number of cores per node'
                 script += "#SBATCH -N %d\n" % n_nodes
@@ -600,7 +601,13 @@ class SLURMJobService(cpi_job.Service):
             else:
                 script += "#SBATCH --ntasks=%s\n" % n_procs
 
-            if not processes_per_host:
+
+            if 'traverse' in self.rm.host.lower():
+                # NOTE: this hardcodes the job for a specific application layout
+                script += "#SBATCH --cpus_per_task=4\n"
+                script += "#SBATCH --ntasks_per_core=1\n"
+
+            elif not processes_per_host:
                 script += "#SBATCH --cpus-per-task=%s\n" \
                         % (int(cpu_count / n_procs))
 
@@ -649,6 +656,10 @@ class SLURMJobService(cpi_job.Service):
 
         elif 'longhorn' in self.rm.host.lower():
             self._logger.debug("SLURM GRES is not set (longhorn exception)\n")
+
+        elif 'traverse' in self.rm.host.lower():
+
+            script += "#SBATCH --gres=gpu:4\n"
 
         else:
 
