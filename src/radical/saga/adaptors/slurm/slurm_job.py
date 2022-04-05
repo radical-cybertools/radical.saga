@@ -12,6 +12,7 @@ import re
 import os
 import math
 import time
+import threading
 import datetime
 import tempfile
 
@@ -30,6 +31,8 @@ from ...utils.job     import TransferDirectives
 
 SYNC_CALL  = cpi_decs.SYNC_CALL
 ASYNC_CALL = cpi_decs.ASYNC_CALL
+
+MONITOR_UPDATE_INTERVAL   = 3  # seconds
 
 
 # ------------------------------------------------------------------------------
@@ -204,6 +207,85 @@ _ADAPTOR_INFO          = {
 }
 
 
+# ------------------------------------------------------------------------------
+#
+class _job_state_monitor(threading.Thread):
+    """
+    thread that periodically monitors job states
+    """
+
+    # --------------------------------------------------------------------------
+    #
+    def __init__(self, job_service):
+
+        self.logger = job_service._logger
+        self.js     = job_service
+        self._term  = threading.Event()
+
+        super(_job_state_monitor, self).__init__()
+        self.setDaemon(True)
+
+
+    # --------------------------------------------------------------------------
+    #
+    def stop(self):
+
+        self.logger.info('stop  thread for %s', self.js.get_url())
+        self._term.set()
+
+
+    # --------------------------------------------------------------------------
+    #
+    def run(self):
+
+        self.logger.info('start thread for %s', self.js.get_url())
+        while not self._term.is_set():
+
+            try:
+                # do bulk updates here! we don't want to pull information
+                # job by job. that would be too inefficient!
+                jobs = self.js.jobs
+                for job in jobs:
+
+                    # if the job hasn't been started, we can't update its
+                    # state. we can tell if a job has been started if it
+                    # has a job id
+                    job_info = self.js.jobs[job]
+                    if not job_info.get('job_id'):
+                        continue
+
+                    # we only need to monitor jobs that are not in a
+                    # terminal state, so we can skip the ones that are
+                    # either done, failed or canceled
+                    state = job_info['state']
+                    if state in rsj.FINAL:
+                        continue
+
+                    # job is not final and we got new info - replace job info
+                    new_info = self.js._job_get_info(job)
+                    self.js.jobs[job] = new_info
+
+                    # we only care to state updates though when the state
+                    # actually changed from last time
+                    new_state = new_info['state']
+                    if new_state == state:
+                        continue
+
+                    # fire job state callback if 'state' has changed
+                    self.logger.info("update Job %s (state: %s)"
+                                    % (job, new_state))
+                    job._api()._attributes_i_set('state', new_state,
+                                                 job._api()._UP, True)
+
+                time.sleep(MONITOR_UPDATE_INTERVAL)
+
+            except Exception:
+                self.logger.exception("job monitoring thread failed")
+                break
+
+        self.logger.info('close thread for %s', self.js.get_url())
+
+
 ################################################################################
 #
 # The adaptor class
@@ -295,6 +377,9 @@ class SLURMJobService(cpi_job.Service):
 
         self.rm      = rm_url
         self.session = session
+
+        self.mt = _job_state_monitor(job_service=self)
+        self.mt.start()
 
         self.jobs = {}
         self._open()
