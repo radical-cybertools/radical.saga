@@ -17,16 +17,7 @@ import sys
 import radical.saga as rs
 
 
-js_url = "slurm://frontera/"
-
-
-# ----------------------------------------------------------------------------
-# This is an example for a callback function. Callback functions can be
-# registered with a rs.Job object and get 'fired' asynchronously on
-# certain conditions.
-def job_state_change_cb(src_obj, fire_on, value):
-    print("Callback    : job state changed to '%s'\n" % value)
-    return True
+js_url = "slurm://localhost/"
 
 
 # ------------------------------------------------------------------------------
@@ -48,10 +39,9 @@ def start():
         jd.executable        = '/bin/touch'
         jd.arguments         = ['$FILENAME']
 
-        jd.total_cpu_count   = 56
         jd.name              = "examplejob"
-        jd.queue             = "development"
-        jd.project           = "MCB20024"
+      # jd.queue             = "normal"
+      # jd.project           = "TG-MCB090174" 
 
         jd.working_directory = ".saga/test"
         jd.output            = "examplejob.out"
@@ -60,9 +50,6 @@ def start():
         # Create a new job from the job description. The initial state of
         # the job is 'New'.
         job = js.create_job(jd)
-
-        # Register our callback. We want it to 'fire' on job state change
-        job.add_callback(rs.STATE, job_state_change_cb)
 
         # Check our job's id and state
         print("Job State   : %s" % (job.state))
@@ -78,8 +65,6 @@ def start():
         print("Create time : %s" % job.created)
         print("Start time  : %s" % job.started)
         print("End time    : %s" % job.finished)
-
-        job.wait()
 
         js.close()
 
