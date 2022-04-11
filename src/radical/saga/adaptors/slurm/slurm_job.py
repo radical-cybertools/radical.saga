@@ -561,7 +561,7 @@ class SLURMJobService(cpi_job.Service):
         runs a job on the wrapper via pty, and returns the job id
         '''
 
-        jd = job_obj.jd
+        jd = job_obj.get_description()
 
         # define a bunch of default args
         exe                 = jd.executable
@@ -674,7 +674,6 @@ class SLURMJobService(cpi_job.Service):
 
                 assert(n_nodes), 'need unique number of cores per node'
                 script += "#SBATCH -N %d\n" % n_nodes
-                script += "#SBATCH -n %d\n" % n_procs
 
             elif self._version in ['17.11.5', '18.08.0', '18.08.3']:
 

@@ -74,9 +74,10 @@ echo $test_env
 """
 
     js = slurm_job.SLURMJobService(api=None, adaptor=None)
-    js._ppn = PROCESSES_PER_NODE
-    js.rm   = ru.Url(JOB_MANAGER_ENDPOINT)
-    js.jobs = {}
+    js._adaptor = slurm_job.Adaptor()
+    js._ppn     = PROCESSES_PER_NODE
+    js.rm       = ru.Url(JOB_MANAGER_ENDPOINT)
+    js.jobs     = {}
     js._logger = js.shell = mock.Mock()
 
     job_id_part = '11111'
@@ -94,7 +95,7 @@ echo $test_env
         (0, 'Submitted batch job %s' % job_id_part, None)
 
     # generates and submits SLURM script
-    job_id = js._job_run(jd=jd)
+    job_id = js._job_run(job_obj=js.create_job(jd))
 
     assert (job_id_part in job_id)
     assert (script_name.endswith('.slurm'))
