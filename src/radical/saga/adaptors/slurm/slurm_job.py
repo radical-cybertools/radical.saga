@@ -12,6 +12,7 @@ import re
 import os
 import math
 import time
+import threading
 import datetime
 import tempfile
 
@@ -30,6 +31,8 @@ from ...utils.job     import TransferDirectives
 
 SYNC_CALL  = cpi_decs.SYNC_CALL
 ASYNC_CALL = cpi_decs.ASYNC_CALL
+
+MONITOR_UPDATE_INTERVAL   = 3  # seconds
 
 
 # ------------------------------------------------------------------------------
@@ -204,6 +207,82 @@ _ADAPTOR_INFO          = {
 }
 
 
+# ------------------------------------------------------------------------------
+#
+class _job_state_monitor(threading.Thread):
+    """
+    thread that periodically monitors job states
+    """
+
+    # --------------------------------------------------------------------------
+    #
+    def __init__(self, job_service):
+
+        self.logger = job_service._logger
+        self.js     = job_service
+        self._term  = threading.Event()
+
+        super(_job_state_monitor, self).__init__()
+        self.setDaemon(True)
+
+
+    # --------------------------------------------------------------------------
+    #
+    def stop(self):
+
+        self.logger.info('stop  thread for %s', self.js.get_url())
+        self._term.set()
+
+
+    # --------------------------------------------------------------------------
+    #
+    def run(self):
+
+        self.logger.info('start thread for %s', self.js.get_url())
+        while not self._term.is_set():
+
+            try:
+                # do bulk updates here! we don't want to pull information
+                # job by job. that would be too inefficient!
+                jobs = self.js.jobs
+                for job_id in jobs:
+
+                    job_info = jobs[job_id]
+                    # we only need to monitor jobs that are not in a
+                    # terminal state, so we can skip the ones that are
+                    # either done, failed or canceled
+                    old_state = job_info['old_state']
+                    if old_state in api_job.FINAL:
+                        continue
+                  
+                    # job is not final and we got new info - replace job info
+                    new_info = self.js._job_get_info(job_id)
+                    self.js.jobs[job_id] = new_info
+
+                    # we only care to state updates though when the state
+                    # actually changed from last time
+                    new_state = new_info['state']
+                    if new_state == old_state:
+                        continue
+
+                    # fire job state callback if 'state' has changed
+                    self.logger.info("update Job %s (state: %s)"
+                                    % (job_id, new_state))
+                    new_info['old_state'] = new_state
+                    job_obj = new_info['job_obj']
+                    if job_obj:
+                        job_obj._api()._attributes_i_set('state', new_state, 
+                                                       job_obj._api()._UP, True)
+
+                time.sleep(MONITOR_UPDATE_INTERVAL)
+
+            except Exception:
+                self.logger.exception("job_id monitoring thread failed")
+                raise
+
+        self.logger.info('close thread for %s', self.js.get_url())
+
+
 ################################################################################
 #
 # The adaptor class
@@ -295,6 +374,9 @@ class SLURMJobService(cpi_job.Service):
 
         self.rm      = rm_url
         self.session = session
+
+        self.mt = _job_state_monitor(job_service=self)
+        self.mt.start()
 
         self.jobs = {}
         self._open()
@@ -474,10 +556,12 @@ class SLURMJobService(cpi_job.Service):
     # --------------------------------------------------------------------------
     #
     #
-    def _job_run(self, jd):
+    def _job_run(self, job_obj):
         '''
         runs a job on the wrapper via pty, and returns the job id
         '''
+
+        jd = job_obj.get_description()
 
         # define a bunch of default args
         exe                 = jd.executable
@@ -741,6 +825,8 @@ class SLURMJobService(cpi_job.Service):
                              'stdout'     : None,
                              'stderr'     : None,
                              'ft'         : file_transfer,
+                             'job_obj'    : job_obj,
+                             'old_state'  : None,
                              }
         return job_id
 
@@ -792,6 +878,251 @@ class SLURMJobService(cpi_job.Service):
         elif slurmjs in ['S'  , "SUSPENDED"    ]: return c.SUSPENDED
         elif slurmjs in ['TO' , "TIMEOUT"      ]: return c.CANCELED
         else                                    : return c.UNKNOWN
+
+
+    # --------------------------------------------------------------------------
+    #
+    def _job_get_info(self, job_id):
+        '''
+        use scontrol to grab job info
+        NOT CURRENTLY USED/TESTED, here for later
+        '''
+
+        # prev. info contains the info collect when _job_get_info
+        # was called the last time
+        prev_info = self.jobs.get(job_id)
+
+        # if the 'gone' flag is set, there's no need to query the job
+        # state again. it's gone forever
+        if prev_info:
+            if prev_info.get('gone', False):
+                self._logger.debug("Job is gone.")
+                return prev_info
+
+        # curr. info will contain the new job info collect. it starts off
+        # as a copy of prev_info (don't use deepcopy because there is an API
+        # object in the dict -> recursion)
+        curr_info = dict()
+
+        if prev_info:
+            curr_info['job_id'     ] = prev_info.get('job_id'     )
+            curr_info['job_name'   ] = prev_info.get('job_name'   )
+            curr_info['state'      ] = prev_info.get('state'      )
+            curr_info['create_time'] = prev_info.get('create_time')
+            curr_info['start_time' ] = prev_info.get('start_time' )
+            curr_info['end_time'   ] = prev_info.get('end_time'   )
+            curr_info['comp_time'  ] = prev_info.get('comp_time'  )
+            curr_info['exec_hosts' ] = prev_info.get('exec_hosts' )
+            curr_info['gone'       ] = prev_info.get('gone'       )
+            curr_info['output'     ] = prev_info.get('output'     )
+            curr_info['error'      ] = prev_info.get('error'      )
+            curr_info['stdout'     ] = prev_info.get('stdout'     )
+            curr_info['stderr'     ] = prev_info.get('stderr'     )
+            curr_info['ft'         ] = prev_info.get('ft'         )
+            curr_info['job_obj'    ] = prev_info.get('job_obj'    )
+            curr_info['old_state'  ] = prev_info.get('old_state'  )
+        else:
+            curr_info['job_id'     ] = None
+            curr_info['job_name'   ] = None
+            curr_info['state'      ] = None
+            curr_info['create_time'] = None
+            curr_info['start_time' ] = None
+            curr_info['end_time'   ] = None
+            curr_info['comp_time'  ] = None
+            curr_info['exec_hosts' ] = None
+            curr_info['gone'       ] = None
+            curr_info['output'     ] = None
+            curr_info['error'      ] = None
+            curr_info['stdout'     ] = None
+            curr_info['stderr'     ] = None
+            curr_info['ft'         ] = None
+            curr_info['job_obj'    ] = None
+            curr_info['old_state'  ] = None
+
+        rm, pid = self._adaptor.parse_id(job_id)
+
+        # update current info with scontrol
+        ret, out, _ = self.shell.run_sync('scontrol show job %s' % pid)
+
+        # out is comprised of a set of space-limited words like this:
+        #
+        # ----------------------------------------------------------------------
+        # $ scontrol show job 8101313
+        #    JobId=8101313 JobName=pilot.0000 UserId=tg803521(803521)
+        #    GroupId=G-81625(81625) Priority=1701 Nice=0 Account=TG-MCB090174
+        #    QOS=normal JobState=RUNNING Reason=None Dependency=(null) Requeue=0
+        #    Restarts=0 BatchFlag=1 Reboot=0 ExitCode=0:0 RunTime=00:00:25
+        #    TimeLimit=00:15:00 TimeMin=N/A SubmitTime=2017-01-11T15:47:19
+        #    EligibleTime=2017-01-11T15:47:19 StartTime=2017-01-11T15:47:19
+        #    EndTime=2017-01-11T16:02:19 PreemptTime=None SuspendTime=None
+        #    SecsPreSuspend=0 Partition=development AllocNode:Sid=login3:2886
+        #    ReqNodeList=(null) ExcNodeList=(null) NodeList=c557-[901-904]
+        #    BatchHost=c557-901 NumNodes=4 NumCPUs=64 CPUs/Task=1
+        #    ReqB:S:C:T=0:0:*:* TRES=cpu=64,node=4 Socks/Node=*
+        #    NtasksPerN:B:S:C=0:0:*:* CoreSpec=* MinCPUsNode=1 MinMemoryNode=0
+        #    MinTmpDiskNode=0 Features=(null) Gres=(null) Reservation=(null)
+        #    Shared=0 Contiguous=0 Licenses=(null) Network=(null)
+        #    Command=/home1/01083/tg803521/tmp_egGk1n.slurm
+        #    WorkDir=/work/01083/
+        #    StdIn=/dev/null
+        #    StdOut=/work/01083/bootstrap_1.out
+        #    StdErr=/work/01083/bootstrap_1.err
+        #    Power= SICP=0
+        # ----------------------------------------------------------------------
+        #
+        # so we split on spaces and newlines, and then on '=' to get
+        # key-value-pairs.
+
+        elems = out.split()
+        data  = dict()
+        for elem in sorted(elems):
+
+            parts = elem.split('=', 1)
+
+            if len(parts) == 1:
+                # default if no '=' is found
+                parts.append(None)
+
+            # ignore non-splittable ones
+            key, val = parts
+            if val in ['', '(null)']:
+                val = None
+            self._logger.info('%-20s := %s', key, val)
+            data[key] = val
+
+        if data.get('JobState'):
+            curr_info['state'] = self._slurm_to_saga_state(data['JobState'])
+        else:
+            curr_info['state'] = self._job_get_state(job_id)
+
+        # update exit code
+        if data.get('ExitCode'):
+            curr_info['exit_code'] = data['ExitCode'].split(':')[0]
+        else:
+            curr_info['exit_code'] = self._job_get_state(job_id)
+
+        curr_info['job_name'   ] = data.get('JobName')
+      # curr_info['create_time'] = data.get('SubmitTime')
+      # curr_info['start_time' ] = data.get('StartTime')
+      # curr_info['end_time'   ] = data.get('EndTime')
+        curr_info['comp_time'  ] = data.get('RunTime')
+        curr_info['exec_hosts' ] = data.get('NodeList')
+
+        # Alas, time stamps are not in EPOCH, and do not contain time zone info,
+        # so we set approximate values here
+        now = time.time()
+        if not curr_info['create_time']: curr_info['create_time'] = now
+
+        if curr_info['state'] in [c.RUNNING] + c.FINAL:
+            if not curr_info['start_time' ]: curr_info['start_time' ] = now
+
+        if curr_info['state'] in c.FINAL:
+
+            if not curr_info['end_time' ]: curr_info['end_time' ] = now
+
+            if curr_info['stdout'] is None:
+
+                if curr_info['output'] is None:
+                    curr_info['output'] = data.get('StdOut')
+
+                ret, out, err = self.shell.run_sync(
+                                                 'cat %s' % curr_info['output'])
+                if ret: curr_info['stdout'] = None
+                else  : curr_info['stdout'] = out
+
+            if curr_info['stderr'] is None:
+
+                if curr_info['error'] is None:
+                    curr_info['error'] = data.get('StdErr')
+
+                ret, out, err = self.shell.run_sync(
+                                                  'cat %s' % curr_info['error'])
+                if ret: curr_info['stderr'] = None
+                else  : curr_info['stderr'] = out
+
+            self._handle_file_transfers(curr_info['ft'], mode='out')
+
+            curr_info['gone'] = True
+
+        self.jobs[job_id] = curr_info
+
+        return curr_info
+
+
+    # --------------------------------------------------------------------------
+    #
+    def _job_get_state(self, job_id):
+        '''
+        get the job state from the wrapper shell
+        '''
+
+      # # if the state is NEW and we haven't sent out a run command, keep
+      # # it listed as NEW
+      # if self._state == c.NEW and not self._started:
+      #     return c.NEW
+
+      # # if the state is DONE, CANCELED or FAILED, it is considered
+      # # final and we don't need to query the backend again
+      # if self._state in c.FINAL:
+      #     return self._state
+
+        rm, pid = self._adaptor.parse_id(job_id)
+
+        try:
+            ret, out, _ = self.shell.run_sync('scontrol show job %s' % pid)
+            match       = self.scontrol_jobstate_re.search(out)
+
+            if match:
+                slurm_state = match.group(1)
+            else:
+                # no jobstate found from scontrol
+                # the job may have finished a while back, use sacct to
+                # look at the full slurm history
+                slurm_state = self._sacct_jobstate_match(pid)
+                if not slurm_state:
+                    # no jobstate found in slurm
+                    return c.UNKNOWN
+
+            return self._slurm_to_saga_state(slurm_state)
+
+        except Exception as e:
+            self._logger.exception('failed to get job state')
+            raise rse.NoSuccess("Error getting the job state for "
+                                "job %s:\n%s" % (pid, e)) from e
+
+        raise rse.NoSuccess._log(self._logger, "Internal SLURM adaptor error"
+                                 " in _job_get_state")
+
+
+    # --------------------------------------------------------------------------
+    #
+    def _sacct_jobstate_match(self, pid):
+        '''
+        get the job state from the slurm accounting data
+        '''
+
+        ret, sacct_out, _ = self.shell.run_sync(
+            "sacct --format=JobID,State --parsable2 --noheader --jobs=%s" % pid)
+
+        # output will look like:
+        # 500723|COMPLETED
+        # 500723.batch|COMPLETED
+        # or:
+        # 500682|CANCELLED by 900369
+        # 500682.batch|CANCELLED
+
+        try:
+            for line in sacct_out.strip().split('\n'):
+
+                slurm_id, slurm_state = line.split('|', 1)
+
+                if slurm_id == pid and slurm_state:
+                    return slurm_state.split()[0].strip()
+
+        except Exception:
+            self._logger.warning('cannot parse sacct output:\n%s' % sacct_out)
+
+        return None
 
 
     # --------------------------------------------------------------------------
@@ -1028,7 +1359,7 @@ class SLURMJob(cpi_job.Job):
         # physically creating a new network connection
         if job_info['reconnect']:
             self._id   = job_info['reconnect_jobid']
-            other_info = self._job_get_info()
+            other_info = self.js._job_get_info(self._id)
             self._name = other_info.get('job_name')
             self._started = True
         else:
@@ -1039,251 +1370,11 @@ class SLURMJob(cpi_job.Job):
 
     # --------------------------------------------------------------------------
     #
-    def _job_get_info(self):
-        '''
-        use scontrol to grab job info
-        NOT CURRENTLY USED/TESTED, here for later
-        '''
-
-        # prev. info contains the info collect when _job_get_info
-        # was called the last time
-        prev_info = self.js.jobs.get(self._id)
-
-        # if the 'gone' flag is set, there's no need to query the job
-        # state again. it's gone forever
-        if prev_info:
-            if prev_info.get('gone', False):
-                self._logger.debug("Job is gone.")
-                return prev_info
-
-        # curr. info will contain the new job info collect. it starts off
-        # as a copy of prev_info (don't use deepcopy because there is an API
-        # object in the dict -> recursion)
-        curr_info = dict()
-
-        if prev_info:
-            curr_info['job_id'     ] = prev_info.get('job_id'     )
-            curr_info['job_name'   ] = prev_info.get('job_name'   )
-            curr_info['state'      ] = prev_info.get('state'      )
-            curr_info['create_time'] = prev_info.get('create_time')
-            curr_info['start_time' ] = prev_info.get('start_time' )
-            curr_info['end_time'   ] = prev_info.get('end_time'   )
-            curr_info['comp_time'  ] = prev_info.get('comp_time'  )
-            curr_info['exec_hosts' ] = prev_info.get('exec_hosts' )
-            curr_info['gone'       ] = prev_info.get('gone'       )
-            curr_info['output'     ] = prev_info.get('output'     )
-            curr_info['error'      ] = prev_info.get('error'      )
-            curr_info['stdout'     ] = prev_info.get('stdout'     )
-            curr_info['stderr'     ] = prev_info.get('stderr'     )
-            curr_info['ft'         ] = prev_info.get('ft'         )
-        else:
-            curr_info['job_id'     ] = None
-            curr_info['job_name'   ] = None
-            curr_info['state'      ] = None
-            curr_info['create_time'] = None
-            curr_info['start_time' ] = None
-            curr_info['end_time'   ] = None
-            curr_info['comp_time'  ] = None
-            curr_info['exec_hosts' ] = None
-            curr_info['gone'       ] = None
-            curr_info['output'     ] = None
-            curr_info['error'      ] = None
-            curr_info['stdout'     ] = None
-            curr_info['stderr'     ] = None
-            curr_info['ft'         ] = None
-
-        rm, pid = self._adaptor.parse_id(self._id)
-
-        # update current info with scontrol
-        ret, out, _ = self.js.shell.run_sync('scontrol show job %s' % pid)
-
-        # out is comprised of a set of space-limited words like this:
-        #
-        # ----------------------------------------------------------------------
-        # $ scontrol show job 8101313
-        #    JobId=8101313 JobName=pilot.0000 UserId=tg803521(803521)
-        #    GroupId=G-81625(81625) Priority=1701 Nice=0 Account=TG-MCB090174
-        #    QOS=normal JobState=RUNNING Reason=None Dependency=(null) Requeue=0
-        #    Restarts=0 BatchFlag=1 Reboot=0 ExitCode=0:0 RunTime=00:00:25
-        #    TimeLimit=00:15:00 TimeMin=N/A SubmitTime=2017-01-11T15:47:19
-        #    EligibleTime=2017-01-11T15:47:19 StartTime=2017-01-11T15:47:19
-        #    EndTime=2017-01-11T16:02:19 PreemptTime=None SuspendTime=None
-        #    SecsPreSuspend=0 Partition=development AllocNode:Sid=login3:2886
-        #    ReqNodeList=(null) ExcNodeList=(null) NodeList=c557-[901-904]
-        #    BatchHost=c557-901 NumNodes=4 NumCPUs=64 CPUs/Task=1
-        #    ReqB:S:C:T=0:0:*:* TRES=cpu=64,node=4 Socks/Node=*
-        #    NtasksPerN:B:S:C=0:0:*:* CoreSpec=* MinCPUsNode=1 MinMemoryNode=0
-        #    MinTmpDiskNode=0 Features=(null) Gres=(null) Reservation=(null)
-        #    Shared=0 Contiguous=0 Licenses=(null) Network=(null)
-        #    Command=/home1/01083/tg803521/tmp_egGk1n.slurm
-        #    WorkDir=/work/01083/
-        #    StdIn=/dev/null
-        #    StdOut=/work/01083/bootstrap_1.out
-        #    StdErr=/work/01083/bootstrap_1.err
-        #    Power= SICP=0
-        # ----------------------------------------------------------------------
-        #
-        # so we split on spaces and newlines, and then on '=' to get
-        # key-value-pairs.
-
-        elems = out.split()
-        data  = dict()
-        for elem in sorted(elems):
-
-            parts = elem.split('=', 1)
-
-            if len(parts) == 1:
-                # default if no '=' is found
-                parts.append(None)
-
-            # ignore non-splittable ones
-            key, val = parts
-            if val in ['', '(null)']:
-                val = None
-            self._logger.info('%-20s := %s', key, val)
-            data[key] = val
-
-        if data.get('JobState'):
-            curr_info['state'] = self.js._slurm_to_saga_state(data['JobState'])
-        else:
-            curr_info['state'] = self._job_get_state(self._id)
-
-        # update exit code
-        if data.get('ExitCode'):
-            curr_info['exit_code'] = data['ExitCode'].split(':')[0]
-        else:
-            curr_info['exit_code'] = self._job_get_state(self._id)
-
-        curr_info['job_name'   ] = data.get('JobName')
-      # curr_info['create_time'] = data.get('SubmitTime')
-      # curr_info['start_time' ] = data.get('StartTime')
-      # curr_info['end_time'   ] = data.get('EndTime')
-        curr_info['comp_time'  ] = data.get('RunTime')
-        curr_info['exec_hosts' ] = data.get('NodeList')
-
-        # Alas, time stamps are not in EPOCH, and do not contain time zone info,
-        # so we set approximate values here
-        now = time.time()
-        if not curr_info['create_time']: curr_info['create_time'] = now
-
-        if curr_info['state'] in [c.RUNNING] + c.FINAL:
-            if not curr_info['start_time' ]: curr_info['start_time' ] = now
-
-        if curr_info['state'] in c.FINAL:
-
-            if not curr_info['end_time' ]: curr_info['end_time' ] = now
-
-            if curr_info['stdout'] is None:
-
-                if curr_info['output'] is None:
-                    curr_info['output'] = data.get('StdOut')
-
-                ret, out, err = self.js.shell.run_sync(
-                                                 'cat %s' % curr_info['output'])
-                if ret: curr_info['stdout'] = None
-                else  : curr_info['stdout'] = out
-
-            if curr_info['stderr'] is None:
-
-                if curr_info['error'] is None:
-                    curr_info['error'] = data.get('StdErr')
-
-                ret, out, err = self.js.shell.run_sync(
-                                                  'cat %s' % curr_info['error'])
-                if ret: curr_info['stderr'] = None
-                else  : curr_info['stderr'] = out
-
-            self.js._handle_file_transfers(curr_info['ft'], mode='out')
-
-            curr_info['gone'] = True
-
-        self.js.jobs[self._id] = curr_info
-
-        return curr_info
-
-
-    # --------------------------------------------------------------------------
-    #
-    def _job_get_state(self, job_id):
-        '''
-        get the job state from the wrapper shell
-        '''
-
-        # if the state is NEW and we haven't sent out a run command, keep
-        # it listed as NEW
-        if self._state == c.NEW and not self._started:
-            return c.NEW
-
-        # if the state is DONE, CANCELED or FAILED, it is considered
-        # final and we don't need to query the backend again
-        if self._state in c.FINAL:
-            return self._state
-
-        rm, pid = self._adaptor.parse_id(job_id)
-
-        try:
-            ret, out, _ = self.js.shell.run_sync('scontrol show job %s' % pid)
-            match       = self.js.scontrol_jobstate_re.search(out)
-
-            if match:
-                slurm_state = match.group(1)
-            else:
-                # no jobstate found from scontrol
-                # the job may have finished a while back, use sacct to
-                # look at the full slurm history
-                slurm_state = self._sacct_jobstate_match(pid)
-                if not slurm_state:
-                    # no jobstate found in slurm
-                    return c.UNKNOWN
-
-            return self.js._slurm_to_saga_state(slurm_state)
-
-        except Exception as e:
-            self._logger.exception('failed to get job state')
-            raise rse.NoSuccess("Error getting the job state for "
-                                "job %s:\n%s" % (pid, e)) from e
-
-        raise rse.NoSuccess._log(self._logger, "Internal SLURM adaptor error"
-                                 " in _job_get_state")
-
-
-    # --------------------------------------------------------------------------
-    #
-    def _sacct_jobstate_match(self, pid):
-        '''
-        get the job state from the slurm accounting data
-        '''
-
-        ret, sacct_out, _ = self.js.shell.run_sync(
-            "sacct --format=JobID,State --parsable2 --noheader --jobs=%s" % pid)
-
-        # output will look like:
-        # 500723|COMPLETED
-        # 500723.batch|COMPLETED
-        # or:
-        # 500682|CANCELLED by 900369
-        # 500682.batch|CANCELLED
-
-        try:
-            for line in sacct_out.strip().split('\n'):
-
-                slurm_id, slurm_state = line.split('|', 1)
-
-                if slurm_id == pid and slurm_state:
-                    return slurm_state.split()[0].strip()
-
-        except Exception:
-            self._logger.warning('cannot parse sacct output:\n%s' % sacct_out)
-
-        return None
-
-
-    # --------------------------------------------------------------------------
-    #
     @SYNC_CALL
     def get_state(self):
 
-        self._state = self._job_get_state(self._id)
+        if self._id is not None:
+            self._state = self.js._job_get_state(self._id)
         return self._state
 
 
@@ -1292,7 +1383,7 @@ class SLURMJob(cpi_job.Job):
     @SYNC_CALL
     def get_stdout(self):
 
-        out = self._job_get_info()['stdout']
+        out = self.js._job_get_info(self._id)['stdout']
         if out is None:
             out = ''
           # raise rse.NoSuccess("Couldn't fetch stdout (js reconnected?)")
@@ -1304,7 +1395,7 @@ class SLURMJob(cpi_job.Job):
     @SYNC_CALL
     def get_stderr(self):
 
-        err = self._job_get_info()['stderr']
+        err = self.js._job_get_info(self._id)['stderr']
         if err is None:
             err = ''
           # raise rse.NoSuccess("Couldn't fetch stderr (js reconnected?)")
@@ -1337,14 +1428,14 @@ class SLURMJob(cpi_job.Job):
 
         while True:
 
-            state = self._job_get_state(self._id)
+            state = self.js._job_get_state(self._id)
             self._logger.debug("wait() for job id %s:%s" % (self._id, state))
 
             if state == c.UNKNOWN:
                 raise rse.IncorrectState("cannot get job state")
 
             if state in c.FINAL:
-                self._job_get_info()
+                self.js._job_get_info(self._id)
                 return True
 
             # check if we hit timeout
@@ -1380,7 +1471,7 @@ class SLURMJob(cpi_job.Job):
     def get_name(self):
 
         if not self._name:
-            self._name = self._job_get_info()['job_name']
+            self._name = self.js._job_get_info(self._id)['job_name']
         return self._name
 
 
@@ -1390,7 +1481,7 @@ class SLURMJob(cpi_job.Job):
     def get_exit_code(self):
 
         # FIXME: use cache
-        return self._job_get_info()['exit_code']
+        return self.js._job_get_info(self._id)['exit_code']
 
 
     # --------------------------------------------------------------------------
@@ -1415,7 +1506,7 @@ class SLURMJob(cpi_job.Job):
 
         # FIXME: use cache
         # FIXME: convert to EOPCH
-        return self._job_get_info()['create_time']
+        return self.js._job_get_info(self._id)['create_time']
 
 
     # --------------------------------------------------------------------------
@@ -1425,7 +1516,7 @@ class SLURMJob(cpi_job.Job):
 
         # FIXME: use cache
         # FIXME: convert to EPOCH
-        return self._job_get_info()['start_time']
+        return self.js._job_get_info(self._id)['start_time']
 
 
     # --------------------------------------------------------------------------
@@ -1435,7 +1526,7 @@ class SLURMJob(cpi_job.Job):
 
         # FIXME: use cache
         # FIXME: convert to EPOCH
-        return self._job_get_info()['end_time']
+        return self.js._job_get_info(self._id)['end_time']
 
 
     # --------------------------------------------------------------------------
@@ -1444,7 +1535,7 @@ class SLURMJob(cpi_job.Job):
     def get_execution_hosts(self):
 
         # FIXME: use cache
-        return self._job_get_info()['exec_hosts']
+        return self.js._job_get_info(self._id)['exec_hosts']
 
 
     # --------------------------------------------------------------------------
@@ -1460,7 +1551,7 @@ class SLURMJob(cpi_job.Job):
     @SYNC_CALL
     def run(self):
 
-        self._id      = self.js._job_run(self.jd)
+        self._id      = self.js._job_run(self)
         self._started = True
 
 
