@@ -585,7 +585,7 @@ class PTYShellFactory (object, metaclass=ru.Singleton) :
 
                 info['sh_env'] = "/usr/bin/env TERM=vt100 "  # avoid ansi escapes
 
-              # if not sumisc.host_is_local (url.host) :
+              # if not ru.is_localhost(url.host) :
               #     raise rse.BadParameter._log (self.logger,
               #             "expect local host for '%s://', not '%s'"
               #             % (url.schema, url.host))

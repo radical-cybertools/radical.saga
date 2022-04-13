@@ -11,6 +11,8 @@ import time
 import socket
 import traceback
 
+import radical.utils as ru
+
 from ..url import Url
 from ..    import exceptions as se
 
@@ -39,30 +41,8 @@ def get_trace () :
 
 # --------------------------------------------------------------------
 #
-def host_is_local (host) :
-    """ Returns True if the given host is the localhost
-    """
-
-    if  not host:
-        return True
-
-    elif host == 'localhost':
-        return True
-
-    else:
-        sockhost = socket.gethostname()
-        while sockhost:
-            if host == sockhost:
-                return True
-            sockhost = '.'.join(sockhost.split('.')[1:])
-
-    return False
-
-
-# --------------------------------------------------------------------
-#
 def host_is_valid (host) :
-    """ 
+    """
     Returns True if the given hostname can be resolved.
     We also test the reverse DNS lookup -- some seriously stupid and standard
     violating internet providers implement a DNS catchall -- the reverse lookup
@@ -71,7 +51,7 @@ def host_is_valid (host) :
 
     # FIXME: cache results so that further lookups are quick
 
-    if  host_is_local (host) :
+    if ru.is_localhost(host):
         return True
 
     try:
@@ -84,7 +64,7 @@ def host_is_valid (host) :
 # --------------------------------------------------------------------
 #
 def get_host_latency (host_url) :
-    """ 
+    """
     This call measures the base tcp latency for a connection to the target
     host.  Note that port 22 is used for connection tests, unless the URL
     explicitly specifies a different port.  If the used port is blocked, the
@@ -94,7 +74,7 @@ def get_host_latency (host_url) :
     try :
         # FIXME see comments to #62bebc9 -- this breaks for some cases, or is at
         # least annoying.  Thus we disable latency checking for the time being,
-        # and return a constant assumed latency of 250ms (which approximately 
+        # and return a constant assumed latency of 250ms (which approximately
         # represents a random WAN link).
         return 0.25
 
@@ -108,7 +88,7 @@ def get_host_latency (host_url) :
         if u.host : host = u.host
         else      : host = 'localhost'
         if u.port : port = u.port
-        else      : port = 22  # FIXME: we should guess by protocol 
+        else      : port = 22  # FIXME: we should guess by protocol
 
         # ensure host is valid
         if not host_is_valid(host):
@@ -136,12 +116,12 @@ def get_host_latency (host_url) :
 # --------------------------------------------------------------------
 #
 def url_is_local (arg) :
-    """ 
+    """
     Returns True if the given url points to localhost.
 
     We consider all URLs which explicitly define a port as non-local, because it
     looks like someone wants to explicitly use some protocol --
-    `ssh://localost:2222/` is likely to point at an ssh tunnel.  
+    `ssh://localost:2222/` is likely to point at an ssh tunnel.
 
     If, however, the port matches the default port for the given protocol, we
     consider it local again -- `ssh://localhost:22/` is most likely a real local
@@ -154,7 +134,7 @@ def url_is_local (arg) :
 
     u = Url (arg)
 
-    if  not host_is_local (u.host) :
+    if not ru.is_localhost(u.host):
         return False
 
     # host is local, but what does the port indicate?
@@ -183,7 +163,7 @@ def url_is_relative (url_1) :
 
     if  str (u1) == str(u1.path) :
         if  not u1.path :
-            return True 
+            return True
         elif u1.path[0] != '/' :
             return True
 
@@ -193,7 +173,7 @@ def url_is_relative (url_1) :
 # --------------------------------------------------------------------
 #
 def url_get_dirname (url_1) :
-    """ 
+    """
     Extract the directory part of the given URL's path element.  We consider
     everything up to the last '/' as directory.  That also holds for relative
     paths.
@@ -208,7 +188,7 @@ def url_get_dirname (url_1) :
 # --------------------------------------------------------------------
 #
 def url_get_filename (url_1) :
-    """ 
+    """
     Extract the directory part of the given URL's path element.  We consider
     everything up to the last '/' as directory.  That also holds for relative
     paths.
@@ -226,7 +206,7 @@ def url_get_filename (url_1) :
 # --------------------------------------------------------------------
 #
 def url_normalize (url_1) :
-    """ 
+    """
     The path element of the URL is normalized
     """
 
@@ -239,7 +219,7 @@ def url_normalize (url_1) :
 # --------------------------------------------------------------------
 #
 def url_make_absolute (url_1, url_2) :
-    """ 
+    """
     URL1 is expected to only have a path
     Missing elements in url_1 are copied from url_2 -- but path stays the
     same.  Unless it is a relative path in the first place: then it is
@@ -276,7 +256,7 @@ def url_make_absolute (url_1, url_2) :
 # --------------------------------------------------------------------
 #
 def url_is_compatible (url_1, url_2) :
-    """ 
+    """
     Returns True if the given urls point to the same host, using the same
     protocol/port/user etc.  If one of the URLs only contains a path, it is
     considered compatible with any other URL.
@@ -290,19 +270,19 @@ def url_is_compatible (url_1, url_2) :
     if os.path.normpath(u2.path) == os.path.normpath (str(u2)) : return True
 
     # more than path in both URLs -- check compatibility for all elements
-    if u1.scheme   and     u2.scheme   and u1.scheme   != u2.scheme  : return False 
+    if u1.scheme   and     u2.scheme   and u1.scheme   != u2.scheme  : return False
     if u1.host     and     u2.host     and u1.host     != u2.host    : return False
     if u1.port     and     u2.port     and u1.port     != u2.port    : return False
     if u1.username and     u2.username and u1.username != u2.username: return False
     if u1.password and     u2.password and u1.password != u2.password: return False
 
-    if u1.scheme   and not u2.scheme  : return False 
+    if u1.scheme   and not u2.scheme  : return False
     if u1.host     and not u2.host    : return False
     if u1.port     and not u2.port    : return False
     if u1.username and not u2.username: return False
     if u1.password and not u2.password: return False
 
-    if u2.scheme   and not u1.scheme  : return False 
+    if u2.scheme   and not u1.scheme  : return False
     if u2.host     and not u1.host    : return False
     if u2.port     and not u1.port    : return False
     if u2.username and not u1.username: return False
