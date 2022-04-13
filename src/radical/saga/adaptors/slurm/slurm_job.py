@@ -662,7 +662,6 @@ class SLURMJobService(cpi_job.Service):
 
             if  'stampede2' in self.rm.host.lower() or \
                 'longhorn'  in self.rm.host.lower() or \
-                'spock'     in self.rm.host.lower() or \
                 'expanse'   in self.rm.host.lower() or \
                 'traverse'  in self.rm.host.lower():
 
@@ -672,6 +671,7 @@ class SLURMJobService(cpi_job.Service):
 
             elif 'frontera'  in self.rm.host.lower() or \
                  'andes'     in self.rm.host.lower() or \
+                 'spock'     in self.rm.host.lower() or \
                  'crusher'   in self.rm.host.lower():
 
                 assert(n_nodes), 'need unique number of cores per node'
