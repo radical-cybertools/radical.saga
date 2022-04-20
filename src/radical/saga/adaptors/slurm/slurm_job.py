@@ -22,7 +22,6 @@ from ...job           import constants   as c
 from ...utils         import pty_shell   as rsups
 from ...              import job         as api_job
 from ...              import exceptions  as rse
-from ...              import filesystem  as sfs
 from ..               import base        as a_base
 from ..cpi            import job         as cpi_job
 from ..cpi            import decorators  as cpi_decs
@@ -254,7 +253,7 @@ class _job_state_monitor(threading.Thread):
                     old_state = job_info['old_state']
                     if old_state in api_job.FINAL:
                         continue
-                  
+
                     # job is not final and we got new info - replace job info
                     new_info = self.js._job_get_info(job_id)
                     self.js.jobs[job_id] = new_info
@@ -271,7 +270,7 @@ class _job_state_monitor(threading.Thread):
                     new_info['old_state'] = new_state
                     job_obj = new_info['job_obj']
                     if job_obj:
-                        job_obj._api()._attributes_i_set('state', new_state, 
+                        job_obj._api()._attributes_i_set('state', new_state,
                                                        job_obj._api()._UP, True)
 
                 time.sleep(MONITOR_UPDATE_INTERVAL)
@@ -445,7 +444,7 @@ class SLURMJobService(cpi_job.Service):
                           "configured properly? " % (cmd, self.rm, out)
                 raise rse.NoSuccess._log(self._logger, message)
 
-        self._logger.debug("got cmd prompt (%s)(%s)" % (ret, out))
+            self._logger.debug("got cmd prompt (%s)(%s)", ret, out)
 
         self.rm.detected_username = self.rm.username
         # figure out username if it wasn't made explicit
@@ -663,6 +662,7 @@ class SLURMJobService(cpi_job.Service):
 
             if  'stampede2' in self.rm.host.lower() or \
                 'longhorn'  in self.rm.host.lower() or \
+                'expanse'   in self.rm.host.lower() or \
                 'traverse'  in self.rm.host.lower():
 
                 assert(n_nodes), 'need unique number of cores per node'
@@ -671,6 +671,7 @@ class SLURMJobService(cpi_job.Service):
 
             elif 'frontera'  in self.rm.host.lower() or \
                  'andes'     in self.rm.host.lower() or \
+                 'spock'     in self.rm.host.lower() or \
                  'crusher'   in self.rm.host.lower():
 
                 assert(n_nodes), 'need unique number of cores per node'
@@ -702,10 +703,10 @@ class SLURMJobService(cpi_job.Service):
         # FIXME: these should be moved into resource config files
         self._logger.debug ("submit SLURM script to %s", self.rm)
         if 'bridges2' in self.rm.host.lower():
-             if gpu_count:
-                 # gres resources are specified *per node*
-                 assert(n_nodes), 'need unique number of cores per node'
-                 script += "#SBATCH --gres=gpu:%s:8\n" % (gpu_arch)
+            if gpu_count:
+                # gres resources are specified *per node*
+                assert(n_nodes), 'need unique number of cores per node'
+                script += "#SBATCH --gres=gpu:%s:8\n" % (gpu_arch)
 
         elif 'comet' in self.rm.host.lower():
 
@@ -761,8 +762,8 @@ class SLURMJobService(cpi_job.Service):
         if account     : script += '#SBATCH --account "%s"\n'     % account
         if reservation : script += '#SBATCH --reservation "%s"\n' % reservation
         if mem_per_node: script += '#SBATCH --mem="%s"\n'         % mem_per_node
-        if wall_time   : script += '#SBATCH --time %02d:%02d:00\n'% \
-                                   (int(wall_time / 60), wall_time % 60)
+        if wall_time   : script += '#SBATCH --time %02d:%02d:00\n' \
+                                 % (int(wall_time / 60), wall_time % 60)
         if constraints : script += '#SBATCH --constraint "%s"\n'  % \
                                    '&'.join(constraints)
 
@@ -1070,7 +1071,7 @@ class SLURMJobService(cpi_job.Service):
 
         try:
             ret, out, _ = self.shell.run_sync('scontrol show job %s' % pid)
-            match       = self.scontrol_jobstate_re.search(out)
+            match       = self.scontrol_jobstate_re.search(str(out))
 
             if match:
                 slurm_state = match.group(1)
