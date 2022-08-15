@@ -3,6 +3,13 @@
 For a list of open issues and known problems, see:
 https://github.com/radical-cybertools/radical.saga/issues
 
+1.16.0 Release                                                        2022-08-15
+--------------------------------------------------------------------------------
+
+  - move `host_is_local` to RU
+  - spock needs -N
+
+
 1.14.0 Release                                                        2022-04-13
 --------------------------------------------------------------------------------
 
