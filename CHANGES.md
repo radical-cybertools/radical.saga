@@ -3,6 +3,13 @@
 For a list of open issues and known problems, see:
 https://github.com/radical-cybertools/radical.saga/issues
 
+1.14.0 Release                                                        2022-04-13
+--------------------------------------------------------------------------------
+
+  - Add notifications to slurm
+  - another attempt to fix traverse support
+
+
 1.13.0 Release                                                        2022-03-21
 --------------------------------------------------------------------------------
 

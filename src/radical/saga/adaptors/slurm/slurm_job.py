@@ -444,7 +444,7 @@ class SLURMJobService(cpi_job.Service):
                           "configured properly? " % (cmd, self.rm, out)
                 raise rse.NoSuccess._log(self._logger, message)
 
-            self._logger.debug("got cmd prompt (%s)(%s)" % (ret, out))
+            self._logger.debug("got cmd prompt (%s)(%s)", ret, out)
 
         self.rm.detected_username = self.rm.username
         # figure out username if it wasn't made explicit
@@ -662,6 +662,7 @@ class SLURMJobService(cpi_job.Service):
 
             if  'stampede2' in self.rm.host.lower() or \
                 'longhorn'  in self.rm.host.lower() or \
+                'expanse'   in self.rm.host.lower() or \
                 'traverse'  in self.rm.host.lower():
 
                 assert(n_nodes), 'need unique number of cores per node'
@@ -670,6 +671,7 @@ class SLURMJobService(cpi_job.Service):
 
             elif 'frontera'  in self.rm.host.lower() or \
                  'andes'     in self.rm.host.lower() or \
+                 'spock'     in self.rm.host.lower() or \
                  'crusher'   in self.rm.host.lower():
 
                 assert(n_nodes), 'need unique number of cores per node'
@@ -761,8 +763,8 @@ class SLURMJobService(cpi_job.Service):
         if account     : script += '#SBATCH --account "%s"\n'     % account
         if reservation : script += '#SBATCH --reservation "%s"\n' % reservation
         if mem_per_node: script += '#SBATCH --mem="%s"\n'         % mem_per_node
-        if wall_time   : script += '#SBATCH --time %02d:%02d:00\n' % \
-                                   (int(wall_time / 60), wall_time % 60)
+        if wall_time   : script += '#SBATCH --time %02d:%02d:00\n' \
+                                 % (int(wall_time / 60), wall_time % 60)
         if constraints : script += '#SBATCH --constraint "%s"\n'  % \
                                    '&'.join(constraints)
 
