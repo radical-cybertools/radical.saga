@@ -594,6 +594,8 @@ class SLURMJobService(cpi_job.Service):
         for opt in sys_arch.get('options', []):
             constraints.append(opt.lower())
 
+        threads_per_core = sys_arch.get('smt', 1)
+
         # check to see what's available in our job description
         # to override defaults
 
@@ -689,15 +691,22 @@ class SLURMJobService(cpi_job.Service):
 
             if 'traverse' in self.rm.host.lower():
                 # NOTE: this hardcodes the job for a specific application layout
-                script += "#SBATCH --cpus_per_task=4\n"
-                script += "#SBATCH --ntasks_per_core=1\n"
+                script += '#SBATCH --cpus-per-task=4\n'
+                script += '#SBATCH --ntasks-per-core=1\n'
 
             elif not processes_per_host:
-                script += "#SBATCH --cpus-per-task=%s\n" \
+                script += '#SBATCH --cpus-per-task=%s\n' \
                         % (int(cpu_count / n_procs))
 
-            else:
-                script += "#SBATCH --ntasks-per-node=%s\n" % processes_per_host
+            elif threads_per_core < 2:
+                # https://slurm.schedmd.com/sbatch.html#OPT_threads-per-core
+                # "threads" refers to the number of processing units on each
+                # core rather than the number of application tasks to be
+                # launched per core.
+                #
+                # Options `--threads-per-core` and `--ntasks-per-node` are
+                # treated as mutually exclusive.
+                script += '#SBATCH --ntasks-per-node=%s\n' % processes_per_host
 
         # target host specifica
         # FIXME: these should be moved into resource config files
@@ -744,12 +753,19 @@ class SLURMJobService(cpi_job.Service):
 
         elif 'traverse' in self.rm.host.lower():
 
-            script += "#SBATCH --gres=gpu:4\n"
+            script += '#SBATCH --gres=gpu:4\n'
 
         else:
 
-            if gpu_count:
-                script += "#SBATCH --gpus=%s\n" % gpu_count
+            if gpu_count and threads_per_core < 2:
+                # https://slurm.schedmd.com/sbatch.html#OPT_threads-per-core
+                # "threads" refers to the number of processing units on each
+                # core rather than the number of application tasks to be
+                # launched per core.
+                #
+                # Options `--threads-per-core` and `--gpus` are treated
+                # as mutually exclusive.
+                script += '#SBATCH --gpus=%s\n' % gpu_count
 
 
         if job_name    : script += '#SBATCH -J "%s"\n'            % job_name
@@ -767,10 +783,19 @@ class SLURMJobService(cpi_job.Service):
         if constraints : script += '#SBATCH --constraint "%s"\n'  % \
                                    '&'.join(constraints)
 
+        if threads_per_core > 1:
+            # High-level (automatic mask generation): minimum number of threads
+            # in a core to dedicate to a job. In task layout, use the specified
+            # maximum number of threads per core.
+            #
+            # This option may implicitly set the number of tasks (if -n was
+            # not specified) as one task per requested thread.
+            script += '#SBATCH --threads-per-core %s\n' % threads_per_core
+
         if env:
             script += "\n## ENVIRONMENT\n"
-            for key,val in env.items():
-                script += 'export "%s"="%s"\n'  %  (key, val)
+            for key, val in env.items():
+                script += 'export %s="%s"\n' % (key, val)
 
         if pre:
             script += "\n## PRE_EXEC\n" + "\n".join(pre)
