@@ -811,17 +811,15 @@ class SLURMJobService(cpi_job.Service):
             script += '\n'
 
         # write script into a tmp file for staging
-        self._logger.info("SLURM script generated:\n%s" % script)
-
         tgt = os.path.basename(tempfile.mktemp(suffix='.slurm', prefix='tmp_'))
         if cwd:
             tgt = os.path.join(cwd, tgt)
         self.shell.write_to_remote(src=script, tgt=tgt)
 
         # submit the job
-        ret, out, _ = self.shell.run_sync('sbatch %s && rm -f %s' % (tgt, tgt))
+        ret, out, _ = self.shell.run_sync('sbatch %s' % tgt)
 
-        self._logger.debug("submit SLURM script (%s) (%s)" % (tgt, ret))
+        self._logger.debug('submit SLURM script (%s) (%s)' % (tgt, ret))
 
         # find out what our job ID is
         # TODO: Could make this more efficient
