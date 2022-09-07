@@ -817,7 +817,8 @@ class SLURMJobService(cpi_job.Service):
         self.shell.write_to_remote(src=script, tgt=tgt)
 
         # submit the job
-        ret, out, _ = self.shell.run_sync("sbatch '%s'; echo rm -f '%s'" % (tgt,tgt))
+        ret, out, _ = self.shell.run_sync(
+            "cd ~ && sbatch '%s' && rm -f '%s'" % (tgt, tgt))
 
         self._logger.debug("submit SLURM script (%s) (%s)" % (tgt, ret))
 
