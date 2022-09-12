@@ -234,6 +234,8 @@ def _lsfscript_generator(url, logger, jd, ppn, lsf_version, queue):
     if smt not in SMT_VALID_VALUES:
         smt = SMT_DEFAULT
 
+    assert (int(jd.environment.get('RADICAL_SMT', 1)) == smt)
+
     cpu_nodes = int(total_cpu_count / cpn)
     if total_cpu_count > (cpu_nodes * cpn):
         cpu_nodes += 1
@@ -252,8 +254,8 @@ def _lsfscript_generator(url, logger, jd, ppn, lsf_version, queue):
     alloc_flags.append('smt%d' % smt)
     lsf_bsubs += "#BSUB -alloc_flags '%s' \n" % ' '.join(alloc_flags)
 
-    env_string += "export RADICAL_SAGA_SMT=%d" % smt
     if jd.environment:
+        env_string += "export"
         for k, v in jd.environment.items():
             env_string += " %s=%s" % (k, v)
 
