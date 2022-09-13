@@ -25,7 +25,7 @@ def test_lsfscript_generator():
     jd.name                = 'Test'
     jd.executable          = '/bin/sleep'
     jd.arguments           = 60
-    jd.environment         = {'test_env': 15}
+    jd.environment         = {'test_env': 15, 'RADICAL_SMT': 2}
     jd.output              = 'output.log'
     jd.error               = 'error.log'
     jd.queue               = 'normal-queue'
@@ -45,7 +45,7 @@ def test_lsfscript_generator():
                + '#BSUB -nnodes 2 \n' \
                + "#BSUB -alloc_flags 'gpumps nvme smt2' \n" \
                + '\n' \
-               + 'export RADICAL_SAGA_SMT=2 test_env=15\n' \
+               + 'export test_env=15 RADICAL_SMT=2\n' \
                + '/bin/sleep 60'
 
     script = _lsfscript_generator(url=url, logger=None, jd=jd,
