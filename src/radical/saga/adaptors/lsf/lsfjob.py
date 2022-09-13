@@ -48,6 +48,15 @@ RESOURCES = {
                    'spectral',
                    'maximizegpfs'
                ]},
+    'ascent': {'cpn': 42,
+               'gpn': 6,
+               'valid_alloc_flags': [
+                   'gpumps',
+                   'gpudefault',
+                   'nvme',
+                   'spectral',
+                   'maximizegpfs'
+               ]},
     'lassen': {'cpn': 40,
                'gpn': 4,
                'valid_alloc_flags': [
