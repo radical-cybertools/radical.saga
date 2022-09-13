@@ -219,10 +219,16 @@ def _lsfscript_generator(url, logger, jd, ppn, lsf_version, queue):
     if not hostname:
         raise RuntimeError('cannot determine target host f or %s' % url)
 
-    cpn, gpn, smt, valid_alloc_flags = 0, 1, SMT_DEFAULT, []
+    smt = int(jd.environment.get('RADICAL_SMT') or
+              jd.system_architecture.get('smt') or
+              SMT_DEFAULT)
+
+    if smt not in SMT_VALID_VALUES:
+        smt = SMT_DEFAULT
+
+    cpn, gpn, valid_alloc_flags = 0, 1, []
     for resource_name in RESOURCES:
         if resource_name in hostname:
-            smt = jd.system_architecture.get('smt') or smt
             cpn = RESOURCES[resource_name]['cpn'] * smt
             gpn = RESOURCES[resource_name]['gpn']
             valid_alloc_flags = RESOURCES[resource_name]['valid_alloc_flags']
@@ -230,11 +236,6 @@ def _lsfscript_generator(url, logger, jd, ppn, lsf_version, queue):
 
     if not cpn:
         raise ValueError('LSF host (%s) not yet supported' % hostname)
-
-    if smt not in SMT_VALID_VALUES:
-        smt = SMT_DEFAULT
-
-    assert (int(jd.environment.get('RADICAL_SMT', 1)) == smt)
 
     cpu_nodes = int(total_cpu_count / cpn)
     if total_cpu_count > (cpu_nodes * cpn):
