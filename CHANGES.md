@@ -3,6 +3,17 @@
 For a list of open issues and known problems, see:
 https://github.com/radical-cybertools/radical.saga/issues
 
+1.17.0 Release                                                        2022-09-15
+--------------------------------------------------------------------------------
+
+  - add resource `ascent` into LSF adaptor
+  - add `threads-per-core` parameter (Slurm)
+  - convince traverse to provide GPUs
+  - enforce a predefined directory for the batch-script
+  - fix SMT setup (in sync with RADICAL-Pilot SMT setup)
+  - keep sbatch script within job's working directory
+
+
 1.16.0 Release                                                        2022-08-15
 --------------------------------------------------------------------------------
 
