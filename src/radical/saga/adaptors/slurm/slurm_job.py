@@ -752,8 +752,9 @@ class SLURMJobService(cpi_job.Service):
             self._logger.debug("SLURM GRES is not set (longhorn exception)\n")
 
         elif 'traverse' in self.rm.host.lower():
-
-            script += '#SBATCH --gres=gpu:4\n'
+            if gpu_count:
+                script += "#SBATCH --gpus-per-task=1\n"
+                script += "#SBATCH --gres=gpu:4\n"
 
         else:
 
