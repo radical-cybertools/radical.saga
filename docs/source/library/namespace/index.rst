@@ -1,46 +1,47 @@
 
-.. _file_managemen:
+.. _namespaces:
 
-Files and Directories
-=====================
+Namespaces
+==========
 
 Introduction
 ------------
 
-The file managment API provides the ability to interact with (local and
-remote) file systems via the two classes, :class:`saga.filesystem.Directory` and
-:class:`saga.filesystem.File`. The API provides a number of operations, which all
-behave similar to the common unix command line tools (cp, ls, rm etc).
+Namespaces are an abstraction over firlesystem and other hirarchical constructs
+which have a notion of a `:class:`saga.namespace.Directory` and of
+`:class:`saga.namespace.Entry`s which exist in those directories.  The API
+provides a number of operations, which all behave similar to the common unix
+command line tools (cp, ls, rm etc).
 
 **Example**::
 
     # get a directory handle
-    dir = radical.saga.filesystem.Directory("sftp://localhost/tmp/")
+    dir = radical.saga.namespace.Directory("sftp://localhost/tmp/")
 
     # create a subdir
     dir.make_dir ("data/")
 
     # list contents of the directory
-    files = dir.list ()
+    entries = dir.list ()
 
     # copy *.dat files into the subdir
-    for f in files :
+    for e in entries :
         if re.match ('^.*\.dat$', f) :
-            dir.copy (f, "sftp://localhost/tmp/data/")
+            dir.copy (e, "sftp://localhost/tmp/data/")
 
-The above example covers most of the semantics of the filesystem package --
+The above example covers most of the semantics of the namespace package --
 additional capabilities, such get_size() or move(), can be found in the
 individual class documentations.
 
 
-.. _filesystemflags:
+.. _namespaceflags:
 
 Flags
 -----
 
 The following constants are defined as valid flags for file and directory methods:
 
-.. currentmodule:: radical.saga.filesystem
+.. currentmodule:: radical.saga.namespace
 .. data:: OVERWRITE
 .. data:: RECURSIVE
 .. data:: CREATE
@@ -50,26 +51,26 @@ The following constants are defined as valid flags for file and directory method
 .. data:: DEREFERENCE
 
 .. #############################################################################
-.. _file:
+.. _namespace:
 
-File -- :class:`radical.saga.filesystem.File`
+Entry -- :class:`radical.saga.namespace.Entry`
 ---------------------------------------------
 
-.. autoclass:: radical.saga.filesystem.File
+.. autoclass:: radical.saga.namespace.Entry
    :members:
    :undoc-members:
    :show-inheritance:
    :special-members: __init__
-   :exclude-members: create, read, write, seek, read_v, write_v, size_p, read_p, write_p, size_e, read_e, write_e, modes_e, __module__
+   :exclude-members: create, __module__
 
 
 .. #############################################################################
 .. _dir:
 
-Directory -- :class:`radical.saga.filesystem.Directory`
+Directory -- :class:`radical.saga.namespace.Directory`
 -------------------------------------------------------
 
-.. autoclass:: radical.saga.filesystem.Directory
+.. autoclass:: radical.saga.namespace.Directory
    :members:
    :undoc-members:
    :show-inheritance:

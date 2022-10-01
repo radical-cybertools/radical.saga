@@ -5,12 +5,13 @@
 Library Reference
 *****************
 
-Intro library reference... 
+Intro library reference...
 
 .. toctree::
 
    url.rst
    job/index.rst
+   namespace/index.rst
    filesystem/index.rst
    resource/index.rst
    replica/index.rst
