@@ -101,6 +101,12 @@ EXIT_VAL=1
 \trap cleanup_handler_sigint  INT
 \trap cleanup_handler_sigterm TERM
 
+usleep(){
+  # slip for a minute amount of time
+  head -c $((1024 * 1024)) /dev/urandom > /dev/null 2>&1
+# head -c 1 /dev/random > /dev/null 2>&1
+}
+
 cleanup_handler_quit (){
   \printf "trapped QUIT\n"
   cmd_quit $IDLE
@@ -715,6 +721,7 @@ cmd_cancel () {
 
   # first kill monitor, so that it does not interfer with state management
   /bin/kill -TERM $mpid 2>/dev/null
+  usleep
   /bin/kill -KILL $mpid 2>/dev/null
 
   # now make sure that job did not reach final state before monitor died
@@ -728,6 +735,7 @@ cmd_cancel () {
 
   # now kill the job process group, and to be sure also the job shell
   /bin/kill -TERM $KILL_DASHES -$rpid 2>/dev/null
+  usleep
   /bin/kill -KILL $KILL_DASHES -$rpid 2>/dev/null
 
   # FIXME: how can we check for success?  ps?
