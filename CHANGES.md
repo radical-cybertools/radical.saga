@@ -3,6 +3,13 @@
 For a list of open issues and known problems, see:
 https://github.com/radical-cybertools/radical.saga/issues
 
+1.18.0 Release                                                        2022-10-11
+--------------------------------------------------------------------------------
+
+  - add namespace docs as they are not pulled via inheritance
+  - allow to trap `SIGTERM` before `SIGKILL` is sent
+
+
 1.17.0 Release                                                        2022-09-15
 --------------------------------------------------------------------------------
 
