@@ -142,18 +142,6 @@ class SagaException (Exception) :
 
     # --------------------------------------------------------------------------
     #
-    def __str__ (self) :
-        return self.get_message ()
-
-
-    # --------------------------------------------------------------------------
-    #
-    def __repr__ (self) :
-        return "%s\n%s" % (self._message, self._traceback)
-
-
-    # --------------------------------------------------------------------------
-    #
     def _clone (self) :
         """ method is used internally -- see :func:`_get_exception_stack`."""
 
