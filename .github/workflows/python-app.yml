@@ -17,10 +17,10 @@ jobs:
     - uses: actions/checkout@v2
       with:
         fetch-depth: 2
-    - name: Set up Python 3.6
+    - name: Set up Python 3.7
       uses: actions/setup-python@v2
       with:
-        python-version: 3.6
+        python-version: 3.7
     - name: Install dependencies
       run: |
         python -m venv testenv
@@ -32,7 +32,7 @@ jobs:
         python -m pip install pytest pytest-timeout
     - name: Test with pytest
       env:
-        LOC: testenv/lib/python3.6/site-packages
+        LOC: testenv/lib/python3.7/site-packages
       run: |
         . testenv/bin/activate
         coverage run --include=$LOC/radical/saga/* -m pytest -ra --timeout=600 -vvv --showlocals tests/adaptors/ tests/unittests/
