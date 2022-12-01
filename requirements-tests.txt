@@ -1,0 +1,10 @@
+
+-r requirements.txt
+
+pytest
+pylint
+flake8
+coverage
+mock==2.0.0.
+pudb
+

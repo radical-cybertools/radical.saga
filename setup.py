@@ -47,6 +47,8 @@ mod_root = 'src/radical/saga/'
 sdist_level = int(os.environ.get('SDIST_LEVEL', 0))
 os.environ['SDIST_LEVEL'] = str(sdist_level + 1)
 
+root = os.path.dirname(__file__) or '.'
+
 
 # ------------------------------------------------------------------------------
 #
@@ -86,12 +88,8 @@ def get_version(_mod_root):
         _sdist_name     = None
 
         # get version from './VERSION'
-        src_root = os.path.dirname(__file__)
-        if not src_root:
-            src_root = '.'
-
-        with open(src_root + '/VERSION', 'r', encoding='utf-8') as f:
-            _version_base = f.readline().strip()
+        with open('%s/VERSION' % root, 'r', encoding='utf-8') as fin:
+            _version_base = fin.readline().strip()
 
         # attempt to get version detail information from git
         # We only do that though if we are in a repo root dir,
@@ -105,7 +103,7 @@ def get_version(_mod_root):
             'test -z `git rev-parse --show-prefix` || exit -1; '
             'tag=`git describe --tags --always` 2>/dev/null ; '
             'branch=`git branch | grep -e "^*" | cut -f 2- -d " "` 2>/dev/null ; '
-            'echo $tag@$branch' % src_root)
+            'echo $tag@$branch' % root)
         _version_detail = out.strip()
         _version_detail = _version_detail.decode()
         _version_detail = _version_detail.replace('detached from ', 'detached-')
@@ -127,10 +125,10 @@ def get_version(_mod_root):
             _version = _version_base
 
         # make sure the version files exist for the runtime version inspection
-        _path = '%s/%s' % (src_root, _mod_root)
-        with open(_path + '/VERSION', 'w', encoding='utf-8') as f:
-            f.write(_version_base + '\n')
-            f.write(_version      + '\n')
+        _path = '%s/%s' % (root, _mod_root)
+        with open(_path + '/VERSION', 'w', encoding='utf-8') as fout:
+            fout.write(_version_base + '\n')
+            fout.write(_version      + '\n')
 
         _sdist_name = '%s-%s.tar.gz' % (name, _version_base)
       # _sdist_name = _sdist_name.replace('/', '-')
@@ -153,8 +151,8 @@ def get_version(_mod_root):
                         '%s/%s'   % (_mod_root, _sdist_name))  # copy into tree
             shutil.move('VERSION.bak', 'VERSION')              # restore version
 
-        with open(_path + '/SDIST', 'w', encoding='utf-8') as f:
-            f.write(_sdist_name + '\n')
+        with open(_path + '/SDIST', 'w', encoding='utf-8') as fout:
+            fout.write(_sdist_name + '\n')
 
         return _version_base, _version_detail, _sdist_name, _path
 
@@ -192,6 +190,13 @@ df.append(('share/%s/examples' % name, glob.glob('examples/*.py')))
 
 # ------------------------------------------------------------------------------
 #
+with open('%s/requirements.txt' % root, encoding='utf-8') as freq:
+    requirements = freq.readlines()
+
+
+
+# ------------------------------------------------------------------------------
+#
 setup_args = {
     'name'               : name,
     'namespace_packages' : ['radical'],
@@ -225,14 +230,10 @@ setup_args = {
     'packages'           : find_namespace_packages('src', include=['radical.*']),
     'package_dir'        : {'': 'src'},
     'scripts'            : ['bin/radical-saga-version'],
-    'package_data'       : {'': ['*.txt', '*.sh', '*.json', '*.gz',
-                                 'VERSION', 'SDIST', sdist_name]},
+    'package_data'       : {'': ['*.txt', '*.sh', '*.json', '*.gz', '*.c',
+                                 'VERSION', 'CHANGES.md', 'SDIST', sdist_name]},
   # 'setup_requires'     : ['pytest-runner'],
-    'install_requires'   : ['radical.utils>=1.12',
-                            'apache-libcloud',
-                            'parse'
-                           ],
-    'tests_require'      : ['mock==2.0.0', 'pytest', 'coverage'],
+    'install_requires'   : requirements,
     'test_suite'         : '%s.tests' % name,
     'zip_safe'           : False,
     'data_files'         : df,
