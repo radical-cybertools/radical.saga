@@ -19,7 +19,7 @@
 # -- Project information -----------------------------------------------------
 
 project = 'RADICAL-SAGA'
-copyright = '2021, The RADICAL-Cybertools Team (info@radical-cybertools.org)'
+copyright = '2023, The RADICAL-Cybertools Team (info@radical-cybertools.org)'
 author = 'RADICAL-Cybertools Team'
 
 # The version info for the project you're documenting, acts as replacement for

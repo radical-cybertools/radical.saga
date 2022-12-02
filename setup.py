@@ -2,7 +2,7 @@
 
 __author__    = 'RADICAL-Cybertools Team'
 __email__     = 'info@radical-cybertools.org'
-__copyright__ = 'Copyright 2013-22, The RADICAL-Cybertools Team'
+__copyright__ = 'Copyright 2013-23, The RADICAL-Cybertools Team'
 __license__   = 'MIT'
 
 
@@ -67,7 +67,7 @@ def sh_callout(cmd):
 #
 #   - version:          1.2.3            - is used for installation
 #   - version_detail:  v1.2.3-9-g0684b06 - is used for debugging
-#   - version is read from VERSION file in src_root, which then is copied to
+#   - version is read from VERSION file in root, which then is copied to
 #     module dir, and is getting installed from there.
 #   - version_detail is derived from the git tag, and only available when
 #     installed from git.  That is stored in mod_root/VERSION in the install
@@ -231,10 +231,8 @@ setup_args = {
     'package_dir'        : {'': 'src'},
     'scripts'            : ['bin/radical-saga-version'],
     'package_data'       : {'': ['*.txt', '*.sh', '*.json', '*.gz', '*.c',
-                                 'VERSION', 'CHANGES.md', 'SDIST', sdist_name]},
-  # 'setup_requires'     : ['pytest-runner'],
+                                 '*.md', 'VERSION', 'SDIST', sdist_name]},
     'install_requires'   : requirements,
-    'test_suite'         : '%s.tests' % name,
     'zip_safe'           : False,
     'data_files'         : df,
     'cmdclass'           : {'upload': RunTwine},
