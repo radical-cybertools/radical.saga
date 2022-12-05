@@ -20,8 +20,9 @@ from setuptools import setup, Command, find_namespace_packages
 
 
 # ------------------------------------------------------------------------------
-name     = 'radical.saga'
-mod_root = 'src/radical/saga/'
+base     = 'saga'
+name     = 'radical.%s'      % base
+mod_root = 'src/radical/%s/' % base
 
 # ------------------------------------------------------------------------------
 #
@@ -194,7 +195,6 @@ with open('%s/requirements.txt' % root, encoding='utf-8') as freq:
     requirements = freq.readlines()
 
 
-
 # ------------------------------------------------------------------------------
 #
 setup_args = {
@@ -208,7 +208,12 @@ setup_args = {
     'author_email'       : 'radical@rutgers.edu',
     'maintainer'         : 'The RADICAL Group',
     'maintainer_email'   : 'radical@rutgers.edu',
-    'url'                : 'http://radical-cybertools.github.io/radical.saga/',
+    'url'                : 'http://radical-cybertools.github.io/%s/' % name,
+    'project_urls'       : {
+        'Documentation': 'https://radical%s.readthedocs.io/en/latest/' % base,
+        'Source'       : 'https://github.com/radical-cybertools/%s/'   % name,
+        'Issues' : 'https://github.com/radical-cybertools/%s/issues'   % name'
+    },
     'license'            : 'MIT',
     'keywords'           : 'radical job saga',
     'python_requires'    : '>=3.6',
