@@ -1,5 +1,5 @@
 
-radical.utils is licensed under the MIT License (MIT)
+radical.saga is licensed under the MIT License (MIT)
 ----------------------------------------------------
 
 Copyright (C) 2011-2023 by the RADICAL-Cybertools Team
