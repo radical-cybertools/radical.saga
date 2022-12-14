@@ -30,7 +30,7 @@ def test_slurm_generator(mocked_handle_ft, mocked_init):
     jd.name                = 'TestSlurm'
     jd.executable          = '/bin/sleep'
     jd.arguments           = ['60']
-    jd.environment         = {'test_env': 15}
+    jd.environment         = {'test_env': 15, 'RADICAL_SMT': 1}
     jd.pre_exec            = ['echo $test_env']
     jd.post_exec           = ['echo $test_env']
     jd.working_directory   = '/home/user'
@@ -44,7 +44,7 @@ def test_slurm_generator(mocked_handle_ft, mocked_init):
     jd.processes_per_host  = PROCESSES_PER_NODE
     jd.total_cpu_count     = PROCESSES_PER_NODE * 2
     # jd.system_architecture = {'gpu': 'p100'}
-    jd.system_architecture = {'options': ['nvme', 'intel'], 'smt': 1}
+    jd.system_architecture = {'options': ['nvme', 'intel'], 'smt': 2}
 
     tgt_script = """#!/bin/sh
 
@@ -62,6 +62,7 @@ def test_slurm_generator(mocked_handle_ft, mocked_init):
 
 ## ENVIRONMENT
 export test_env="15"
+export RADICAL_SMT="1"
 
 ## PRE_EXEC
 echo $test_env
