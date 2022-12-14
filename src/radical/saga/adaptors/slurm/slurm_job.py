@@ -33,6 +33,8 @@ ASYNC_CALL = cpi_decs.ASYNC_CALL
 
 MONITOR_UPDATE_INTERVAL   = 3  # seconds
 
+SMT_DEFAULT = 1
+
 
 # ------------------------------------------------------------------------------
 # some private defs
@@ -594,7 +596,8 @@ class SLURMJobService(cpi_job.Service):
         for opt in sys_arch.get('options', []):
             constraints.append(opt.lower())
 
-        threads_per_core = sys_arch.get('smt', 1)
+        threads_per_core = int(
+            env.get('RADICAL_SMT') or sys_arch.get('smt') or SMT_DEFAULT)
 
         # check to see what's available in our job description
         # to override defaults
