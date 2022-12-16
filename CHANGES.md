@@ -3,6 +3,15 @@
 For a list of open issues and known problems, see:
 https://github.com/radical-cybertools/radical.saga/issues
 
+1.19.0 Release                                                        2022-12-16
+--------------------------------------------------------------------------------
+
+  - bump python test env to 3.7
+  - enhanced SMT control (same approach as for LSF adaptor)
+  - SAGA.Exception to not overwrite representation
+  - sync with ru
+
+
 1.18.0 Release                                                        2022-10-11
 --------------------------------------------------------------------------------
 
