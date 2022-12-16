@@ -3,7 +3,7 @@
 For a list of open issues and known problems, see:
 https://github.com/radical-cybertools/radical.saga/issues
 
-1.19.0 Release                                                        2022-12-16
+1.20.0 Release                                                        2022-12-16
 --------------------------------------------------------------------------------
 
   - bump python test env to 3.7
