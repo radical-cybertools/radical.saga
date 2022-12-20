@@ -161,85 +161,39 @@ def _script_generator(url, logger, jd, ppn, gres, version, is_cray=False,
                       queue=None):
     """ generates a batch script from a SAGA job description
     """
-    pbs_params  = str()
-    exec_n_args = str()
-
-    if jd.processes_per_host:
-        logger.info("Override detected ppn (%d) with user ppn (%d)" % (ppn, jd.processes_per_host))
-        ppn = jd.processes_per_host
-
-    exec_n_args += 'export SAGA_PPN=%d\n' % ppn
-    if jd.executable:
-        exec_n_args += "%s " % (jd.executable)
-    if jd.arguments:
-        for arg in jd.arguments:
-            exec_n_args += "%s " % (arg)
+    pbs_params  = ''
 
     if jd.name:
-        pbs_params += "#PBS -N %s \n" % jd.name
-
-    if is_cray or 'Version: 4.2.7' not in version:
-        # qsub on Cray systems complains about the -V option:
-        # Warning:
-        # Your job uses the -V option, which requests that all of your
-        # current shell environment settings (9913 bytes) be exported to
-        # it.  This is not recommended, as it causes problems for the
-        # batch environment in some cases.
-        pbs_params += "#PBS -V \n"
-
-    if jd.environment:
-        pbs_params += "#PBS -v %s\n" % \
-                ','.join (["%s=%s" % (k,v)
-                           for k,v in jd.environment.items()])
-
-    # apparently this doesn't work with older PBS installations
-    #    if jd.working_directory:
-    #        pbs_params += "#PBS -d %s \n" % jd.working_directory
-    #
-    # a workaround is to do an explicit 'cd'
-    if jd.working_directory:
-        workdir_directives  = 'export    PBS_O_WORKDIR=%s \n' % jd.working_directory
-        workdir_directives += 'mkdir -p  %s\n' % jd.working_directory
-        workdir_directives += 'cd        %s\n' % jd.working_directory
-    else:
-        workdir_directives = ''
+        pbs_params += '#PBS -N %s\n' % jd.name
 
     if jd.output:
-        # if working directory is set, we want stdout to end up in
-        # the working directory as well, unless it containes a specific
-        # path name.
-        if jd.working_directory:
-            if os.path.isabs(jd.output):
-                pbs_params += "#PBS -o %s \n" % jd.output
-            else:
-                # user provided a relative path for STDOUT. in this case
-                # we prepend the workind directory path before passing
-                # it on to PBS
-                pbs_params += "#PBS -o %s/%s \n" % (jd.working_directory, jd.output)
-        else:
-            pbs_params += "#PBS -o %s \n" % jd.output
+        stdout_dir = ''
+        if jd.working_directory and not os.path.isabs(jd.output):
+            # user provided a relative path for STDOUT
+            stdout_dir = '%s/' % jd.working_directory
+        pbs_params += '#PBS -o %s%s\n' % (stdout_dir, jd.output)
 
     if jd.error:
-        # if working directory is set, we want stderr to end up in
-        # the working directory as well, unless it contains a specific
-        # path name.
-        if jd.working_directory:
-            if os.path.isabs(jd.error):
-                pbs_params += "#PBS -e %s \n" % jd.error
-            else:
-                # user provided a realtive path for STDERR. in this case
-                # we prepend the workind directory path before passing
-                # it on to PBS
-                pbs_params += "#PBS -e %s/%s \n" % (jd.working_directory, jd.error)
-        else:
-            pbs_params += "#PBS -e %s \n" % jd.error
-
+        stderr_dir = ''
+        if jd.working_directory and not os.path.isabs(jd.error):
+            # user provided a relative path for STDERR
+            stderr_dir = '%s/' % jd.working_directory
+        pbs_params += '#PBS -e %s%s\n' % (stderr_dir, jd.error)
 
     if jd.wall_time_limit:
-        hours = int(jd.wall_time_limit / 60)
-        minutes = jd.wall_time_limit % 60
-        pbs_params += "#PBS -l walltime=%s:%s:00 \n" \
-            % (str(hours), str(minutes))
+        pbs_params += '#PBS -l walltime=%s:%s:00\n' \
+            % (int(jd.wall_time_limit / 60), jd.wall_time_limit % 60)
+
+    if jd.project:
+        pbs_params += '#PBS -A %s\n' % jd.project
+        if 'PBSPro_1' in version:
+            # set both parameters: -P(roject) and -A(accounting)
+            # depends on system configuration (check with site admin if needed)
+            pbs_params += '#PBS -P %s\n' % jd.project
+
+    if jd.job_contact:
+        pbs_params += '#PBS -M %s\n' % jd.job_contact
+        pbs_params += '#PBS -m abe\n'  # sends email on job abort, begin and end
 
     # see https://gist.github.com/nobias/5b2373258e595e5242d5
     # The parameter to '-q' can have the following forms:
@@ -251,43 +205,35 @@ def _script_generator(url, logger, jd, ppn, gres, version, is_cray=False,
     # where 'server' is the target resource which can be *different* than the
     # submission host.  We interpret 'jd.candidate_hosts[0]' as such a target
     # resource - but only if exactly one `candidate_host` is given.
-
-    # We haqve to take care to filter out special cases where we abise
+    #
+    # We have to take care to filter out special cases where we abuse
     # `candidate_hosts` for node properties (those are appended to the nodes
     # argument in the resource_list).  This is currently only implemented for
     # "bigflash" on Gordon@SDSC
     #
     # https://github.com/radical-cybertools/radical.saga/issues/406
+    #
+    # Parse candidate_hosts, node properties are appended to the nodes
+    # argument in the resource_list.
+    queue_spec = queue or jd.queue or ''
 
-    queue_spec      = ''
     node_properties = []
-
-    if      queue: queue_spec =    queue
-    elif jd.queue: queue_spec = jd.queue
-
-    # Parse candidate_hosts
-    #
-    # Node properties are appended to the nodes argument in the resource_list.
-    #
-    # Currently only implemented for "bigflash" on Gordon@SDSC
-    # https://github.com/radical-cybertools/saga-python/issues/406
-    #
-    if queue_spec:
-        pbs_params += "#PBS -q %s\n" % queue_spec
-
-    if jd.project:
-        if 'PBSPro_1' in version:
-            # On PBS Pro we set both -P(roject) and -A(accounting),
-            # as we don't know what the admins decided, and just
-            # pray that this doesn't create problems.
-            pbs_params += "#PBS -P %s \n" % str(jd.project)
-            pbs_params += "#PBS -A %s \n" % str(jd.project)
+    if jd.candidate_hosts:
+        if 'BIG_FLASH' in jd.candidate_hosts:
+            node_properties.append('bigflash')
+        elif len(jd.candidate_hosts) == 1:
+            queue_spec += '@%s' % jd.candidate_hosts[0]
         else:
-            # Torque
-            pbs_params += "#PBS -A %s \n" % str(jd.project)
+            raise rse.NotImplemented(
+                'unsupported candidate_hosts [%s]' % jd.candidate_hosts)
 
-    if jd.job_contact:
-        pbs_params += "#PBS -m abe \n"
+    if queue_spec:
+        pbs_params += '#PBS -q %s\n' % queue_spec
+
+    if jd.processes_per_host:
+        logger.info('Override detected ppn (%d) with user ppn (%d)' %
+                    (ppn, jd.processes_per_host))
+        ppn = jd.processes_per_host
 
     # if total_cpu_count is not defined, we assume 1
     if not jd.total_cpu_count:
@@ -298,59 +244,59 @@ def _script_generator(url, logger, jd, ppn, gres, version, is_cray=False,
     if jd.total_cpu_count % ppn > 0:
         nnodes += 1
 
-    # use ncpus value for systems that need to specify ncpus as multiple of PPN
-    ncpus = nnodes * ppn
-
-    # Node properties are appended to the nodes argument in the resource_list.
-    node_properties = []
-
-    # Parse candidate_hosts
-    #
-    # Currently only implemented for "bigflash" on Gordon@SDSC
-    # https://github.com/radical-cybertools/radical.saga/issues/406
-    #
-    if jd.candidate_hosts:
-        if 'BIG_FLASH' in jd.candidate_hosts:
-            node_properties.append('bigflash')
-        elif len(jd.candidate_hosts) == 1:
-            queue_spec += '@%s' % jd.candidate_hosts[0]
-        else:
-            raise rse.NotImplemented("unsupported candidate_hosts [%s]"
-                                      % jd.candidate_hosts)
-
-    if 'cheyenne'  in url.host.lower() or \
-       'cheyenne'  in os.uname()[1].lower():
-        is_cheyenne = True
+    # TODO: Special cases for PBS/TORQUE on Cray
+    if any(v in version for v in ['PBSPro_10', '4.2.7']):       # edison, hopper
+        pbs_params += '#PBS -l mppwidth=%s\n' % jd.total_cpu_count
+    elif any(v in version for v in ['PBSPro_12', 'PBSPro_13']): # archer
+        pbs_params += '#PBS -l select=%d\n' % nnodes
+    elif is_cray:                                               # kraken, jaguar
+        pbs_params += '#PBS -l size=%s\n' % jd.total_cpu_count
+    elif node_properties:
+        pbs_params += '#PBS -l nodes=%d:ppn=%d%s\n' % (
+            nnodes, ppn, ''.join([':%s' % prop for prop in node_properties]))
     else:
-        is_cheyenne = False
-
-    # TODO: Special cases for PBS/TORQUE on Cray. Different PBSes,
-    #       different flags. A complete nightmare...
-    #       The more we add, the more it screams for a refactoring
-    if   is_cheyenne                     : pbs_params += "#PBS -l select=%d:ncpus=%d\n" % (nnodes, 36)           # cheyenne, ppn=36
-    elif 'PBSPro_10'       in version: pbs_params += "#PBS -l mppwidth=%s \n"       % jd.total_cpu_count     # hopper
-    elif 'PBSPro_12'       in version: pbs_params += "#PBS -l select=%d\n"          % nnodes                 # pbspro 12, archer
-    elif 'PBSPro_13'       in version: pbs_params += "#PBS -l select=%d\n"          % nnodes                 # pbspro 13
-    elif '4.2.6'           in version: pbs_params += "#PBS -l nodes=%d\n"           % nnodes                 # titan
-    elif '4.2.7'           in version: pbs_params += "#PBS -l mppwidth=%s \n"       % jd.total_cpu_count     # edison, hopper
-    elif 'Version: 5.'     in version: pbs_params += "#PBS -l procs=%d\n"           % jd.total_cpu_count     # torqye 5
-    elif 'version: 2.3.13' in version: pbs_params += "#PBS -l ncpus=%d\n"           % ncpus                  # blacklight
-    elif '14.2'            in version: pbs_params += "#PBS -l select=%d:ncpus=%d\n" % (nnodes, ppn)          # pbspro 14
-    elif is_cray                     : pbs_params += "#PBS -l size=%s\n"            % jd.total_cpu_count     # kraken, jaguar
-    else                             : pbs_params += "#PBS -l nodes=%d:ppn=%d%s\n"  % (nnodes, ppn,          # default
-                                       ''.join([':%s' % prop for prop in node_properties]))
+        pbs_params += '#PBS -l select=%d:ncpus=%d\n' % (nnodes, ppn)
 
     # Process Generic Resource specification request
     if gres:
-        pbs_params += "#PBS -l gres=%s\n" % gres
+        pbs_params += '#PBS -l gres=%s\n' % gres
 
-    # escape all double quotes and dollarsigns, otherwise 'echo |'
-    # further down won't work
-    # only escape '$' in args and exe. not in the params
-    exec_n_args = workdir_directives + exec_n_args
-    exec_n_args = exec_n_args.replace('$', '\\$')
+    for l_option in jd.system_architecture.get('options', []):
+        pbs_params += '#PBS -l %s\n' % l_option
 
-    pbscript = "\n#!/bin/bash \n%s%s" % (pbs_params, exec_n_args)
+    if is_cray:
+        # qsub on Cray systems complains about the -V option:
+        # Warning:
+        # Your job uses the -V option, which requests that all of your
+        # current shell environment settings (9913 bytes) be exported to
+        # it.  This is not recommended, as it causes problems for the
+        # batch environment in some cases.
+        pbs_params += "#PBS -V \n"
+
+    if jd.environment:
+        pbs_params += '#PBS -v %s\n' % \
+            ','.join(['"%s=%s"' % (k, v) for k, v in jd.environment.items()])
+
+    exec_script = '\nexport SAGA_PPN=%d\n' % ppn
+    if jd.working_directory:
+        # older PBS installations might not accept this option
+        # if jd.working_directory:
+        #     pbs_params += '#PBS -d %s \n' % jd.working_directory
+        # (*) a workaround is to do an explicit 'cd'
+        exec_script += 'export PBS_O_WORKDIR=%s \n' % jd.working_directory
+        exec_script += 'mkdir -p %s\n' % jd.working_directory
+        exec_script += 'cd       %s\n' % jd.working_directory
+
+    if jd.executable:
+        exec_script += '\n%s ' % jd.executable
+    if jd.arguments:
+        exec_script += ' '.join(jd.arguments)
+
+    # escape all double quotes and dollar signs, otherwise 'echo |' further
+    # down won't work only escape '$' in args and exec, not in the params
+    exec_script = exec_script.replace('$', '\\$')
+
+    pbscript = '\n#!/bin/bash\n\n%s%s\n' % (pbs_params, exec_script)
 
     pbscript = pbscript.replace('"', '\\"')
     return pbscript
@@ -387,7 +333,10 @@ _ADAPTOR_CAPABILITIES = {
                           api.WALL_TIME_LIMIT,
                           api.SPMD_VARIATION,
                           api.PROCESSES_PER_HOST,
-                          api.TOTAL_CPU_COUNT],
+                          api.TOTAL_CPU_COUNT,
+                          api.TOTAL_GPU_COUNT,
+                          api.SYSTEM_ARCHITECTURE,
+                          api.JOB_CONTACT],
     "job_attributes":    [api.EXIT_CODE,
                           api.EXECUTION_HOSTS,
                           api.CREATED,
