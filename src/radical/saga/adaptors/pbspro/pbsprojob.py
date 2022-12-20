@@ -193,6 +193,7 @@ def _script_generator(url, logger, jd, ppn, gres, version, is_cray=False,
 
     if jd.job_contact:
         pbs_params += '#PBS -M %s\n' % jd.job_contact
+        pbs_params += '#PBS -m abe\n'  # sends email on job abort, begin and end
 
     # see https://gist.github.com/nobias/5b2373258e595e5242d5
     # The parameter to '-q' can have the following forms:
