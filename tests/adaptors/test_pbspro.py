@@ -10,8 +10,7 @@ Tests for the PBSPro script generator function as well as the PBSPro adaptor.
 
 from unittest import mock
 
-import radical.saga  as rs
-import radical.utils as ru
+import radical.saga as rs
 
 from radical.saga.adaptors.pbspro import pbsprojob as rsapj
 
@@ -64,8 +63,7 @@ cd       /home/user
 /bin/sleep 10
 """
 
-    script = rsapj._script_generator(url=ru.Url(JOB_MANAGER_ENDPOINT),
-                                     logger=mock.Mock(), jd=jd, ppn=1,
+    script = rsapj._script_generator(url=None, logger=mock.Mock(), jd=jd, ppn=1,
                                      gres=None, version='', is_cray=False,
                                      queue=None)
 

@@ -182,12 +182,13 @@ def _script_generator(url, logger, jd, ppn, gres, version, is_cray=False,
 
     if jd.wall_time_limit:
         pbs_params += '#PBS -l walltime=%s:%s:00\n' \
-            % (str(int(jd.wall_time_limit / 60)), str(jd.wall_time_limit % 60))
+            % (int(jd.wall_time_limit / 60), jd.wall_time_limit % 60)
 
     if jd.project:
         pbs_params += '#PBS -A %s\n' % jd.project
         if 'PBSPro_1' in version:
             # set both parameters: -P(roject) and -A(accounting)
+            # depends on system configuration (check with site admin if needed)
             pbs_params += '#PBS -P %s\n' % jd.project
 
     if jd.job_contact:
@@ -232,10 +233,6 @@ def _script_generator(url, logger, jd, ppn, gres, version, is_cray=False,
         logger.info('Override detected ppn (%d) with user ppn (%d)' %
                     (ppn, jd.processes_per_host))
         ppn = jd.processes_per_host
-
-    if 'cheyenne' in url.host.lower() or \
-       'cheyenne' in os.uname()[1].lower():
-        ppn = 36
 
     # if total_cpu_count is not defined, we assume 1
     if not jd.total_cpu_count:
