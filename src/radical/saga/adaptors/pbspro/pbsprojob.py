@@ -277,7 +277,7 @@ def _script_generator(url, logger, jd, ppn, gres, version, is_cray=False,
 
     if jd.environment:
         pbs_params += '#PBS -v %s\n' % \
-            ', '.join(['"%s=%s"' % (k, v) for k, v in jd.environment.items()])
+            ','.join(['"%s=%s"' % (k, v) for k, v in jd.environment.items()])
 
     exec_script = '\nexport SAGA_PPN=%d\n' % ppn
     if jd.working_directory:
@@ -336,6 +336,7 @@ _ADAPTOR_CAPABILITIES = {
                           api.SPMD_VARIATION,
                           api.PROCESSES_PER_HOST,
                           api.TOTAL_CPU_COUNT,
+                          api.TOTAL_GPU_COUNT,
                           api.SYSTEM_ARCHITECTURE,
                           api.JOB_CONTACT],
     "job_attributes":    [api.EXIT_CODE,
