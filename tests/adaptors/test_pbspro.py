@@ -40,6 +40,7 @@ def test_pbsproscript_generator():
     jd.system_architecture = {'options': ['filesystems=grand:home',
                                           'place=scatter']}
     jd.total_cpu_count     = POLARIS_PPN * NUM_NODES
+    jd.total_gpu_count     = NUM_NODES
 
     tgt_script = """
 #!/bin/bash
@@ -53,7 +54,7 @@ def test_pbsproscript_generator():
 #PBS -l select=4:ncpus=64
 #PBS -l filesystems=grand:home
 #PBS -l place=scatter
-#PBS -v \\"test_env=15\\", \\"RADICAL_BASE=/tmp\\"
+#PBS -v \\"test_env=15\\",\\"RADICAL_BASE=/tmp\\"
 
 export SAGA_PPN=64
 export PBS_O_WORKDIR=/home/user 
