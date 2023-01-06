@@ -26,7 +26,7 @@ class Url (ru.Url) :
       location = saga.Url ("file://localhost/tmp/file.dat")
       d = saga.filesystem.Directory(location)
 
-    A URL consists of the following components (where one ore more can
+    A URL consists of the following components (where one or more can
     be 'None')::
 
       <scheme>://<user>:<pass>@<host>:<port>/<path>?<query>#<fragment>
