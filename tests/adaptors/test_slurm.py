@@ -76,7 +76,7 @@ echo $test_env
 
     js = slurm_job.SLURMJobService(api=None, adaptor=None)
     js._adaptor = slurm_job.Adaptor()
-    js._ppn     = PROCESSES_PER_NODE
+    js._ppn     = 1  # `jd.processes_per_host` will be used instead
     js.rm       = ru.Url(JOB_MANAGER_ENDPOINT)
     js.jobs     = {}
     js._logger = js.shell = mock.Mock()
