@@ -576,7 +576,7 @@ class SLURMJobService(cpi_job.Service):
         cpu_count           = jd.as_dict().get(c.TOTAL_CPU_COUNT)
         gpu_count           = jd.as_dict().get(c.TOTAL_GPU_COUNT)
         n_procs             = jd.as_dict().get(c.NUMBER_OF_PROCESSES)
-        processes_per_host  = jd.as_dict().get(c.PROCESSES_PER_HOST)
+        procs_per_host      = jd.as_dict().get(c.PROCESSES_PER_HOST)
         output              = jd.as_dict().get(c.OUTPUT, "radical.saga.stdout")
         error               = jd.as_dict().get(c.ERROR,  "radical.saga.stderr")
         file_transfer       = jd.as_dict().get(c.FILE_TRANSFER)
@@ -639,16 +639,14 @@ class SLURMJobService(cpi_job.Service):
         # get mem_per_node from total_memory and make sure it is not None
         mem_per_node = total_memory or 0
 
-        # define n_nodes and recalculate mem_per_node (if self._ppn is set)
+        # check user provided value first, then check discovered value
+        procs_per_host = procs_per_host or self._ppn
+
+        # define n_nodes and recalculate mem_per_node
         n_nodes = None
-        if self._ppn:
+        if procs_per_host:
 
-            # exception(s) for earlier defined `self._ppn`
-            if 'frontera' in self.rm.host.lower() and \
-                    queue and 'rtx' in queue.lower():
-                self._ppn = 16  # other option is to use: processes_per_host
-
-            n_nodes = int(math.ceil(float(cpu_count) / self._ppn))
+            n_nodes      = int(math.ceil(float(cpu_count) / procs_per_host))
             mem_per_node = int(mem_per_node / float(n_nodes))
 
         elif total_memory:
@@ -697,7 +695,7 @@ class SLURMJobService(cpi_job.Service):
                 script += '#SBATCH --cpus-per-task=4\n'
                 script += '#SBATCH --ntasks-per-core=1\n'
 
-            elif not processes_per_host:
+            elif not procs_per_host:
                 script += '#SBATCH --cpus-per-task=%s\n' \
                         % (int(cpu_count / n_procs))
 
@@ -709,7 +707,7 @@ class SLURMJobService(cpi_job.Service):
                 #
                 # Options `--threads-per-core` and `--ntasks-per-node` are
                 # treated as mutually exclusive.
-                script += '#SBATCH --ntasks-per-node=%s\n' % processes_per_host
+                script += '#SBATCH --ntasks-per-node=%s\n' % procs_per_host
 
         # target host specifica
         # FIXME: these should be moved into resource config files
