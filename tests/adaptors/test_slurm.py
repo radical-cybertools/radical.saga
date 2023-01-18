@@ -49,7 +49,6 @@ def test_slurm_generator(mocked_handle_ft, mocked_init):
     tgt_script = """#!/bin/sh
 
 #SBATCH -N 2
-#SBATCH --ntasks-per-node=56
 #SBATCH -J "TestSlurm"
 #SBATCH -D "/home/user"
 #SBATCH --output "output.log"
@@ -59,6 +58,7 @@ def test_slurm_generator(mocked_handle_ft, mocked_init):
 #SBATCH --reservation "ReservationTag"
 #SBATCH --time 01:10:00
 #SBATCH --constraint "nvme&intel"
+#SBATCH --threads-per-core 1
 
 ## ENVIRONMENT
 export test_env="15"
@@ -76,7 +76,7 @@ echo $test_env
 
     js = slurm_job.SLURMJobService(api=None, adaptor=None)
     js._adaptor = slurm_job.Adaptor()
-    js._ppn     = PROCESSES_PER_NODE
+    js._ppn     = 1  # `jd.processes_per_host` will be used instead
     js.rm       = ru.Url(JOB_MANAGER_ENDPOINT)
     js.jobs     = {}
     js._logger = js.shell = mock.Mock()
