@@ -49,7 +49,6 @@ def test_slurm_generator(mocked_handle_ft, mocked_init):
     tgt_script = """#!/bin/sh
 
 #SBATCH -N 2
-#SBATCH --ntasks-per-node=56
 #SBATCH -J "TestSlurm"
 #SBATCH -D "/home/user"
 #SBATCH --output "output.log"
@@ -59,6 +58,7 @@ def test_slurm_generator(mocked_handle_ft, mocked_init):
 #SBATCH --reservation "ReservationTag"
 #SBATCH --time 01:10:00
 #SBATCH --constraint "nvme&intel"
+#SBATCH --threads-per-core 1
 
 ## ENVIRONMENT
 export test_env="15"
