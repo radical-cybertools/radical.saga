@@ -44,7 +44,9 @@ def test_slurm_generator(mocked_handle_ft, mocked_init):
     jd.processes_per_host  = PROCESSES_PER_NODE
     jd.total_cpu_count     = PROCESSES_PER_NODE * 2
     # jd.system_architecture = {'gpu': 'p100'}
-    jd.system_architecture = {'options': ['nvme', 'intel'], 'smt': 2}
+    jd.system_architecture = {'smt'          : 2,
+                              'options'      : ['nvme', 'intel'],
+                              'blocked_cores': []}
 
     tgt_script = """#!/bin/sh
 
@@ -53,12 +55,13 @@ def test_slurm_generator(mocked_handle_ft, mocked_init):
 #SBATCH -D "/home/user"
 #SBATCH --output "output.log"
 #SBATCH --error "error.log"
-#SBATCH --partition "normal-queue"
 #SBATCH --account "TestProject"
+#SBATCH --partition "normal-queue"
 #SBATCH --reservation "ReservationTag"
-#SBATCH --time 01:10:00
 #SBATCH --constraint "nvme&intel"
-#SBATCH --threads-per-core 1
+#SBATCH --time 01:10:00
+#SBATCH --core-spec=0
+#SBATCH --threads-per-core=1
 
 ## ENVIRONMENT
 export test_env="15"
