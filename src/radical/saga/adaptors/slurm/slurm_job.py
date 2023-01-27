@@ -591,6 +591,10 @@ class SLURMJobService(cpi_job.Service):
         cpu_arch            = sys_arch.get('cpu')
         gpu_arch            = sys_arch.get('gpu')
 
+        core_spec = None
+        if 'blocked_cores' in sys_arch:
+            core_spec = len(sys_arch['blocked_cores'])
+
         # default: only nodes with all of specified features will be used
         constraints = []
         for opt in sys_arch.get('options', []):
@@ -773,21 +777,27 @@ class SLURMJobService(cpi_job.Service):
                 # as mutually exclusive.
                 script += '#SBATCH --gpus=%s\n' % gpu_count
 
-
         if job_name    : script += '#SBATCH -J "%s"\n'            % job_name
         if cwd         : script += '#SBATCH -D "%s"\n'            % cwd
         if output      : script += '#SBATCH --output "%s"\n'      % output
         if error       : script += '#SBATCH --error "%s"\n'       % error
-        if queue       : script += '#SBATCH --partition "%s"\n'   % queue
-        if c_hosts     : script += '#SBATCH --nodelist="%s"\n'    % c_hosts
         if job_contact : script += '#SBATCH --mail-user="%s"\n'   % job_contact
         if account     : script += '#SBATCH --account "%s"\n'     % account
+        if queue       : script += '#SBATCH --partition "%s"\n'   % queue
         if reservation : script += '#SBATCH --reservation "%s"\n' % reservation
-        if mem_per_node: script += '#SBATCH --mem="%s"\n'         % mem_per_node
-        if wall_time   : script += '#SBATCH --time %02d:%02d:00\n' \
-                                 % (int(wall_time / 60), wall_time % 60)
+        if c_hosts     : script += '#SBATCH --nodelist="%s"\n'    % c_hosts
         if constraints : script += '#SBATCH --constraint "%s"\n'  % \
                                    '&'.join(constraints)
+        if wall_time   : script += '#SBATCH --time %02d:%02d:00\n'  \
+                                 % (int(wall_time / 60), wall_time % 60)
+        if mem_per_node: script += '#SBATCH --mem=%d\n'           % mem_per_node
+
+        if core_spec is not None:
+            # Core specialization is a feature designed to isolate system
+            # overhead (system interrupts, etc.) to designated cores
+            # on compute nodes. The count identifies the number of cores to be
+            # reserved for system overhead on each allocated compute node.
+            script += '#SBATCH --core-spec=%d\n' % core_spec
 
         if threads_per_core:
             # High-level (automatic mask generation): minimum number of threads
@@ -796,7 +806,7 @@ class SLURMJobService(cpi_job.Service):
             #
             # This option may implicitly set the number of tasks (if -n was
             # not specified) as one task per requested thread.
-            script += '#SBATCH --threads-per-core %s\n' % threads_per_core
+            script += '#SBATCH --threads-per-core=%d\n' % threads_per_core
 
         if env:
             script += "\n## ENVIRONMENT\n"
