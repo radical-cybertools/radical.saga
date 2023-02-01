@@ -576,7 +576,7 @@ class SLURMJobService(cpi_job.Service):
         cpu_count           = jd.as_dict().get(c.TOTAL_CPU_COUNT)
         gpu_count           = jd.as_dict().get(c.TOTAL_GPU_COUNT)
         n_procs             = jd.as_dict().get(c.NUMBER_OF_PROCESSES)
-        processes_per_host  = jd.as_dict().get(c.PROCESSES_PER_HOST)
+        procs_per_host      = jd.as_dict().get(c.PROCESSES_PER_HOST)
         output              = jd.as_dict().get(c.OUTPUT, "radical.saga.stdout")
         error               = jd.as_dict().get(c.ERROR,  "radical.saga.stderr")
         file_transfer       = jd.as_dict().get(c.FILE_TRANSFER)
@@ -591,13 +591,21 @@ class SLURMJobService(cpi_job.Service):
         cpu_arch            = sys_arch.get('cpu')
         gpu_arch            = sys_arch.get('gpu')
 
+        core_spec = None
+        if 'blocked_cores' in sys_arch:
+            core_spec = len(sys_arch['blocked_cores'])
+
         # default: only nodes with all of specified features will be used
         constraints = []
         for opt in sys_arch.get('options', []):
             constraints.append(opt.lower())
 
-        threads_per_core = int(
-            env.get('RADICAL_SMT') or sys_arch.get('smt') or SMT_DEFAULT)
+        threads_per_core = None
+        # check that target machine requires SMT to be set
+        if 'smt' in sys_arch:
+            threads_per_core = int(env.get('RADICAL_SMT') or
+                                   sys_arch.get('smt') or
+                                   SMT_DEFAULT)
 
         # check to see what's available in our job description
         # to override defaults
@@ -639,16 +647,14 @@ class SLURMJobService(cpi_job.Service):
         # get mem_per_node from total_memory and make sure it is not None
         mem_per_node = total_memory or 0
 
-        # define n_nodes and recalculate mem_per_node (if self._ppn is set)
+        # check user provided value first, then check discovered value
+        procs_per_host = procs_per_host or self._ppn
+
+        # define n_nodes and recalculate mem_per_node
         n_nodes = None
-        if self._ppn:
+        if procs_per_host:
 
-            # exception(s) for earlier defined `self._ppn`
-            if 'frontera' in self.rm.host.lower() and \
-                    queue and 'rtx' in queue.lower():
-                self._ppn = 16  # other option is to use: processes_per_host
-
-            n_nodes = int(math.ceil(float(cpu_count) / self._ppn))
+            n_nodes      = int(math.ceil(float(cpu_count) / procs_per_host))
             mem_per_node = int(mem_per_node / float(n_nodes))
 
         elif total_memory:
@@ -697,11 +703,11 @@ class SLURMJobService(cpi_job.Service):
                 script += '#SBATCH --cpus-per-task=4\n'
                 script += '#SBATCH --ntasks-per-core=1\n'
 
-            elif not processes_per_host:
+            elif not procs_per_host:
                 script += '#SBATCH --cpus-per-task=%s\n' \
                         % (int(cpu_count / n_procs))
 
-            elif threads_per_core < 2:
+            elif not threads_per_core:
                 # https://slurm.schedmd.com/sbatch.html#OPT_threads-per-core
                 # "threads" refers to the number of processing units on each
                 # core rather than the number of application tasks to be
@@ -709,7 +715,7 @@ class SLURMJobService(cpi_job.Service):
                 #
                 # Options `--threads-per-core` and `--ntasks-per-node` are
                 # treated as mutually exclusive.
-                script += '#SBATCH --ntasks-per-node=%s\n' % processes_per_host
+                script += '#SBATCH --ntasks-per-node=%s\n' % procs_per_host
 
         # target host specifica
         # FIXME: these should be moved into resource config files
@@ -761,7 +767,7 @@ class SLURMJobService(cpi_job.Service):
 
         else:
 
-            if gpu_count and threads_per_core < 2:
+            if gpu_count and not threads_per_core:
                 # https://slurm.schedmd.com/sbatch.html#OPT_threads-per-core
                 # "threads" refers to the number of processing units on each
                 # core rather than the number of application tasks to be
@@ -771,30 +777,36 @@ class SLURMJobService(cpi_job.Service):
                 # as mutually exclusive.
                 script += '#SBATCH --gpus=%s\n' % gpu_count
 
-
         if job_name    : script += '#SBATCH -J "%s"\n'            % job_name
         if cwd         : script += '#SBATCH -D "%s"\n'            % cwd
         if output      : script += '#SBATCH --output "%s"\n'      % output
         if error       : script += '#SBATCH --error "%s"\n'       % error
-        if queue       : script += '#SBATCH --partition "%s"\n'   % queue
-        if c_hosts     : script += '#SBATCH --nodelist="%s"\n'    % c_hosts
         if job_contact : script += '#SBATCH --mail-user="%s"\n'   % job_contact
         if account     : script += '#SBATCH --account "%s"\n'     % account
+        if queue       : script += '#SBATCH --partition "%s"\n'   % queue
         if reservation : script += '#SBATCH --reservation "%s"\n' % reservation
-        if mem_per_node: script += '#SBATCH --mem="%s"\n'         % mem_per_node
-        if wall_time   : script += '#SBATCH --time %02d:%02d:00\n' \
-                                 % (int(wall_time / 60), wall_time % 60)
+        if c_hosts     : script += '#SBATCH --nodelist="%s"\n'    % c_hosts
         if constraints : script += '#SBATCH --constraint "%s"\n'  % \
                                    '&'.join(constraints)
+        if wall_time   : script += '#SBATCH --time %02d:%02d:00\n'  \
+                                 % (int(wall_time / 60), wall_time % 60)
+        if mem_per_node: script += '#SBATCH --mem=%d\n'           % mem_per_node
 
-        if threads_per_core > 1:
+        if core_spec is not None:
+            # Core specialization is a feature designed to isolate system
+            # overhead (system interrupts, etc.) to designated cores
+            # on compute nodes. The count identifies the number of cores to be
+            # reserved for system overhead on each allocated compute node.
+            script += '#SBATCH --core-spec=%d\n' % core_spec
+
+        if threads_per_core:
             # High-level (automatic mask generation): minimum number of threads
             # in a core to dedicate to a job. In task layout, use the specified
             # maximum number of threads per core.
             #
             # This option may implicitly set the number of tasks (if -n was
             # not specified) as one task per requested thread.
-            script += '#SBATCH --threads-per-core %s\n' % threads_per_core
+            script += '#SBATCH --threads-per-core=%d\n' % threads_per_core
 
         if env:
             script += "\n## ENVIRONMENT\n"

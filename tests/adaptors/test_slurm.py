@@ -44,21 +44,24 @@ def test_slurm_generator(mocked_handle_ft, mocked_init):
     jd.processes_per_host  = PROCESSES_PER_NODE
     jd.total_cpu_count     = PROCESSES_PER_NODE * 2
     # jd.system_architecture = {'gpu': 'p100'}
-    jd.system_architecture = {'options': ['nvme', 'intel'], 'smt': 2}
+    jd.system_architecture = {'smt'          : 2,
+                              'options'      : ['nvme', 'intel'],
+                              'blocked_cores': []}
 
     tgt_script = """#!/bin/sh
 
 #SBATCH -N 2
-#SBATCH --ntasks-per-node=56
 #SBATCH -J "TestSlurm"
 #SBATCH -D "/home/user"
 #SBATCH --output "output.log"
 #SBATCH --error "error.log"
-#SBATCH --partition "normal-queue"
 #SBATCH --account "TestProject"
+#SBATCH --partition "normal-queue"
 #SBATCH --reservation "ReservationTag"
-#SBATCH --time 01:10:00
 #SBATCH --constraint "nvme&intel"
+#SBATCH --time 01:10:00
+#SBATCH --core-spec=0
+#SBATCH --threads-per-core=1
 
 ## ENVIRONMENT
 export test_env="15"
@@ -76,7 +79,7 @@ echo $test_env
 
     js = slurm_job.SLURMJobService(api=None, adaptor=None)
     js._adaptor = slurm_job.Adaptor()
-    js._ppn     = PROCESSES_PER_NODE
+    js._ppn     = 1  # `jd.processes_per_host` will be used instead
     js.rm       = ru.Url(JOB_MANAGER_ENDPOINT)
     js.jobs     = {}
     js._logger = js.shell = mock.Mock()
