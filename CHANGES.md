@@ -3,6 +3,16 @@
 For a list of open issues and known problems, see:
 https://github.com/radical-cybertools/radical.saga/issues
 
+1.21.0 Release                                                        2023-02-01
+--------------------------------------------------------------------------------
+
+  - added core specialization option (SLURM)
+  - enforce to use `threads-per-core` only if `smt` is in `system_architecture`
+  - fixed value for `processes_per_host`
+  - let shell_wrapper.py close file more promptly.
+  - updated and cleaned PBSPro adapter
+
+
 1.20.0 Release                                                        2022-12-16
 --------------------------------------------------------------------------------
 
