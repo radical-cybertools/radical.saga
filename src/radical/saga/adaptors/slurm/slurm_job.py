@@ -683,7 +683,8 @@ class SLURMJobService(cpi_job.Service):
             elif 'frontera'  in self.rm.host.lower() or \
                  'andes'     in self.rm.host.lower() or \
                  'spock'     in self.rm.host.lower() or \
-                 'crusher'   in self.rm.host.lower():
+                 'crusher'   in self.rm.host.lower() or \
+                 'frontier'  in self.rm.host.lower():
 
                 assert(n_nodes), 'need unique number of cores per node'
                 script += "#SBATCH -N %d\n" % n_nodes
