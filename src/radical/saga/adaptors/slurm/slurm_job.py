@@ -31,9 +31,24 @@ from ...utils.job     import TransferDirectives
 SYNC_CALL  = cpi_decs.SYNC_CALL
 ASYNC_CALL = cpi_decs.ASYNC_CALL
 
-MONITOR_UPDATE_INTERVAL   = 3  # seconds
+MONITOR_UPDATE_INTERVAL = 3  # seconds
 
 SMT_DEFAULT = 1
+
+PPN_PER_QUEUE = {
+    'bridges2': {
+        'rm'    : 128,
+        'rm-512': 128,
+        'em'    : 96
+    },
+    'rivanna': {
+        'standard': 40,
+        'parallel': 40,
+        'largemem': 16,
+        'gpu'     : 10,
+        'dev'     : 4
+    }
+}
 
 
 # ------------------------------------------------------------------------------
@@ -647,8 +662,11 @@ class SLURMJobService(cpi_job.Service):
         # get mem_per_node from total_memory and make sure it is not None
         mem_per_node = total_memory or 0
 
+        resource = self.rm.host.split('.', 1)[0].lower()
         # check user provided value first, then check discovered value
-        procs_per_host = procs_per_host or self._ppn
+        procs_per_host = procs_per_host or \
+                         PPN_PER_QUEUE.get(resource, {}).get(queue.lower()) or \
+                         self._ppn
 
         # define n_nodes and recalculate mem_per_node
         n_nodes = None
@@ -704,7 +722,8 @@ class SLURMJobService(cpi_job.Service):
                 script += '#SBATCH --cpus-per-task=4\n'
                 script += '#SBATCH --ntasks-per-core=1\n'
 
-            elif not procs_per_host:
+            elif not procs_per_host or procs_per_host == 1:
+                # batch nodes (ppn=1) are not considered for `ntasks-per-node`
                 script += '#SBATCH --cpus-per-task=%s\n' \
                         % (int(cpu_count / n_procs))
 
@@ -718,7 +737,7 @@ class SLURMJobService(cpi_job.Service):
                 # treated as mutually exclusive.
                 script += '#SBATCH --ntasks-per-node=%s\n' % procs_per_host
 
-        # target host specifica
+        # target host specification
         # FIXME: these should be moved into resource config files
         self._logger.debug ("submit SLURM script to %s", self.rm)
         if 'bridges2' in self.rm.host.lower():
