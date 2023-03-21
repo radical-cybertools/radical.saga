@@ -31,6 +31,7 @@ def main():
 
             jd.executable        = '/usr/bin/touch'
             jd.arguments         = ['$FILENAME']
+            jd.queue             = 'test'
 
             jd.working_directory = "/tmp/%d/A/B/C" % os.getuid()
             jd.output            = "examplejob.out"
