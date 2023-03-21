@@ -3,6 +3,14 @@
 For a list of open issues and known problems, see:
 https://github.com/radical-cybertools/radical.saga/issues
 
+1.22.0 Release                                                        2023-03-21
+--------------------------------------------------------------------------------
+
+  - support for Frontier
+  - added set of PPNs per queue
+  - add some job attributes to the shell adaptor but ignore them
+  
+
 1.21.0 Release                                                        2023-02-01
 --------------------------------------------------------------------------------
 
