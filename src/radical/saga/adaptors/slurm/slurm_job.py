@@ -390,11 +390,11 @@ class SLURMJobService(cpi_job.Service):
 
         self.rm      = rm_url
         self.session = session
+        self.jobs    = dict()
 
         self.mt = _job_state_monitor(job_service=self)
         self.mt.start()
 
-        self.jobs = {}
         self._open()
 
         return self.get_api()
