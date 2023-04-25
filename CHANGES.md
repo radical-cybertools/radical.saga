@@ -3,6 +3,14 @@
 For a list of open issues and known problems, see:
 https://github.com/radical-cybertools/radical.saga/issues
 
+1.33.0 Release                                                        2023-04-25
+--------------------------------------------------------------------------------
+
+  - fix a race condition
+  - fix CI (removed codecov)
+  - fix `core-spec` with consideration of `threads-per-core` (Slurm)
+
+
 1.22.0 Release                                                        2023-03-21
 --------------------------------------------------------------------------------
 
