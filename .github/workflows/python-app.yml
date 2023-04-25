@@ -28,8 +28,7 @@ jobs:
         python -m pip install --upgrade pip setuptools
         python -m pip install git+https://github.com/radical-cybertools/radical.utils.git@devel
         python -m pip install --upgrade .
-        python -m pip install coverage codecov
-        python -m pip install pytest pytest-timeout
+        python -m pip install coverage pytest pytest-timeout
     - name: Test with pytest
       env:
         LOC: testenv/lib/python3.7/site-packages

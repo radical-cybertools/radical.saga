@@ -606,10 +606,6 @@ class SLURMJobService(cpi_job.Service):
         cpu_arch            = sys_arch.get('cpu')
         gpu_arch            = sys_arch.get('gpu')
 
-        core_spec = None
-        if 'blocked_cores' in sys_arch:
-            core_spec = len(sys_arch['blocked_cores'])
-
         # default: only nodes with all of specified features will be used
         constraints = []
         for opt in sys_arch.get('options', []):
@@ -621,6 +617,11 @@ class SLURMJobService(cpi_job.Service):
             threads_per_core = int(env.get('RADICAL_SMT') or
                                    sys_arch.get('smt') or
                                    SMT_DEFAULT)
+
+        core_spec = None
+        if 'blocked_cores' in sys_arch:
+            core_spec = len(sys_arch['blocked_cores']) // \
+                        (threads_per_core or 1)
 
         # check to see what's available in our job description
         # to override defaults
