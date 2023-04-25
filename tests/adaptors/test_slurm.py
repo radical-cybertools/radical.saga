@@ -15,7 +15,7 @@ from unittest import mock
 
 from radical.saga.adaptors.slurm import slurm_job
 
-PROCESSES_PER_NODE   = 56
+CORES_PER_NODE   = 56
 JOB_MANAGER_ENDPOINT = 'slurm+ssh://frontera.tacc.utexas.edu/'
 
 
@@ -30,7 +30,7 @@ def test_slurm_generator(mocked_handle_ft, mocked_init):
     jd.name                = 'TestSlurm'
     jd.executable          = '/bin/sleep'
     jd.arguments           = ['60']
-    jd.environment         = {'test_env': 15, 'RADICAL_SMT': 1}
+    jd.environment         = {'test_env': 15, 'RADICAL_SMT': 2}
     jd.pre_exec            = ['echo $test_env']
     jd.post_exec           = ['echo $test_env']
     jd.working_directory   = '/home/user'
@@ -41,12 +41,18 @@ def test_slurm_generator(mocked_handle_ft, mocked_init):
     jd.project             = 'TestProject:ReservationTag'
     jd.wall_time_limit     = 70
 
-    jd.processes_per_host  = PROCESSES_PER_NODE
-    jd.total_cpu_count     = PROCESSES_PER_NODE * 2
+    jd.processes_per_host  = CORES_PER_NODE
+    jd.total_cpu_count     = CORES_PER_NODE * 2
     # jd.system_architecture = {'gpu': 'p100'}
     jd.system_architecture = {'smt'          : 2,
                               'options'      : ['nvme', 'intel'],
-                              'blocked_cores': []}
+                              'blocked_cores': [0, 1]}
+
+    # - blocked cores represent virtual cores
+    #   (e.g., physical cores with 1 thread or threads, if physical cores
+    #   have more than one thread per core)
+    # - core specialization targets physical cores only
+    #   (i.e., num_blocked_cores // smt)
 
     tgt_script = """#!/bin/sh
 
@@ -60,12 +66,12 @@ def test_slurm_generator(mocked_handle_ft, mocked_init):
 #SBATCH --reservation "ReservationTag"
 #SBATCH --constraint "nvme&intel"
 #SBATCH --time 01:10:00
-#SBATCH --core-spec=0
-#SBATCH --threads-per-core=1
+#SBATCH --core-spec=1
+#SBATCH --threads-per-core=2
 
 ## ENVIRONMENT
 export test_env="15"
-export RADICAL_SMT="1"
+export RADICAL_SMT="2"
 
 ## PRE_EXEC
 echo $test_env
