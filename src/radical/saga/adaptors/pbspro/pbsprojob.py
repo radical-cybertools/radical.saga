@@ -837,8 +837,6 @@ class PBSProJobService (cpi.Service):
             if job_info.get('exec_host'):
                 job_info['exec_hosts'] = job_info['exec_hosts'].split('+')
 
-            # TORQUE doesn't allow us to distinguish DONE/FAILED on final state
-            # alone, we need to consider the exit_status.
             retcode = job_info.get('returncode', -1)
             job_info['state'] = _to_saga_jobstate(job_state, retcode)
 
@@ -850,13 +848,6 @@ class PBSProJobService (cpi.Service):
             if job_info['state'] in api.FINAL \
                 and not job_info['end_time']:
                 job_info['end_time'] = time.time()
-
-
-        # PBSPRO state does not indicate error or success -- we derive that from
-        # the exit code
-        if job_info['returncode'] not in [None, 0]:
-            job_info['state'] = api.FAILED
-
 
         # return the updated job info
         return job_info
