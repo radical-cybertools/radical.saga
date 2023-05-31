@@ -746,17 +746,16 @@ class PBSProJobService (cpi.Service):
 
         rm, pid = self._adaptor.parse_id(job_id)
 
-        # run the PBS 'qstat' command to get some infos about our job
-        # TODO: create a PBSPRO/TORQUE flag once
+        # run the PBS 'qstat' command to get job's info
+        # options: "-f" - long format; "-x" - includes finished jobs
         pbs_version = self._commands['qstat']['version']
-        if   '18.2'     in pbs_version: qstat_flag = '-fx'  # Cheyenne
-        elif 'PBSPro_1' in pbs_version: qstat_flag = '-f'
-        else                          : qstat_flag = '-f1'
+        if 'PBSPro_1' in pbs_version: qstat_flags = '-f'
+        else                        : qstat_flags = '-fx'
 
         ret, out, _ = self.shell.run_sync("unset GREP_OPTIONS; %s %s %s | "
                 "grep -E -i '(job_state)|(Job_Name)|(exec_host)|(exit_status)|"
                  "(ctime)|(start_time)|(stime)|(mtime)'"
-                % (self._commands['qstat']['path'], qstat_flag, pid))
+                % (self._commands['qstat']['path'], qstat_flags, pid))
 
         if ret:
 
