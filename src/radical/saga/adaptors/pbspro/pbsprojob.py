@@ -130,14 +130,16 @@ def _to_saga_jobstate(job_state, retcode, logger=None):
     # F: Job is Finished (PBSPro)
     # C: Job is completed after having run (Torque)
 
-    ret = None
-
     if   job_state == 'C':     # Torque
         if retcode ==  0 : ret = api.DONE
         else             : ret = api.FAILED
     elif job_state == 'F':     # PBSPro
-        if retcode ==  0 : ret = api.DONE
-        else             : ret = api.FAILED
+        # if return_code >= 128 - job was killed with a signal, which is
+        # calculated as following: `signal = return_code % 128`,
+        # where `signal = 15` means that RADICAL-Pilot has terminated the job
+        if   retcode       ==  0: ret = api.DONE
+        elif retcode % 128 == 15: ret = api.DONE
+        else                    : ret = api.FAILED
     elif job_state == 'H': ret = api.PENDING
     elif job_state == 'Q': ret = api.PENDING
     elif job_state == 'S': ret = api.PENDING
