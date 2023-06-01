@@ -29,8 +29,8 @@ from ..cpi            import decorators as cpi_decs
 SYNC_CALL  = cpi_decs.SYNC_CALL
 ASYNC_CALL = cpi_decs.ASYNC_CALL
 
-SYNC_WAIT_UPDATE_INTERVAL =  1  # seconds
-MONITOR_UPDATE_INTERVAL   = 10  # seconds
+SYNC_WAIT_UPDATE_INTERVAL = 1  # seconds
+MONITOR_UPDATE_INTERVAL   = 5  # seconds
 
 
 # --------------------------------------------------------------------
