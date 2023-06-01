@@ -134,9 +134,6 @@ def _to_saga_jobstate(job_state, retcode, logger=None):
         if retcode ==  0 : ret = api.DONE
         else             : ret = api.FAILED
     elif job_state == 'F':     # PBSPro
-        # if return_code >= 128 - job was killed with a signal, which is
-        # calculated as following: `signal = return_code % 128`,
-        # where `signal = 15` means that RADICAL-Pilot has terminated the job
         if retcode ==  0 : ret = api.DONE
         else             : ret = api.FAILED
     elif job_state == 'H': ret = api.PENDING
