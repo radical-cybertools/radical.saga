@@ -30,7 +30,7 @@ SYNC_CALL  = cpi_decs.SYNC_CALL
 ASYNC_CALL = cpi_decs.ASYNC_CALL
 
 SYNC_WAIT_UPDATE_INTERVAL =  1  # seconds
-MONITOR_UPDATE_INTERVAL   = 60  # seconds
+MONITOR_UPDATE_INTERVAL   = 10  # seconds
 
 
 # --------------------------------------------------------------------
@@ -137,9 +137,8 @@ def _to_saga_jobstate(job_state, retcode, logger=None):
         # if return_code >= 128 - job was killed with a signal, which is
         # calculated as following: `signal = return_code % 128`,
         # where `signal = 15` means that RADICAL-Pilot has terminated the job
-        if   retcode       ==  0: ret = api.DONE
-        elif retcode % 128 == 15: ret = api.DONE
-        else                    : ret = api.FAILED
+        if retcode ==  0 : ret = api.DONE
+        else             : ret = api.FAILED
     elif job_state == 'H': ret = api.PENDING
     elif job_state == 'Q': ret = api.PENDING
     elif job_state == 'S': ret = api.PENDING
@@ -905,6 +904,10 @@ class PBSProJobService (cpi.Service):
     def _job_cancel(self, job_id):
         """ cancel the job via 'qdel'
         """
+        if self.jobs[job_id]['state'] in api.FINAL:
+            # job is already final - nothing to do
+            return
+
         rm, pid = self._adaptor.parse_id(job_id)
 
         ret, out, _ = self.shell.run_sync("%s %s\n"
@@ -913,7 +916,7 @@ class PBSProJobService (cpi.Service):
         if ret:
             raise rse.NoSuccess("Error canceling job via 'qdel': %s" % out)
 
-        # assume the job was succesfully canceled
+        # assume the job was successfully canceled
         self.jobs[job_id]['state'] = api.CANCELED
 
         if not self.jobs[job_id]['end_time']:
