@@ -79,7 +79,7 @@ class _job_state_monitor(threading.Thread):
                         pre_update_state = job_info['state']
 
                         new_job_info = self.js._job_get_info(job_id, reconnect=False)
-                        self.logger.info ("Job monitoring thread updating Job "
+                        self.logger.debug("Job monitoring thread updating Job "
                                           "%s (old state: %s, new state: %s)" %
                                           (job_id, pre_update_state, new_job_info['state']))
 
