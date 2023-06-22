@@ -3,6 +3,17 @@
 For a list of open issues and known problems, see:
 https://github.com/radical-cybertools/radical.saga/issues
 
+1.34.0 Release                                                        2023-06-22
+--------------------------------------------------------------------------------
+
+  - adding `exclusive` arg to srun
+  - cleaned intermediate fix (PBSPro)
+  - fixed final state (PBSPro)
+  - fixed monitoring update interval (PBSPro)
+  - fixed option for Perlmutter
+  - fixed option(s) for PBSPro tool(s)
+
+
 1.33.0 Release                                                        2023-04-25
 --------------------------------------------------------------------------------
 

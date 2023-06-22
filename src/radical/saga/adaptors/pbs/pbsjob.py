@@ -741,16 +741,13 @@ class PBSJobService (cpi_job.Service):
         """
         # rm, pid = self._adaptor.parse_id(job_id)
 
-        # # run the PBS 'qstat' command to get some infos about our job
-        # if 'PBSPro_1' in self._commands['qstat']['version']:
-        #     qstat_flag = '-f'
-        # else:
-        #     qstat_flag ='-f1'
+        # # run the PBS 'qstat' command to get job's info
         #
+        # qstat_flags = '-fx'
         # ret, out, _ = self.shell.run_sync("unset GREP_OPTIONS; %s %s %s | "\
         #         "grep -E -i '(job_state)|(exec_host)|(exit_status)|(ctime)|"\
         #         "(start_time)|(comp_time)|(stime)|(qtime)|(mtime)'" \
-        #       % (self._commands['qstat']['path'], qstat_flag, pid))
+        #       % (self._commands['qstat']['path'], qstat_flags, pid))
 
         # if ret != 0:
         #     raise NoSuccess("Couldn't reconnect job '%s': %s" % (job_id, out))
@@ -807,17 +804,14 @@ class PBSJobService (cpi_job.Service):
 
         rm, pid = self._adaptor.parse_id(job_id)
 
-        # run the PBS 'qstat' command to get some infos about our job
-        # TODO: create a PBSPRO/TORQUE flag once
-        if 'PBSPro_1' in self._commands['qstat']['version']:
-            qstat_flag = '-fx'
-        else:
-            qstat_flag = '-f1'
+        # run the PBS 'qstat' command to get job's info
+        # options: "-f" - long format; "-x" - includes finished jobs
+        qstat_flags = '-fx'
 
         ret, out, _ = self.shell.run_sync("unset GREP_OPTIONS; %s %s %s | "
                 "grep -E -i '(job_state)|(exec_host)|(exit_status)|"
                  "(ctime)|(start_time)|(stime)|(mtime)'"
-                % (self._commands['qstat']['path'], qstat_flag, pid))
+                % (self._commands['qstat']['path'], qstat_flags, pid))
 
         if ret != 0:
 

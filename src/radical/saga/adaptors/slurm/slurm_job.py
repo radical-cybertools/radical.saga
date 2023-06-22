@@ -623,6 +623,8 @@ class SLURMJobService(cpi_job.Service):
             core_spec = len(sys_arch['blocked_cores']) // \
                         (threads_per_core or 1)
 
+        is_exclusive = sys_arch.get('exclusive', False)
+
         # check to see what's available in our job description
         # to override defaults
 
@@ -699,11 +701,12 @@ class SLURMJobService(cpi_job.Service):
                 script += "#SBATCH -N %d\n" % n_nodes
                 script += "#SBATCH -n %s\n" % n_procs
 
-            elif 'frontera'  in self.rm.host.lower() or \
-                 'andes'     in self.rm.host.lower() or \
-                 'spock'     in self.rm.host.lower() or \
-                 'crusher'   in self.rm.host.lower() or \
-                 'frontier'  in self.rm.host.lower():
+            elif 'frontera'   in self.rm.host.lower() or \
+                 'andes'      in self.rm.host.lower() or \
+                 'spock'      in self.rm.host.lower() or \
+                 'crusher'    in self.rm.host.lower() or \
+                 'frontier'   in self.rm.host.lower() or \
+                 'perlmutter' in self.rm.host.lower():
 
                 assert(n_nodes), 'need unique number of cores per node'
                 script += "#SBATCH -N %d\n" % n_nodes
@@ -811,6 +814,8 @@ class SLURMJobService(cpi_job.Service):
                                    '&'.join(constraints)
         if wall_time   : script += '#SBATCH --time %02d:%02d:00\n'  \
                                  % (int(wall_time / 60), wall_time % 60)
+
+        if is_exclusive: script += '#SBATCH --exclusive\n'
         if mem_per_node: script += '#SBATCH --mem=%d\n'           % mem_per_node
 
         if core_spec is not None:

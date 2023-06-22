@@ -29,8 +29,8 @@ from ..cpi            import decorators as cpi_decs
 SYNC_CALL  = cpi_decs.SYNC_CALL
 ASYNC_CALL = cpi_decs.ASYNC_CALL
 
-SYNC_WAIT_UPDATE_INTERVAL =  1  # seconds
-MONITOR_UPDATE_INTERVAL   = 60  # seconds
+SYNC_WAIT_UPDATE_INTERVAL = 1  # seconds
+MONITOR_UPDATE_INTERVAL   = 5  # seconds
 
 
 # --------------------------------------------------------------------
@@ -79,7 +79,7 @@ class _job_state_monitor(threading.Thread):
                         pre_update_state = job_info['state']
 
                         new_job_info = self.js._job_get_info(job_id, reconnect=False)
-                        self.logger.info ("Job monitoring thread updating Job "
+                        self.logger.debug("Job monitoring thread updating Job "
                                           "%s (old state: %s, new state: %s)" %
                                           (job_id, pre_update_state, new_job_info['state']))
 
@@ -129,8 +129,6 @@ def _to_saga_jobstate(job_state, retcode, logger=None):
     # X: Subjob has completed execution or has been deleted (PBSPro)
     # F: Job is Finished (PBSPro)
     # C: Job is completed after having run (Torque)
-
-    ret = None
 
     if   job_state == 'C':     # Torque
         if retcode ==  0 : ret = api.DONE
@@ -746,17 +744,16 @@ class PBSProJobService (cpi.Service):
 
         rm, pid = self._adaptor.parse_id(job_id)
 
-        # run the PBS 'qstat' command to get some infos about our job
-        # TODO: create a PBSPRO/TORQUE flag once
+        # run the PBS 'qstat' command to get job's info
+        # options: "-f" - long format; "-x" - includes finished jobs
         pbs_version = self._commands['qstat']['version']
-        if   '18.2'     in pbs_version: qstat_flag = '-fx'  # Cheyenne
-        elif 'PBSPro_1' in pbs_version: qstat_flag = '-f'
-        else                          : qstat_flag = '-f1'
+        if 'PBSPro_1' in pbs_version: qstat_flags = '-f'
+        else                        : qstat_flags = '-fx'
 
         ret, out, _ = self.shell.run_sync("unset GREP_OPTIONS; %s %s %s | "
                 "grep -E -i '(job_state)|(Job_Name)|(exec_host)|(exit_status)|"
                  "(ctime)|(start_time)|(stime)|(mtime)'"
-                % (self._commands['qstat']['path'], qstat_flag, pid))
+                % (self._commands['qstat']['path'], qstat_flags, pid))
 
         if ret:
 
@@ -838,8 +835,6 @@ class PBSProJobService (cpi.Service):
             if job_info.get('exec_host'):
                 job_info['exec_hosts'] = job_info['exec_hosts'].split('+')
 
-            # TORQUE doesn't allow us to distinguish DONE/FAILED on final state
-            # alone, we need to consider the exit_status.
             retcode = job_info.get('returncode', -1)
             job_info['state'] = _to_saga_jobstate(job_state, retcode)
 
@@ -851,13 +846,6 @@ class PBSProJobService (cpi.Service):
             if job_info['state'] in api.FINAL \
                 and not job_info['end_time']:
                 job_info['end_time'] = time.time()
-
-
-        # PBSPRO state does not indicate error or success -- we derive that from
-        # the exit code
-        if job_info['returncode'] not in [None, 0]:
-            job_info['state'] = api.FAILED
-
 
         # return the updated job info
         return job_info
@@ -913,6 +901,10 @@ class PBSProJobService (cpi.Service):
     def _job_cancel(self, job_id):
         """ cancel the job via 'qdel'
         """
+        if self.jobs[job_id]['state'] in api.FINAL:
+            # job is already final - nothing to do
+            return
+
         rm, pid = self._adaptor.parse_id(job_id)
 
         ret, out, _ = self.shell.run_sync("%s %s\n"
@@ -921,7 +913,7 @@ class PBSProJobService (cpi.Service):
         if ret:
             raise rse.NoSuccess("Error canceling job via 'qdel': %s" % out)
 
-        # assume the job was succesfully canceled
+        # assume the job was successfully canceled
         self.jobs[job_id]['state'] = api.CANCELED
 
         if not self.jobs[job_id]['end_time']:
