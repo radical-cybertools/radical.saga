@@ -652,6 +652,14 @@ class SLURMJobService(cpi_job.Service):
         else:
             account, reservation = project, None
 
+        if queue and ':' in queue:
+            partition, qos = queue.split(':', 1)
+        else:
+            if 'perlmutter' in self.rm.host.lower():
+                partition, qos = None, queue
+            else:
+                partition, qos = queue, None
+
         script = "#!/bin/sh\n\n"
 
         # make sure we have something for cpu_count
@@ -668,7 +676,8 @@ class SLURMJobService(cpi_job.Service):
         resource = self.rm.host.split('.', 1)[0].lower()
         # check user provided value first, then check discovered value
         procs_per_host = procs_per_host or \
-                         PPN_PER_QUEUE.get(resource, {}).get(queue.lower()) or \
+                         PPN_PER_QUEUE.get(resource, {}).\
+                                       get(partition.lower()) or \
                          self._ppn
 
         # define n_nodes and recalculate mem_per_node
@@ -807,7 +816,8 @@ class SLURMJobService(cpi_job.Service):
         if error       : script += '#SBATCH --error "%s"\n'       % error
         if job_contact : script += '#SBATCH --mail-user="%s"\n'   % job_contact
         if account     : script += '#SBATCH --account "%s"\n'     % account
-        if queue       : script += '#SBATCH --partition "%s"\n'   % queue
+        if partition   : script += '#SBATCH --partition "%s"\n'   % partition
+        if qos         : script += '#SBATCH --qos "%s"\n'         % qos
         if reservation : script += '#SBATCH --reservation "%s"\n' % reservation
         if c_hosts     : script += '#SBATCH --nodelist="%s"\n'    % c_hosts
         if constraints : script += '#SBATCH --constraint "%s"\n'  % \
