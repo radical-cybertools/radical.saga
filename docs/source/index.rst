@@ -1,3 +1,5 @@
+.. py:module:: radical.saga
+
 ####################################
 RADICAL-SAGA |version| Documentation
 ####################################
