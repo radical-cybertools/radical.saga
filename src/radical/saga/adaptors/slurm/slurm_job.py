@@ -44,6 +44,7 @@ PPN_PER_QUEUE = {
     'rivanna': {
         'standard': 40,
         'parallel': 40,
+        'bii'     : 40,
         'largemem': 16,
         'gpu'     : 10,
         'dev'     : 4
@@ -730,11 +731,7 @@ class SLURMJobService(cpi_job.Service):
             else:
                 script += "#SBATCH --ntasks=%s\n" % n_procs
 
-            if 'rivanna' in self.rm.host.lower():
-                # do not specify any resources per task
-                pass
-
-            elif 'traverse' in self.rm.host.lower():
+            if 'traverse' in self.rm.host.lower():
                 # NOTE: this hardcodes the job for a specific application layout
                 script += '#SBATCH --cpus-per-task=4\n'
                 script += '#SBATCH --ntasks-per-core=1\n'
