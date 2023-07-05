@@ -44,6 +44,7 @@ PPN_PER_QUEUE = {
     'rivanna': {
         'standard': 40,
         'parallel': 40,
+        'bii'     : 40,
         'largemem': 16,
         'gpu'     : 10,
         'dev'     : 4
@@ -715,7 +716,8 @@ class SLURMJobService(cpi_job.Service):
                  'spock'      in self.rm.host.lower() or \
                  'crusher'    in self.rm.host.lower() or \
                  'frontier'   in self.rm.host.lower() or \
-                 'perlmutter' in self.rm.host.lower():
+                 'perlmutter' in self.rm.host.lower() or \
+                 'rivanna'    in self.rm.host.lower():
 
                 assert(n_nodes), 'need unique number of cores per node'
                 script += "#SBATCH -N %d\n" % n_nodes
@@ -728,7 +730,6 @@ class SLURMJobService(cpi_job.Service):
 
             else:
                 script += "#SBATCH --ntasks=%s\n" % n_procs
-
 
             if 'traverse' in self.rm.host.lower():
                 # NOTE: this hardcodes the job for a specific application layout
