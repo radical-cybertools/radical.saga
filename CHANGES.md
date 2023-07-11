@@ -3,6 +3,14 @@
 For a list of open issues and known problems, see:
 https://github.com/radical-cybertools/radical.saga/issues
 
+1.35.0 Release                                                        2023-07-11
+--------------------------------------------------------------------------------
+
+  - support `partition[:qos]` as `queue` instead of `partition/queue`
+    for Perlmutter@NERSC
+  - fixed SLURM generation for Rivanna
+
+
 1.34.0 Release                                                        2023-06-22
 --------------------------------------------------------------------------------
 
