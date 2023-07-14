@@ -774,7 +774,8 @@ class SLURMJobService(cpi_job.Service):
                 # Make sure we take a full GPU node
                 script += "#SBATCH --gres=gpu%s:%d\n" % (gpu_arch_str, count)
 
-        elif 'tiger' in self.rm.host.lower():
+        elif 'tiger'  in self.rm.host.lower() or \
+             'amarel' in self.rm.host.lower():
 
             if gpu_count:
                 # gres resources are specified *per node*
