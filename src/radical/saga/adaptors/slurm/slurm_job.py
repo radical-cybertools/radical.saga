@@ -780,7 +780,7 @@ class SLURMJobService(cpi_job.Service):
             if gpu_count:
                 # gres resources are specified *per node*
                 assert(n_nodes), 'need unique number of cores per node'
-                count = int(gpu_count / n_nodes)
+                count = math.ceil(gpu_count / n_nodes)
 
                 if count:
                     script += "#SBATCH --gres=gpu:%s\n" % count
