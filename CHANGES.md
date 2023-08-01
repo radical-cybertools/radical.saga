@@ -3,6 +3,12 @@
 For a list of open issues and known problems, see:
 https://github.com/radical-cybertools/radical.saga/issues
 
+1.36.0 Release                                                        2023-08-01
+--------------------------------------------------------------------------------
+
+  - fixed request for GPUs on Amarel (SLURM)
+
+
 1.35.0 Release                                                        2023-07-11
 --------------------------------------------------------------------------------
 
