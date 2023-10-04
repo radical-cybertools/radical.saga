@@ -1,5 +1,4 @@
-
-radical.utils>=1.12
+radical.utils>=1.40
 apache-libcloud
 parse
 
