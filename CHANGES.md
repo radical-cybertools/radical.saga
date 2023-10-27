@@ -3,6 +3,12 @@
 For a list of open issues and known problems, see:
 https://github.com/radical-cybertools/radical.saga/issues
 
+1.39.0 Release                                                        2023-10-27
+--------------------------------------------------------------------------------
+
+  - last release before MongoDB removal
+
+
 1.36.0 Release                                                        2023-08-01
 --------------------------------------------------------------------------------
 
