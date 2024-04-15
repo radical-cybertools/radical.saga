@@ -141,9 +141,7 @@ def get_version(_mod_root):
         if not os.path.isfile('dist/%s' % _sdist_name):
             _sdist_name = '%s-%s.tar.gz' % (name.replace('.', '_'), _version_base)
 
-        if '--record'    in sys.argv or \
-           'bdist_egg'   in sys.argv or \
-           'bdist_wheel' in sys.argv    :
+        if os.path.isfile('dist/%s' % _sdist_name):
             # pip install stage 2 or easy_install stage 1
             #
             # pip install will untar the sdist in a tmp tree.  In that tmp
