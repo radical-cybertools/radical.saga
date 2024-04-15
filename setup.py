@@ -137,6 +137,10 @@ def get_version(_mod_root):
       # _sdist_name = _sdist_name.replace('#', '-')
       # _sdist_name = _sdist_name.replace('_', '-')
 
+        # setuptools 69.5 does changes naming scheme
+        if not os.path.isfile('%s/%s' % (_path, _sdist_name)):
+            _sdist_name = '%s-%s.tar.gz' % (name.replace('.', '_'), _version_base)
+
         if '--record'    in sys.argv or \
            'bdist_egg'   in sys.argv or \
            'bdist_wheel' in sys.argv    :
@@ -199,7 +203,7 @@ with open('%s/requirements.txt' % root, encoding='utf-8') as freq:
 #
 setup_args = {
     'name'               : name,
-    'namespace_packages' : ['radical'],
+  # 'namespace_packages' : ['radical'],
     'version'            : version,
     'description'        : 'A light-weight access layer for distributed '
                            'computing infrastructure '
