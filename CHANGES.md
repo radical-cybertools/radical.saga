@@ -3,6 +3,11 @@
 For a list of open issues and known problems, see:
 https://github.com/radical-cybertools/radical.saga/issues
 
+1.50.0 Release                                                        2024-04-15
+--------------------------------------------------------------------------------
+
+  - fix for setuptools upgrade
+
 
 1.47.0 Release                                                        2024-02-08
 --------------------------------------------------------------------------------
