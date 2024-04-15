@@ -138,7 +138,7 @@ def get_version(_mod_root):
       # _sdist_name = _sdist_name.replace('_', '-')
 
         # setuptools 69.5 does changes naming scheme
-        if not os.path.isfile('%s/%s' % (_path, _sdist_name)):
+        if not os.path.isfile('dist/%s' % _sdist_name):
             _sdist_name = '%s-%s.tar.gz' % (name.replace('.', '_'), _version_base)
 
         if '--record'    in sys.argv or \
