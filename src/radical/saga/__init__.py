@@ -39,7 +39,7 @@ from .           import utils
 
 # ------------------------------------------------------------------------------
 #
-import os as _os
+import os            as _os
 import radical.utils as _ru
 
 _mod_root = _os.path.dirname (__file__)
