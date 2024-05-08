@@ -8,8 +8,7 @@ __license__   = "MIT"
 
 import radical.utils as ru
 
-from ..        import exceptions as rse
-from ..version import *
+from .. import exceptions as rse
 
 
 # ------------------------------------------------------------------------------
@@ -135,7 +134,6 @@ class Engine(object, metaclass=ru.Singleton):
 
         # Initialize the logging, and log version (this is a singleton!)
         self._logger = ru.Logger('radical.saga')
-        self._logger.info('radical.saga         version: %s' % version_detail)
 
         # load adaptors
         self._load_adaptors()
