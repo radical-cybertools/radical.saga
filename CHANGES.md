@@ -3,6 +3,14 @@
 For a list of open issues and known problems, see:
 https://github.com/radical-cybertools/radical.saga/issues
 
+1.60.0 Release                                                        2024-05-10
+--------------------------------------------------------------------------------
+
+  - Provide a target for Sphinx :py:mod: role.
+  - set version requirement for RCT stack
+  - sync with RU
+
+
 1.52.0 Release                                                        2024-04-15
 --------------------------------------------------------------------------------
 
@@ -1213,7 +1221,3 @@ Version 0.1.7 released 2011-11-09
 
 --------------------------------------------------------------------------------
 
-  - (HEAD -> master, origin/devel, origin/HEAD, devel) fix the fix
-  - devel version bump
-  - (HEAD -> master, origin/devel, origin/HEAD, devel) fix the fix
-  - devel version bump
