@@ -3,6 +3,12 @@
 For a list of open issues and known problems, see:
 https://github.com/radical-cybertools/radical.saga/issues
 
+1.70.0 Release                                                        2024-09-03
+--------------------------------------------------------------------------------
+
+  - maintenance release
+
+
 1.60.0 Release                                                        2024-05-10
 --------------------------------------------------------------------------------
 
