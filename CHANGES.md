@@ -3,7 +3,7 @@
 For a list of open issues and known problems, see:
 https://github.com/radical-cybertools/radical.saga/issues
 
-1.70.0 Release                                                        2024-09-03
+1.80.0 Release                                                        2024-09-03
 --------------------------------------------------------------------------------
 
   - maintenance release
@@ -1227,3 +1227,4 @@ Version 0.1.7 released 2011-11-09
 
 --------------------------------------------------------------------------------
 
+  - (HEAD -> master, origin/devel, origin/HEAD, devel) devel version bump
