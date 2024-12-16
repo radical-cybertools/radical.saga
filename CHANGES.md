@@ -3,6 +3,12 @@
 For a list of open issues and known problems, see:
 https://github.com/radical-cybertools/radical.saga/issues
 
+1.90.0 Release                                                        2024-12-16
+--------------------------------------------------------------------------------
+
+  - remove MacOS support
+
+
 1.81.0 Release                                                        2024-09-03
 --------------------------------------------------------------------------------
 
@@ -1229,3 +1235,5 @@ Version 0.1.7 released 2011-11-09
 
   - (HEAD -> master, origin/devel, origin/HEAD, devel) devel version bump
   - (HEAD -> master, origin/devel, origin/HEAD, devel) devel version bump
+  - devel version bump
+  - no macos
