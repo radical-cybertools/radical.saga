@@ -48,8 +48,8 @@ It also installs pip:
     python virtualenv.py $HOME/sagaenv/ --no-site-packages
     . $HOME/sagaenv/bin/activate
     pip install radical.saga
-    
-    
+
+
 
 Using Conda
 -----------
@@ -58,7 +58,7 @@ Similar to Virtualenv, another method you can employ to create a Python environm
 
 .. code-block:: bash
 
-    conda create --name env_name python=3.7
+    conda create --name env_name python=3.8
     conda activate env_name
     pip install radical.saga
 
