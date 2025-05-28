@@ -3,6 +3,13 @@
 For a list of open issues and known problems, see:
 https://github.com/radical-cybertools/radical.saga/issues
 
+1.102.0 Release                                                       2025-05-28
+--------------------------------------------------------------------------------
+
+  - move python version to 3.8
+  - update version and req of rct stack
+
+
 1.90.0 Release                                                        2024-12-16
 --------------------------------------------------------------------------------
 
@@ -1233,7 +1240,3 @@ Version 0.1.7 released 2011-11-09
 
 --------------------------------------------------------------------------------
 
-  - (HEAD -> master, origin/devel, origin/HEAD, devel) devel version bump
-  - (HEAD -> master, origin/devel, origin/HEAD, devel) devel version bump
-  - devel version bump
-  - no macos
